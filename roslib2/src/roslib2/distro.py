@@ -49,6 +49,7 @@ class DistroException(Exception): pass
 
 def distro_version(version_val):
     """Parse distro version value, converting SVN revision to version value if necessary"""
+    version_val = str(version_val)
     m = re.search('\$Revision:\s*([0-9]*)\s*\$', version_val)
     if m is not None:
         version_val = 'r'+m.group(1)
@@ -81,18 +82,17 @@ class DistroStack(object):
         self.debian_version = debianize_version(stack_version, release_version)
         self.debian_name = debianize_name("ros-%s-%s"%(release_name,stack_name))
 
-        #rosdistro keys
+        #rosdistro key
         self.dev_svn = expand_rule(rules['dev-svn'], stack_name, stack_version, release_name)
         self.distro_svn = expand_rule(rules['distro-svn'], stack_name, stack_version, release_name)
         self.release_svn = expand_rule(rules['release-svn'], stack_name, stack_version, release_name)
-        
         # for password-protected repos
         self.user_svn = rules.get('user-svn', None)
         self.pass_svn = rules.get('pass-svn', None)
-
+    
         if 'source-tarball' in rules:
             self.source_tarball = expand_rule(rules['source-tarball'], stack_name, stack_version, release_name)
-
+            
 class Variant(object):
     """
     A variant defines a specific set of stacks ("metapackage", in Debian
