@@ -1,0 +1,15 @@
+<package>
+  <description brief="roslib2">
+
+     roslib2: this packages houses new roslib librariese in development that are necessary for release tools, and thus must stay ahead of ROS core release cycle.
+
+  </description>
+  <author>Ken Conley</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/roslib2</url>
+  <depend package="roslib"/>
+
+</package>
+
+

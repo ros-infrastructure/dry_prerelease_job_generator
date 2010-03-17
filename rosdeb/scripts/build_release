@@ -1,0 +1,491 @@
+#!/usr/bin/python
+# Software License Agreement (BSD License)
+#
+# Copyright (c) 2009, Morgan Quigley
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+#
+#  * Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+#  * Redistributions in binary form must reproduce the above
+#    copyright notice, this list of conditions and the following
+#    disclaimer in the documentation and/or other materials provided
+#    with the distribution.
+#  * Neither the name of Willow Garage, Inc. nor the names of its
+#    contributors may be used to endorse or promote products derived
+#    from this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+# COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+# ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+#
+# Revision $Id$
+
+from __future__ import with_statement
+
+import roslib; roslib.load_manifest('rosdeb')
+
+import os
+import sys
+import subprocess
+import shutil
+from subprocess import Popen, PIPE
+from optparse import OptionParser
+import email
+import stat
+
+from roslib2.distro import DistroException, Distro, debianize_name, debianize_version
+from rosdeb import ubuntu_release, debianize_name, debianize_version
+
+NAME='build_release'
+
+def _fullusage():
+  prog=NAME
+  print """build_release creates debian packages for ROS software
+
+Commands:
+\t%(prog)s checkout\tcheck out a distro
+\t%(prog)s rosdep\trun rosdep on the distro
+\t%(prog)s build\tbuild a distro from a local checkout
+\t%(prog)s package\tpackage up a distro from a local build
+
+Type %(prog)s <command> -h for more detailed usage.
+"""%locals()
+  sys.exit(os.EX_USAGE)
+
+def non_blacklisted_packages(pkgs, rospack_path, environ):
+  good_pkgs = []
+  for pkg in sorted(pkgs):
+    pkg_path = Popen([rospack_path,'find',pkg], env=environ, stdout=PIPE).communicate()[0].strip()
+    if not os.path.exists(os.path.join(pkg_path, 'ROS_BUILD_BLACKLIST')):
+      good_pkgs += [pkg]
+  return sorted(good_pkgs)
+
+def setup_environment(environ, workspace):
+  ros_root = os.path.join(workspace, 'ros')
+  stacks_root = os.path.join(workspace, 'stacks')
+  if 'PATH' in environ:
+    path = ':'.join([os.path.join(ros_root, 'bin'), environ['PATH']])
+  else:
+    path = os.path.join(ros_root, 'bin')
+  if 'PYTHONPATH' in environ:
+    pythonpath = ':'.join([environ['PYTHONPATH'], os.path.join(ros_root, 'core', 'roslib', 'src')])
+  else:
+    pythonpath = os.path.join(ros_root, 'core', 'roslib', 'src')
+  env_vars = environ.copy()
+  env_vars.update({'ROS_ROOT' : ros_root,
+                   'PATH' : path,
+                   'PYTHONPATH' : pythonpath,
+                   'ROS_MASTER_URI' : 'http://localhost:11311',
+                   'ROS_PACKAGE_PATH' : stacks_root, 
+                   'ROBOT' : 'sim'})
+  return env_vars
+
+def call_ros(workspace, cmd, args, environ=None):
+  """
+  Do a checked call to the specified ros command. cwd will be set to ROS_ROOT
+  @param workspace: path to workspace
+  @param cmd: ros* command name
+  @param args: arguments to pass to command
+  @param environ: environment to pass to process. If not specified, will use setup_environment() on workspace
+  """
+  if environ is None:
+    environ = setup_environment(os.environ, workspace)
+  ros_root = os.path.join(workspace, 'ros')
+  
+  call_args = [os.path.join(ros_root, 'bin', cmd)] + args
+  subprocess.check_call([os.path.join(ros_root,'bin',cmd)] + args, cwd=ros_root, env=environ, stdout=sys.stdout, stdin=sys.stdin, stderr=sys.stderr)
+    
+def _checkout_command(argv):
+  args = argv[2:]
+  parser = OptionParser(usage="usage: %prog checkout [options] distro_file", prog=NAME)
+  parser.add_option("-w", "--workspace", dest="workspace",
+                    default=os.path.abspath("workspace"),
+                    help="where to land the checkout; default is ./workspace", 
+                    metavar="WORKSPACE")
+  parser.add_option("-r", "--reuse", dest="reuse", default=False,
+                    help="reuse an existing workspace", action="store_true")
+  (options, args) = parser.parse_args(args)
+  if not args:
+    parser.error('please specify a distro file (file path or URI)')
+  elif len(args) != 1:
+    parser.error('you may only specify one distro file')    
+  distro_uri = args[0]
+  d = Distro(distro_uri)
+  release_name = d.release_name # save typing
+  workspace = options.workspace
+  print "checking out %s to %s" % (release_name, workspace)
+
+  # check out ros
+  ros_uri = d.ros.release_svn
+  print ros_uri
+  ros_root = os.path.join(workspace, 'ros')
+  try:
+    os.makedirs(workspace, 0755)
+  except:
+    if not options.reuse:
+      raise DistroException("could not create workspace directory. ahhhhhhhhhh\nTo re-use an existing workspace, use the -r option")
+
+  # TODO: convert to roslib2.vcs as that supports git/bzr
+    
+  # check out all stacks in the distribution. 
+  #  - special rule for ros, which goes into a different location
+  subprocess.check_call(['/usr/bin/svn', 'co', ros_uri, ros_root])
+  stacks_root = os.path.join(workspace, 'stacks')
+  for stack in d.stacks.itervalues():
+    if stack.name == 'ros':
+      continue
+    stack_name = stack.name
+    stack_uri = stack.distro_svn
+    print 'checking out %s from %s' % (stack_name, stack_uri)
+    stack_root = os.path.join(stacks_root, stack_name)
+    
+    if stack.user_svn is not None:
+      if stack.pass_svn is None:
+        raise DistroException("stack '%s' has 'user-svn' key but no 'pass-svn' key"%stack_name)
+      subprocess.check_call(['/usr/bin/svn', 'co', '--no-auth-cache', '--username', stack.user_svn, '--password', stack.pass_svn, stack_uri, stack_root])
+    else:
+      subprocess.check_call(['/usr/bin/svn', 'co', stack_uri, stack_root])
+  # ensure that ros is built, for rospack
+  call_ros(workspace, 'rosmake', ['--rosdep-install','--bootstrap','--rosdep-yes'])
+
+def _rosdep_command(argv):
+  args = argv[2:]
+  parser = OptionParser()
+  parser.add_option("-y", "--rosdep_yes", dest="rosdep_yes", default=False,
+                    help="tell rosdep to say 'yes' to any questions",
+                    action="store_true")
+  parser.add_option("-w", "--workspace", dest="workspace",
+                    default=os.path.abspath("workspace"),
+                    help="the build_release workspace; default is ./workspace", 
+                    metavar="WORKSPACE")
+  parser.add_option("-i", "--rosdep_incremental", dest="rosdep_incremental",
+                    default=False, help="run rosdep one package at a time",
+                    action="store_true")
+  (options, args) = parser.parse_args(args)
+  workspace = options.workspace # save typing
+  environ = setup_environment(os.environ, workspace)
+  ros_root = os.path.join(workspace, 'ros')
+  # get package list via rospack
+  environ = setup_environment(os.environ, workspace)
+  rospack_path = os.path.join(ros_root, 'bin', 'rospack')
+  
+  all_pkgs = Popen([rospack_path,'list-names'], env=environ, stdout=PIPE).communicate()[0].split()
+  # don't try to rosdep packages that are blacklisted
+  good_pkgs = non_blacklisted_packages(all_pkgs, rospack_path, environ)
+  print "I will now try to rosdep these guys:\n"+'\n'.join(["  %s" % pkg for pkg in good_pkgs])
+  # rosdep install everybody
+  rosdep_args = ['install']
+  if options.rosdep_yes:
+    rosdep_args += ['-y']
+  if options.rosdep_incremental:
+    for pkg in good_pkgs:
+      print "running rosdep on %s" % pkg
+      sys.stdout.flush()
+      call_ros(workspace, 'rosdep', rosdep_args + [pkg], environ=environ)
+  else:
+    call_ros(workspace, 'rosdep', rosdep_args + good_pkgs, environ=environ)    
+
+  # now, we can safely do a make minimal
+  subprocess.check_call(['make','minimal'], cwd=ros_root, env=environ)
+
+def _build_command(argv):
+  print "Executing build command!"
+  args = argv[2:]
+  parser = OptionParser()
+  parser.add_option("-w", "--workspace", dest="workspace",
+                    default=os.path.abspath("workspace"),
+                    help="the build_release workspace; default is ./workspace", 
+                    metavar="WORKSPACE")
+  (options, args) = parser.parse_args(args)
+  workspace = options.workspace # save typing
+  # build everybody
+  call_ros(workspace, 'rosmake', ['-Vr','--skip-blacklist','--output=%s'%os.path.join(workspace, 'build_output'),'-ia'])
+  print "have a nice day"
+
+_ubuntu_map = { '10.10': 'mighty', '10.04': 'lucid', '9.10': 'karmic', '9.04': 'jaunty', '8.10': 'intrepid', '8.04': 'hardy'}
+def ubuntu_release():
+  f = open('/etc/issue')
+  for s in f:
+    if s.startswith('Ubuntu'):
+      v = s.split()[1]
+      v = '.'.join(v.split('.')[:2])
+      try:
+        return _ubuntu_map[v]
+      except KeyError:
+        raise DistroException("build_release doesn't know about ubuntu %s" % v)
+  raise DistroException("build_release could not parse ubuntu release version")
+
+def debianize_name(name):
+  return name.replace('_', '-')
+
+def debianize_version(stack_version, distro_version, ubuntu_rel=None):
+  if ubuntu_rel is None:
+    ubuntu_rel = ubuntu_release()
+  return stack_version+'-'+distro_version+'~%s'%ubuntu_rel
+
+def setup_file_text(ros_root, package_path):
+  return """export ROS_ROOT=%(ros_root)s
+export PATH=${ROS_ROOT}/bin:${PATH}
+export PYTHONPATH=${ROS_ROOT}/core/roslib/src
+export ROS_PACKAGE_PATH=%(package_path)s
+if [ ! \"$ROS_MASTER_URI\" ] ; then export ROS_MASTER_URI=http://localhost:11311 ; fi
+
+. ${ROS_ROOT}/tools/rosbash/rosbash"""%locals()
+  
+def package_deb(name, path, workspace, porkspace, distro, ros_root):
+  porkspace = os.path.abspath(porkspace)
+  environ = setup_environment(os.environ, workspace)
+  print "packaging %s from %s" % (name, path)
+  deb_dir = os.path.join(porkspace, name)
+  release_name = distro.release_name
+  base_path = os.path.join(deb_dir, 'root', 'opt', 'ros', release_name)
+  stack = distro.stacks[name]
+  version = stack.debian_version
+  print "  %s is a released stack, version %s" % (name, version)
+  if name == 'ros':
+    landing_dir = os.path.join(base_path, 'ros')
+  else:
+    landing_dir = os.path.join(base_path, 'stacks', name)
+  print "  copying files to staging directory"
+  shutil.copytree(path, landing_dir, symlinks=True)
+  if name == 'ros':
+    with open(os.path.join(base_path, 'setup.sh'), 'w') as setup_file:
+      package_path = os.path.join('/opt', 'ros', release_name, 'stacks')
+      setup_file.write(setup_file_text(ros_root, package_path))
+  print "  removing non-essential files..."
+  non_essential = []
+  for arg in ['.svn', '*.o', '.deps', 'CMakeFiles', 'CMakeCache.txt']:
+    non_essential += Popen(['find',deb_dir,'-name',arg], stdout=PIPE).communicate()[0].split()
+  subprocess.check_call(['rm','-rf'] + non_essential)
+
+  print "  generating dpkg dependencies and writing control file..."
+  
+  deb_deps = calculate_stack_deps(distro, name, ros_root, environ)
+  if 0:
+    deb_name = debianize_name("ros-%s-%s"%(release_name,name))
+  size = int(Popen(["du","-bs",landing_dir], stdout=PIPE).communicate()[0].strip().split()[0])
+  create_dpkg(deb_dir, stack.debian_name, version, deb_deps)
+  
+def calculate_stack_deps(distro, stack_name, ros_root=None, environ=None):
+  """
+  calculate dependencies of stack, including both ROS stacks and their rosdep dependencies
+  @return: list of debian package deps
+  """
+  if ros_root is None:
+    ros_root = os.environ['ROS_ROOT']
+  if environ is None:
+    environ = os.environ.copy()
+
+  # calculate stack packages
+  rospack_path = os.path.join(ros_root, 'bin', 'rospack')
+  rosstack_path = os.path.join(ros_root, 'bin', 'rosstack')
+
+  pkg_names = Popen([rosstack_path,'contents', stack_name], env=environ, stdout=PIPE).communicate()[0].split()
+  good_pkgs = non_blacklisted_packages(pkg_names, rospack_path, environ)
+
+  # calculate rosdeps of stack
+  rosdep_script = Popen([os.path.join(ros_root, 'bin', 'rosdep'),'satisfy','--include_duplicates'] + good_pkgs, env=environ, stdout=PIPE).communicate()[0].split('\n')
+  install_line = [s for s in rosdep_script if s.startswith("sudo apt-get install")]
+  deb_deps = install_line[0][20:].split() if install_line else []
+
+  # add in base deps of ROS
+  deb_deps += ['libc6','build-essential','cmake','python-yaml','subversion'] 
+
+  # add in version-locked ROS stack dependencies
+  stack_deps = Popen([rosstack_path,'deps',stack_name], env=environ, stdout=PIPE).communicate()[0].split()
+  if set(stack_deps) - set(distro.stack_names):
+    raise DistroException("stack [%s] has unreleased dependencies: %s"%(stack_name, set(stack_deps) - set(distro.stack_names)))
+
+  sds = [distro.stacks[s] for s in stack_deps]
+  deb_deps += ["%s (= %s)"%(sd.debian_name, sd.debian_version) for sd in sds]
+
+  if 0:
+    deb_deps += [debianize_name("ros-%s-%s"%(distro.release_name,s)) for s in stack_deps]
+  return deb_deps
+
+# not sure what to put here. lintian says it needs an email address.
+DEFAULT_MAINTAINER = "The ROS community <ros-user@lists.sourceforge.net>"
+#TODO: include manifest description
+def control_file(package_name, source_name, arch, depends, maintainer=DEFAULT_MAINTAINER):
+  return """Source: %(source_name)s
+Section: devel
+Maintainer: %(maintainer)s
+Build-Depends: debhelper (>= 5)
+Standards-Version: 3.7.2
+Priority: optional
+Homepage: http://ros.org
+
+Package: %(package_name)s
+Architecture: %(arch)s
+Depends: %(depends)s
+Description: Software for ROS (Robot Operating System)
+"""%locals()
+
+def changelog_file(package_name, version, maintainer=DEFAULT_MAINTAINER):
+  date = email.Utils.formatdate(localtime=True)
+  ubuntu_distro = ubuntu_release()
+  return """%(package_name)s (%(version)s) %(ubuntu_distro)s; urgency=low
+
+  * Updated release to %(version)s
+
+ -- %(maintainer)s  %(date)s
+"""%locals()
+
+def compat_file():
+  return """5
+"""
+
+def install_file():
+  return """root/* .
+"""
+
+def rules_file():
+  return """#!/usr/bin/make -f
+# -*- makefile -*-
+
+export DH_ALWAYS_EXCLUDE=CVS:.svn
+export DEB_BUILD_OPTIONS=nostrip
+export DEB_DH_SHLIBDEPS_ARGS_ALL=-Xros
+
+include /usr/share/cdbs/1/rules/debhelper.mk
+"""
+
+def create_dpkg(dir_path, dpkg_name, version, deps):
+  """
+  Common sequence for creating meta package from list of dependencies
+  @param dir_path: directory to build debian control file
+  @param dpkg_name: name of debian metapackage
+  @param version: version of metapackage
+  @param deps: list of debian package dependencies
+  """
+  if not os.path.exists(dir_path):
+    os.mkdir(dir_path, 0755)
+
+  if not os.path.exists(os.path.join(dir_path, 'debian')):
+    os.mkdir(os.path.join(dir_path, 'debian'), 0755)
+
+  deps_str = ', '.join(deps)
+  arch = Popen(['dpkg', '--print-architecture'], stdout=PIPE).communicate()[0].strip()
+
+  with open(os.path.join(dir_path, 'debian', "control"), "w") as control:
+    control.write(control_file(dpkg_name, dpkg_name, arch, deps_str))
+
+  with open(os.path.join(dir_path, 'debian', "changelog"), "w") as changelog:
+    changelog.write(changelog_file(dpkg_name, version))
+
+  with open(os.path.join(dir_path, 'debian', "compat"), "w") as compat:
+    compat.write(compat_file())
+
+  # Only create an install file if there's something in "root"
+  if os.path.exists(os.path.join(dir_path, 'root')):
+    with open(os.path.join(dir_path, 'debian', "install"), "w") as install:
+      install.write(install_file())
+
+  with open(os.path.join(dir_path, 'debian', "rules"), "w") as rules:
+    rules.write(rules_file())
+    os.chmod(os.path.join(dir_path, 'debian', "rules"), stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
+
+
+  print "  running dpkg-buildpackage..."
+  os.chdir(dir_path)
+
+  subprocess.check_call(['dpkg-buildpackage', '-uc', '-b', '-tc'])
+  #subprocess.check_call(['fakeroot','dpkg-deb','--build',dir_path,dpkg_name+'_'+version+'_'+ubuntu_release()+'_'+arch+'.deb'])
+
+  
+def _package_command(argv):
+  args = argv[2:]
+  parser = OptionParser(usage="usage: %prog package [options] distro_file", prog=NAME)
+  parser.add_option("-w", "--workspace", dest="workspace",
+                    default=os.path.abspath("workspace"),
+                    help="the build_release workspace; default is ./workspace", 
+                    metavar="WORKSPACE")
+  parser.add_option("-a", "--assembly-dir",
+                    dest="porkspace", # packager+workspace  you know it's funny
+                    default=os.path.abspath("packager-workspace"),
+                    help="packager workspace (for assembly)",
+                    metavar="PACKAGER_WORKSPACE")
+  parser.add_option("-f", "--force", dest="force", default=False,
+                    help="blow away packager directory if it's there",
+                    action="store_true")
+                
+  (options, args) = parser.parse_args(args)
+  if not args:
+    parser.error('please specify a distro file (file path or URI)')
+  elif len(args) != 1:
+    parser.error('you may only specify one distro file')    
+
+  distro_uri = args[0]
+  workspace = options.workspace # save typing
+  porkspace = options.porkspace
+  distro = Distro(distro_uri)
+  release_name = distro.release_name # save typing
+
+  ros_root = os.path.join(workspace, 'ros')
+  try:
+    os.mkdir(porkspace, 0755)
+  except:
+    if not options.force:
+      raise DistroException("could not create assembly directory ahhhhhh   if you want to automatically blow away the old one, use --force")
+    else:
+      shutil.rmtree(porkspace) # remove wasteful spending
+      os.mkdir(porkspace, 0755)
+
+  # special rule for ros, which lives in a separate location
+  package_deb('ros', ros_root, workspace, porkspace, distro, ros_root)
+  stacks_root = os.path.join(workspace, 'stacks')
+  for stack in os.listdir(stacks_root):
+    if stack[0] == '.': # skip hidden dirs
+      continue
+    package_deb(stack, os.path.join(stacks_root, stack), workspace, porkspace, distro, ros_root)
+
+  # make the metapackage for the variant.
+  dpkg_args = compute_metapackage_dpkg_args(distro, porkspace)
+  for dir_path, variant_metapkg, metapkg_ver, variant_stacks in dpkg_args:
+    create_dpkg(dir_path, variant_metapkg, metapkg_ver, variant_stacks)
+
+def compute_metapackage_dpkg_args(distro, porkspace):
+  args = []
+  rel = distro.release_name
+  for name, variant in distro.variants.iteritems():
+    dir_path = os.path.join(porkspace, name)
+    variant_metapkg = "ros-%s-%s" % (rel, name)
+    variant_stacks = ["%s (= %s)" % (distro.stacks[s].debian_name, distro.stacks[s].debian_version) for s in variant.stack_names]
+    metapkg_ver="1.0.0-"+distro.version
+    args.append((dir_path, variant_metapkg, metapkg_ver, variant_stacks))
+  return args
+
+def main(argv):
+  if len(argv) == 1:
+    _fullusage()
+  try:
+    command = argv[1]
+    if command == 'checkout':
+      _checkout_command(argv)
+    elif command == 'rosdep':
+      _rosdep_command(argv)
+    elif command == 'build':
+      _build_command(argv)
+    elif command == 'package':
+      _package_command(argv)
+    else:
+      _fullusage()
+  except DistroException, e:
+    print >> sys.stderr, str(e)
+    return 1
+
+if __name__ == "__main__":
+  sys.exit(main(sys.argv) or 0)

@@ -1,0 +1,16 @@
+<package>
+  <description brief="rosdeb">
+
+     Tools for creating debian packages from ROS stacks, plus managing a debian repository.
+
+  </description>
+  <author>Jeremy Leibs, Ken Conley, Morgan Quigley</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/rosdeb</url>
+  <depend package="roslib2"/>
+  <depend package="roslib"/>
+
+</package>
+
+
