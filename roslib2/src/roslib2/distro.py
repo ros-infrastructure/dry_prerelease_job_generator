@@ -36,6 +36,8 @@
 Library for process rosdistro files.
 """
 
+from __future__ import with_statement
+
 import os
 import sys
 import yaml
@@ -75,6 +77,7 @@ class DistroStack(object):
         self.version = stack_version
 
         #debian-specific stuff
+        #TODO: move to rosdeb
         self.debian_version = debianize_version(stack_version, release_version)
         self.debian_name = debianize_name("ros-%s-%s"%(release_name,stack_name))
 
@@ -200,3 +203,36 @@ class Distro(object):
                 self.ros = self.stacks[stack_name]
   
 
+################################################################################
+# DEBIAN-SPECIFIC STUFF
+# TODO: move to rosdeb
+
+_ubuntu_map = { '10.10': 'mighty', '10.04': 'lucid', '9.10': 'karmic', '9.04': 'jaunty', '8.10': 'intrepid', '8.04': 'hardy'}
+def ubuntu_release():
+    """
+    WARNING: this can only be called on an Ubuntu system
+    """
+    f = open('/etc/issue')
+    for s in f:
+        if s.startswith('Ubuntu'):
+            v = s.split()[1]
+            v = '.'.join(v.split('.')[:2])
+        try:
+            return _ubuntu_map[v]
+        except KeyError:
+            raise DistroException("unrecognized ubuntu version %s" % v)
+    raise DistroException("could not parse ubuntu release version")
+
+def debianize_name(name):
+    """
+    Convert ROS stack name to debian conventions (dashes, not underscores)
+    """
+    return name.replace('_', '-')
+
+def debianize_version(stack_version, distro_version, ubuntu_rel=None):
+    """
+    WARNING: this can only be called on an Ubuntu system
+    """
+    if ubuntu_rel is None:
+        ubuntu_rel = ubuntu_release()
+    return stack_version+'-'+distro_version+'~%s'%ubuntu_rel
