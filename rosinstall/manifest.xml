@@ -1,0 +1,15 @@
+<package>
+  <description brief="rosinstall">
+
+     rosinstall
+
+  </description>
+  <author>Tully Foote</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/rosinstall</url>
+  <depend package="roslib2"/>
+
+</package>
+
+
