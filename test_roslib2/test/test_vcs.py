@@ -49,16 +49,36 @@ class SVNClientTest(unittest.TestCase):
 
     def setUp(self):
         self.directories = {}
-
+        directory = tempfile.mkdtemp()
+        name = "setUp"
+        self.directories[name] = directory
+        self.readonly_url = "https://code.ros.org/svn/ros/stacks/ros/trunk"
+        self.readonly_version = "-r8800"
+        self.readonly_path = os.path.join(directory, "readonly")
+        svnc = svn.SVNClient(self.readonly_path)
+        self.assertTrue(svnc.checkout(self.readonly_url, self.readonly_version))
 
     def tearDown(self):
         for d in self.directories:
             shutil.rmtree(self.directories[d])
 
+    def test_get_url_by_reading(self):
+        svnc = svn.SVNClient(self.readonly_path)
+        self.assertTrue(svnc.path_exists())
+        self.assertTrue(svnc.detect_presence())
+        self.assertEqual(svnc.get_url(), self.readonly_url)
+        #self.assertEqual(svnc.get_version(), self.readonly_version)
+
+
+    def test_get_type_name(self):
+        local_path = "/tmp/dummy"
+        svnc = svn.SVNClient(local_path)
+        self.assertEqual(svnc.get_vcs_type_name(), 'svn')
+
     def test_checkout(self):
         directory = tempfile.mkdtemp()
         self.directories["checkout_test"] = directory
-        local_path = os.path.join(directory, "ros-head")
+        local_path = os.path.join(directory, "ros")
         url = "https://code.ros.org/svn/ros/stacks/ros/trunk"
         svnc = svn.SVNClient(local_path)
         self.assertFalse(svnc.path_exists())
@@ -69,18 +89,18 @@ class SVNClientTest(unittest.TestCase):
         self.assertTrue(svnc.detect_presence())
         self.assertEqual(svnc.get_path(), local_path)
         self.assertEqual(svnc.get_url(), url)
-        self.assertEqual(svnc.get_vcs_type_name(), 'svn')
+
         #self.assertEqual(svnc.get_version(), '-r*')
         
 
         shutil.rmtree(directory)
         self.directories.pop("checkout_test")
 
-    def test_checkout_specific_version(self):
+    def test_checkout_specific_version_and_update(self):
         directory = tempfile.mkdtemp()
         subdir = "checkout_specific_version_test"
         self.directories[subdir] = directory
-        local_path = os.path.join(directory, "ros-head")
+        local_path = os.path.join(directory, "ros")
         url = "https://code.ros.org/svn/ros/stacks/ros/trunk"
         version = "-r8800"
         svnc = svn.SVNClient(local_path)
@@ -92,12 +112,17 @@ class SVNClientTest(unittest.TestCase):
         self.assertTrue(svnc.detect_presence())
         self.assertEqual(svnc.get_path(), local_path)
         self.assertEqual(svnc.get_url(), url)
-        self.assertEqual(svnc.get_vcs_type_name(), 'svn')
-        #self.assertEqual(svnc.get_version(), '-r*')
+        #self.assertEqual(svnc.get_version(), version)
         
-
+        new_version = '-r8801'
+        self.assertTrue(svnc.update(new_version))
+        #self.assertEqual(svnc.get_version(), new_version)
+        
         shutil.rmtree(directory)
         self.directories.pop(subdir)
+
+
+
 
 if __name__ == '__main__':
     rostest.unitrun('test_roslib2', 'test_vcs', SVNClientTest, coverage_packages=['roslib2'])  
