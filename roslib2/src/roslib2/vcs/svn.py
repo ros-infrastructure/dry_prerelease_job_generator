@@ -1,5 +1,6 @@
-import vcs_base
 import subprocess
+import os
+import vcs_base
 
 class SVNClient(vcs_base.VCSClientBase):
     def get_url(self):
