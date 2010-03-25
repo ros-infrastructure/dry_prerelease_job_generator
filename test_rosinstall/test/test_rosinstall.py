@@ -41,32 +41,36 @@ import subprocess
 import tempfile
 import urllib
 import shutil
-
+import roslib
 import rostest
 
 
 class RosinstallCommandlineTest(unittest.TestCase):
 
     def setUp(self):
-        self.rosinstall_tempfile = tempfile.NamedTemporaryFile(mode='a+b')
-        self.rosinstall_fn = "/tmp/test_rosinstall_temp_version"
-        urllib.urlretrieve("https://code.ros.org/svn/ros/installers/trunk/rosinstall/rosinstall2", self.rosinstall_fn)
-        os.chmod(self.rosinstall_fn, stat.S_IRWXU)
+        #self.rosinstall_tempfile = tempfile.NamedTemporaryFile(mode='a+b')
+        self.rosinstall_fn = ["rosrun", "rosinstall", "rosinstall"]
+        #urllib.urlretrieve("https://code.ros.org/svn/ros/installers/trunk/rosinstall/rosinstall2", self.rosinstall_fn)
+        #os.chmod(self.rosinstall_fn, stat.S_IRWXU)
         self.directories = {}
 
 
     def tearDown(self):
         for d in self.directories:
             shutil.rmtree(self.directories[d])
-        os.remove(self.rosinstall_fn)
+        #os.remove(self.rosinstall_fn)
 
     def test_Rosinstall_executable(self):
-        self.assertEqual(0,subprocess.call([self.rosinstall_fn, "-h"]))
+        cmd = self.rosinstall_fn
+        print cmd.append("-h")
+        self.assertEqual(0,subprocess.call(cmd))
 
     def test_Rosinstall_ros(self):
         directory = tempfile.mkdtemp()
         self.directories["ros"] = directory
-        self.assertEqual(0,subprocess.call([self.rosinstall_fn, directory, "http://www.ros.org/rosinstalls/boxturtle_ros.rosinstall"]))
+        cmd = self.rosinstall_fn
+        cmd.extend([directory, "http://www.ros.org/rosinstalls/boxturtle_ros.rosinstall"])
+        self.assertEqual(0,subprocess.call(cmd))
         shutil.rmtree(directory)
         self.directories.pop("ros")
 
@@ -74,24 +78,33 @@ class RosinstallCommandlineOverlays(unittest.TestCase):
 
     def setUp(self):
         self.rosinstall_tempfile = tempfile.NamedTemporaryFile(mode='a+b')
-        self.rosinstall_fn = "/tmp/test_rosinstall_temp_version"
-        urllib.urlretrieve("https://code.ros.org/svn/ros/installers/trunk/rosinstall/rosinstall", self.rosinstall_fn)
-        os.chmod(self.rosinstall_fn, stat.S_IRWXU)
+        self.rosinstall_fn = ["rosrun", "rosinstall", "rosinstall"]
+        #self.rosinstall_fn = "/tmp/test_rosinstall_temp_version"
+        #urllib.urlretrieve("https://code.ros.org/svn/ros/installers/trunk/rosinstall/rosinstall", self.rosinstall_fn)
+        #os.chmod(self.rosinstall_fn, stat.S_IRWXU)
         self.directories = {}
         self.base = tempfile.mkdtemp()
-        self.assertEqual(0,subprocess.call([self.rosinstall_fn, self.base, "http://www.ros.org/rosinstalls/boxturtle_base.rosinstall"]))
+        cmd = self.rosinstall_fn
+        #cmd.extend([self.base, "http://www.ros.org/rosinstalls/boxturtle_base.rosinstall"])
+        cmd.extend([self.base, os.path.join(roslib.packages.get_pkg_dir("test_rosinstall"), "test/boxturtle_base_w_release.rosinstall")])
+        self.assertEqual(0,subprocess.call(cmd))
 
 
     def tearDown(self):
         for d in self.directories:
             shutil.rmtree(self.directories[d])
         shutil.rmtree(self.base)
-        os.remove(self.rosinstall_fn)
+        #os.remove(self.rosinstall_fn)
 
     def test_Rosinstall_ros_tutorial_as_overlay(self):
         directory = tempfile.mkdtemp()
         self.directories["tutorials"] = directory
-        self.assertEqual(0,subprocess.call(["bash", "-c", "source %s && %s %s -o http://www.ros.org/rosinstalls/boxturtle_tutorials.rosinstall"%(os.path.join(self.base,"setup.sh"), self.rosinstall_fn, directory)]))
+        cmd = " ".join(self.rosinstall_fn)
+        print cmd
+        full_cmd = ["bash", "-c", "source %s && %s %s -o http://www.ros.org/rosinstalls/boxturtle_tutorials.rosinstall"%(os.path.join(self.base,"setup.sh"), cmd, directory)]
+        #self.assertEqual( "Full command",  full_cmd)
+        
+        self.assertEqual(0,subprocess.call(full_cmd))
 
         shutil.rmtree(directory)
         self.directories.pop("tutorials")
@@ -99,13 +112,15 @@ class RosinstallCommandlineOverlays(unittest.TestCase):
     def test_Rosinstall_ros_tutorial_as_setup_file(self):
         directory = tempfile.mkdtemp()
         self.directories["tutorials2"] = directory
-        self.assertEqual(0,subprocess.call([self.rosinstall_fn, directory, "-s", os.path.join(self.base,"setup.sh"), "http://www.ros.org/rosinstalls/boxturtle_tutorials.rosinstall"]))
+        cmd = self.rosinstall_fn
+        cmd.extend([directory, "-s", os.path.join(self.base,"setup.sh"), "http://www.ros.org/rosinstalls/boxturtle_tutorials.rosinstall"])
+        self.assertEqual(0,subprocess.call(cmd))
 
 
         shutil.rmtree(directory)
         self.directories.pop("tutorials2")
 
 if __name__ == '__main__':
-  rostest.unitrun('test_rosinstall', 'test_commandline', RosinstallCommandlineTest, coverage_packages=['rosinstall'])  
-  rostest.unitrun('test_rosinstall', 'test_commandline_overlay', RosinstallCommandlineOverlays, coverage_packages=['rosinstall'])  
+    #rostest.unitrun('test_rosinstall', 'test_commandline', RosinstallCommandlineTest, coverage_packages=['rosinstall'])  
+    rostest.unitrun('test_rosinstall', 'test_commandline_overlay', RosinstallCommandlineOverlays, coverage_packages=['rosinstall'])  
 
