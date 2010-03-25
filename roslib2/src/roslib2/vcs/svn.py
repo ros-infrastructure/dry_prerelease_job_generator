@@ -1,0 +1,33 @@
+import vcs_base
+import subprocess
+
+class SVNClient(vcs_base.VCSClientBase):
+    def get_url(self):
+        """
+        @return: SVN URL of the directory path (output of svn info command), or None if it cannot be determined
+        """
+        if self.detect_presence()
+            output = subprocess.Popen(['svn', 'info', self._path], stdout=subprocess.PIPE).communicate()[0]
+            matches = [l for l in output.split('\n') if l.startswith('URL: ')]
+            if matches:
+                return matches[0][5:]
+        return None
+
+    def detect_presence(self):
+        return self.path_exists() and os.path.isdir(os.path.join(self._path, '.svn')):
+
+
+    def checkout(self, url, version=None):
+        if self.path_exists():
+            print >>sys.stderr, "Error: cannnot checkout into existing directory"
+            return False
+            
+        cmd = "svn co %s %s %s"%(version, url, self._path)
+        return subprocess.check_call(cmd, shell=True)
+
+    def update(self, version=None):
+        if not self.detect_presence():
+            return False
+        cmd = "svn up %s %s"%(version, self._path)
+        return subprocess.check_call(cmd, shell=True)
+        
