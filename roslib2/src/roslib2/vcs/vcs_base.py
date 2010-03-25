@@ -1,4 +1,4 @@
-
+import os
 
 class VCSClientBase:
     def __init__(self, path):
@@ -17,7 +17,7 @@ class VCSClientBase:
         """
         raise NotImplementedError, "Base class method must be overridden"
 
-    def get_version(self)
+    def get_version(self):
         raise NotImplementedError, "Base class method must be overridden"
 
     def checkout(self, url, version):

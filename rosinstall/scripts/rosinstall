@@ -19,6 +19,8 @@ subsequent update:  rosinstall -u ~/ros
 from __future__ import with_statement
 import roslib; roslib.load_manifest("rosinstall")
 
+
+
 import os
 import subprocess
 import sys
@@ -29,6 +31,7 @@ import urllib, urllib2
 from optparse import OptionParser
 
 import rosinstall.helpers
+from roslib2.vcs import svn
 
 def usage():
   print __doc__ % vars()
@@ -60,10 +63,12 @@ class Config:
             vsw = '-r ' + ver[1:] 
           tree['uri'] = svn_uri = v['uri']
           co_path = os.path.join(install_path, local_name)
-          if not os.path.isdir(co_path):
-            tree['cmd'] = "svn co %s %s %s"%(vsw, svn_uri, co_path)
+          svnc = svn.SVNClient(co_path)
+          if not svnc.path_exists():
+            svnc.checkout(svn_uri, vsw)
           else:
-            tree['cmd'] = "svn up %s %s"%(vsw, co_path)
+            svnc.update(vsw)
+          tree['cmd'] = "echo already done with %s"%co_path
           self.trees.append(tree)
         elif k == 'git':
           if not 'uri' in v:

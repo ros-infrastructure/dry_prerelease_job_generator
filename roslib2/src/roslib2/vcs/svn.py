@@ -6,7 +6,7 @@ class SVNClient(vcs_base.VCSClientBase):
         """
         @return: SVN URL of the directory path (output of svn info command), or None if it cannot be determined
         """
-        if self.detect_presence()
+        if self.detect_presence():
             output = subprocess.Popen(['svn', 'info', self._path], stdout=subprocess.PIPE).communicate()[0]
             matches = [l for l in output.split('\n') if l.startswith('URL: ')]
             if matches:
@@ -14,7 +14,7 @@ class SVNClient(vcs_base.VCSClientBase):
         return None
 
     def detect_presence(self):
-        return self.path_exists() and os.path.isdir(os.path.join(self._path, '.svn')):
+        return self.path_exists() and os.path.isdir(os.path.join(self._path, '.svn'))
 
 
     def checkout(self, url, version=None):
