@@ -18,17 +18,21 @@ class SVNClient(vcs_base.VCSClientBase):
         return self.path_exists() and os.path.isdir(os.path.join(self._path, '.svn'))
 
 
-    def checkout(self, url, version=None):
+    def checkout(self, url, version=''):
         if self.path_exists():
             print >>sys.stderr, "Error: cannnot checkout into existing directory"
             return False
             
         cmd = "svn co %s %s %s"%(version, url, self._path)
-        return subprocess.check_call(cmd, shell=True)
+        if subprocess.check_call(cmd, shell=True) == 0:
+            return True
+        return False
 
-    def update(self, version=None):
+    def update(self, version=''):
         if not self.detect_presence():
             return False
         cmd = "svn up %s %s"%(version, self._path)
         return subprocess.check_call(cmd, shell=True)
         
+    def get_vcs_type_name(self):
+        return 'svn'

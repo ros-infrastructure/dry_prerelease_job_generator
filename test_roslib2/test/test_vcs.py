@@ -58,13 +58,46 @@ class SVNClientTest(unittest.TestCase):
     def test_checkout(self):
         directory = tempfile.mkdtemp()
         self.directories["checkout_test"] = directory
-        svnc = svn.SVNClient(os.path.join(directory, "ros-head"))
+        local_path = os.path.join(directory, "ros-head")
+        url = "https://code.ros.org/svn/ros/stacks/ros/trunk"
+        svnc = svn.SVNClient(local_path)
         self.assertFalse(svnc.path_exists())
-        self.assertTrue(svnc.checkout("https://code.ros.org/svn/ros/stacks/ros/trunk"))
+        self.assertFalse(svnc.detect_presence())
+        self.assertFalse(svnc.detect_presence())
+        self.assertTrue(svnc.checkout(url))
         self.assertTrue(svnc.path_exists())
+        self.assertTrue(svnc.detect_presence())
+        self.assertEqual(svnc.get_path(), local_path)
+        self.assertEqual(svnc.get_url(), url)
+        self.assertEqual(svnc.get_vcs_type_name(), 'svn')
+        #self.assertEqual(svnc.get_version(), '-r*')
+        
+
         shutil.rmtree(directory)
         self.directories.pop("checkout_test")
 
+    def test_checkout_specific_version(self):
+        directory = tempfile.mkdtemp()
+        subdir = "checkout_specific_version_test"
+        self.directories[subdir] = directory
+        local_path = os.path.join(directory, "ros-head")
+        url = "https://code.ros.org/svn/ros/stacks/ros/trunk"
+        version = "-r8800"
+        svnc = svn.SVNClient(local_path)
+        self.assertFalse(svnc.path_exists())
+        self.assertFalse(svnc.detect_presence())
+        self.assertFalse(svnc.detect_presence())
+        self.assertTrue(svnc.checkout(url, version))
+        self.assertTrue(svnc.path_exists())
+        self.assertTrue(svnc.detect_presence())
+        self.assertEqual(svnc.get_path(), local_path)
+        self.assertEqual(svnc.get_url(), url)
+        self.assertEqual(svnc.get_vcs_type_name(), 'svn')
+        #self.assertEqual(svnc.get_version(), '-r*')
+        
+
+        shutil.rmtree(directory)
+        self.directories.pop(subdir)
 
 if __name__ == '__main__':
     rostest.unitrun('test_roslib2', 'test_vcs', SVNClientTest, coverage_packages=['roslib2'])  
