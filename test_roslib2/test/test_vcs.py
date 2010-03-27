@@ -43,7 +43,7 @@ import urllib
 import shutil
 import roslib
 import rostest
-from roslib2.vcs import svn
+from roslib2.vcs import svn, bzr, git
 
 class SVNClientTest(unittest.TestCase):
 
@@ -122,8 +122,86 @@ class SVNClientTest(unittest.TestCase):
         self.directories.pop(subdir)
 
 
+class BZRClientTest(unittest.TestCase):
+
+    def setUp(self):
+        self.directories = {}
+        directory = tempfile.mkdtemp()
+        name = "setUp"
+        self.directories[name] = directory
+        self.readonly_url = "http://bazaar.launchpad.net/~tully.foote/ffm/trunk/"
+        self.readonly_version = "-r24"
+        self.readonly_path = os.path.join(directory, "readonly")
+        bzrc = bzr.BZRClient(self.readonly_path)
+        self.assertTrue(bzrc.checkout(self.readonly_url, self.readonly_version))
+
+    def tearDown(self):
+        for d in self.directories:
+            shutil.rmtree(self.directories[d])
+
+    def test_get_url_by_reading(self):
+        bzrc = bzr.BZRClient(self.readonly_path)
+        self.assertTrue(bzrc.path_exists())
+        self.assertTrue(bzrc.detect_presence())
+        self.assertEqual(bzrc.get_url(), self.readonly_url)
+        #self.assertEqual(bzrc.get_version(), self.readonly_version)
+
+
+    def test_get_type_name(self):
+        local_path = "/tmp/dummy"
+        bzrc = bzr.BZRClient(local_path)
+        self.assertEqual(bzrc.get_vcs_type_name(), 'bzr')
+
+    def test_checkout(self):
+        directory = tempfile.mkdtemp()
+        self.directories["checkout_test"] = directory
+        local_path = os.path.join(directory, "ros")
+        url = "http://bazaar.launchpad.net/~tully.foote/ffm/trunk/"
+        bzrc = bzr.BZRClient(local_path)
+        self.assertFalse(bzrc.path_exists())
+        self.assertFalse(bzrc.detect_presence())
+        self.assertFalse(bzrc.detect_presence())
+        self.assertTrue(bzrc.checkout(url))
+        self.assertTrue(bzrc.path_exists())
+        self.assertTrue(bzrc.detect_presence())
+        self.assertEqual(bzrc.get_path(), local_path)
+        self.assertEqual(bzrc.get_url(), url)
+
+        #self.assertEqual(bzrc.get_version(), '-r*')
+        
+
+        shutil.rmtree(directory)
+        self.directories.pop("checkout_test")
+
+    def test_checkout_specific_version_and_update(self):
+        directory = tempfile.mkdtemp()
+        subdir = "checkout_specific_version_test"
+        self.directories[subdir] = directory
+        local_path = os.path.join(directory, "ros")
+        url = "http://bazaar.launchpad.net/~tully.foote/ffm/trunk/"
+        version = "-r20"
+        bzrc = bzr.BZRClient(local_path)
+        self.assertFalse(bzrc.path_exists())
+        self.assertFalse(bzrc.detect_presence())
+        self.assertFalse(bzrc.detect_presence())
+        self.assertTrue(bzrc.checkout(url, version))
+        self.assertTrue(bzrc.path_exists())
+        self.assertTrue(bzrc.detect_presence())
+        self.assertEqual(bzrc.get_path(), local_path)
+        self.assertEqual(bzrc.get_url(), url)
+        #self.assertEqual(bzrc.get_version(), version)
+        
+        new_version = '-r21'
+        self.assertTrue(bzrc.update(new_version))
+        #self.assertEqual(bzrc.get_version(), new_version)
+        
+        shutil.rmtree(directory)
+        self.directories.pop(subdir)
+
+
 
 
 if __name__ == '__main__':
+    rostest.unitrun('test_roslib2', 'test_vcs', BZRClientTest, coverage_packages=['roslib2'])  
     rostest.unitrun('test_roslib2', 'test_vcs', SVNClientTest, coverage_packages=['roslib2'])  
 
