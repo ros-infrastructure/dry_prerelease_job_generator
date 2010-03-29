@@ -9,9 +9,7 @@ class GITClient(vcs_base.VCSClientBase):
         """
         if self.detect_presence():
             output = subprocess.Popen(["git", "config",  "--get", "remote.origin.url"], cwd=self._path, stdout=subprocess.PIPE).communicate()[0]
-            matches = [l for l in output.split('\n') if l.startswith('URL: ')]
-            if matches:
-                return matches[0][5:]
+            return output.rstrip()
         return None
 
     def detect_presence(self):
@@ -23,18 +21,30 @@ class GITClient(vcs_base.VCSClientBase):
             print >>sys.stderr, "Error: cannnot checkout into existing directory"
             return False
             
-        cmd = "git clone %s %s %s"%(version, url, self._path)
-        if subprocess.check_call(cmd, shell=True) == 0:
-            return True
-        return False
+        cmd = "git clone %s %s"%(url, self._path)
+        if not subprocess.check_call(cmd, shell=True) == 0:
+            return False
+        cmd = "git checkout %s -b rosinstall"%(version)
+        if not subprocess.check_call(cmd, cwd=self._path, shell=True) == 0:
+            return False
+        return True
 
     def update(self, version=''):
         if not self.detect_presence():
             return False
-        cmd = "git pull %s %s %s"%(self._path, self.get_url(), version)
-        if subprocess.check_call(cmd, shell=True) == 0:
-            return True
-        return False
+        cmd = "git checkout master"
+        if not subprocess.check_call(cmd, cwd=self._path, shell=True) == 0:
+            return False
+        cmd = "git fetch"
+        if not subprocess.check_call(cmd, cwd=self._path, shell=True) == 0:
+            return False
+        cmd = "git branch -D rosinstall"
+        if not subprocess.check_call(cmd, cwd=self._path, shell=True) == 0:
+            pass # OK to fail return False
+        cmd = "git checkout %s -b rosinstall"%(version)
+        if not subprocess.check_call(cmd, cwd=self._path, shell=True) == 0:
+            return False
+        return True
         
     def get_vcs_type_name(self):
         return 'git'
