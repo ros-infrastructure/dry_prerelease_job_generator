@@ -70,6 +70,57 @@ def expand_rule(rule, stack_name, stack_ver, release_name, revision=None):
         s = s.replace('$REVISION', revision)
     return s
 
+def get_variants(distro, stack_name):
+    """
+    Retrieve names of variants that stack is present in. This operates
+    on the raw distro dictionary document.
+    
+    @param distro: rosdistro document
+    @type  distro: dict
+    """
+    if stack_name == 'ROS':
+        stack_name = 'ros'
+
+    retval = []
+    variants = distro.get('variants', {})
+    
+    for variant_d in variants:
+        try:
+            variant = variant_d.keys()[0]
+            variant_props = variant_d[variant]
+            if stack_name in variant_props['stacks']:
+                retval.append(variant)
+            elif 'extends' in variant_props and variant_props['extends'] in retval:
+                retval.append(variant)                
+        except:
+            pass
+    return retval
+
+# TODO: integrate with Distro
+def get_rules(distro, stack_name):
+    """
+    Retrieve rules from distro for specified stack This operates on
+    the raw distro dictionary document.
+
+    @param distro: rosdistro document
+    @type  distro: dict
+    """
+    if stack_name == 'ROS':
+        stack_name = 'ros'
+    # there are three tiers of dictionaries that we look in for uri rules
+    rules_d = [distro.get('stacks', {}),
+               distro.get('stacks', {}).get(stack_name, {})]
+    rules_d = [d for d in rules_d if d]
+    # load the '_rules' from the dictionaries, in order
+    props = {}
+    for d in rules_d:
+        if type(d) == dict:
+            props.update(d.get('_rules', {}))
+
+    if not props:
+        raise Exception("cannot load _rules")
+    return props
+        
 class DistroStack(object):
     """Stores information about a stack release"""
 

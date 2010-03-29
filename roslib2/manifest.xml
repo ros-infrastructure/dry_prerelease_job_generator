@@ -9,6 +9,7 @@
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/roslib2</url>
   <depend package="roslib"/>
+  <depend package="rostest"/>  
 
 </package>
 
