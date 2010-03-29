@@ -170,7 +170,7 @@ def rosinstall_main(argv):
   if len(argv) < 2:
     usage()
   args = argv[1:]
-  parser = OptionParser()
+  parser = OptionParser(usage="usage: %prog PATH [URI] [options]")
   parser.add_option("-u", "--update", dest="update", default=False,
                     help="update an existing installation (URI not needed)",
                     action="store_true")
