@@ -31,7 +31,7 @@ import urllib, urllib2
 from optparse import OptionParser
 
 import rosinstall.helpers
-from roslib2.vcs import svn
+from roslib2.vcs import svn, bzr, git
 
 def usage():
   print __doc__ % vars()
@@ -51,61 +51,35 @@ class Config:
         except KeyError:
           print >> sys.stderr, "local-name is required on all code trees"
           exit(1)
+        if not 'uri' in v:
+          print >> sys.stderr, "woah! no uri for svn tree %s" % local_name
+          exit(1)
+        else:
+          source_uri = v['uri']          
+        vcs = None
+        version = v.get('version', '')
+        local_path = os.path.join(install_path, local_name)
+
+        #if local_path in self.vcs:
+        #  raise Exception("cannot install two things into the same directory!! %s"%local_path)
+        
         if k == 'svn':
-          if not 'uri' in v:
-            print >> sys.stderr, "woah! no uri for svn tree %s" % local_name
-            exit(1)
-          tree = { }
-          tree['name'] = local_name
-          tree['version'] = ver = v.get('version', None)
-          vsw = '' # vsw = version switch
-          if ver and ver == 'r' and ver[1:].isdigit():
-            vsw = '-r ' + ver[1:] 
-          tree['uri'] = svn_uri = v['uri']
-          co_path = os.path.join(install_path, local_name)
-          svnc = svn.SVNClient(co_path)
-          if not svnc.path_exists():
-            svnc.checkout(svn_uri, vsw)
-          else:
-            svnc.update(vsw)
-          tree['cmd'] = "echo already done with %s"%co_path
-          self.trees.append(tree)
+          vcsc = svn.SVNClient(local_path)
         elif k == 'git':
-          if not 'uri' in v:
-            print >> sys.stderr, "woah! no uri for git tree %s" % local_name
-            exit(1)
-          tree = { }
-          tree['name'] = local_name
-          #tree['version'] = ver = v.get('version', None)
-          #vsw = '' # vsw = version switch
-          #if ver and ver == 'r' and ver[1:].isdigit():
-          #  vsw = '-r ' + ver[1:] 
-          tree['uri'] = git_uri = v['uri']
-          co_path = os.path.join(install_path, local_name)
-          if not os.path.isdir(co_path):
-            tree['cmd'] = "git clone %s %s"%(git_uri, co_path)
-          else:
-            tree['cmd'] = "cd %s && git pull"%(co_path)
-          self.trees.append(tree)
+          vcsc = git.GITClient(local_path)
         elif k == 'bzr':
-          if not 'uri' in v:
-            print >> sys.stderr, "woah! no uri for bzr tree %s" % local_name
-            exit(1)
-          tree = { }
-          tree['name'] = local_name
-          #tree['version'] = ver = v.get('version', None)
-          #vsw = '' # vsw = version switch
-          #if ver and ver == 'r' and ver[1:].isdigit():
-          #  vsw = '-r ' + ver[1:] 
-          tree['uri'] = bzr_uri = v['uri']
-          co_path = os.path.join(install_path, local_name)
-          if not os.path.isdir(co_path):
-            tree['cmd'] = "bzr checkout %s %s"%(bzr_uri, co_path)
-          else:
-            tree['cmd'] = "cd %s && bzr up"%(co_path)
-          self.trees.append(tree)
+          vcsc = bzr.BZRClient(local_path)
         else:
           raise Exception("woah, unknown installation method %s" % k)
+
+
+        tree = {}
+        tree['name'] = local_name
+        tree['uri'] = source_uri
+        tree['version'] = version
+        tree['vcs'] = vcsc
+        self.trees.append(tree)
+        
   def ros_path(self):
     for t in self.trees:
       if t['name'] == 'ros':
@@ -124,12 +98,14 @@ class Config:
     if not os.path.exists(self.base_path):
       os.mkdir(self.base_path)
     for t in self.trees:
-      try:
-        print "rosinstall is updating %s" % t['name']
-        subprocess.check_call(t['cmd'], shell=True)
-        print ""
-      except:
-        raise ROSInstallException("Failed to install tree '%s' using command:\n\t%s\nPerhaps there is another installation in the way, or there are permissions issues."%(t['name'], t['cmd']))
+      if 'vcs' in t:
+        vcsc = t['vcs']
+        if not vcsc.path_exists():
+          vcsc.checkout(t['uri'], t['version'])
+        else:
+          vcsc.update(t['version'])
+      else:
+        raise ROSInstallException("Failed to install tree '%s'\n vcs not setup correctly")
 
     # TODO go back and make sure that everything in options.path is described
     # in the yaml, and offer to delete otherwise? not sure, but it could go here
