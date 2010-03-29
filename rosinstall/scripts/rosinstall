@@ -46,16 +46,16 @@ class Config:
     self.base_path = install_path
     for t in y:
       for k, v in t.iteritems():
-        try:
+        if not 'local-name' in v:
+          raise ROSInstallException("local-name is required on all code trees")
+        else:
           local_name = v['local-name']
-        except KeyError:
-          print >> sys.stderr, "local-name is required on all code trees"
-          exit(1)
+
         if not 'uri' in v:
-          print >> sys.stderr, "woah! no uri for svn tree %s" % local_name
-          exit(1)
+          raise ROSInstallException("woah! no uri for svn tree %s" % local_name)
         else:
           source_uri = v['uri']          
+
         vcs = None
         version = v.get('version', '')
         local_path = os.path.join(install_path, local_name)
@@ -70,7 +70,7 @@ class Config:
         elif k == 'bzr':
           vcsc = bzr.BZRClient(local_path)
         else:
-          raise Exception("woah, unknown installation method %s" % k)
+          raise ROSInstallException("woah, unknown installation method %s" % k)
 
 
         tree = {}
@@ -130,7 +130,6 @@ def generate_setup(options, config):
       print >> sys.stderr, "woah. you gave a setup file %s, but your config %s also includes a ROS stack" % (options.setup_file, options.config_uri)
       exit(1)
     # source the file and see if we can grep it, to handle chaining / whatever
-    options.fresh_install = False
     ros_root = subprocess.Popen("source %s && env | grep ROS_ROOT" % options.setup_file, stdout=subprocess.PIPE, shell=True, executable="/bin/bash").communicate()[0].split('=')[-1] # oh yeah
     if len(ros_root) == 0:
       print >> sys.stderr, "woah. you gave a setup file %s, but that file did not set ROS_ROOT" % options.setup_file
@@ -158,7 +157,7 @@ def generate_setup(options, config):
 
 
 
-
+## legacy for breadcrumb which will be removed shortly.
 def installed_uri(path):
   try:
     f = open(os.path.join(path, '.rosinstall_source_uri'),'r')
@@ -198,17 +197,23 @@ def rosinstall_main(argv):
   if len(args) == 0 or (len(args) == 1 and not options.update):
     print "\nneed to specify a URI, unless you're doing an update.\n\n"
     exit(1)
+    
+
+  # Get the path to the rosinstall 
   options.path = os.path.abspath(args[0])
+
+  # if two args the 2nd is the config_uri
   if len(args) > 1:
     options.config_uri = rosinstall.helpers.conditional_abspath(args[1])
-    if options.update and installed_uri(options.path) != args[1]:
-      print >> sys.stderr, "%s is not what was saved in %s/.rosinstall_source_uri   (%s). please make them agree." % (args[1], options.path, installed_uri(options.path)) 
-      exit(1)
-  else:
+  elif os.path.exists(os.path.join(options.path, "this.rosinstall")):
+    optoins.config_uri = "this.rosinstall"
+  else: ## backwards compatability to be removed in the future
     # try to read the source uri from the breadcrumb mmmm delicious
     options.config_uri = installed_uri(options.path)
-    if not options.config_uri or len(options.config_uri) == 0:
-      print "update is not possible, since %s was empty or non-existent" % os.path.join(options.path, '.rosinstall_source_uri')
+  if not options.config_uri or len(options.config_uri) == 0:
+    parser.error( "update is not possible, since uri could not be determined, looked at args, %s , and %s(deprecated)"%(
+        os.path.join(options.path, "this.rosinstall"), os.path.join(options.path, ".rosinstall_source_uri")))
+
   # now that we've got a config uri and a path, let's move out.
   u = urlparse(options.config_uri)
   f = 0
@@ -230,17 +235,15 @@ def rosinstall_main(argv):
   except yaml.YAMLError, e:
     print >> sys.stderr, "ahhhhhhhh, yaml parse error: %s" % e # long ahh
     exit(1)
+
   # check for breadcrumb
   breadcrumb_path = os.path.join(options.path, '.rosinstall_source_uri')
-  if os.path.exists(breadcrumb_path):
-    options.fresh_install = False
-  else:
-    # #2411
-    if not os.path.exists(options.path):
-      os.makedirs(options.path)
-    with open(os.path.join(options.path, '.rosinstall_source_uri'),'w') as breadcrumb:
-      breadcrumb.write(options.config_uri)
-    options.fresh_install = True
+  # #2411
+  if not os.path.exists(options.path):
+    os.makedirs(options.path)
+  with open(os.path.join(options.path, '.rosinstall_source_uri'),'w') as breadcrumb:
+    breadcrumb.write(options.config_uri)
+
   config = Config(y, options.path)
   config.write_source()
   config.install_yaml()
