@@ -244,16 +244,13 @@ def rosinstall_main(argv):
   config = Config(y, options.path)
   config.write_source()
   config.install_yaml()
-  if options.fresh_install:
-    generate_setup(options, config)
-    if not (options.overlay or options.setup_file or options.nobuild):
-      if options.rosdep_yes:
-        subprocess.check_call("source %s && rosmake rostest --rosdep-install --rosdep-yes" % (os.path.join(options.path, 'setup.sh')), shell=True, executable='/bin/bash')
-      else:
-        subprocess.check_call("source %s && rosmake rostest --rosdep-install" % (os.path.join(options.path, 'setup.sh')), shell=True, executable='/bin/bash')
-    print "\ndone. Now, type 'source %s/setup.sh' to set up your environment.\nAdd that to the bottom of your ~/.bashrc to set it up every time.\n\n" % options.path
-  else:
-    print "\ndone.\n"
+  generate_setup(options, config)
+  if not (options.overlay or options.setup_file or options.nobuild):
+    if options.rosdep_yes:
+      subprocess.check_call("source %s && rosmake rostest --rosdep-install --rosdep-yes" % (os.path.join(options.path, 'setup.sh')), shell=True, executable='/bin/bash')
+    else:
+      subprocess.check_call("source %s && rosmake rostest --rosdep-install" % (os.path.join(options.path, 'setup.sh')), shell=True, executable='/bin/bash')
+  print "\ndone. Now, type 'source %s/setup.sh' to set up your environment.\nAdd that to the bottom of your ~/.bashrc to set it up every time.\n\n" % options.path
   
 if __name__ == "__main__":
   try:
