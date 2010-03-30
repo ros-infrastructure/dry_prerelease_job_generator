@@ -140,10 +140,10 @@ class Config:
   def generate_setup(self, options):
     # simplest case first
     setup_path = os.path.join(options.path, 'setup.sh')
-    f = open(setup_path, 'w')
     ros_root = self.ros_path()
     rpp = self.get_ros_package_path()
 
+    text = ""
     if options.setup_file:
       if ros_root:
         print >> sys.stderr, "woah. you gave a setup file %s, but your config %s also includes a ROS stack" % (options.setup_file, options.config_uri)
@@ -153,28 +153,32 @@ class Config:
       if len(ros_root) == 0:
         print >> sys.stderr, "woah. you gave a setup file %s, but that file did not set ROS_ROOT" % options.setup_file
         exit(1)
-      f.write("source %s\n" % options.setup_file)
-      f.write("export ROS_PACKAGE_PATH=%s:$ROS_PACKAGE_PATH\n" % rpp)
-    elif options.overlay:
-      if ros_root:
-        print >> sys.stderr, "woah. you asked to overlay %s (which contains ROS) on your environment, but your environment already defines ROS_ROOT" % (self.config_uri)
-        exit(1)
-      if not 'ROS_ROOT' in os.environ:
-        print >> sys.stderr, "woah. you asked to overlay %s on your environment, but your environment doesn't have ROS_ROOT set." % (self.config_uri)
-        exit(1)
-      ros_root = os.environ['ROS_ROOT']
-      existing_rpp = subprocess.Popen("env | grep ROS_PACKAGE_PATH", stdout=subprocess.PIPE, shell=True, executable="/bin/bash").communicate()[0].split('=')[-1]
-      if len(existing_rpp) > 0:
-        rpp = rpp + ':' + existing_rpp
-    if not options.setup_file: # it's a vanilla install or an overlay
-      f.write("export ROS_ROOT=%s\n" % ros_root)
-      f.write("export PATH=$ROS_ROOT/bin:$PATH\n") # might include it twice
-      f.write("export PYTHONPATH=$ROS_ROOT/core/roslib/src:$PYTHONPATH\n")
-      f.write("if [ ! \"$ROS_MASTER_URI\" ] ; then export ROS_MASTER_URI=http://localhost:11311 ; fi\n")
-      f.write("export ROS_PACKAGE_PATH=%s\n" % rpp)
-      f.write("source $ROS_ROOT/tools/rosbash/rosbash\n")
+      text += "source %s\n" % options.setup_file
+      text += "export ROS_PACKAGE_PATH=%s:$ROS_PACKAGE_PATH\n" % rpp
+    else:
+      if options.overlay:
+        if ros_root:
+          print >> sys.stderr, "woah. you asked to overlay %s (which contains ROS) on your environment, but your environment already defines ROS_ROOT" % (self.config_uri)
+          exit(1)
+        if not 'ROS_ROOT' in os.environ:
+          print >> sys.stderr, "woah. you asked to overlay %s on your environment, but your environment doesn't have ROS_ROOT set." % (self.config_uri)
+          exit(1)
+        ros_root = os.environ['ROS_ROOT']
+        existing_rpp = subprocess.Popen("env | grep ROS_PACKAGE_PATH", stdout=subprocess.PIPE, shell=True, executable="/bin/bash").communicate()[0].split('=')[-1]
+        if len(existing_rpp) > 0:
+          rpp = rpp + ':' + existing_rpp
+      
 
-    f.close()
+      # overlay or standard
+      text += "export ROS_ROOT=%s\n" % ros_root
+      text += "export PATH=$ROS_ROOT/bin:$PATH\n" # might include it twice
+      text += "export PYTHONPATH=$ROS_ROOT/core/roslib/src:$PYTHONPATH\n"
+      text += "if [ ! \"$ROS_MASTER_URI\" ] ; then export ROS_MASTER_URI=http://localhost:11311 ; fi\n"
+      text += "export ROS_PACKAGE_PATH=%s\n" % rpp
+      text += "source $ROS_ROOT/tools/rosbash/rosbash\n"
+
+    with open(setup_path, 'w') as f:
+      f.write(text)
 
 
 ## legacy for breadcrumb which will be removed shortly.
