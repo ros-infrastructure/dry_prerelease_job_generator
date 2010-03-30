@@ -25,10 +25,8 @@ import os
 import subprocess
 import sys
 import xml.dom.minidom #import parse
-import yaml
-from urlparse import urlparse
-import urllib, urllib2
 from optparse import OptionParser
+import yaml
 
 import rosinstall.helpers
 from roslib2.vcs import svn, bzr, git
@@ -40,10 +38,17 @@ def usage():
 class ROSInstallException(Exception): pass
 
 class Config:
-  def __init__(self, y, install_path):
-    self.source = y
+  def __init__(self, config_uri, install_path):
+    self.source = rosinstall.helpers.get_yaml_from_uri(config_uri)
     self.trees = [ ]
     self.base_path = install_path
+
+    if self.source:
+      self.load_yaml(self.source)
+
+    
+
+  def load_yaml(self, y):
     for t in y:
       for k, v in t.iteritems():
         if not 'local-name' in v:
@@ -58,7 +63,7 @@ class Config:
 
         vcs = None
         version = v.get('version', '')
-        local_path = os.path.join(install_path, local_name)
+        local_path = os.path.join(self.base_path, local_name)
 
         #if local_path in self.vcs:
         #  raise Exception("cannot install two things into the same directory!! %s"%local_path)
@@ -88,10 +93,15 @@ class Config:
           return vcsc.get_path()
     return None
   
+  def make_parent_dirs(self, path):
+    
+  
   def write_source(self):
     """
     Write this.rosinstall into the root of the checkout
     """
+    if not os.path.exists(self.base_path):
+      os.makedirs(self.base_path)
     f = open(os.path.join(self.base_path, "this.rosinstall"), "w+b")
     f.write(yaml.safe_dump(self.source))
     f.close()
@@ -103,10 +113,10 @@ class Config:
       if 'vcs' in t:
         vcsc = t['vcs']
         if not vcsc.path_exists():
-          if not vcsc.detect_presence():
-            raise ROSInstallException("Directory '%s' already exists but is not of type %s"%(vcsc.get_path(), vcsc.get_vcs_type_name()))
           vcsc.checkout(t['uri'], t['version'])
         else:
+          if not vcsc.detect_presence():
+            raise ROSInstallException("Directory '%s' already exists but is not of type %s"%(vcsc.get_path(), vcsc.get_vcs_type_name()))
           vcsc.update(t['version'])
       else:
         raise ROSInstallException("Failed to install tree '%s'\n vcs not setup correctly")
@@ -208,6 +218,8 @@ def rosinstall_main(argv):
   # Get the path to the rosinstall 
   options.path = os.path.abspath(args[0])
 
+  # Find out what the URI is (args, this.rosinstall, or breadcrumb(for backwards compatability)
+
   # if two args the 2nd is the config_uri
   if len(args) > 1:
     options.config_uri = rosinstall.helpers.conditional_abspath(args[1])
@@ -216,33 +228,13 @@ def rosinstall_main(argv):
   else: ## backwards compatability to be removed in the future
     # try to read the source uri from the breadcrumb mmmm delicious
     options.config_uri = installed_uri(options.path)
+  
+  ## Could not get uri therefore error out
   if not options.config_uri or len(options.config_uri) == 0:
     parser.error( "update is not possible, since uri could not be determined, looked at args, %s , and %s(deprecated)"%(
         os.path.join(options.path, "this.rosinstall"), os.path.join(options.path, ".rosinstall_source_uri")))
 
-  # now that we've got a config uri and a path, let's move out.
-  u = urlparse(options.config_uri)
-  f = 0
-  if u.scheme == '': # maybe it's a local file?
-    try:
-      f = open(options.config_uri, 'r')
-    except IOError, e:
-      print >> sys.stderr, "ahhhh error opening file: %s" % e
-  else:
-    try:
-      f = urllib2.urlopen(options.config_uri)
-    except IOError, e:
-      print >> sys.stderr, "ahhhhh got an error from the interwebs: %s" % e
-  if not f:
-    print >> sys.stderr, "couldn't load config uri %s" % options.config_uri
-    exit(1)
-  try:
-    y = yaml.load(f);
-  except yaml.YAMLError, e:
-    print >> sys.stderr, "ahhhhhhhh, yaml parse error: %s" % e # long ahh
-    exit(1)
-
-  config = Config(y, options.path)
+  config = Config(options.config_uri, options.path)
   config.write_source()
   config.execute_install()
   generate_setup(options, config)

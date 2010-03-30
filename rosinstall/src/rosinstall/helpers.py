@@ -1,6 +1,7 @@
 import os
 import urlparse
-
+import urllib2
+import yaml
 
 def conditional_abspath(uri):
   """
@@ -37,3 +38,28 @@ def is_path_ros(path):
   return False
 
 
+def get_yaml_from_uri(uri):
+
+  # now that we've got a config uri and a path, let's move out.
+  u = urlparse.urlparse(uri)
+  f = 0
+  if u.scheme == '': # maybe it's a local file?
+    try:
+      f = open(uri, 'r')
+    except IOError, e:
+      print >> sys.stderr, "ahhhh error opening file: %s" % e
+  else:
+    try:
+      f = urllib2.urlopen(uri)
+    except IOError, e:
+      print >> sys.stderr, "ahhhhh got an error from the interwebs: %s" % e
+  if not f:
+    print >> sys.stderr, "couldn't load config uri %s" % uri
+    return None
+  try:
+    y = yaml.load(f);
+  except yaml.YAMLError, e:
+    print >> sys.stderr, "ahhhhhhhh, yaml parse error: %s" % e # long ahh
+    return None
+  return y
+  
