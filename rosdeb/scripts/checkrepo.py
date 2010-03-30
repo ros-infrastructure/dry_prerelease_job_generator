@@ -164,5 +164,5 @@ def testall():
         main(['checkrepo.py', distros[0], u])
         main(['checkrepo.py', distros[1], u])             
 
-if '__target__' == '__main__':
+if __name__ == "__main__":
     main()
