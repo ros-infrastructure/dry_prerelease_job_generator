@@ -79,11 +79,13 @@ class Config:
         tree['version'] = version
         tree['vcs'] = vcsc
         self.trees.append(tree)
-        
+
   def ros_path(self):
     for t in self.trees:
-      if t['name'] == 'ros':
-        return os.path.join(self.base_path, t['name'])
+      if 'vcs' in t:
+        vcsc = t['vcs']
+        if rosinstall.helpers.is_path_ros(vcsc.get_path()):
+          return vcsc.get_path()
     return None
   
   def write_source(self):
@@ -94,13 +96,15 @@ class Config:
     f.write(yaml.safe_dump(self.source))
     f.close()
     
-  def install_yaml(self):
+  def execute_install(self):
     if not os.path.exists(self.base_path):
       os.mkdir(self.base_path)
     for t in self.trees:
       if 'vcs' in t:
         vcsc = t['vcs']
         if not vcsc.path_exists():
+          if not vcsc.detect_presence():
+            raise ROSInstallException("Directory '%s' already exists but is not of type %s"%(vcsc.get_path(), vcsc.get_vcs_type_name()))
           vcsc.checkout(t['uri'], t['version'])
         else:
           vcsc.update(t['version'])
@@ -109,6 +113,8 @@ class Config:
 
     # TODO go back and make sure that everything in options.path is described
     # in the yaml, and offer to delete otherwise? not sure, but it could go here
+
+
     
 
 def generate_setup(options, config):
@@ -236,17 +242,9 @@ def rosinstall_main(argv):
     print >> sys.stderr, "ahhhhhhhh, yaml parse error: %s" % e # long ahh
     exit(1)
 
-  # check for breadcrumb
-  breadcrumb_path = os.path.join(options.path, '.rosinstall_source_uri')
-  # #2411
-  if not os.path.exists(options.path):
-    os.makedirs(options.path)
-  with open(os.path.join(options.path, '.rosinstall_source_uri'),'w') as breadcrumb:
-    breadcrumb.write(options.config_uri)
-
   config = Config(y, options.path)
   config.write_source()
-  config.install_yaml()
+  config.execute_install()
   generate_setup(options, config)
   if not (options.overlay or options.setup_file or options.nobuild):
     if options.rosdep_yes:
