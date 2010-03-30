@@ -46,8 +46,7 @@ from optparse import OptionParser
 import email
 import stat
 
-from roslib2.distro import DistroException, Distro, debianize_name, debianize_version
-from rosdeb import ubuntu_release, debianize_name, debianize_version
+from roslib2.distro import DistroException, Distro, debianize_name, debianize_version, ubuntu_release
 
 NAME='build_release'
 
@@ -214,27 +213,6 @@ def _build_command(argv):
   # build everybody
   call_ros(workspace, 'rosmake', ['-Vr','--skip-blacklist','--output=%s'%os.path.join(workspace, 'build_output'),'-ia'])
   print "have a nice day"
-
-_ubuntu_map = { '10.10': 'mighty', '10.04': 'lucid', '9.10': 'karmic', '9.04': 'jaunty', '8.10': 'intrepid', '8.04': 'hardy'}
-def ubuntu_release():
-  f = open('/etc/issue')
-  for s in f:
-    if s.startswith('Ubuntu'):
-      v = s.split()[1]
-      v = '.'.join(v.split('.')[:2])
-      try:
-        return _ubuntu_map[v]
-      except KeyError:
-        raise DistroException("build_release doesn't know about ubuntu %s" % v)
-  raise DistroException("build_release could not parse ubuntu release version")
-
-def debianize_name(name):
-  return name.replace('_', '-')
-
-def debianize_version(stack_version, distro_version, ubuntu_rel=None):
-  if ubuntu_rel is None:
-    ubuntu_rel = ubuntu_release()
-  return stack_version+'-'+distro_version+'~%s'%ubuntu_rel
 
 def setup_file_text(ros_root, package_path):
   return """export ROS_ROOT=%(ros_root)s
