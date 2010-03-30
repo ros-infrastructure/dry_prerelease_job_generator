@@ -206,7 +206,7 @@ def rosinstall_main(argv):
   if len(args) > 1:
     options.config_uri = rosinstall.helpers.conditional_abspath(args[1])
   elif os.path.exists(os.path.join(options.path, "this.rosinstall")):
-    optoins.config_uri = "this.rosinstall"
+    options.config_uri = "this.rosinstall"
   else: ## backwards compatability to be removed in the future
     # try to read the source uri from the breadcrumb mmmm delicious
     options.config_uri = installed_uri(options.path)
