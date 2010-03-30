@@ -122,28 +122,34 @@ class Config:
   # in the yaml, and offer to delete otherwise? not sure, but it could go here
 
 
-    
 
-  def generate_setup(self, options):
-    # simplest case first
-    setup_path = os.path.join(options.path, 'setup.sh')
-    f = open(setup_path, 'w')
-    ros_root = self.ros_path()
+  def get_ros_package_path(self):
+    """ Return the simplifed ROS_PACKAGE_PATH """
     code_trees = []
     for t in self.trees:
       if t['name'] != 'ros':
         # take only the first element of the local_name so that we just point to the subdir
         if t['name'].startswith(os.sep):
-          code_trees.append(os.path.join(options.path, os.sep + t['name'].split(os.sep)[1]))
+          code_trees.append(os.path.join(self.base_path, os.sep + t['name'].split(os.sep)[1]))
         else:
-          code_trees.append(os.path.join(options.path, t['name'].split(os.sep)[0]))        
+          code_trees.append(os.path.join(self.base_path, t['name'].split(os.sep)[0]))        
     rpp = ':'.join(set(code_trees))
+    return rpp
+    
+  
+  def generate_setup(self, options):
+    # simplest case first
+    setup_path = os.path.join(options.path, 'setup.sh')
+    f = open(setup_path, 'w')
+    ros_root = self.ros_path()
+    rpp = self.get_ros_package_path()
+
     if options.setup_file:
       if ros_root:
         print >> sys.stderr, "woah. you gave a setup file %s, but your config %s also includes a ROS stack" % (options.setup_file, options.config_uri)
         exit(1)
       # source the file and see if we can grep it, to handle chaining / whatever
-      ros_root = subprocess.Popen("source %s && env | grep ROS_ROOT" % options.setup_file, stdout=subprocess.PIPE, shell=True, executable="/bin/bash").communicate()[0].split('=')[-1] # oh yeah
+      ros_root = rosinstall.helpers.get_ros_root_from_file(options.setup_file)
       if len(ros_root) == 0:
         print >> sys.stderr, "woah. you gave a setup file %s, but that file did not set ROS_ROOT" % options.setup_file
         exit(1)
@@ -168,6 +174,7 @@ class Config:
       f.write("export ROS_PACKAGE_PATH=%s\n" % rpp)
       f.write("source $ROS_ROOT/tools/rosbash/rosbash\n")
 
+    f.close()
 
 
 ## legacy for breadcrumb which will be removed shortly.

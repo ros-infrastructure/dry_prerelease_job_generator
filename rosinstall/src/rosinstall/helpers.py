@@ -2,6 +2,7 @@ import os
 import urlparse
 import urllib2
 import yaml
+import subprocess
 
 def conditional_abspath(uri):
   """
@@ -63,3 +64,6 @@ def get_yaml_from_uri(uri):
     return None
   return y
   
+### TODO remove BASH usage
+def get_ros_root_from_file(file):
+  return subprocess.Popen("source %s && env | grep ROS_ROOT" % file, stdout=subprocess.PIPE, shell=True, executable="/bin/bash").communicate()[0].split('=')[-1] # oh yeah
