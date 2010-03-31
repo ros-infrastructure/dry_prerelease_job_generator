@@ -102,6 +102,7 @@ class RosinstallCommandlineOverlays(unittest.TestCase):
         cmd = " ".join(self.rosinstall_fn)
         print cmd
         full_cmd = ["bash", "-c", "source %s && %s %s http://www.ros.org/rosinstalls/boxturtle_tutorials.rosinstall"%(os.path.join(self.base,"setup.sh"), cmd, directory)]
+        self.assertEqual( "directory",  directory)
         self.assertEqual( "Full command",  full_cmd)
         
         self.assertEqual(0,subprocess.call(full_cmd))
