@@ -67,4 +67,6 @@ def get_yaml_from_uri(uri):
   
 ### TODO remove BASH usage
 def get_ros_root_from_file(file):
-  return subprocess.Popen("source %s && env | grep ROS_ROOT" % file, stdout=subprocess.PIPE, shell=True, executable="/bin/bash").communicate()[0].split('=')[-1] # oh yeah
+  out = subprocess.Popen("source %s && echo $ROS_ROOT" % file, stdout=subprocess.PIPE, env=None, shell=True, executable="/bin/bash").communicate()[0].strip() # oh yeah
+  print out
+  return out

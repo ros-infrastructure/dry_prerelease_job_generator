@@ -37,7 +37,7 @@ import stat
 import struct
 import sys
 import unittest
-
+import roslib
 import rostest
 
 import rosinstall.helpers
@@ -53,8 +53,63 @@ class ConditionalAbspath(unittest.TestCase):
     def test_conditional_abspath(self):
         path = "foo"
         self.assertEqual(os.path.normpath(os.path.join(os.getcwd(), path)), rosinstall.helpers.conditional_abspath(path))
+        
+    def test_is_path_stack(self):
+        self.assertTrue(rosinstall.helpers.is_path_stack(roslib.stacks.get_stack_dir("ros")))
+        self.assertFalse(rosinstall.helpers.is_path_stack(roslib.packages.get_pkg_dir("roscpp")))
 
+    def test_is_path_ros(self):
+        self.assertTrue(rosinstall.helpers.is_path_stack(roslib.stacks.get_stack_dir("ros")))
+        self.assertFalse(rosinstall.helpers.is_path_stack(roslib.packages.get_pkg_dir("roscpp")))
 
+    def test_get_yaml_from_uri_from_file(self):
+        file = os.path.join(roslib.packages.get_pkg_dir("test_rosinstall"), "test", "example.yaml")
+        y = rosinstall.helpers.get_yaml_from_uri(file)
+        
+        self.assertTrue("text" in y)
+        self.assertTrue(y["text"] == "foobar")
+
+        self.assertTrue("number" in y)
+        self.assertTrue(y["number"] == 2)
+
+    def test_get_yaml_from_uri_from_missing_file(self):
+        file = "/asdfasdfasdfasfasdf_does_not_exist"
+        y = rosinstall.helpers.get_yaml_from_uri(file)
+        self.assertEqual(y, None)
+
+#TODO Fix this
+#    def test_get_yaml_from_uri_from_non_yaml_file(self):
+#        file = os.path.join(roslib.packages.get_pkg_dir("test_rosinstall"), "Makefile")
+#        y = rosinstall.helpers.get_yaml_from_uri(file)
+#        self.assertEqual(y, None)
+
+    def test_get_yaml_from_uri_from_url(self):
+        url = "http://www.ros.org/rosinstalls/boxturtle_base.rosinstall"
+        y = rosinstall.helpers.get_yaml_from_uri(url)
+        
+        ros_found = False
+        for e in y:
+            if "svn" in e:
+                element = e["svn"]
+                if "local-name" in element:
+                    if element["local-name"] == "ros":
+                        ros_found = True
+        self.assertTrue(ros_found)
+
+    def test_get_yaml_from_uri_from_invalid_url(self):
+        url = "http://www.ros.org/invalid"
+        y = rosinstall.helpers.get_yaml_from_uri(url)
+        self.assertEqual(y, None)
+
+    def test_get_ros_root_from_file(self):
+        file = os.path.join(roslib.packages.get_pkg_dir("test_rosinstall"), "test", "example.sh")
+        self.assertEqual("/tmp/release/ros", rosinstall.helpers.get_ros_root_from_file(file))
+        
+#    def test_get_ros_root_from_bad_file(self):
+#        file = os.path.join(roslib.packages.get_pkg_dir("test_rosinstall"), "test", "bad_example.sh")
+#        self.assertEqual("", rosinstall.helpers.get_ros_root_from_file(file))
+        
+        
 if __name__ == '__main__':
   rostest.unitrun('test_rosinstall', 'test_conditional_abspath', ConditionalAbspath, coverage_packages=['rosinstall'])  
 
