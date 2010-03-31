@@ -69,7 +69,7 @@ class RosinstallCommandlineTest(unittest.TestCase):
         directory = tempfile.mkdtemp()
         self.directories["ros"] = directory
         cmd = self.rosinstall_fn
-        cmd.extend([directory, "http://www.ros.org/rosinstalls/boxturtle_ros.rosinstall"])
+        cmd.extend([directory, os.path.join(roslib.packages.get_pkg_dir("test_rosinstall"), "rosinstalls", "ros_w_release.rosinstall")])
         self.assertEqual(0,subprocess.call(cmd))
         shutil.rmtree(directory)
         self.directories.pop("ros")
@@ -86,7 +86,7 @@ class RosinstallCommandlineOverlays(unittest.TestCase):
         self.base = tempfile.mkdtemp()
         cmd = self.rosinstall_fn[:]
         #cmd.extend([self.base, "http://www.ros.org/rosinstalls/boxturtle_base.rosinstall"])
-        cmd.extend([self.base, os.path.join(roslib.packages.get_pkg_dir("test_rosinstall"), "test/boxturtle_base_w_release.rosinstall")])
+        cmd.extend([self.base, os.path.join(roslib.packages.get_pkg_dir("test_rosinstall"), "rosinstalls", "ros_w_release.rosinstall")])
         self.assertEqual(0,subprocess.call(cmd))
 
 
@@ -102,7 +102,8 @@ class RosinstallCommandlineOverlays(unittest.TestCase):
         self.directories["tutorials"] = directory
         cmd = " ".join(self.rosinstall_fn)
         self.assertEqual( "rosrun rosinstall rosinstall",  cmd)
-        full_cmd = ["bash", "-c", "source %s && %s %s http://www.ros.org/rosinstalls/boxturtle_tutorials.rosinstall"%(os.path.join(self.base,"setup.sh"), cmd, directory)]
+        full_cmd = ["bash", "-c", "source %s && %s %s %s"%(os.path.join(self.base,"setup.sh"), cmd, directory, 
+                                                           os.path.join(roslib.packages.get_pkg_dir("test_rosinstall"), "rosinstalls", "overlay.rosinstall"))]
         
         self.assertEqual(0,subprocess.call(full_cmd))
 
@@ -113,7 +114,7 @@ class RosinstallCommandlineOverlays(unittest.TestCase):
         directory = tempfile.mkdtemp()
         self.directories["tutorials2"] = directory
         cmd = self.rosinstall_fn
-        cmd.extend([directory, "-s", os.path.join(self.base,"setup.sh"), "http://www.ros.org/rosinstalls/boxturtle_tutorials.rosinstall"])
+        cmd.extend([directory, "-s", os.path.join(self.base,"setup.sh"), os.path.join(roslib.packages.get_pkg_dir("test_rosinstall"), "rosinstalls", "overlay.rosinstall")])
         self.assertEqual(0,subprocess.call(cmd))
 
 
