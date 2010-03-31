@@ -252,7 +252,8 @@ def rosinstall_main(argv):
   ## Generate setup.sh and save
   config.generate_setup(options)
   ## bootstrap the build if installing ros
-  if not (config.ros_path() or options.setup_file or options.nobuild):
+  print config.ros_path()
+  if config.ros_path() and not (options.setup_file or options.nobuild):
     if options.rosdep_yes:
       subprocess.check_call("source %s && rosmake rostest --rosdep-install --rosdep-yes" % (os.path.join(options.path, 'setup.sh')), shell=True, executable='/bin/bash')
     else:
