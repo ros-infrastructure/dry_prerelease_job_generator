@@ -80,7 +80,7 @@ def setup_environment(environ, workspace):
   else:
     path = os.path.join(ros_root, 'bin')
   if 'PYTHONPATH' in environ:
-    pythonpath = ':'.join([environ['PYTHONPATH'], os.path.join(ros_root, 'core', 'roslib', 'src')])
+    pythonpath = ':'.join([os.path.join(ros_root, 'core', 'roslib', 'src'), environ['PYTHONPATH']])
   else:
     pythonpath = os.path.join(ros_root, 'core', 'roslib', 'src')
   env_vars = environ.copy()
@@ -159,6 +159,7 @@ def _checkout_command(argv):
       subprocess.check_call(['/usr/bin/svn', 'co', stack_uri, stack_root])
   # ensure that ros is built, for rospack
   call_ros(workspace, 'rosmake', ['--rosdep-install','--bootstrap','--rosdep-yes'])
+
 
 def _rosdep_command(argv):
   args = argv[2:]
