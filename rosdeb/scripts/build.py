@@ -41,7 +41,7 @@ def build(distro, arch, path, ros_distro_uri):
     checkrepo_path = os.path.join(path,'tmp/checkrepo.py')
     roslib_path = os.path.join(path,'tmp/roslib')
  
-    ret = subprocess.call(['rosrun', 'rosdeb', 'checkrepo.py', 'http://code.ros.org/packages/ros/ubuntu/dists/%s/main/binary-%s/Packages'%(distro,arch)])
+    ret = subprocess.call(['rosrun', 'rosdeb', 'checkrepo.py', ros_distro_uri, 'http://code.ros.org/packages/ros/ubuntu/dists/%s/main/binary-%s/Packages'%(distro,arch)])
     if ret == 0:
       print "Release already up to date"
       sys.exit(0)
@@ -87,6 +87,11 @@ def build(distro, arch, path, ros_distro_uri):
       subprocess.check_call(chrootcmd + ['apt-get', 'update'])
 
       subprocess.check_call(chrootcmd + ['apt-get', '-y', '--force-yes', 'install', 'build-essential', 'python-yaml', 'cmake', 'subversion', 'wget', 'lsb-release', 'fakeroot', 'sudo', 'debhelper', 'cdbs', 'ca-certificates', 'debconf-utils'])
+
+
+      # Fix the sudoers file
+      sudoers_path = os.path.join(path, 'etc/sudoers')
+      subprocess.check_call(['sudo', 'chown', '0.0', sudoers_path])
 
       subprocess.Popen(chrootcmd + ['debconf-set-selections'], stdin=subprocess.PIPE).communicate("""
 hddtemp hddtemp/port string 7634
