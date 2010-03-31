@@ -3,6 +3,7 @@ import urlparse
 import urllib2
 import yaml
 import subprocess
+import sys
 
 def conditional_abspath(uri):
   """

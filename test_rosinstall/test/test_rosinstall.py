@@ -101,8 +101,8 @@ class RosinstallCommandlineOverlays(unittest.TestCase):
         self.directories["tutorials"] = directory
         cmd = " ".join(self.rosinstall_fn)
         print cmd
-        full_cmd = ["bash", "-c", "source %s && %s %s -o http://www.ros.org/rosinstalls/boxturtle_tutorials.rosinstall"%(os.path.join(self.base,"setup.sh"), cmd, directory)]
-        #self.assertEqual( "Full command",  full_cmd)
+        full_cmd = ["bash", "-c", "source %s && %s %s http://www.ros.org/rosinstalls/boxturtle_tutorials.rosinstall"%(os.path.join(self.base,"setup.sh"), cmd, directory)]
+        self.assertEqual( "Full command",  full_cmd)
         
         self.assertEqual(0,subprocess.call(full_cmd))
 
@@ -121,6 +121,6 @@ class RosinstallCommandlineOverlays(unittest.TestCase):
         self.directories.pop("tutorials2")
 
 if __name__ == '__main__':
-    #rostest.unitrun('test_rosinstall', 'test_commandline', RosinstallCommandlineTest, coverage_packages=['rosinstall'])  
+    rostest.unitrun('test_rosinstall', 'test_commandline', RosinstallCommandlineTest, coverage_packages=['rosinstall'])  
     rostest.unitrun('test_rosinstall', 'test_commandline_overlay', RosinstallCommandlineOverlays, coverage_packages=['rosinstall'])  
 

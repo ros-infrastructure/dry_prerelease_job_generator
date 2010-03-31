@@ -6,7 +6,6 @@ usage: rosinstall [OPTIONS] INSTALL_PATH [URI]
 Options:
 -u or --update (URI is optional only when using --update on an existing install)
 -s SETUP_FILE or --setup=SETUP_FILE (use another setup.sh file to create env)
--o or --overlay (push current environment into setup.sh)
 -n or --nobuild (don't perform a 'make core_cools' on the ros stack)
 
 Common invocations:
@@ -39,6 +38,7 @@ class ROSInstallException(Exception): pass
 
 class Config:
   def __init__(self, config_uri, install_path):
+    self.source_uri = config_uri
     self.source = rosinstall.helpers.get_yaml_from_uri(config_uri)
     self.trees = [ ]
     self.base_path = install_path
@@ -137,46 +137,57 @@ class Config:
     return rpp
     
   
+  def generate_include_setup_text(self, filename):
+    rpp = self.get_ros_package_path()
+    text = ""
+    text += "source %s\n" % filename
+    text += "export ROS_PACKAGE_PATH=%s:$ROS_PACKAGE_PATH\n" % rpp
+    return text
+
+  def generate_full_setup_text(self, ros_root, ros_package_path):
+    # overlay or standard
+    text = ""
+    text += "export ROS_ROOT=%s\n" % ros_root
+    text += "export PATH=$ROS_ROOT/bin:$PATH\n" # might include it twice
+    text += "export PYTHONPATH=$ROS_ROOT/core/roslib/src:$PYTHONPATH\n"
+    text += "if [ ! \"$ROS_MASTER_URI\" ] ; then export ROS_MASTER_URI=http://localhost:11311 ; fi\n"
+    text += "export ROS_PACKAGE_PATH=%s\n" % ros_package_path
+    text += "source $ROS_ROOT/tools/rosbash/rosbash\n"
+    return text
+    
+
+  def get_ros_package_path_from_env(self):
+    return subprocess.Popen("env | grep ROS_PACKAGE_PATH", stdout=subprocess.PIPE, shell=True, executable="/bin/bash").communicate()[0].split('=')[-1]
+
   def generate_setup(self, options):
     # simplest case first
-    setup_path = os.path.join(options.path, 'setup.sh')
     ros_root = self.ros_path()
     rpp = self.get_ros_package_path()
 
     text = ""
     if options.setup_file:
       if ros_root:
-        print >> sys.stderr, "woah. you gave a setup file %s, but your config %s also includes a ROS stack" % (options.setup_file, options.config_uri)
+        print >> sys.stderr, "woah. you gave a setup file %s, but your config %s also includes a ROS stack (%s)" % (options.setup_file, self.source_uri, ros_root)
         exit(1)
       # source the file and see if we can grep it, to handle chaining / whatever
       ros_root = rosinstall.helpers.get_ros_root_from_file(options.setup_file)
       if len(ros_root) == 0:
         print >> sys.stderr, "woah. you gave a setup file %s, but that file did not set ROS_ROOT" % options.setup_file
         exit(1)
-      text += "source %s\n" % options.setup_file
-      text += "export ROS_PACKAGE_PATH=%s:$ROS_PACKAGE_PATH\n" % rpp
+      text = self.generate_include_setup_text(options.setup_file)
     else:
-      if options.overlay:
-        if ros_root:
-          print >> sys.stderr, "woah. you asked to overlay %s (which contains ROS) on your environment, but your environment already defines ROS_ROOT" % (self.config_uri)
-          exit(1)
+      if not ros_root: # Must be an overlay if no ros_root options.overlay:
         if not 'ROS_ROOT' in os.environ:
-          print >> sys.stderr, "woah. you asked to overlay %s on your environment, but your environment doesn't have ROS_ROOT set." % (self.config_uri)
+          print >> sys.stderr, "woah. There needs to be a version of ros either in your rosinstall file(%s) or your environment (ROS_ROOT)." % (self.source_uri)
           exit(1)
         ros_root = os.environ['ROS_ROOT']
-        existing_rpp = subprocess.Popen("env | grep ROS_PACKAGE_PATH", stdout=subprocess.PIPE, shell=True, executable="/bin/bash").communicate()[0].split('=')[-1]
+        existing_rpp = self.get_ros_package_path_from_env()
         if len(existing_rpp) > 0:
           rpp = rpp + ':' + existing_rpp
-      
+      text = self.generate_full_setup_text(ros_root, rpp)
 
-      # overlay or standard
-      text += "export ROS_ROOT=%s\n" % ros_root
-      text += "export PATH=$ROS_ROOT/bin:$PATH\n" # might include it twice
-      text += "export PYTHONPATH=$ROS_ROOT/core/roslib/src:$PYTHONPATH\n"
-      text += "if [ ! \"$ROS_MASTER_URI\" ] ; then export ROS_MASTER_URI=http://localhost:11311 ; fi\n"
-      text += "export ROS_PACKAGE_PATH=%s\n" % rpp
-      text += "source $ROS_ROOT/tools/rosbash/rosbash\n"
 
+    setup_path = os.path.join(options.path, 'setup.sh')
     with open(setup_path, 'w') as f:
       f.write(text)
 
@@ -196,13 +207,13 @@ def rosinstall_main(argv):
   args = argv[1:]
   parser = OptionParser(usage="usage: %prog PATH [URI] [options]")
   parser.add_option("-u", "--update", dest="update", default=False,
-                    help="update an existing installation (URI not needed)",
+                    help="(deprecated unused)",
                     action="store_true")
   parser.add_option("-s", "--setup_file", dest="setup_file",
                     metavar="SETUP_FILE",
                     help="create environment using an existing setup file")
   parser.add_option("-o", "--overlay", dest="overlay", default=False,
-                    help="use current environment to build setup file",
+                    help="(deprecated unused)",
                     action="store_true")
   parser.add_option("-n", "--nobuild", dest="nobuild", default=False,
                     help="skip the build step for the ROS stack",
@@ -211,16 +222,6 @@ def rosinstall_main(argv):
                     help="Pass through --rosdep-yes to rosmake", 
                     action="store_true")
   (options, args) = parser.parse_args(args)
-  # check for illegal combinations
-  if options.overlay and options.setup_file:
-    print "\ncan't init from both an overlay and setup file\n\n"
-    exit(1)
-  if options.update and (options.setup_file or options.overlay):
-    print "\ncan't do an update along with init via overlay/setup file\n\n"
-    exit(1)
-  if len(args) == 0 or (len(args) == 1 and not options.update):
-    print "\nneed to specify a URI, unless you're doing an update.\n\n"
-    exit(1)
     
 
   # Get the path to the rosinstall 
@@ -230,20 +231,20 @@ def rosinstall_main(argv):
 
   # if two args the 2nd is the config_uri
   if len(args) > 1:
-    options.config_uri = rosinstall.helpers.conditional_abspath(args[1])
+    config_uri = rosinstall.helpers.conditional_abspath(args[1])
   elif os.path.exists(os.path.join(options.path, "this.rosinstall")):
-    options.config_uri = "this.rosinstall"
+    config_uri = os.path.join(options.path, "this.rosinstall")
   else: ## backwards compatability to be removed in the future
     # try to read the source uri from the breadcrumb mmmm delicious
-    options.config_uri = installed_uri(options.path)
+    config_uri = installed_uri(options.path)
   
   ## Could not get uri therefore error out
-  if not options.config_uri or len(options.config_uri) == 0:
+  if not config_uri or len(config_uri) == 0:
     parser.error( "update is not possible, since uri could not be determined, looked at args, %s , and %s(deprecated)"%(
         os.path.join(options.path, "this.rosinstall"), os.path.join(options.path, ".rosinstall_source_uri")))
 
   ## Generate the config class with the uri and path
-  config = Config(options.config_uri, options.path)
+  config = Config(config_uri, options.path)
   ## Save this.rosinstall 
   config.write_source()
   ## install or update each element
@@ -251,7 +252,7 @@ def rosinstall_main(argv):
   ## Generate setup.sh and save
   config.generate_setup(options)
   ## bootstrap the build if installing ros
-  if not (options.overlay or options.setup_file or options.nobuild):
+  if not (config.ros_path() or options.setup_file or options.nobuild):
     if options.rosdep_yes:
       subprocess.check_call("source %s && rosmake rostest --rosdep-install --rosdep-yes" % (os.path.join(options.path, 'setup.sh')), shell=True, executable='/bin/bash')
     else:
