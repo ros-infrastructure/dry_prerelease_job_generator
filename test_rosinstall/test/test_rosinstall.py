@@ -84,7 +84,7 @@ class RosinstallCommandlineOverlays(unittest.TestCase):
         #os.chmod(self.rosinstall_fn, stat.S_IRWXU)
         self.directories = {}
         self.base = tempfile.mkdtemp()
-        cmd = self.rosinstall_fn
+        cmd = self.rosinstall_fn[:]
         #cmd.extend([self.base, "http://www.ros.org/rosinstalls/boxturtle_base.rosinstall"])
         cmd.extend([self.base, os.path.join(roslib.packages.get_pkg_dir("test_rosinstall"), "test/boxturtle_base_w_release.rosinstall")])
         self.assertEqual(0,subprocess.call(cmd))
