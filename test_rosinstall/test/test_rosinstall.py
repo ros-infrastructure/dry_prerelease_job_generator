@@ -100,9 +100,9 @@ class RosinstallCommandlineOverlays(unittest.TestCase):
         directory = tempfile.mkdtemp()
         self.directories["tutorials"] = directory
         cmd = " ".join(self.rosinstall_fn)
-        print cmd
+        self.assertEqual( "rosrun rosinstall rosinstall",  cmd)
         full_cmd = ["bash", "-c", "source %s && %s %s http://www.ros.org/rosinstalls/boxturtle_tutorials.rosinstall"%(os.path.join(self.base,"setup.sh"), cmd, directory)]
-        self.assertEqual( "directory",  directory)
+        #self.assertEqual( "directory",  directory)
         self.assertEqual( "Full command",  full_cmd)
         
         self.assertEqual(0,subprocess.call(full_cmd))
