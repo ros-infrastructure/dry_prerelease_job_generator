@@ -97,6 +97,7 @@ class RosinstallCommandlineOverlays(unittest.TestCase):
         #os.remove(self.rosinstall_fn)
 
     def test_Rosinstall_ros_tutorial_as_overlay(self):
+        self.assertEqual(self.rosinstall_fn, ["rosrun", "rosinstall", "rosinstall"])
         directory = tempfile.mkdtemp()
         self.directories["tutorials"] = directory
         cmd = " ".join(self.rosinstall_fn)
