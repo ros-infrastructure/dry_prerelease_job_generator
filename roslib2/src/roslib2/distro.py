@@ -104,6 +104,8 @@ def get_rules(distro, stack_name):
 
     @param distro: rosdistro document
     @type  distro: dict
+    @param stack_name: name of stack to get rules for
+    @type  stack_name: str
     """
     if stack_name == 'ROS':
         stack_name = 'ros'
@@ -121,6 +123,47 @@ def get_rules(distro, stack_name):
         raise Exception("cannot load _rules")
     return props
         
+def load_distro_stacks(distro_doc, stack_names, release_name=None, version=None):
+    """
+    @param distro_doc: dictionary form of rosdistro file
+    @type distro_doc: dict
+    @param stack_names: names of stacks to load
+    @type  stack_names: [str]
+    @param release_name: (optional) name of distro release to override distro_doc spec.
+    @type  release_name: str
+    @param version: (optional) distro version to override distro_doc spec.
+    @type  version: str
+    @return: dictionary of stack names to DistroStack instances
+    @rtype: {str : DistroStack}
+    @raise DistroException: if distro_doc format is invalid
+    """
+
+    # load stacks and expand out uri rules
+    stacks = {}
+    # we pass these in mostly for small performance reasons, as well as testing
+    if version is None:
+        version = distro_version(distro_doc.get('version', '0'))        
+    if release_name is None:
+        release_name = distro_doc['release']
+
+    try:
+        stack_props = distro_doc['stacks']
+    except KeyError:
+        raise DistroException("distro is missing required 'stacks' key")
+    for stack_name in stack_names:
+        # ignore private keys like _rules
+        if stack_name[0] == '_':
+            continue
+
+        try:
+            stack_version = stack_props[stack_name]['version']
+        except KeyError:
+            raise DistroException("stack [%s] is missing version key"%stack_name)
+
+        rules = get_rules(distro_doc, stack_name)
+        stacks[stack_name] = DistroStack(stack_name, rules, stack_version, release_name, version)
+    return stacks
+
 class DistroStack(object):
     """Stores information about a stack release"""
 
@@ -143,7 +186,23 @@ class DistroStack(object):
     
         if 'source-tarball' in rules:
             self.source_tarball = expand_rule(rules['source-tarball'], stack_name, stack_version, release_name)
-            
+        else:
+            self.source_tarball = None
+
+    def __eq__(self, other):
+        if not isinstance(other, DistroStack):
+            return False
+        return self.name == other.name and \
+            self.version == other.version and \
+            self.debian_version == other.debian_version and \
+            self.debian_name == other.debian_name and \
+            self.dev_svn == other.dev_svn and \
+            self.distro_svn == other.distro_svn and \
+            self.release_svn == other.release_svn and \
+            self.user_svn == other.user_svn and \
+            self.pass_svn == other.pass_svn and \
+            self.source_tarball == other.source_tarball
+
 class Variant(object):
     """
     A variant defines a specific set of stacks ("metapackage", in Debian
@@ -229,31 +288,10 @@ class Distro(object):
         if not 'ros' in stack_props:
             raise DistroException("this program assumes that ros is in your variant")
 
-        # load stacks and expand out uri rules
-        # TODO: the rules logic is incorrect. 
-        # It should accumulate the rules as partial overrides are allowed at lower levels
-        for stack_name in self.stack_names:
-            # ignore private keys like _rules
-            if stack_name[0] == '_':
-                continue
+        self.stacks = load_distro_stacks(self.distro_props, self.stack_names, release_name=self.release_name, version=self.version)
+        self.ros = self.stacks.get('ros', None)
 
-            try:
-                stack_version = stack_props[stack_name]['version']
-            except KeyError:
-                raise DistroException("stack [%s] is missing version key"%stack_name)
-            rules = { }
-            if '_rules' in stack_props[stack_name]:
-                rules = stack_props[stack_name]['_rules']
-            elif '_rules' in stack_props:
-                rules = stack_props['_rules']
-            else:
-                raise DistroException("no uri rules defined")
-  
-            self.stacks[stack_name] = DistroStack(stack_name, rules, stack_version, self.release_name, self.version)
-            if stack_name == 'ros':
-                self.ros = self.stacks[stack_name]
-  
-
+    
 ################################################################################
 # DEBIAN-SPECIFIC STUFF
 # TODO: move to rosdeb
