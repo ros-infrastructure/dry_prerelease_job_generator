@@ -443,7 +443,7 @@ def compute_metapackage_dpkg_args(distro, porkspace):
     dir_path = os.path.join(porkspace, name)
     variant_metapkg = "ros-%s-%s" % (rel, name)
     variant_stacks = ["%s (= %s)" % (distro.stacks[s].debian_name, distro.stacks[s].debian_version) for s in variant.stack_names]
-    metapkg_ver="1.0.0-"+distro.version
+    metapkg_ver=debianize_version("1.0.0",distro.version)
     args.append((dir_path, variant_metapkg, metapkg_ver, variant_stacks))
   return args
 
