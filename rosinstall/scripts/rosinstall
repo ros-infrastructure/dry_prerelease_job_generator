@@ -4,21 +4,17 @@
 usage: rosinstall [OPTIONS] INSTALL_PATH [URI]
 
 Options:
--u or --update (URI is optional only when using --update on an existing install)
 -s SETUP_FILE or --setup=SETUP_FILE (use another setup.sh file to create env)
 -n or --nobuild (don't perform a 'make core_cools' on the ros stack)
 
 Common invocations:
 
 initial checkout:   rosinstall ~/ros http://ros.org/rosconfigs/all.rosconfig
-subsequent update:  rosinstall -u ~/ros
+subsequent update:  rosinstall ~/ros
 
 """
 
 from __future__ import with_statement
-import roslib; roslib.load_manifest("rosinstall")
-
-
 
 import os
 import subprocess
