@@ -10,11 +10,11 @@ setup(name='rosinstall',
       author = "Tully Foote", 
       author_email = "tfoote@willowgarage.com",
       url = "http://www.ros.org/wiki/rosinstall",
-      download_url = "http://code.ros.org/rosinstall-0.1.tar.gz", 
+      download_url = "http://pypi.python.org/packages/source/r/roslib2/roslib2-0.01.tar.gz", 
       keywords = ["ROS"],
       classifiers = [
         "Programming Language :: Python", 
-        "License :: OSI Approved :: BSD" ],
+        "License :: OSI Approved :: BSD License" ],
       long_description = """\
 The installer for ROS
 """
