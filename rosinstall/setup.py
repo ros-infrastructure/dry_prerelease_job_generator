@@ -3,10 +3,9 @@ from distutils.core import setup
 
 setup(name='rosinstall',
       version='0.01',
-      packages=['rosinstall'],
+      packages=['rosinstall', 'rosinstall.vcs'],
       package_dir = {'':'src'},
       scripts = ["scripts/rosinstall"],
-      requires = ['roslib2'],
       author = "Tully Foote", 
       author_email = "tfoote@willowgarage.com",
       url = "http://www.ros.org/wiki/rosinstall",

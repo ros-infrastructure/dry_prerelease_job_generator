@@ -24,7 +24,7 @@ from optparse import OptionParser
 import yaml
 
 import rosinstall.helpers
-from roslib2.vcs import svn, bzr, git
+from rosinstall.vcs import svn, bzr, git
 
 def usage():
   print __doc__ % vars()
