@@ -243,10 +243,10 @@ def rosinstall_main(argv):
   config = Config(config_uri, options.path)
   ## Save this.rosinstall 
   config.write_source()
-  ## install or update each element
-  config.execute_install()
   ## Generate setup.sh and save
   config.generate_setup(options)
+  ## install or update each element
+  config.execute_install()
   ## bootstrap the build if installing ros
   print config.ros_path()
   if config.ros_path() and not (options.setup_file or options.nobuild):
