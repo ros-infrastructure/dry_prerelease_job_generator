@@ -41,9 +41,12 @@ class Config:
 
     if self.source:
       self.load_yaml(self.source)
-
+      self.valid = True
+    else:
+      self.valid = False
     
-
+  def is_valid(self):
+    return self.valid
   def load_yaml(self, y):
     for t in y:
       for k, v in t.iteritems():
@@ -192,6 +195,7 @@ class Config:
 def installed_uri(path):
   try:
     f = open(os.path.join(path, '.rosinstall_source_uri'),'r')
+    print "Falling back onto deprecated .rosinstall_source_uri"
   except IOError, e:
     pass
     return None
@@ -241,6 +245,9 @@ def rosinstall_main(argv):
 
   ## Generate the config class with the uri and path
   config = Config(config_uri, options.path)
+  if not config.is_valid():
+    return -1
+
   ## Save this.rosinstall 
   config.write_source()
   ## Generate setup.sh and save
@@ -248,8 +255,8 @@ def rosinstall_main(argv):
   ## install or update each element
   config.execute_install()
   ## bootstrap the build if installing ros
-  print "Bootstraping ROS build"
   if config.ros_path() and not (options.setup_file or options.nobuild):
+    print "Bootstraping ROS build"
     if options.rosdep_yes:
       subprocess.check_call("source %s && rosmake rostest --rosdep-install --rosdep-yes" % (os.path.join(options.path, 'setup.sh')), shell=True, executable='/bin/bash')
     else:
