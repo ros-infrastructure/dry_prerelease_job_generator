@@ -17,10 +17,17 @@ class SVNClient(vcs_base.VCSClientBase):
     def detect_presence(self):
         return self.path_exists() and os.path.isdir(os.path.join(self._path, '.svn'))
 
+    def exists(self, url):
+        """
+        @return: True if url exists in repo
+        """
+        cmd = ['svn', 'info', url]
+        output = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
+        return bool(output[0])
 
     def checkout(self, url, version=''):
         if self.path_exists():
-            print >>sys.stderr, "Error: cannnot checkout into existing directory"
+            print >>sys.stderr, "Error: cannot checkout into existing directory"
             return False
             
         cmd = "svn co %s %s %s"%(version, url, self._path)
