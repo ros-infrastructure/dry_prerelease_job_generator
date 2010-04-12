@@ -127,11 +127,8 @@ class Config:
     code_trees = []
     for t in self.trees:
       if t['name'] != 'ros':
-        # take only the first element of the local_name so that we just point to the subdir
-        if t['name'].startswith(os.sep):
-          code_trees.append(os.path.join(self.base_path, os.sep + t['name'].split(os.sep)[1]))
-        else:
-          code_trees.append(os.path.join(self.base_path, t['name'].split(os.sep)[0]))        
+        code_trees.append(t['name'])
+    code_trees.reverse()
     rpp = ':'.join(set(code_trees))
     return rpp
     
