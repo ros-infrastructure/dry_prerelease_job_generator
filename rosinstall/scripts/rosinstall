@@ -42,6 +42,8 @@ class ConfigElement:
     return self.name
   def install(self):
     raise NotImplementedError, "ConfigElement install unimplemented"
+  def get_ros_path(self):
+    raise NotImplementedError, "ConfigElement get_ros_path unimplemented"
 
 class OverlayConfigElement(ConfigElement):
   def install(self):
@@ -62,6 +64,12 @@ class VCSConfigElement(ConfigElement):
         raise ROSInstallException("Directory '%s' already exists but is not of type %s"%(self.vcsc.get_path(), self.vcsc.get_vcs_type_name()))
       self.vcsc.update(self.version)
     return True
+  
+  def get_ros_path(self):
+    if rosinstall.helpers.is_path_ros(self.path):
+      return self.path
+    else:
+      return None
   
 
 class SVNConfigElement(VCSConfigElement):
@@ -107,6 +115,43 @@ class DistroStackConfigElement(VCSConfigElement):
     else:
       raise ROSInstallException("stack %s missing in rosdistro %s"%(name, uri))
 
+class DistroVariantConfigElement(ConfigElement):
+  def __init__(self, name, path, uri, release_name, rule = "release_svn"):
+    self.name = name
+    self.path = path
+
+    self.distro_uri = uri
+    self.release_name = release_name
+    self.rule = rule
+
+    self.distro = rosinstall.distro.Distro(uri)
+    if not name in self.distro.variants:
+      ROSInstallException("distro doesn't have variant %s"%name)
+    variant = self.distro.variants[name]
+    self.stack_list = variant.stack_names
+
+
+  def install(self):
+    for stack_name in self.stack_list:
+      uri = getattr(self.distro.stacks[stack_name], self.rule)
+      stack_path = os.path.join(self.path, stack_name)
+      vcsc = svn.SVNClient(stack_path)
+      if not vcsc.path_exists():
+        if not vcsc.checkout(uri, ''):
+          return False
+      else:
+        if not vcsc.detect_presence():
+          raise ROSInstallException("Directory '%s' already exists but is not of type %s"%(vcsc.get_path(), vcsc.get_vcs_type_name()))
+        if not vcsc.update(''):
+          return False
+    return True
+
+  def get_ros_path(self):
+    for s in self.stack_list:
+      if rosinstall.helpers.is_path_ros(os.path.join(self.path, s)):
+        return os.path.join(self.path, s)
+    return None
+  
 
 class Config:
   def __init__(self, yaml_source, install_path):
@@ -169,8 +214,12 @@ class Config:
           pass
         elif k == 'stack':
           if not source_uri:
-            raise ROSInstallException("woah! no uri for stack tree %s" % local_name)
+            raise ROSInstallException("woah! no uri for stack %s" % local_name)
           elem = DistroStackConfigElement(local_name, local_path, source_uri, version, rule = "distro_svn")
+        elif k == 'variant':
+          if not source_uri:
+            raise ROSInstallException("woah! no uri for variant %s" % local_name)
+          elem = DistroVariantConfigElement(local_name, local_path, source_uri, version, rule = "distro_svn")
         else:
           raise ROSInstallException("woah, unknown installation method %s" % k)
 
@@ -178,10 +227,12 @@ class Config:
         self.trees.append(elem)
 
   def ros_path(self):
+    rp = None
     for t in self.trees:
-      if rosinstall.helpers.is_path_ros(t.get_path()):
-        return t.get_path()
-    return None
+      ros_path = t.get_ros_path()
+      if ros_path:
+        rp = ros_path
+    return rp
   
   def write_source(self):
     """
@@ -216,13 +267,6 @@ class Config:
     return rpp
     
   
-  def generate_include_setup_text(self, filename):
-    rpp = self.get_ros_package_path()
-    text = ""
-    text += "source %s\n" % filename
-    text += "export ROS_PACKAGE_PATH=%s:$ROS_PACKAGE_PATH\n" % rpp
-    return text
-
   def generate_full_setup_text(self, ros_root, ros_package_path):
     # overlay or standard
     text = ""
@@ -235,35 +279,12 @@ class Config:
     return text
     
 
-  def get_ros_package_path_from_env(self):
-    return subprocess.Popen("env | grep ROS_PACKAGE_PATH", stdout=subprocess.PIPE, shell=True, executable="/bin/bash").communicate()[0].split('=')[-1]
-
   def generate_setup(self, options):
     # simplest case first
     ros_root = self.ros_path()
     rpp = self.get_ros_package_path()
 
-    text = ""
-    if options.setup_file:
-      if ros_root:
-        print >> sys.stderr, "woah. you gave a setup file %s, but your config %s also includes a ROS stack (%s)" % (options.setup_file, self.source_uri, ros_root)
-        exit(1)
-      # source the file and see if we can grep it, to handle chaining / whatever
-      ros_root = rosinstall.helpers.get_ros_root_from_file(options.setup_file)
-      if len(ros_root) == 0:
-        print >> sys.stderr, "woah. you gave a setup file %s, but that file did not set ROS_ROOT" % options.setup_file
-        exit(1)
-      text = self.generate_include_setup_text(options.setup_file)
-    else:
-      if not ros_root: # Must be an overlay if no ros_root options.overlay:
-        if not 'ROS_ROOT' in os.environ:
-          print >> sys.stderr, "woah. There needs to be a version of ros either in your rosinstall file(%s) or your environment (ROS_ROOT)." % (self.source_uri)
-          exit(1)
-        ros_root = os.environ['ROS_ROOT']
-        existing_rpp = self.get_ros_package_path_from_env()
-        if len(existing_rpp) > 0:
-          rpp = rpp + ':' + existing_rpp
-      text = self.generate_full_setup_text(ros_root, rpp)
+    text = self.generate_full_setup_text(ros_root, rpp)
 
 
     setup_path = os.path.join(options.path, 'setup.sh')
