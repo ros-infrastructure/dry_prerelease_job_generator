@@ -74,6 +74,16 @@ class RosinstallCommandlineTest(unittest.TestCase):
         shutil.rmtree(directory)
         self.directories.pop("ros")
 
+    def test_Rosinstall_ros_stack(self):
+        directory = tempfile.mkdtemp()
+        self.directories["stack"] = directory
+        cmd = self.rosinstall_fn
+        cmd.extend([directory, os.path.join(roslib.packages.get_pkg_dir("test_rosinstall"), "rosinstalls", "distro_stack.rosinstall")])
+        self.assertEqual(0,subprocess.call(cmd))
+        shutil.rmtree(directory)
+        self.directories.pop("stack")
+
+
 class RosinstallCommandlineOverlays(unittest.TestCase):
 
     def setUp(self):
