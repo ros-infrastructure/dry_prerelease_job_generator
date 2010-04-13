@@ -260,6 +260,26 @@ def installed_uri(path):
     return None
   return rosinstall.helpers.conditional_abspath(f.readline())  # abspath here for backwards compatability with change to abspath in breadcrumb
 
+def insert_source_yaml(source_yaml, source, observed_paths, aggregate_source_yaml):
+    if source_yaml:
+      for element in source_yaml:
+        #print "element", element
+        for k in element:
+          #print "k", k
+          #print "element[k]", element[k]
+          if 'local-name' in element[k]:
+            path = element[k]['local-name']
+            if path in observed_paths:
+              return "local-name '%s' multiply defined, first definition in %s, second definition in %s"%(path, observed_paths[path], source)
+            else:
+              observed_paths[path] = source
+          else:  
+            return "local-name must be defined for all targets, failed in %s"%source
+      aggregate_source_yaml.extend(source_yaml)
+      #print "aggregated to", aggregate_source_yaml
+      return ''
+
+
 def rosinstall_main(argv):
   if len(argv) < 2:
     usage()
@@ -268,9 +288,12 @@ def rosinstall_main(argv):
   parser.add_option("-u", "--update", dest="update", default=False,
                     help="(deprecated unused)",
                     action="store_true")
+  parser.add_option("-p", "--prepend", dest="prepend",
+                    metavar="prepend overlay", action="append", 
+                    help="prepend the install in this directory as an overlay")
   parser.add_option("-s", "--setup_file", dest="setup_file",
                     metavar="SETUP_FILE",
-                    help="create environment using an existing setup file")
+                    help="create environment using an existing setup file(deprecated)")
   parser.add_option("-o", "--overlay", dest="overlay", default=False,
                     help="(deprecated unused)",
                     action="store_true")
@@ -300,31 +323,32 @@ def rosinstall_main(argv):
       config_uris.append(config_uri)
 
   config_uris.extend(args[1:])
-    
+
+  overlay_source = """- overlay: 
+    local-name: %s
+    uri: %s"""
+
   observed_paths = {}
   aggregate_source_yaml = []
   print "rosinstall operating on", options.path, "from specifications in rosinstall files ", ", ".join(config_uris)
+
+  if options.prepend:
+    for p in options.prepend:
+      print "adding overlay of %s"%p
+      #print overlay_source%(p, p)
+      source_yaml = yaml.load(overlay_source%(p, p))
+      result = insert_source_yaml(source_yaml, p, observed_paths, aggregate_source_yaml)
+      if result != '':
+        parser.error(result)
+
   for a in config_uris:
     #print "argument", a
     config_uri = rosinstall.helpers.conditional_abspath(a)
     source_yaml = rosinstall.helpers.get_yaml_from_uri(config_uri)
     #print "source yaml", source_yaml
-    if source_yaml:
-      for element in source_yaml:
-        #print "element", element
-        for k in element:
-          #print "k", k
-          #print "element[k]", element[k]
-          if 'local-name' in element[k]:
-            path = element[k]['local-name']
-            if path in observed_paths:
-              parser.error("local-name '%s' multiply defined, first definition in %s, second definition in %s"%(path, observed_paths[path], a))
-            else:
-              observed_paths[path] = a
-          else:  
-            parser.error("local-name must be defined for all targets, failed in %s"%a)
-      aggregate_source_yaml.extend(source_yaml)
-      #print "aggregated to", aggregate_source_yaml
+    result = insert_source_yaml(source_yaml, a, observed_paths, aggregate_source_yaml)
+    if result != '':
+      parser.error(result)
 
   ## Could not get uri therefore error out
   if len(config_uris) == 0:
