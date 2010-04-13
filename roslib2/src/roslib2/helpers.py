@@ -50,6 +50,7 @@ def get_yaml_from_uri(uri):
       f = open(uri, 'r')
     except IOError, e:
       print >> sys.stderr, "ahhhh error opening file: %s" % e
+      return None
   else:
     try:
       f = urllib2.urlopen(uri)

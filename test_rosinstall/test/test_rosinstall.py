@@ -99,13 +99,22 @@ class RosinstallCommandlineOverlays(unittest.TestCase):
     def test_Rosinstall_ros_tutorial_as_overlay(self):
         self.assertEqual(self.rosinstall_fn, ["rosrun", "rosinstall", "rosinstall"])
         directory = tempfile.mkdtemp()
-        self.directories["tutorials"] = directory
-        cmd = " ".join(self.rosinstall_fn)
-        self.assertEqual( "rosrun rosinstall rosinstall",  cmd)
-        full_cmd = ["bash", "-c", "source %s && %s %s %s"%(os.path.join(self.base,"setup.sh"), cmd, directory, 
-                                                           os.path.join(roslib.packages.get_pkg_dir("test_rosinstall"), "rosinstalls", "overlay.rosinstall"))]
-        
-        self.assertEqual(0,subprocess.call(full_cmd))
+        with tempfile.NamedTemporaryFile() as ri_file:
+            ri_file.write("""
+- overlay:
+    local-name: base
+    uri: %s
+- svn:
+    uri: https://code.ros.org/svn/ros-pkg/stacks/common_msgs/tags/boxturtle
+    local-name: stacks/common
+"""%self.base)
+            ri_file.flush()
+                          
+            self.directories["tutorials"] = directory
+            cmd = self.rosinstall_fn[:]
+            cmd.extend([directory, ri_file.name])
+            print "EXECUTING", cmd
+            self.assertEqual(0,subprocess.call(cmd))
 
         shutil.rmtree(directory)
         self.directories.pop("tutorials")
@@ -113,13 +122,15 @@ class RosinstallCommandlineOverlays(unittest.TestCase):
     def test_Rosinstall_ros_tutorial_as_setup_file(self):
         directory = tempfile.mkdtemp()
         self.directories["tutorials2"] = directory
-        cmd = self.rosinstall_fn
+        cmd = self.rosinstall_fn[:]
         cmd.extend([directory, "-s", os.path.join(self.base,"setup.sh"), os.path.join(roslib.packages.get_pkg_dir("test_rosinstall"), "rosinstalls", "overlay.rosinstall")])
         self.assertEqual(0,subprocess.call(cmd))
 
 
         shutil.rmtree(directory)
         self.directories.pop("tutorials2")
+
+
 
 if __name__ == '__main__':
     rostest.unitrun('test_rosinstall', 'test_commandline', RosinstallCommandlineTest, coverage_packages=['rosinstall'])  

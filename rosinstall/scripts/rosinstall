@@ -34,13 +34,20 @@ class ROSInstallException(Exception): pass
 
 class ConfigElement:
   def __init__(self, name, path):
+    self.name = name
     self.path = path
   def get_path(self):
     return self.path
   def get_name(self):
     return self.name
   def install(self):
-    raise ROSInstallexception("unimplemented")
+    raise NotImplementedException("ConfigElement install unimplemented")
+
+class OverlayConfigElement(ConfigElement):
+  def install(self):
+    return True
+  
+    
 
 class VCSConfigElement(ConfigElement):
   def __init__(self, name, path, uri, version):
@@ -101,19 +108,18 @@ class Config:
     
   def is_valid(self):
     return self.valid
+
   def load_yaml(self, y):
     for t in y:
       for k, v in t.iteritems():
+
+
         if not 'local-name' in v:
           raise ROSInstallException("local-name is required on all code trees")
         else:
           local_name = v['local-name']
 
-        if not 'uri' in v:
-          raise ROSInstallException("woah! no uri for svn tree %s" % local_name)
-        else:
-          source_uri = v['uri']          
-
+        source_uri = v.get('uri', None)
         version = v.get('version', '')
         local_path = os.path.join(self.base_path, local_name)
 
@@ -121,11 +127,31 @@ class Config:
         #  raise Exception("cannot install two things into the same directory!! %s"%local_path)
         
         if k == 'svn':
+          if not source_uri:
+            raise ROSInstallException("woah! no uri for svn tree %s" % local_name)
           elem = SVNConfigElement(local_name, local_path, source_uri, version)
         elif k == 'git':
+          if not source_uri:
+            raise ROSInstallException("woah! no uri for git tree %s" % local_name)
           elem = GITConfigElement(local_name, local_path, source_uri, version)
         elif k == 'bzr':
+          if not source_uri:
+            raise ROSInstallException("woah! no uri for bzr tree %s" % local_name)
           elem = BZRConfigElement(local_name, local_path, source_uri, version)
+        elif k == 'overlay':
+          if not source_uri:
+            print v
+            raise ROSInstallException("woah! no uri for overlay %s" % local_name)
+          rosinstall_uri = os.path.join(source_uri, "this.rosinstall")
+          if os.path.exists(rosinstall_uri):
+            child_config = Config(rosinstall_uri, local_path)
+            for child_t in child_config.trees:
+              elem = OverlayConfigElement(child_t.get_name(), child_t.get_path())
+              self.trees.append(elem)
+            continue # so we don't append some individual one at the end
+          else:
+            raise ROSInstallException("woah! invalid uri for overlay tree %s: %s"% (local_name, rosinstall_uri))
+          pass
         else:
           raise ROSInstallException("woah, unknown installation method %s" % k)
 
@@ -153,7 +179,7 @@ class Config:
       os.mkdir(self.base_path)
     for t in self.trees:
       if not t.install():
-        raise ROSInstallException("Failed to install tree '%s'\n vcs not setup correctly")
+        raise ROSInstallException("Failed to install tree '%s'\n vcs not setup correctly"%t.get_name())
         
   # TODO go back and make sure that everything in options.path is described
   # in the yaml, and offer to delete otherwise? not sure, but it could go here
