@@ -41,13 +41,11 @@ class ConfigElement:
   def get_name(self):
     return self.name
   def install(self):
-    raise NotImplementedException("ConfigElement install unimplemented")
+    raise NotImplementedError, "ConfigElement install unimplemented"
 
 class OverlayConfigElement(ConfigElement):
   def install(self):
     return True
-  
-    
 
 class VCSConfigElement(ConfigElement):
   def __init__(self, name, path, uri, version):
@@ -61,8 +59,8 @@ class VCSConfigElement(ConfigElement):
       self.vcsc.checkout(self.uri, self.version)
     else:
       if not self.vcsc.detect_presence():
-        raise ROSInstallException("Directory '%s' already exists but is not of type %s"%(vcsc.get_path(), vcsc.get_vcs_type_name()))
-      self.vcsc.update(t['version'])
+        raise ROSInstallException("Directory '%s' already exists but is not of type %s"%(self.vcsc.get_path(), self.vcsc.get_vcs_type_name()))
+      self.vcsc.update(self.version)
     return True
   
 
@@ -94,9 +92,9 @@ class GITConfigElement(VCSConfigElement):
 
 
 class Config:
-  def __init__(self, config_uri, install_path):
-    self.source_uri = config_uri
-    self.source = rosinstall.helpers.get_yaml_from_uri(config_uri)
+  def __init__(self, yaml_source, install_path):
+    self.source_uri = "hack" #TODO Hack so I don't have to fix theusages of this remove!!!
+    self.source = yaml_source
     self.trees = [ ]
     self.base_path = install_path
 
@@ -144,7 +142,7 @@ class Config:
             raise ROSInstallException("woah! no uri for overlay %s" % local_name)
           rosinstall_uri = os.path.join(source_uri, "this.rosinstall")
           if os.path.exists(rosinstall_uri):
-            child_config = Config(rosinstall_uri, local_path)
+            child_config = Config(rosinstall.helpers.get_yaml_from_uri(rosinstall_uri), local_path)
             for child_t in child_config.trees:
               elem = OverlayConfigElement(child_t.get_name(), child_t.get_path())
               self.trees.append(elem)
@@ -290,22 +288,54 @@ def rosinstall_main(argv):
 
   # Find out what the URI is (args, this.rosinstall, or breadcrumb(for backwards compatability)
 
-  # if two args the 2nd is the config_uri
-  if len(args) > 1:
-    config_uri = rosinstall.helpers.conditional_abspath(args[1])
-  elif os.path.exists(os.path.join(options.path, "this.rosinstall")):
-    config_uri = os.path.join(options.path, "this.rosinstall")
+
+  config_uris = []
+
+  if os.path.exists(os.path.join(options.path, "this.rosinstall")):
+    config_uris.append(os.path.join(options.path, "this.rosinstall"))
   else: ## backwards compatability to be removed in the future
     # try to read the source uri from the breadcrumb mmmm delicious
     config_uri = installed_uri(options.path)
-  
+    if config_uri:
+      config_uris.append(config_uri)
+
+  if len(args) > 1:
+    config_uris.extend(args[1:])
+    
+  observed_paths = {}
+  aggregate_source_yaml = []
+  # if two args the 2nd is the config_uri
+  for a in config_uris:
+    #print "argument", a
+    config_uri = rosinstall.helpers.conditional_abspath(a)
+    source_yaml = rosinstall.helpers.get_yaml_from_uri(config_uri)
+    #print "source yaml", source_yaml
+    if source_yaml:
+      for element in source_yaml:
+        #print "element", element
+        for k in element:
+          #print "k", k
+          #print "element[k]", element[k]
+          if 'local-name' in element[k]:
+            path = element[k]['local-name']
+            if path in observed_paths:
+              parser.error("local-name '%s' multiply defined, first definition in %s, second definition in %s"%(path, observed_paths[path], a))
+            else:
+              observed_paths[path] = a
+              aggregate_source_yaml.extend(source_yaml)
+              #print "aggregated to", aggregate_source_yaml
+          else:  
+            parser.error("local-name must be defined for all targets, failed in %s"%a)
+          
   ## Could not get uri therefore error out
-  if not config_uri or len(config_uri) == 0:
-    parser.error( "update is not possible, since uri could not be determined, looked at args, %s , and %s(deprecated)"%(
+  if len(config_uris) == 0:
+    parser.error( "no source rosinstall file found! looked at arguments, %s , and %s(deprecated)"%(
         os.path.join(options.path, "this.rosinstall"), os.path.join(options.path, ".rosinstall_source_uri")))
 
+  #print "source...........................", aggregate_source_yaml
+
   ## Generate the config class with the uri and path
-  config = Config(config_uri, options.path)
+  config = Config(aggregate_source_yaml, options.path)
   if not config.is_valid():
     return -1
 
