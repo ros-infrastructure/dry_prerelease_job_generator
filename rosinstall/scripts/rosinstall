@@ -44,6 +44,8 @@ class ConfigElement:
     raise NotImplementedError, "ConfigElement install unimplemented"
   def get_ros_path(self):
     raise NotImplementedError, "ConfigElement get_ros_path unimplemented"
+  def get_versioned_yaml(self):
+    raise NotImplementedError, "ConfigElement get_versioned_yaml unimplemented"
 
 class OverlayConfigElement(ConfigElement):
   def install(self):
@@ -54,6 +56,10 @@ class OverlayConfigElement(ConfigElement):
       return self.path
     else:
       return None
+
+  def get_versioned_yaml(self):
+    raise ROSInstallException("Cannot generate versioned outputs with overlays")
+    return [{"overlay": {"local-name": self.name, "uri": self.path} }]
 
 class VCSConfigElement(ConfigElement):
   def __init__(self, name, path, uri, version):
@@ -76,6 +82,9 @@ class VCSConfigElement(ConfigElement):
       return self.path
     else:
       return None
+
+  def get_versioned_yaml(self):
+    return [{self.vcsc.get_vcs_type_name(): {"local-name": self.name, "uri": self.uri, "version":self.vcsc.get_version()} }]
   
 
 class SVNConfigElement(VCSConfigElement):
@@ -158,6 +167,14 @@ class DistroVariantConfigElement(ConfigElement):
         return os.path.join(self.path, s)
     return None
   
+  def get_versioned_yaml(self):
+    output = []
+    for stack_name in self.stack_list:
+      uri = getattr(self.distro.stacks[stack_name], self.rule)
+      stack_path = os.path.join(self.path, stack_name)
+      vcsc = svn.SVNClient(stack_path)
+      
+      output.append({vcsc.get_vcs_type_name(): {"local-name": stack_path, "uri": uri, "version":vcsc.get_version()} })
 
 class Config:
   def __init__(self, yaml_source, install_path):
@@ -240,6 +257,14 @@ class Config:
         rp = ros_path
     return rp
   
+  def write_version_locked_source(self, filename):
+    source_aggregate = []
+    for t in self.trees:
+      source_aggregate.extend(t.get_versioned_yaml())
+
+    with open(filename, 'w') as fh:
+      fh.write(yaml.safe_dump(source_aggregate))
+      
   def write_source(self):
     """
     Write this.rosinstall into the root of the checkout
@@ -352,6 +377,8 @@ def rosinstall_main(argv):
   parser.add_option("--rosdep-yes", dest="rosdep_yes", default=False,
                     help="Pass through --rosdep-yes to rosmake", 
                     action="store_true")
+  parser.add_option("--generate-versioned-rosinstall", dest="generate_versioned", default=None,
+                    help="generate a versioned rosintall file", action="store")
   (options, args) = parser.parse_args(args)
     
 
@@ -411,6 +438,12 @@ def rosinstall_main(argv):
   config = Config(aggregate_source_yaml, options.path)
   if not config.is_valid():
     return -1
+
+  if options.generate_versioned:
+    filename = os.path.abspath(options.generate_versioned)
+    config.write_version_locked_source(filename)
+    print "Saved versioned rosinstall of current directory %s to %s"%(options.path, filename)
+    return 0
 
   ## Save this.rosinstall 
   config.write_source()
