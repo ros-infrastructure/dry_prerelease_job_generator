@@ -50,7 +50,6 @@ class OverlayConfigElement(ConfigElement):
     return True
 
   def get_ros_path(self):
-    print "here", self.path
     if rosinstall.helpers.is_path_ros(self.path):
       return self.path
     else:
@@ -211,7 +210,7 @@ class Config:
             raise ROSInstallException("woah! no uri for overlay %s" % local_name)
           rosinstall_uri = os.path.join(source_uri, "this.rosinstall")
           if os.path.exists(rosinstall_uri):
-            child_config = Config(rosinstall.helpers.get_yaml_from_uri(rosinstall_uri), local_path)
+            child_config = Config(rosinstall.helpers.get_yaml_from_uri(rosinstall_uri), source_uri)
             for child_t in child_config.trees:
               elem = OverlayConfigElement(child_t.get_name(), child_t.get_path())
               self.trees.append(elem)
@@ -427,7 +426,7 @@ def rosinstall_main(argv):
     else:
       subprocess.check_call("source %s && rosmake rostest --rosdep-install" % (os.path.join(options.path, 'setup.sh')), shell=True, executable='/bin/bash')
   print "\ndone. Now, type 'source %s/setup.sh' to set up your environment.\nAdd that to the bottom of your ~/.bashrc to set it up every time.\n\n" % options.path
-  
+
 if __name__ == "__main__":
   try:
     sys.exit(rosinstall_main(sys.argv) or 0)
