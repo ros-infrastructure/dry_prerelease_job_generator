@@ -83,6 +83,15 @@ class RosinstallCommandlineTest(unittest.TestCase):
         shutil.rmtree(directory)
         self.directories.pop("stack")
 
+    def test_Rosinstall_ros_variant(self):
+        directory = tempfile.mkdtemp()
+        self.directories["variant"] = directory
+        cmd = self.rosinstall_fn
+        cmd.extend([directory, os.path.join(roslib.packages.get_pkg_dir("test_rosinstall"), "rosinstalls", "distro_variant.rosinstall")])
+        self.assertEqual(0,subprocess.call(cmd))
+        shutil.rmtree(directory)
+        self.directories.pop("variant")
+
 
 class RosinstallCommandlineOverlays(unittest.TestCase):
 
@@ -110,14 +119,16 @@ class RosinstallCommandlineOverlays(unittest.TestCase):
         self.assertEqual(self.rosinstall_fn, ["rosrun", "rosinstall", "rosinstall"])
         directory = tempfile.mkdtemp()
         with tempfile.NamedTemporaryFile() as ri_file:
-            ri_file.write("""
+            file_text = """
 - overlay:
-    local-name: base
+    local-name: unused
     uri: %s
 - svn:
     uri: https://code.ros.org/svn/ros-pkg/stacks/common_msgs/tags/boxturtle
     local-name: stacks/common
-"""%self.base)
+"""%self.base
+            print file_text
+            ri_file.write(file_text)
             ri_file.flush()
                           
             self.directories["tutorials"] = directory
@@ -129,11 +140,11 @@ class RosinstallCommandlineOverlays(unittest.TestCase):
         shutil.rmtree(directory)
         self.directories.pop("tutorials")
 
-    def test_Rosinstall_ros_tutorial_as_setup_file(self):
+    def test_Rosinstall_ros_tutorial_as_prepend(self):
         directory = tempfile.mkdtemp()
         self.directories["tutorials2"] = directory
         cmd = self.rosinstall_fn[:]
-        cmd.extend([directory, "-s", os.path.join(self.base,"setup.sh"), os.path.join(roslib.packages.get_pkg_dir("test_rosinstall"), "rosinstalls", "overlay.rosinstall")])
+        cmd.extend([directory, "-p", self.base, os.path.join(roslib.packages.get_pkg_dir("test_rosinstall"), "rosinstalls", "overlay.rosinstall")])
         self.assertEqual(0,subprocess.call(cmd))
 
 
