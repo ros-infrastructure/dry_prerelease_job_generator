@@ -53,5 +53,5 @@ class SVNClient(vcs_base.VCSClientBase):
         if len(matches) == 1:
             split_str = matches[0].split()
             if len(split_str) == 2:
-                return split_str[1]
+                return '-r'+split_str[1]
         return None
