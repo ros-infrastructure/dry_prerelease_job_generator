@@ -45,3 +45,13 @@ class SVNClient(vcs_base.VCSClientBase):
         
     def get_vcs_type_name(self):
         return 'svn'
+
+
+    def get_version(self):
+        output = subprocess.Popen(['svn', 'info', self._path], stdout=subprocess.PIPE).communicate()[0]
+        matches = [l for l in output.split('\n') if l.startswith('Revision: ')]
+        if len(matches) == 1:
+            split_str = matches[0].split()
+            if len(split_str) == 2:
+                return split_str[1]
+        return None
