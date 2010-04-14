@@ -49,6 +49,13 @@ class OverlayConfigElement(ConfigElement):
   def install(self):
     return True
 
+  def get_ros_path(self):
+    print "here", self.path
+    if rosinstall.helpers.is_path_ros(self.path):
+      return self.path
+    else:
+      return None
+
 class VCSConfigElement(ConfigElement):
   def __init__(self, name, path, uri, version):
     self.name = name
@@ -279,15 +286,16 @@ class Config:
     return text
     
 
-  def generate_setup(self, options):
+  def generate_setup(self):
     # simplest case first
     ros_root = self.ros_path()
+    if not ros_root:
+      raise ROSInstallException("No ROS_ROOT defined")
     rpp = self.get_ros_package_path()
 
     text = self.generate_full_setup_text(ros_root, rpp)
 
-
-    setup_path = os.path.join(options.path, 'setup.sh')
+    setup_path = os.path.join(self.base_path, 'setup.sh')
     with open(setup_path, 'w') as f:
       f.write(text)
 
@@ -376,10 +384,11 @@ def rosinstall_main(argv):
 
   if options.prepend:
     for p in options.prepend:
-      print "adding overlay of %s"%p
-      #print overlay_source%(p, p)
-      source_yaml = yaml.load(overlay_source%(p, p))
-      result = insert_source_yaml(source_yaml, p, observed_paths, aggregate_source_yaml)
+      pa = os.path.abspath(p)
+      print "adding overlay of %s"%pa
+      #print overlay_source%(pa, pa)
+      source_yaml = yaml.load(overlay_source%(pa, pa))
+      result = insert_source_yaml(source_yaml, pa, observed_paths, aggregate_source_yaml)
       if result != '':
         parser.error(result)
 
@@ -406,10 +415,10 @@ def rosinstall_main(argv):
 
   ## Save this.rosinstall 
   config.write_source()
-  ## Generate setup.sh and save
-  config.generate_setup(options)
   ## install or update each element
   config.execute_install()
+  ## Generate setup.sh and save
+  config.generate_setup()
   ## bootstrap the build if installing ros
   if config.ros_path() and not (options.setup_file or options.nobuild):
     print "Bootstraping ROS build"
