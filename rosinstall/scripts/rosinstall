@@ -111,6 +111,14 @@ class GITConfigElement(VCSConfigElement):
     self.version = version
     self.vcsc = git.GITClient(self.path)
 
+class HGConfigElement(VCSConfigElement):
+  def __init__(self, name, path, uri, version = None):
+    self.name = name
+    self.path = path
+    self.uri = uri
+    self.version = version
+    self.vcsc = hg.HGClient(self.path)
+
 class DistroStackConfigElement(VCSConfigElement):
   def __init__(self, name, path, uri, release_name, rule = "release_svn"):
     self.name = name
@@ -217,6 +225,10 @@ class Config:
           if not source_uri:
             raise ROSInstallException("woah! no uri for git tree %s" % local_name)
           elem = GITConfigElement(local_name, local_path, source_uri, version)
+        elif k == 'hg':
+          if not source_uri:
+            raise ROSInstallException("woah! no uri for hg tree %s" % local_name)
+          elem = HGConfigElement(local_name, local_path, source_uri, version)
         elif k == 'bzr':
           if not source_uri:
             raise ROSInstallException("woah! no uri for bzr tree %s" % local_name)
