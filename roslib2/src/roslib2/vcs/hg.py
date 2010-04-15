@@ -48,3 +48,7 @@ class HGClient(vcs_base.VCSClientBase):
         
     def get_vcs_type_name(self):
         return 'hg'
+
+    def get_version(self):
+        output = subprocess.Popen(['hg', 'identify', "-i", self._path], stdout=subprocess.PIPE).communicate()[0]
+        return output.strip()
