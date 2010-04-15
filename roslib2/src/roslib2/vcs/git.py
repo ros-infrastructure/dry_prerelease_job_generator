@@ -48,3 +48,7 @@ class GITClient(vcs_base.VCSClientBase):
         
     def get_vcs_type_name(self):
         return 'git'
+
+    def get_version(self):
+        output = subprocess.Popen(['git', 'log', "-1", "--format='%H'"], cwd= self._path, stdout=subprocess.PIPE).communicate()[0]
+        return output.strip().strip("'")
