@@ -221,7 +221,7 @@ class GITClientTest(unittest.TestCase):
         self.assertTrue(gitc.path_exists())
         self.assertTrue(gitc.detect_presence())
         self.assertEqual(gitc.get_url(), self.readonly_url)
-        #self.assertEqual(gitc.get_version(), self.readonly_version)
+        self.assertEqual(gitc.get_version(), self.readonly_version)
 
 
     def test_get_type_name(self):
@@ -266,11 +266,11 @@ class GITClientTest(unittest.TestCase):
         self.assertTrue(gitc.detect_presence())
         self.assertEqual(gitc.get_path(), local_path)
         self.assertEqual(gitc.get_url(), url)
-        #self.assertEqual(gitc.get_version(), version)
+        self.assertEqual(gitc.get_version(), version)
         
         new_version = '1fd87b781c64de366c6a6d4be8cdc76fbee5541e'
         self.assertTrue(gitc.update(new_version))
-        #self.assertEqual(gitc.get_version(), new_version)
+        self.assertEqual(gitc.get_version(), new_version)
         
         shutil.rmtree(directory)
         self.directories.pop(subdir)
@@ -298,7 +298,7 @@ class HGClientTest(unittest.TestCase):
         self.assertTrue(hgc.path_exists())
         self.assertTrue(hgc.detect_presence())
         self.assertEqual(hgc.get_url(), self.readonly_url)
-        #self.assertEqual(hgc.get_version(), self.readonly_version)
+        self.assertEqual(hgc.get_version(), self.readonly_version)
 
 
     def test_get_type_name(self):
@@ -321,7 +321,7 @@ class HGClientTest(unittest.TestCase):
         self.assertEqual(hgc.get_path(), local_path)
         self.assertEqual(hgc.get_url(), url)
 
-        #self.assertEqual(hgc.get_version(), '-r*')
+        #self.assertEqual(hgc.get_version(), )
         
 
         shutil.rmtree(directory)
@@ -343,11 +343,11 @@ class HGClientTest(unittest.TestCase):
         self.assertTrue(hgc.detect_presence())
         self.assertEqual(hgc.get_path(), local_path)
         self.assertEqual(hgc.get_url(), url)
-        #self.assertEqual(hgc.get_version(), version)
+        self.assertEqual(hgc.get_version(), version)
         
         new_version = '38a0105c05ea'
         self.assertTrue(hgc.update(new_version))
-        #self.assertEqual(hgc.get_version(), new_version)
+        self.assertEqual(hgc.get_version(), new_version)
         
         shutil.rmtree(directory)
         self.directories.pop(subdir)
@@ -358,4 +358,3 @@ if __name__ == '__main__':
     rostest.unitrun('test_roslib2', 'test_vcs', BZRClientTest, coverage_packages=['roslib2'])  
     rostest.unitrun('test_roslib2', 'test_vcs', SVNClientTest, coverage_packages=['roslib2'])  
     rostest.unitrun('test_roslib2', 'test_vcs', HGClientTest,  coverage_packages=['roslib2'])  
-
