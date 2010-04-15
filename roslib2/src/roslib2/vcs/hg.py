@@ -41,7 +41,7 @@ class HGClient(vcs_base.VCSClientBase):
         cmd = "hg pull"
         if not subprocess.check_call(cmd, cwd=self._path, shell=True) == 0:
             return False
-        cmd = "hg checkout default"
+        cmd = "hg checkout %s"%version
         if not subprocess.check_call(cmd, cwd=self._path, shell=True) == 0:
             return False
         return True
