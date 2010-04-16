@@ -61,6 +61,20 @@ class OverlayConfigElement(ConfigElement):
     raise ROSInstallException("Cannot generate versioned outputs with overlays")
     return [{"overlay": {"local-name": self.name, "uri": self.path} }]
 
+class InstalledConfigElement(ConfigElement):
+  def install(self):
+    return True
+
+  def get_ros_path(self):
+    if rosinstall.helpers.is_path_ros(self.path):
+      return self.path
+    else:
+      return None
+
+  def get_versioned_yaml(self):
+    raise ROSInstallException("Cannot generate versioned outputs with installed elements")
+    return [{"installed": {"local-name": self.name, "uri": self.path} }]
+
 class VCSConfigElement(ConfigElement):
   def __init__(self, name, path, uri, version):
     self.name = name
@@ -233,6 +247,8 @@ class Config:
           if not source_uri:
             raise ROSInstallException("woah! no uri for bzr tree %s" % local_name)
           elem = BZRConfigElement(local_name, local_path, source_uri, version)
+        elif k == 'installed':
+          elem = InstalledConfigElement(local_name, local_name)
         elif k == 'overlay':
           if not source_uri:
             print v
