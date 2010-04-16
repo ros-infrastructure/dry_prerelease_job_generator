@@ -206,7 +206,7 @@ class Config:
 
 
         if not 'local-name' in v:
-          raise ROSInstallException("local-name is required on all code trees")
+          raise ROSInstallException("local-name is required on all rosinstall elements")
         else:
           local_name = v['local-name']
 
@@ -247,11 +247,11 @@ class Config:
           else:
             raise ROSInstallException("woah! invalid uri for overlay tree %s: %s"% (local_name, rosinstall_uri))
           pass
-        elif k == 'stack':
+        elif k == 'stack_DISABLED!!!!!':
           if not source_uri:
             raise ROSInstallException("woah! no uri for stack %s" % local_name)
           elem = DistroStackConfigElement(local_name, local_path, source_uri, version, rule = "distro_svn")
-        elif k == 'variant':
+        elif k == 'variant_DISABLED!!!!!':
           if not source_uri:
             raise ROSInstallException("woah! no uri for variant %s" % local_name)
           elem = DistroVariantConfigElement(local_name, local_path, source_uri, version, rule = "distro_svn")
