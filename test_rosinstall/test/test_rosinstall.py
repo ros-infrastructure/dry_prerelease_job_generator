@@ -74,7 +74,7 @@ class RosinstallCommandlineTest(unittest.TestCase):
         shutil.rmtree(directory)
         self.directories.pop("ros")
 
-    def test_Rosinstall_ros_stack(self):
+    def DISABLED_test_Rosinstall_ros_stack(self):
         directory = tempfile.mkdtemp()
         self.directories["stack"] = directory
         cmd = self.rosinstall_fn
@@ -83,7 +83,7 @@ class RosinstallCommandlineTest(unittest.TestCase):
         shutil.rmtree(directory)
         self.directories.pop("stack")
 
-    def test_Rosinstall_ros_variant(self):
+    def DISABLED_test_Rosinstall_ros_variant(self):
         directory = tempfile.mkdtemp()
         self.directories["variant"] = directory
         cmd = self.rosinstall_fn
