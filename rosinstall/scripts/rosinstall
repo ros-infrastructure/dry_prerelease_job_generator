@@ -319,13 +319,11 @@ class Config:
     """ Return the simplifed ROS_PACKAGE_PATH """
     code_trees = []
     trs = [s.get_name() for s in self.trees]
-    print "trees are", ", ".join(trs)
     for t in self.trees:
       if t.get_name() != 'ros':
         code_trees.append(t.get_path())
     #code_trees.reverse()
     rpp = ':'.join(code_trees)
-    print "RPP: ", rpp
     return rpp
     
   
