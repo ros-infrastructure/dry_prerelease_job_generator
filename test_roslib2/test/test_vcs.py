@@ -144,7 +144,7 @@ class BZRClientTest(unittest.TestCase):
         self.assertTrue(bzrc.path_exists())
         self.assertTrue(bzrc.detect_presence())
         self.assertEqual(bzrc.get_url(), self.readonly_url)
-        #self.assertEqual(bzrc.get_version(), self.readonly_version)
+        self.assertEqual(bzrc.get_version(), self.readonly_version)
 
 
     def test_get_type_name(self):
@@ -189,11 +189,11 @@ class BZRClientTest(unittest.TestCase):
         self.assertTrue(bzrc.detect_presence())
         self.assertEqual(bzrc.get_path(), local_path)
         self.assertEqual(bzrc.get_url(), url)
-        #self.assertEqual(bzrc.get_version(), version)
+        self.assertEqual(bzrc.get_version(), version)
         
         new_version = '-r21'
         self.assertTrue(bzrc.update(new_version))
-        #self.assertEqual(bzrc.get_version(), new_version)
+        self.assertEqual(bzrc.get_version(), new_version)
         
         shutil.rmtree(directory)
         self.directories.pop(subdir)
