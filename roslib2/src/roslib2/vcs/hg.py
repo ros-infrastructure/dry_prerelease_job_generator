@@ -5,7 +5,7 @@ import vcs_base
 class HGClient(vcs_base.VCSClientBase):
     def get_url(self):
         """
-        @return: HG URL of the directory path (output of git info command), or None if it cannot be determined
+        @return: HG URL of the directory path (output of hg paths command), or None if it cannot be determined
         """
         if self.detect_presence():
             output = subprocess.Popen(["hg", "paths", "default"], cwd=self._path, stdout=subprocess.PIPE).communicate()[0]
@@ -24,15 +24,9 @@ class HGClient(vcs_base.VCSClientBase):
         cmd = "hg clone %s %s"%(url, self._path)
         if not subprocess.check_call(cmd, shell=True) == 0:
             return False
-        if version != '':
-            cmd = "hg checkout -r %s"%(version)
-            if not subprocess.check_call(cmd, cwd=self._path, shell=True) == 0:
-                return False
-        ## this would be the branching (like the git client does it), but it's not standard practice with hg
-        ## (according to hg help branch)
-        #cmd = "hg branch rosinstall"
-        #if not subprocess.check_call(cmd, cwd=self._path, shell=True) == 0:
-        #    return False
+        cmd = "hg checkout %s"%(version)
+        if not subprocess.check_call(cmd, cwd=self._path, shell=True) == 0:
+            return False
         return True
 
     def update(self, version=''):
