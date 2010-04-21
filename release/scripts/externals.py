@@ -39,8 +39,10 @@ def main():
                     continue
                 stack = distro.stacks[stack_name]
                 uri = stack.distro_svn
-                svn_external += tmpl%locals()
-            all += svn_external
+                ext = tmpl%locals()
+                svn_external += ext
+                if ext not in all:
+                    all += ext
             externals.append((name, svn_external))
 
         externals.append(('all', all))
