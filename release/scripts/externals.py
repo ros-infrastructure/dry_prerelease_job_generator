@@ -45,6 +45,8 @@ def main():
         # create an all external for everything
         all = ''
         for stack_name, stack in distro.stacks.iteritems():
+            if stack_name == 'ros':
+                continue
             uri = stack.distro_svn
             all += tmpl%locals()
         externals.append(('all', all))
