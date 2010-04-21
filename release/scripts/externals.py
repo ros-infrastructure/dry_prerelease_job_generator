@@ -31,7 +31,7 @@ def main():
         externals = []
         tmpl = "%(stack_name)s %(uri)s\n"
 
-        all = ''
+        # create external for each variant
         for name, variant in distro.variants.iteritems():
             svn_external = ''
             for stack_name in variant.stack_names:
@@ -39,12 +39,14 @@ def main():
                     continue
                 stack = distro.stacks[stack_name]
                 uri = stack.distro_svn
-                ext = tmpl%locals()
-                svn_external += ext
-                if ext not in all:
-                    all += ext
+                svn_external += tmpl%locals()
             externals.append((name, svn_external))
 
+        # create an all external for everything
+        all = ''
+        for stack_name, stack in distro.stacks.iteritems():
+            uri = stack.distro_svn
+            all += tmpl%locals()
         externals.append(('all', all))
         
         if not hasattr(roslib.scriptutil, 'ask_and_call'):
