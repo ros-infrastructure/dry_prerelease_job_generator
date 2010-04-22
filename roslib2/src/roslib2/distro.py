@@ -30,12 +30,10 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 #
-# Revision $Id: distro.py 8507 2010-02-27 01:16:02Z kwc $
+# Revision $Id: distro.py 9094 2010-04-15 00:48:13Z kwc $
 
 """
 Library for process rosdistro files.
-
-New in ROS C-Turtle.
 """
 
 from __future__ import with_statement
@@ -175,8 +173,12 @@ class DistroStack(object):
 
         #debian-specific stuff
         #TODO: move to rosdeb
-        self.debian_version = debianize_version(stack_version, release_version)
-        self.debian_name = debianize_name("ros-%s-%s"%(release_name,stack_name))
+        try:
+            self.debian_version = debianize_version(stack_version, release_version)
+            self.debian_name = debianize_name("ros-%s-%s"%(release_name,stack_name))
+        except DistroException:
+            # ignore on non debian systems. This really belongs in an extension
+            self.debian_version = self.debian_name = None
 
         #rosdistro key
         self.dev_svn = expand_rule(rules['dev-svn'], stack_name, stack_version, release_name)
@@ -303,6 +305,8 @@ def ubuntu_release():
     """
     WARNING: this can only be called on an Ubuntu system
     """
+    if not os.path.isfile('/etc/issue'):
+        raise DistroException("this is not an ubuntu system")        
     f = open('/etc/issue')
     for s in f:
         if s.startswith('Ubuntu'):
