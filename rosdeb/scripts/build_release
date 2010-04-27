@@ -340,6 +340,7 @@ export DEB_BUILD_OPTIONS=nostrip
 export DEB_DH_SHLIBDEPS_ARGS_ALL=-Xros
 
 include /usr/share/cdbs/1/rules/debhelper.mk
+include /usr/share/cdbs/1/class/python-distutils.mk
 """
 
 def create_dpkg(dir_path, dpkg_name, version, deps):
