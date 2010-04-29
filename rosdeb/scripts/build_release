@@ -213,6 +213,12 @@ def _build_command(argv):
   workspace = options.workspace # save typing
   # build everybody
   call_ros(workspace, 'rosmake', ['-Vr','--skip-blacklist','--output=%s'%os.path.join(workspace, 'build_output'),'-ia'])
+  
+  # compile all python files
+  environ = setup_environment(os.environ, workspace)
+  subprocess.check_call(['python','-mcompileall', '.'], cwd=env['ROS_ROOT'], env=environ)
+  subprocess.check_call(['python','-mcompileall', '.'], cwd=env['ROS_PACKAGE_PATH'], env=environ)
+  
   print "have a nice day"
 
 def setup_file_text(ros_root, package_path):
