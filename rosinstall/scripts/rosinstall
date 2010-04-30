@@ -160,10 +160,11 @@ class Config:
             raise ROSInstallException("woah! invalid uri for overlay tree %s: %s"% (local_name, rosinstall_uri))
           pass
         else:
-          elem = AVCSConfigElement(k, local_path, source_uri, version)
-          if not elem:
-            raise ROSInstallException("woah, unknown installation method %s" % k)
-          self.trees.append(elem)
+          try:
+            elem = AVCSConfigElement(k, local_path, source_uri, version)
+            self.trees.append(elem)
+          except Execption, ex:
+            raise ROSInstallException("woah, unknown installation method %s" % ex)
 
   def ros_path(self):
     rp = None
