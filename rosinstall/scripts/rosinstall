@@ -97,34 +97,6 @@ class VCSConfigElement(ConfigElement):
     return [{self.vcsc.get_vcs_type_name(): {"local-name": self.path, "uri": self.uri, "version":self.vcsc.get_version()} }]
   
 
-class SVNConfigElement(VCSConfigElement):
-  def __init__(self, path, uri, version = ''):
-    self.path = path
-    self.uri = uri
-    self.version = version
-    self.vcsc = svn.SVNClient(self.path)
-
-class BZRConfigElement(VCSConfigElement):
-  def __init__(self, path, uri, version = ''):
-    self.path = path
-    self.uri = uri
-    self.version = version
-    self.vcsc = bzr.BZRClient(self.path)
-
-class GITConfigElement(VCSConfigElement):
-  def __init__(self, path, uri, version = ''):
-    self.path = path
-    self.uri = uri
-    self.version = version
-    self.vcsc = git.GITClient(self.path)
-
-class HGConfigElement(VCSConfigElement):
-  def __init__(self, path, uri, version = ''):
-    self.path = path
-    self.uri = uri
-    self.version = version
-    self.vcsc = hg.HGClient(self.path)
-
 class AVCSConfigElement(VCSConfigElement):
   def __init__(self, type, path, uri, version = ''):
     self.type = type
@@ -169,28 +141,6 @@ class Config:
         #if local_path in self.vcs:
         #  raise Exception("cannot install two things into the same directory!! %s"%local_path)
         
-
-        if False:
-          if k == 'svn':
-            if not source_uri:
-              raise ROSInstallException("woah! no uri for svn tree %s" % local_name)
-            elem = SVNConfigElement(local_name, local_path, source_uri, version)
-            self.trees.append(elem)
-          elif k == 'git':
-            if not source_uri:
-              raise ROSInstallException("woah! no uri for git tree %s" % local_name)
-            elem = GITConfigElement(local_name, local_path, source_uri, version)
-            self.trees.append(elem)
-          elif k == 'hg':
-            if not source_uri:
-              raise ROSInstallException("woah! no uri for hg tree %s" % local_name)
-            elem = HGConfigElement(local_name, local_path, source_uri, version)
-            self.trees.append(elem)
-          elif k == 'bzr':
-            if not source_uri:
-              raise ROSInstallException("woah! no uri for bzr tree %s" % local_name)
-            elem = BZRConfigElement(local_name, local_path, source_uri, version)
-            self.trees.append(elem)
 
         if k == 'installed':
           elem = InstalledConfigElement(local_name, local_name)
