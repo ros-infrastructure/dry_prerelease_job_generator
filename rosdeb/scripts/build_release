@@ -216,8 +216,10 @@ def _build_command(argv):
   
   # compile all python files
   environ = setup_environment(os.environ, workspace)
-  subprocess.check_call(['python','-mcompileall', '.'], cwd=environ['ROS_ROOT'], env=environ)
-  subprocess.check_call(['python','-mcompileall', '.'], cwd=environ['ROS_PACKAGE_PATH'], env=environ)
+
+  # These may return error codes, but that's ok for now.  Replace with check_call in the future.
+  subprocess.check(['python','-mcompileall', '.'], cwd=environ['ROS_ROOT'], env=environ)
+  subprocess.check(['python','-mcompileall', '.'], cwd=environ['ROS_PACKAGE_PATH'], env=environ)
   
   print "have a nice day"
 
