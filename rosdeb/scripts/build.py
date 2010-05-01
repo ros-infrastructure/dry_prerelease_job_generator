@@ -99,6 +99,9 @@ hddtemp hddtemp/interface string 127.0.0.1
 hddtemp hddtemp/daemon boolean false
 hddtemp hddtemp/syslog string 0
 hddtemp hddtemp/SUID_bit boolean false
+sun-java6-bin shared/accepted-sun-dlj-v1-1 boolean true
+sun-java6-jdk shared/accepted-sun-dlj-v1-1 boolean true
+sun-java6-jre shared/accepted-sun-dlj-v1-1 boolean true
 """);
 
       subprocess.check_call(chrootcmd + ['wget', '--no-check-certificate', 'http://ros.org/rosinstall', '-O', '/tmp/rosinstall'])
