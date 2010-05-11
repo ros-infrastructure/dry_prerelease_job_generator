@@ -120,7 +120,7 @@ class RosinstallCommandlineOverlays(unittest.TestCase):
         directory = tempfile.mkdtemp()
         with tempfile.NamedTemporaryFile() as ri_file:
             file_text = """
-- overlay:
+- other:
     local-name: unused
     uri: %s
 - svn:

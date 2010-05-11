@@ -24,7 +24,8 @@ from optparse import OptionParser
 import yaml
 
 import rosinstall.helpers
-from rosinstall.vcs import svn, bzr, git, vcs_abstraction
+from rosinstall.vcs import svn, bzr, git
+from rosinstall.vcs import vcs_abstraction
 
 def usage():
   print __doc__ % vars()
@@ -44,7 +45,7 @@ class ConfigElement:
   def get_versioned_yaml(self):
     raise NotImplementedError, "ConfigElement get_versioned_yaml unimplemented"
 
-class OverlayConfigElement(ConfigElement):
+class OtherConfigElement(ConfigElement):
   def install(self):
     return True
 
@@ -55,22 +56,8 @@ class OverlayConfigElement(ConfigElement):
       return None
 
   def get_versioned_yaml(self):
-    raise ROSInstallException("Cannot generate versioned outputs with overlays")
-    return [{"overlay": {"local-name": self.path} }]
-
-class InstalledConfigElement(ConfigElement):
-  def install(self):
-    return True
-
-  def get_ros_path(self):
-    if rosinstall.helpers.is_path_ros(self.path):
-      return self.path
-    else:
-      return None
-
-  def get_versioned_yaml(self):
-    raise ROSInstallException("Cannot generate versioned outputs with installed elements")
-    return [{"installed": {"local-name": self.path} }]
+    raise ROSInstallException("Cannot generate versioned outputs with non source types")
+    return [{"other": {"local-name": self.path} }]
 
 class VCSConfigElement(ConfigElement):
   def __init__(self, path, uri, version=''):
@@ -142,18 +129,15 @@ class Config:
         #  raise Exception("cannot install two things into the same directory!! %s"%local_path)
         
 
-        if k == 'installed':
-          elem = InstalledConfigElement(local_name, local_name)
-          self.trees.append(elem)
-        elif k == 'overlay':
+        if k == 'other':
           if not source_uri:
             print v
-            raise ROSInstallException("woah! no uri for overlay %s" % local_name)
+            raise ROSInstallException("woah! no uri for non overlay path %s" % local_name)
           rosinstall_uri = os.path.join(source_uri, "this.rosinstall")
           if os.path.exists(rosinstall_uri):
             child_config = Config(rosinstall.helpers.get_yaml_from_uri(rosinstall_uri), source_uri)
             for child_t in child_config.trees:
-              elem = OverlayConfigElement(child_t.get_path())
+              elem = OtherConfigElement(child_t.get_path())
               self.trees.append(elem)
             continue # so we don't append some individual one at the end
           else:
@@ -316,7 +300,7 @@ def rosinstall_main(argv):
 
   config_uris.extend(args[1:])
 
-  overlay_source = """- overlay: 
+  other_source = """- other: 
     local-name: %s
     uri: %s"""
 
@@ -329,7 +313,7 @@ def rosinstall_main(argv):
       pa = os.path.abspath(p)
       print "adding overlay of %s"%pa
       #print overlay_source%(pa, pa)
-      source_yaml = yaml.load(overlay_source%(pa, pa))
+      source_yaml = yaml.load(other_source%(pa, pa))
       result = insert_source_yaml(source_yaml, pa, observed_paths, aggregate_source_yaml)
       if result != '':
         parser.error(result)
