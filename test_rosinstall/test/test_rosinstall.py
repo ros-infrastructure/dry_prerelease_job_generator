@@ -140,11 +140,12 @@ class RosinstallCommandlineOverlays(unittest.TestCase):
         shutil.rmtree(directory)
         self.directories.pop("tutorials")
 
-    def test_Rosinstall_ros_tutorial_as_prepend(self):
+    def test_Rosinstall_ros_tutorial_as_argument(self):
         directory = tempfile.mkdtemp()
         self.directories["tutorials2"] = directory
         cmd = self.rosinstall_fn[:]
-        cmd.extend([directory, "-p", self.base, os.path.join(roslib.packages.get_pkg_dir("test_rosinstall"), "rosinstalls", "overlay.rosinstall")])
+        cmd.extend([directory, self.base, os.path.join(roslib.packages.get_pkg_dir("test_rosinstall"), "rosinstalls", "overlay.rosinstall")])
+        print "Running command %s"%cmd
         self.assertEqual(0,subprocess.call(cmd))
 
 

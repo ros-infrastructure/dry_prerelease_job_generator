@@ -262,9 +262,6 @@ def rosinstall_main(argv):
   parser.add_option("-u", "--update", dest="update", default=False,
                     help="(deprecated unused)",
                     action="store_true")
-  parser.add_option("-p", "--prepend", dest="prepend",
-                    metavar="prepend overlay", action="append", 
-                    help="prepend the install in this directory as an overlay")
   parser.add_option("-s", "--setup_file", dest="setup_file",
                     metavar="SETUP_FILE",
                     help="create environment using an existing setup file(deprecated)")
@@ -308,20 +305,13 @@ def rosinstall_main(argv):
   aggregate_source_yaml = []
   print "rosinstall operating on", options.path, "from specifications in rosinstall files ", ", ".join(config_uris)
 
-  if options.prepend:
-    for p in options.prepend:
-      pa = os.path.abspath(p)
-      print "adding overlay of %s"%pa
-      #print overlay_source%(pa, pa)
-      source_yaml = yaml.load(other_source%(pa, pa))
-      result = insert_source_yaml(source_yaml, pa, observed_paths, aggregate_source_yaml)
-      if result != '':
-        parser.error(result)
-
   for a in config_uris:
     #print "argument", a
     config_uri = rosinstall.helpers.conditional_abspath(a)
-    source_yaml = rosinstall.helpers.get_yaml_from_uri(config_uri)
+    if os.path.isdir(config_uri):
+      source_yaml = rosinstall.helpers.get_yaml_from_uri(os.path.join(config_uri, "this.rosinstall"))
+    else:
+      source_yaml = rosinstall.helpers.get_yaml_from_uri(config_uri)
     #print "source yaml", source_yaml
     result = insert_source_yaml(source_yaml, a, observed_paths, aggregate_source_yaml)
     if result != '':
