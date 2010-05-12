@@ -44,6 +44,8 @@ import shutil
 import roslib
 import rostest
 
+import rosinstall
+
 
 class RosinstallCommandlineTest(unittest.TestCase):
 
@@ -114,6 +116,20 @@ class RosinstallCommandlineOverlays(unittest.TestCase):
             shutil.rmtree(self.directories[d])
         shutil.rmtree(self.base)
         #os.remove(self.rosinstall_fn)
+
+    def test_Rosinstall_rosinstall_file_generation(self):
+        generated_rosinstall_filename = os.path.join(self.base, ".rosinstall")
+        self.assertTrue(os.path.exists(generated_rosinstall_filename))
+        source_yaml = rosinstall.helpers.get_yaml_from_uri(generated_rosinstall_filename)
+        self.assertEqual(source_yaml, 
+                         [{'svn': { 'uri': 'https://code.ros.org/svn/ros/stacks/ros/tags/boxturtle',
+                                    'local-name': 'ros'} },
+                          {'svn': { 'uri': 'https://code.ros.org/svn/ros/stacks/ros_release/trunk',
+                                    'local-name': 'ros_release'} }
+                          ])
+
+        
+            
 
     def test_Rosinstall_ros_tutorial_as_overlay(self):
         self.assertEqual(self.rosinstall_fn, ["rosrun", "rosinstall", "rosinstall"])
