@@ -1,15 +1,14 @@
 #!/usr/bin/env python
 
 """
-usage: rosinstall [OPTIONS] INSTALL_PATH [URI]
+usage: rosinstall [OPTIONS] INSTALL_PATH [ROSINSTALL FILES OR DIRECTORIES]
 
 Options:
--s SETUP_FILE or --setup=SETUP_FILE (use another setup.sh file to create env)
 -n or --nobuild (don't perform a 'make core_cools' on the ros stack)
 
 Common invocations:
 
-initial checkout:   rosinstall ~/ros http://ros.org/rosconfigs/all.rosconfig
+initial checkout:   rosinstall ~/ros http://www.ros.org/rosinstalls/latest_pr2all.rosinstall
 subsequent update:  rosinstall ~/ros
 
 """
@@ -192,7 +191,7 @@ class Config:
     """ Return the simplifed ROS_PACKAGE_PATH """
     code_trees = []
     for t in reversed(self.trees):
-      if rosinstall.helpers.is_path_ros(t.get_path()):
+      if not rosinstall.helpers.is_path_ros(t.get_path()):
         code_trees.append(t.get_path())
     rpp = ':'.join(code_trees)
     return rpp
@@ -259,15 +258,6 @@ def rosinstall_main(argv):
     usage()
   args = argv[1:]
   parser = OptionParser(usage="usage: %prog PATH [URI] [options]", version="%prog 0.04.2")
-  parser.add_option("-u", "--update", dest="update", default=False,
-                    help="(deprecated unused)",
-                    action="store_true")
-  parser.add_option("-s", "--setup_file", dest="setup_file",
-                    metavar="SETUP_FILE",
-                    help="create environment using an existing setup file(deprecated)")
-  parser.add_option("-o", "--overlay", dest="overlay", default=False,
-                    help="(deprecated unused)",
-                    action="store_true")
   parser.add_option("-n", "--nobuild", dest="nobuild", default=False,
                     help="skip the build step for the ROS stack",
                     action="store_true")
@@ -342,7 +332,7 @@ def rosinstall_main(argv):
   ## Generate setup.sh and save
   config.generate_setup()
   ## bootstrap the build if installing ros
-  if config.ros_path() and not (options.setup_file or options.nobuild):
+  if config.ros_path() and not options.nobuild:
     print "Bootstraping ROS build"
     if options.rosdep_yes:
       subprocess.check_call("source %s && rosmake rostest --rosdep-install --rosdep-yes" % (os.path.join(options.path, 'setup.sh')), shell=True, executable='/bin/bash')
