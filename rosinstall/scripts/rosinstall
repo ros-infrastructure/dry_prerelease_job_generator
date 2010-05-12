@@ -278,11 +278,11 @@ def rosinstall_main(argv):
   # Find out what the URI is (args, .rosinstall, or breadcrumb(for backwards compatability)
 
   if options.update:
-    print "update option is deprecated and will be ignored"
+    print "WARNING: update option is deprecated and will be ignored"
   if options.setup_file:
-    print "setup_file option is deprecated and will be ignored"
+    print "WARNING: setup_file option is deprecated and will be ignored"
   if options.overlay:
-    print "overlay option is deprecated and will be ignored"
+    print "WARNING: overlay option is deprecated and will be ignored"
 
 
   config_uris = []
