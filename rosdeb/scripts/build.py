@@ -144,15 +144,15 @@ def push(distro, arch, path, ros_distro_uri):
   landing_path = os.path.join("/var/packages/ros/ubuntu/queue",distro)
 
   # Clear stale packages in the incoming queue
-  subprocess.check_call(['ssh', '-p', '2222', 'rosbuild@pub5', 'rm -f %s/*.deb'%landing_path])
-  subprocess.check_call(['ssh', '-p', '2222', 'rosbuild@pub5', 'rm -f %s/*.changes'%landing_path])
+  subprocess.check_call(['ssh', '-p', '22', 'rosbuild@pub5', 'rm -f %s/*.deb'%landing_path])
+  subprocess.check_call(['ssh', '-p', '22', 'rosbuild@pub5', 'rm -f %s/*.changes'%landing_path])
 
   # Upload .changes and .debs
-  subprocess.check_call(['sh', '-c', 'scp -P 2222 '+path+'/packager-workspace/*.changes rosbuild@pub5:'+landing_path])
-  subprocess.check_call(['sh', '-c', 'scp -P 2222 '+path+'/packager-workspace/*.deb rosbuild@pub5:'+landing_path])
+  subprocess.check_call(['sh', '-c', 'scp -P 22 '+path+'/packager-workspace/*.changes rosbuild@pub5:'+landing_path])
+  subprocess.check_call(['sh', '-c', 'scp -P 22 '+path+'/packager-workspace/*.deb rosbuild@pub5:'+landing_path])
 
   # Pull new files into the repo
-  subprocess.check_call(['ssh', '-p', '2222', 'rosbuild@pub5', 'reprepro -V -b /var/packages/ros/ubuntu --keepunreferencedfiles processincoming %s'%distro])
+  subprocess.check_call(['ssh', '-p', '22', 'rosbuild@pub5', 'reprepro -V -b /var/packages/ros/ubuntu --keepunreferencedfiles processincoming %s'%distro])
 
 
 
