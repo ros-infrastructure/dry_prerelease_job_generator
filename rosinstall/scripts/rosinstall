@@ -50,8 +50,10 @@ class OtherConfigElement(ConfigElement):
 
   def get_ros_path(self):
     if rosinstall.helpers.is_path_ros(self.path):
+      print "other config element is a ros path", self.path
       return self.path
     else:
+      print "other config element is not a ros path", self.path
       return None
 
   def get_versioned_yaml(self):
@@ -95,13 +97,13 @@ class AVCSConfigElement(VCSConfigElement):
 
 class Config:
   def __init__(self, yaml_source, install_path):
-    self.source_uri = "hack" #TODO Hack so I don't have to fix theusages of this remove!!!
+    self.source_uri = install_path #TODO Hack so I don't have to fix theusages of this remove!!!
     self.source = yaml_source
     self.trees = [ ]
     self.base_path = install_path
 
     if self.source:
-      self.load_yaml(self.source)
+      self.load_yaml(self.source, self.source_uri)
       self.valid = True
     else:
       self.valid = False
@@ -109,7 +111,7 @@ class Config:
   def is_valid(self):
     return self.valid
 
-  def load_yaml(self, y):
+  def load_yaml(self, y, rosinstall_source_uri):
     for t in y:
       for k, v in t.iteritems():
 
@@ -125,17 +127,18 @@ class Config:
         print "VERSION IS", version
 
         if k == 'other':
-          rosinstall_uri = os.path.join(local_path, ".rosinstall")
+          rosinstall_uri = os.path.join(os.path.dirname(rosinstall_source_uri), ".rosinstall")
+          print "processing other", rosinstall_uri, "suri", rosinstall_source_uri
           if os.path.exists(rosinstall_uri):
             child_config = Config(rosinstall.helpers.get_yaml_from_uri(rosinstall_uri), local_path)
             for child_t in child_config.trees:
-              elem = OtherConfigElement(child_t.get_path())
+              print "paths are---------------", local_path, child_t.get_path()
+              sys.exit(-1)
+              elem = OtherConfigElement(os.path.join(local_path, child_t.get_path()))
               self.trees.append(elem)
-            continue # so we don't append some individual one at the end
           else:
             elem = OtherConfigElement(local_path)
             self.trees.append(elem)
-          pass
         else:
           try:
             elem = AVCSConfigElement(k, local_path, source_uri, version)
@@ -246,12 +249,24 @@ def insert_source_yaml(source_yaml, source, observed_paths, aggregate_source_yam
       #print "aggregated to", aggregate_source_yaml
       return ''
 
+def rewrite_included_source(source_yaml, source_path):
+  print "before", source_yaml
+  for dir in source_yaml:
+    types = ['svn', 'bzr', 'hg', 'git', 'other']
+    for t in types:
+      if t in dir.keys():
+        local_path = os.path.join(source_path, dir[t]['local-name'])
+        del dir[t]
+        dir['other'] = {}
+        dir['other']['local-name'] = local_path
+  print "after", source_yaml  
+  return source_yaml
 
 def rosinstall_main(argv):
   if len(argv) < 2:
     usage()
   args = argv[1:]
-  parser = OptionParser(usage="usage: %prog PATH [URI] [options]", version="%prog 0.04.2")
+  parser = OptionParser(usage="usage: %prog PATH [URI] [options]", version="%prog 0.04.4")
   parser.add_option("-u", "--update", dest="update", default=False,
                     help="DEPRECATED: Behavior is default",
                     action="store_true")
@@ -299,7 +314,7 @@ def rosinstall_main(argv):
 
   other_source = """- other: 
     local-name: %s
-    uri: %s"""
+"""
 
   observed_paths = {}
   aggregate_source_yaml = []
@@ -309,7 +324,14 @@ def rosinstall_main(argv):
     #print "argument", a
     config_uri = rosinstall.helpers.conditional_abspath(a)
     if os.path.isdir(config_uri):
-      source_yaml = rosinstall.helpers.get_yaml_from_uri(os.path.join(config_uri, ".rosinstall"))
+      rosinstall_uri = os.path.join(config_uri, ".rosinstall")
+      print "processing config_uri %s"%config_uri
+      if os.path.exists(rosinstall_uri):
+        source_yaml = rosinstall.helpers.get_yaml_from_uri(rosinstall_uri)
+        source_yaml = rewrite_included_source(source_yaml, config_uri)
+      else:
+        # fall back to just a directory
+        source_yaml = [ {'other': {'local-name': '%s'%config_uri} } ]
     else:
       source_yaml = rosinstall.helpers.get_yaml_from_uri(config_uri)
     #print "source yaml", source_yaml
