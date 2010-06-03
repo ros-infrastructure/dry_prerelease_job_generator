@@ -65,7 +65,7 @@ class VCSConfigElement(ConfigElement):
     self.path = path
     self.uri = uri
     self.version = version
-    print "VCSCONFIG INIT VERSION IS", version
+
   def install(self):
     if not self.vcsc.path_exists():
       self.vcsc.checkout(self.uri, self.version)
@@ -124,7 +124,7 @@ class Config:
         source_uri = v.get('uri', None)
         version = v.get('version', '')
         local_path = os.path.join(self.base_path, local_name)
-        print "VERSION IS", version
+        #print "VERSION IS", version
 
         if k == 'other':
           rosinstall_uri = os.path.join(os.path.dirname(rosinstall_source_uri), ".rosinstall")
@@ -286,6 +286,8 @@ def rosinstall_main(argv):
                     help="generate a versioned rosintall file", action="store")
   (options, args) = parser.parse_args(args)
     
+  if len(args) < 1:
+    parser.error("rosinstall requires at least 1 arguments")
 
   # Get the path to the rosinstall 
   options.path = os.path.abspath(args[0])
