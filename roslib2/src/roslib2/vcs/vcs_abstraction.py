@@ -45,7 +45,7 @@ class VCSClient(vcs_base.VCSClientBase):
       "hg": hg.HGClient,
       }
     if not type in self.vcs_types:
-      raise Exception("\TODO FIXME")
+      raise LookupError("%s VCS type undefined"%type)
     self.vcs = self.vcs_types[type](path)
     
   # pass through VCSClientBase API

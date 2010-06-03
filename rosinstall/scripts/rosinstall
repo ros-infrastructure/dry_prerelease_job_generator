@@ -143,7 +143,7 @@ class Config:
           try:
             elem = AVCSConfigElement(k, local_path, source_uri, version)
             self.trees.append(elem)
-          except Execption, ex:
+          except LookupError, ex:
             raise ROSInstallException("woah, unknown installation method %s" % ex)
 
   def ros_path(self):

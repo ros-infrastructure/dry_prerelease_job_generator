@@ -131,18 +131,19 @@ class RosinstallCommandlineOverlays(unittest.TestCase):
         
             
 
-    def test_Rosinstall_ros_tutorial_as_overlay(self):
+    def test_Rosinstall_common_msgs_as_explicit_overlay(self):
         self.assertEqual(self.rosinstall_fn, ["rosrun", "rosinstall", "rosinstall"])
         directory = tempfile.mkdtemp()
         with tempfile.NamedTemporaryFile() as ri_file:
             file_text = """
 - other:
-    local-name: unused
-    uri: %s
+    local-name: %s/ros_release
+- other:
+    local-name: %s/ros
 - svn:
     uri: https://code.ros.org/svn/ros-pkg/stacks/common_msgs/tags/boxturtle
-    local-name: stacks/common
-"""%self.base
+    local-name: stacks/common_msgs
+"""%(self.base, self.base)
             print file_text
             ri_file.write(file_text)
             ri_file.flush()
