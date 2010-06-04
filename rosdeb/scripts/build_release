@@ -231,6 +231,12 @@ export ROS_PACKAGE_PATH=%(package_path)s
 if [ ! \"$ROS_MASTER_URI\" ] ; then export ROS_MASTER_URI=http://localhost:11311 ; fi
 
 . ${ROS_ROOT}/tools/rosbash/rosbash"""%locals()
+
+def rosinstall_file_text(ros_root, package_path):
+  return """- other: 
+    local-name: %(ros_root)s
+- other:
+    local-name: %(package_path)s"""%locals()
   
 def package_deb(name, path, workspace, porkspace, distro, ros_root):
   porkspace = os.path.abspath(porkspace)
@@ -252,6 +258,9 @@ def package_deb(name, path, workspace, porkspace, distro, ros_root):
     with open(os.path.join(base_path, 'setup.sh'), 'w') as setup_file:
       package_path = os.path.join('/opt', 'ros', release_name, 'stacks')
       setup_file.write(setup_file_text(ros_root, package_path))
+    with open(os.path.join(base_path, '.rosinstall'), 'w') as rosinstall_file:
+      package_path = os.path.join('/opt', 'ros', release_name, 'stacks')
+      rosinstall_file.write(rosinstall_file_text(ros_root, package_path))
   print "  removing non-essential files..."
   non_essential = []
   for arg in ['.svn', '*.o', '.deps', 'CMakeFiles', 'CMakeCache.txt']:
