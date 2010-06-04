@@ -40,6 +40,8 @@ http://code.ros.org/packages/ros/ubuntu/dists/jaunty/main/binary-amd64/Packages
 http://code.ros.org/packages/ros/ubuntu/dists/jaunty/main/binary-i386/Packages
 http://code.ros.org/packages/ros/ubuntu/dists/karmic/main/binary-amd64/Packages
 http://code.ros.org/packages/ros/ubuntu/dists/karmic/main/binary-i386/Packages
+http://code.ros.org/packages/ros/ubuntu/dists/lucid/main/binary-amd64/Packages
+http://code.ros.org/packages/ros/ubuntu/dists/lucid/main/binary-i386/Packages
 
 Contain the current versions of the debs in the repo.  They should be
 fairly easily parseable for versions of the lates/rosdistro file.
@@ -148,6 +150,8 @@ urls = [
     'http://code.ros.org/packages/ros/ubuntu/dists/jaunty/main/binary-i386/Packages',
     'http://code.ros.org/packages/ros/ubuntu/dists/karmic/main/binary-amd64/Packages',
     'http://code.ros.org/packages/ros/ubuntu/dists/karmic/main/binary-i386/Packages',
+    'http://code.ros.org/packages/ros/ubuntu/dists/lucid/main/binary-amd64/Packages',
+    'http://code.ros.org/packages/ros/ubuntu/dists/lucid/main/binary-i386/Packages',
     ]
 
 distros = [
