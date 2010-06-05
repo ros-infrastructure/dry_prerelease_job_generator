@@ -1,0 +1,24 @@
+- svn:
+    uri: https://code.ros.org/svn/wg-ros-pkg/stacks/pr2_common/tags/latest
+    local-name: stacks/pr2_common
+- svn:
+    uri: https://code.ros.org/svn/wg-ros-pkg/stacks/pr2_controllers/tags/latest
+    local-name: stacks/pr2_controllers
+- svn:
+    uri: https://code.ros.org/svn/wg-ros-pkg/stacks/pr2_ethercat_drivers/tags/latest
+    local-name: stacks/pr2_ethercat_drivers
+- svn:
+    uri: https://code.ros.org/svn/wg-ros-pkg/stacks/pr2_gui/tags/latest
+    local-name: stacks/pr2_gui
+- svn:
+    uri: https://code.ros.org/svn/wg-ros-pkg/stacks/pr2_mechanism/tags/latest
+    local-name: stacks/pr2_mechanism
+- svn:
+    uri: https://code.ros.org/svn/wg-ros-pkg/stacks/pr2_power_drivers/tags/latest
+    local-name: stacks/pr2_power_drivers
+- svn:
+    uri: https://code.ros.org/svn/wg-ros-pkg/stacks/pr2_robot/tags/latest
+    local-name: stacks/pr2_robot
+- svn:
+    uri: https://code.ros.org/svn/wg-ros-pkg/stacks/pr2_simulator/tags/latest
+    local-name: stacks/pr2_simulator
