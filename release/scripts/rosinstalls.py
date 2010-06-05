@@ -2,7 +2,9 @@
 
 # source code refers to 'stacks', but this can work with apps as well
 from __future__ import with_statement
-NAME="wg_create_release.py"
+PKG = 'release'
+import roslib; roslib.load_manifest(PKG)
+NAME="rosinstalls.py"
 
 import sys
 import os
@@ -12,6 +14,7 @@ import traceback
 
 import roslib.scriptutil
 import roslib.stacks
+from roslib2.distro import Distro, DistroException
 
 print "WARNING: this script requires ROS *trunk*"
 
@@ -20,51 +23,6 @@ try:
 except ImportError:
     print >> sys.stderr, "python-yaml not installed, cannot proceed"
     sys.exit(1)
-
-
-def load_distro(distro_file):
-    if not os.path.isfile(distro_file):
-        raise ReleaseException("Cannot find [%s].\nPlease consult documentation on how to create this file"%p)
-    with open(distro_file) as f:
-        docs = [d for d in yaml.load_all(f.read())]
-        if len(docs) != 1:
-            raise ReleaseException("Found multiple YAML documents in [%s]"%distro_file)
-        distro = docs[0]
-    return distro
-
-def load_stack_rules(distro, stack_name):
-    # there are two tiers of dictionaries that we look in for uri rules
-    rules_d = [distro.get('stacks', {}),
-               distro.get('stacks', {}).get(stack_name, {})]
-    rules_d = [d for d in rules_d if d]
-    # load the '_rules' from the dictionaries, in order
-    props = {}
-    for d in rules_d:
-        if type(d) == dict:
-            props.update(d.get('_rules', {}))
-
-    if not props:
-        raise ReleaseException("[%s] is missing '_rules'. Please consult distroumentation"%(distro_file))
-    
-    if not 'release' in distro:
-        raise ReleaseException("[%s] is missing 'release' key. Please consult documentation"%(distro_file))
-    props['release'] = distro['release']
-
-    for reqd in ['release-svn']:
-        if not reqd in props:
-            raise ReleaseException("[%s] is missing required key [%s]"%(distro_file, reqd))
-
-    # add in some additional keys
-    if not 'dev-svn' in props:
-        from subprocess import Popen, PIPE
-        output = Popen(['svn', 'info'], stdout=PIPE, cwd=stack_dir).communicate()[0]
-        url_line = [l for l in output.split('\n') if l.startswith('URL:')]
-        if url_line:
-            props['dev-svn'] = url_line[0][4:].strip()
-        else:
-            raise ReleaseException("cannot determine SVN URL of stack [%s]"%stack_name)
-    
-    return props
 
 def main():
     try:
@@ -76,36 +34,22 @@ def main():
  * release name""")
         release_name = args[0]
         if release_name.endswith('.rosdistro'):
-            distro_file = release_name
             release_name = release_name[:-len('.rosdistro')]
-        else:
-            distro_file = "%s.rosdistro"%release_name
-        print "distro file", distro_file
+
         print "release name", release_name
-
-        if not os.path.isfile(distro_file):
-            parser.error("[%s] does not appear to be a valid release, no corresponding .rosdistro file"%(release_name))
-
+        
         # load in an expand URIs for rosinstalls
-        distro = load_distro(distro_file)
-        stack_props = distro['stacks']
+        distro = Distro("http://ros.org/distros/%s.rosdistro"%release_name)
         checkouts = {}
-        for stack_name in sorted(stack_props.iterkeys()):
-            if stack_name[0] == '_':
-                continue
-            rules = load_stack_rules(distro, stack_name)
-            stack_version = stack_props[stack_name]['version']
-            uri = expand_uri(rules['distro-svn'], stack_name, stack_version, release_name)
-            checkouts[stack_name] = uri
+        for stack_name, stack in distro.stacks.iteritems():
+            checkouts[stack_name] = stack.distro_svn
 
         # create text for rosinstalls
         variant_rosinstalls = []
-        variants = distro['variants']
         tmpl = """- svn:
     uri: %(uri)s
     local-name: %(local_name)s
 """
-        #TODO: build_release has the Distro class that computes much of this
 
         variant_stacks = {}
         variant_stacks_extended = {}
@@ -114,14 +58,15 @@ def main():
         uri = checkouts['ros']
         variant_rosinstalls.append(('rosinstall/%s_ros.rosinstall'%release_name,tmpl%locals()))
 
-        for variant_d in variants:
-            variant = variant_d.keys()[0]
-            variant_props = variant_d[variant]
-            variant_stacks[variant] = variant_props['stacks']
-            if 'extends' in variant_props:
-                variant_stacks_extended[variant] = variant_stacks_extended[variant_props['extends']] + variant_props['stacks']
-            else:
-                variant_stacks_extended[variant] = variant_props['stacks']
+        pkg_dir = roslib.packages.get_pkg_dir(PKG)
+        rosinstall_dir = os.path.join(pkg_dir, 'rosinstalls')
+
+        for name, variant in distro.variants.iteritems():
+            variant_props = variant.props
+
+            # the variant class computes the extended list, we also need the unextended list
+            variant_stacks[name] = variant_props['stacks']
+            variant_stacks_extended[name] = variant.stack_names
                 
             # create two rosinstalls per variant: 'extended' (non-overlay) and normal (overlay)
             text = ''
@@ -130,7 +75,7 @@ def main():
             uri = checkouts['ros']
             text_extended = tmpl%locals()
 
-            for stack_name in sorted(variant_stacks[variant]):
+            for stack_name in sorted(variant_stacks[name]):
                 uri = checkouts[stack_name]
                 if stack_name == 'ros':
                     continue
@@ -138,7 +83,7 @@ def main():
                     local_name = "stacks/%s"%stack_name
                 text += tmpl%locals()
                 
-            for stack_name in sorted(variant_stacks_extended[variant]):
+            for stack_name in sorted(variant_stacks_extended[name]):
                 uri = checkouts[stack_name]
                 if stack_name == 'ros':
                     continue
@@ -147,18 +92,21 @@ def main():
                 text_extended += tmpl%locals()
 
             # create non-overlay rosinstall
-            filename = os.path.join('rosinstall', '%s_%s.rosinstall'%(release_name, variant))
+            filename = os.path.join(rosinstall_dir, '%s_%s.rosinstall'%(release_name, name))
             variant_rosinstalls.append((filename, text_extended))
 
             # create variant overlay
-            filename = os.path.join('rosinstall', '%s_%s_overlay.rosinstall'%(release_name, variant))
+            filename = os.path.join(rosinstall_dir, '%s_%s_overlay.rosinstall'%(release_name, name))
             variant_rosinstalls.append((filename, text))
 
-        filename = os.path.join('rosinstall', '%s_wg_all.rosinstall'%(release_name))
+        filename = os.path.join(rosinstall_dir, '%s_wg_all.rosinstall'%(release_name))
         variant_rosinstalls.append((filename, create_wg_all(release_name, tmpl, checkouts)))
         
         # output rosinstalls
         for filename, text in variant_rosinstalls:
+            d = os.path.dirname(filename)
+            if not os.path.exists(d):
+                os.makedirs(d)
             with open(filename,'w') as f:
                 f.write(text)
             copy_to_server(filename)
@@ -207,13 +155,6 @@ def copy_to_server(filename):
     except:
         traceback.print_exc()
         print >> sys.stderr, "COPY FAILED, please redo manually"
-
-#TODO: copied from create_release.py
-def expand_uri(rule, stack_name, stack_ver, release_name):
-  s = rule.replace('$STACK_NAME', stack_name)
-  s =    s.replace('$STACK_VERSION', stack_ver)
-  s =    s.replace('$RELEASE_NAME', release_name)
-  return s
 
 if __name__ == '__main__':
     main()
