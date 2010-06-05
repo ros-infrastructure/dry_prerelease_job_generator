@@ -120,7 +120,7 @@ sun-java6-jre shared/accepted-sun-dlj-v1-1 boolean true
         setarch = []
 
       bash = ['bash', '-c']
-      setupandrun = "source /tmp/ros-release/setup.sh; rosrun rosdeb build_release "
+      setupandrun = "source /tmp/ros-release/setup.sh; export JAVA_HOME=/usr/lib/jvm/java-6-sun/; rosrun rosdeb build_release "
 
       subprocess.check_call(chrootcmd + setarch + bash + [setupandrun + "checkout %s -r -w %s"%(ros_distro_uri, ros_path)])
       subprocess.check_call(chrootcmd + setarch + bash + [setupandrun + "rosdep -w %s -y"%ros_path])
