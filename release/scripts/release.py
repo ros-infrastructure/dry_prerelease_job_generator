@@ -9,6 +9,7 @@ import os
 from subprocess import Popen, PIPE, call, check_call
 
 import roslib.stacks
+from roslib.scriptutil import ask_and_call
 
 try:
     import yaml
@@ -159,19 +160,39 @@ def main():
     try:
         props = load_and_validate_properties()
         name, version, distro_file, source_dir, release_props = props[:6]
+        tarball = make_dist(name, version, source_dir, release_props)
+        tag_urls = tag_subversion(name, version, release_props)
+        update_rosdistro_yaml(name, version, distro_file)
 
-        if 1:
-            dist = make_dist(name, version, source_dir, release_props)
+        if tarball:
+            copy_to_server(name, tarball)
+        else:
+            print_bold("cannot copy to server as tarball was not built")
+        
+        print """
 
-        if 1:
-            tag_urls = tag_subversion(name, version, release_props)
-
-        if 1:
-            update_rosdistro_yaml(name, version, distro_file)
-
+Now:
+ * update the changelist at http://www.ros.org/wiki/%s/ChangeList
+ * email Ken to update ros.org/rosdistros
+ * Checkin the rosdistro file."""%name
+        
     except ReleaseException, e:
         print >> sys.stderr, "ERROR: %s"%str(e)
         sys.exit(1)
+
+def copy_to_server(name, tarball):
+    scp_target = os.environ.get('ROS_RELEASE_SCP', None)
+    if scp_target is None:
+        print "ROS_RELEASE_SCP is not set, will not upload tarball"
+        return
+    try:
+        file_name = os.path.split(tarball)[1]
+        dest = os.path.join(scp_target,name,file_name)
+        cmds = [['scp', tarball, dest]]
+        if not ask_and_call(cmds):    
+            print "create_release will not copy the release tarball to the remote server"
+    except:
+        print >> sys.stderr, "COPY FAILED, please redo manually. The most likely cause is permissions or a missing directory."
 
 def tag_subversion(name, version, release_props):
     urls = []
