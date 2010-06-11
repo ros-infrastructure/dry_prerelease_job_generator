@@ -263,8 +263,8 @@ def package_deb(name, path, workspace, porkspace, distro, ros_root):
       rosinstall_file.write(rosinstall_file_text(ros_root, package_path))
     # Add (empty) stacks directory to ros deb
     os.mkdir(os.path.join(base_path, 'stacks'))
-    with open(os.path.join(base_path, 'stacks', 'README')) as readme_file:
-      readme_file.write("This directory contains stacks for the %s distro"%distro)
+    with open(os.path.join(base_path, 'stacks', 'README'), 'w') as readme_file:
+      readme_file.write("This directory contains stacks for the %s distro"%distro.release_name)
   print "  removing non-essential files..."
   non_essential = []
   for arg in ['.svn', '*.o', '.deps', 'CMakeFiles', 'CMakeCache.txt']:
