@@ -128,11 +128,11 @@ class Config:
 
         if k == 'other':
           rosinstall_uri = os.path.join(os.path.dirname(rosinstall_source_uri), ".rosinstall")
-          print "processing other", rosinstall_uri, "suri", rosinstall_source_uri
+          #print "processing other", rosinstall_uri, "suri", rosinstall_source_uri
           if os.path.exists(rosinstall_uri):
             child_config = Config(rosinstall.helpers.get_yaml_from_uri(rosinstall_uri), local_path)
             for child_t in child_config.trees:
-              print "paths are---------------", local_path, child_t.get_path()
+              #print "paths are---------------", local_path, child_t.get_path()
               sys.exit(-1)
               elem = OtherConfigElement(os.path.join(local_path, child_t.get_path()))
               self.trees.append(elem)
@@ -210,7 +210,7 @@ class Config:
     # simplest case first
     ros_root = self.ros_path()
     if not ros_root:
-      raise ROSInstallException("No ROS_ROOT defined")
+      raise ROSInstallException("No ROS_ROOT defined.  The 'ros' stack is required in all rosinstall directories. Please add a definition of the 'ros' stack either manually in .rosinstall and then call 'rosinstall .' in the directory. Or add one on the command line 'rosinstall . http://www.ros.org/rosinstalls/boxturtle_ros.rosinstall'. Or reference an existing install like in /opt/ros/boxturtle with 'rosinstall . /opt/ros/boxturtle'.  Note: the above suggestions assume you are using boxturtle, if you are using latest or another distro please change the urls." )
     rpp = self.get_ros_package_path()
 
     text = self.generate_full_setup_text(ros_root, rpp)
