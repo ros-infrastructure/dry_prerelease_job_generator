@@ -2,7 +2,7 @@
 from distutils.core import setup
 
 setup(name='rosinstall',
-      version='0.04.5',
+      version='0.04.6',
       packages=['rosinstall', 'rosinstall.vcs'],
       package_dir = {'':'src'},
       scripts = ["scripts/rosinstall"],
