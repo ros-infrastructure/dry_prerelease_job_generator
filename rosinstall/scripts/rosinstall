@@ -46,7 +46,7 @@ class ConfigElement:
   def get_versioned_yaml(self):
     raise NotImplementedError, "ConfigElement get_versioned_yaml unimplemented"
   def backup(self, backup_path):
-    if not path:
+    if not backup_path:
       raise ROSInstallException("Cannot install %s.  backup disabled."%self.path)
     backup_path = os.path.join(backup_path, "%s"%datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")+os.path.basename(self.path))
     print "Backing up %s to %s"%(self.path, backup_path)
@@ -76,12 +76,17 @@ class VCSConfigElement(ConfigElement):
     self.uri = uri
     self.version = version
 
-  def install(self):
+  def install(self, backup_path = None):
+    print "Updating %s to %s %s"%(self.path, self.uri, self.version)
     if not self.vcsc.path_exists():
       self.vcsc.checkout(self.uri, self.version)
     else:
-      if not self.vcsc.detect_presence():
-        raise ROSInstallException("Directory '%s' already exists but is not of type %s"%(self.vcsc.get_path(), self.vcsc.get_vcs_type_name()))
+      if not self.vcsc.detect_presence() or self.vcsc.get_url() != self.uri:
+        if not backup_path:
+          raise ROSInstallException("Directory '%s' already exists but is not of type %s"%(self.vcsc.get_path(), self.vcsc.get_vcs_type_name()))
+        else:
+          self.backup(backup_path)
+          self.vcsc.checkout(self.uri, self.version)
       self.vcsc.update(self.version)
     return True
   
@@ -186,7 +191,7 @@ class Config:
     if not os.path.exists(self.base_path):
       os.mkdir(self.base_path)
     for t in self.trees:
-      if not t.install():
+      if not t.install(os.path.join(self.base_path, 'backup')):
         raise ROSInstallException("Failed to install tree '%s'\n vcs not setup correctly"%t.get_path())
         
   # TODO go back and make sure that everything in options.path is described
@@ -252,8 +257,16 @@ def insert_source_yaml(source_yaml, source, observed_paths, aggregate_source_yam
             path = element[k]['local-name']
             if path in observed_paths:
               print "local-name '%s' multiply redefined, first definition in %s, second definition in %s"%(path, observed_paths[path], source)
-              overlapping = [element for element in aggregate_source_yaml if 'local-name' in element and element['local-name'] == path]
+              overlapping = []
+              for agel in aggregate_source_yaml:
+                for vcs_type in agel:
+                  for param in agel[vcs_type]:
+                    #print "param", param
+                    if param == "local-name" and agel[vcs_type]['local-name'] == path:
+                      overlapping.append(agel)
+              #print "OVERLAPPING", overlapping
               for ol in overlapping:
+                #print "removing: ", ol
                 aggregate_source_yaml.remove(ol)
 
             observed_paths[path] = source
