@@ -21,6 +21,8 @@ import sys
 import xml.dom.minidom #import parse
 from optparse import OptionParser
 import yaml
+import shutil
+import datetime
 
 import rosinstall.helpers
 from rosinstall.vcs import svn, bzr, git
@@ -43,6 +45,14 @@ class ConfigElement:
     raise NotImplementedError, "ConfigElement get_ros_path unimplemented"
   def get_versioned_yaml(self):
     raise NotImplementedError, "ConfigElement get_versioned_yaml unimplemented"
+  def backup(self, backup_path):
+    if not path:
+      raise ROSInstallException("Cannot install %s.  backup disabled."%self.path)
+    backup_path = os.path.join(backup_path, "%s"%datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")+os.path.basename(self.path))
+    print "Backing up %s to %s"%(self.path, backup_path)
+    shutil.move(self.path, backup_path)
+
+
 
 class OtherConfigElement(ConfigElement):
   def install(self):
@@ -230,6 +240,7 @@ def installed_uri(path):
     return None
   return rosinstall.helpers.conditional_abspath(f.readline())  # abspath here for backwards compatability with change to abspath in breadcrumb
 
+
 def insert_source_yaml(source_yaml, source, observed_paths, aggregate_source_yaml):
     if source_yaml:
       for element in source_yaml:
@@ -240,13 +251,16 @@ def insert_source_yaml(source_yaml, source, observed_paths, aggregate_source_yam
           if 'local-name' in element[k]:
             path = element[k]['local-name']
             if path in observed_paths:
-              return "local-name '%s' multiply defined, first definition in %s, second definition in %s"%(path, observed_paths[path], source)
-            else:
-              observed_paths[path] = source
+              print "local-name '%s' multiply redefined, first definition in %s, second definition in %s"%(path, observed_paths[path], source)
+              overlapping = [element for element in aggregate_source_yaml if 'local-name' in element and element['local-name'] == path]
+              for ol in overlapping:
+                aggregate_source_yaml.remove(ol)
+
+            observed_paths[path] = source
           else:  
             return "local-name must be defined for all targets, failed in %s"%source
       aggregate_source_yaml.extend(source_yaml)
-      #print "aggregated to", aggregate_source_yaml
+      
       return ''
 
 def rewrite_included_source(source_yaml, source_path):
