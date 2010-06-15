@@ -59,3 +59,5 @@ class VCSClient(vcs_base.VCSClientBase):
     return self.vcs.detect_presence()
   def get_vcs_type_name(self):
     return self.vcs.get_vcs_type_name()
+  def get_url(self):
+    return self.vcs.get_url()
