@@ -48,7 +48,7 @@ class ConfigElement:
   def backup(self, backup_path):
     if not backup_path:
       raise ROSInstallException("Cannot install %s.  backup disabled."%self.path)
-    backup_path = os.path.join(backup_path, "%s"%datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")+os.path.basename(self.path))
+    backup_path = os.path.join(backup_path, os.path.basename(self.path)+"_%s"%datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S"))
     print "Backing up %s to %s"%(self.path, backup_path)
     shutil.move(self.path, backup_path)
 
