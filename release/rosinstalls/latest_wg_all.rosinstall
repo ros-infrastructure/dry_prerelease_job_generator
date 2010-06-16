@@ -68,6 +68,9 @@
     uri: https://code.ros.org/svn/ros-pkg/stacks/navigation/tags/latest
     local-name: stacks/navigation
 - svn:
+    uri: https://code.ros.org/svn/ros-pkg/stacks/navigation_experimental/tags/latest
+    local-name: stacks/navigation_experimental
+- svn:
     uri: https://code.ros.org/svn/ros-pkg/stacks/physics_ode/tags/latest
     local-name: stacks/physics_ode
 - svn:
@@ -88,6 +91,9 @@
 - svn:
     uri: https://code.ros.org/svn/wg-ros-pkg/stacks/pr2_calibration/tags/latest
     local-name: stacks/pr2_calibration
+- svn:
+    uri: https://code.ros.org/svn/wg-ros-pkg/stacks/pr2_cockpit/tags/latest
+    local-name: stacks/pr2_cockpit
 - svn:
     uri: https://code.ros.org/svn/wg-ros-pkg/stacks/pr2_common/tags/latest
     local-name: stacks/pr2_common
@@ -131,6 +137,9 @@
     uri: https://code.ros.org/svn/wg-ros-pkg/stacks/pr2_robot/tags/latest
     local-name: stacks/pr2_robot
 - svn:
+    uri: https://code.ros.org/svn/wg-ros-pkg/stacks/pr2_self_test/tags/latest
+    local-name: stacks/pr2_self_test
+- svn:
     uri: https://code.ros.org/svn/wg-ros-pkg/stacks/pr2_simulator/tags/latest
     local-name: stacks/pr2_simulator
 - svn:
@@ -158,6 +167,12 @@
     uri: https://code.ros.org/svn/ros-pkg/stacks/sound_drivers/tags/latest
     local-name: stacks/sound_drivers
 - svn:
+    uri: https://code.ros.org/svn/wg-ros-pkg/stacks/texas_drivers/tags/latest
+    local-name: stacks/texas_drivers
+- svn:
+    uri: https://code.ros.org/svn/wg-ros-pkg/stacks/topological_navigation/tags/latest
+    local-name: stacks/topological_navigation
+- svn:
     uri: https://code.ros.org/svn/wg-ros-pkg/stacks/trajectory_filters/tags/latest
     local-name: stacks/trajectory_filters
 - svn:
@@ -175,6 +190,9 @@
 - svn:
     uri: https://code.ros.org/svn/wg-ros-pkg/stacks/wg_common/tags/latest
     local-name: stacks/wg_common
+- svn:
+    uri: https://code.ros.org/svn/wg-ros-pkg/stacks/wg_hardware_test/tags/latest
+    local-name: stacks/wg_hardware_test
 - svn:
     uri: https://code.ros.org/svn/wg-ros-pkg/stacks/wg_pr2_apps/tags/latest
     local-name: stacks/wg_pr2_apps
