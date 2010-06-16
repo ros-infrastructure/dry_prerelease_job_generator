@@ -39,7 +39,7 @@ class ConfigElement:
     self.path = path
   def get_path(self):
     return self.path
-  def install(self):
+  def install(self, backup_path):
     raise NotImplementedError, "ConfigElement install unimplemented"
   def get_ros_path(self):
     raise NotImplementedError, "ConfigElement get_ros_path unimplemented"
@@ -55,7 +55,7 @@ class ConfigElement:
 
 
 class OtherConfigElement(ConfigElement):
-  def install(self):
+  def install(self, backup_path):
     return True
 
   def get_ros_path(self):
