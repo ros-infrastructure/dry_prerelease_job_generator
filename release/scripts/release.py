@@ -43,9 +43,12 @@ def get_version(name, source_url):
 
     import re
     import urllib2
-    f = urllib2.urlopen(source_url)
-    text = f.read()
-    f.close()
+    try:
+        f = urllib2.urlopen(source_url)
+        text = f.read()
+        f.close()
+    except urllib2.HTTPError:
+        raise ReleaseException("failed to fetch CMakeLists.txt for stack.\nA common cause is the '_rules' are not set correctly for this stack.\nThe URL was %s"%source_url)
     
     for l in text.split('\n'):
         if l.strip().startswith('rosbuild_make_distribution'):
