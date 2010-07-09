@@ -22,3 +22,6 @@
 - svn:
     uri: https://code.ros.org/svn/wg-ros-pkg/stacks/pr2_simulator/tags/cturtle
     local-name: stacks/pr2_simulator
+- svn:
+    uri: https://code.ros.org/svn/wg-ros-pkg/stacks/web_interface/tags/cturtle
+    local-name: stacks/web_interface

@@ -71,6 +71,9 @@
     uri: https://code.ros.org/svn/ros-pkg/stacks/navigation_experimental/tags/cturtle
     local-name: stacks/navigation_experimental
 - svn:
+    uri: https://code.ros.org/svn/wg-ros-pkg/stacks/people/tags/cturtle
+    local-name: stacks/people
+- svn:
     uri: https://code.ros.org/svn/ros-pkg/stacks/physics_ode/tags/cturtle
     local-name: stacks/physics_ode
 - svn:
