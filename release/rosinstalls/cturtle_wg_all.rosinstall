@@ -29,6 +29,9 @@
     uri: https://code.ros.org/svn/ros-pkg/stacks/geometry/tags/cturtle
     local-name: stacks/geometry
 - svn:
+    uri: https://code.ros.org/svn/ros-pkg/stacks/graph_mapping/tags/cturtle
+    local-name: stacks/graph_mapping
+- svn:
     uri: https://code.ros.org/svn/ros-pkg/stacks/image_common/tags/cturtle
     local-name: stacks/image_common
 - svn:
