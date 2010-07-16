@@ -83,6 +83,9 @@
     uri: https://code.ros.org/svn/ros/stacks/ros_realtime/tags/cturtle
     local-name: stacks/ros_realtime
 - svn:
+    uri: https://code.ros.org/svn/ros-pkg/stacks/slam_karto/tags/cturtle
+    local-name: stacks/slam_karto
+- svn:
     uri: https://code.ros.org/svn/wg-ros-pkg/stacks/sql_database/tags/cturtle
     local-name: stacks/sql_database
 - svn:
