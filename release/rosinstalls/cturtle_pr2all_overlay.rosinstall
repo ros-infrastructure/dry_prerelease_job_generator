@@ -92,6 +92,9 @@
     uri: https://code.ros.org/svn/wg-ros-pkg/stacks/trajectory_filters/tags/cturtle
     local-name: stacks/trajectory_filters
 - svn:
+    uri: https://code.ros.org/svn/ros-pkg/stacks/vslam/tags/cturtle
+    local-name: stacks/vslam
+- svn:
     uri: https://code.ros.org/svn/wg-ros-pkg/stacks/wg_common/tags/cturtle
     local-name: stacks/wg_common
 - svn:

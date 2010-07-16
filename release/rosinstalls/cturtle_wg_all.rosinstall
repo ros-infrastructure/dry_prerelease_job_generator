@@ -98,6 +98,9 @@
     uri: https://code.ros.org/svn/wg-ros-pkg/stacks/pr2_calibration/tags/cturtle
     local-name: stacks/pr2_calibration
 - svn:
+    uri: https://code.ros.org/svn/wg-ros-pkg/stacks/pr2_cockpit/tags/cturtle
+    local-name: stacks/pr2_cockpit
+- svn:
     uri: https://code.ros.org/svn/wg-ros-pkg/stacks/pr2_common/tags/cturtle
     local-name: stacks/pr2_common
 - svn:
@@ -205,6 +208,9 @@
 - svn:
     uri: https://code.ros.org/svn/ros-pkg/stacks/visualization_common/tags/cturtle
     local-name: stacks/visualization_common
+- svn:
+    uri: https://code.ros.org/svn/ros-pkg/stacks/vslam/tags/cturtle
+    local-name: stacks/vslam
 - svn:
     uri: https://code.ros.org/svn/wg-ros-pkg/stacks/web_interface/tags/cturtle
     local-name: stacks/web_interface
