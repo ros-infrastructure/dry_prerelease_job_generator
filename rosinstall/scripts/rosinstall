@@ -294,15 +294,6 @@ def rosinstall_main(argv):
     usage()
   args = argv[1:]
   parser = OptionParser(usage="usage: %prog PATH [URI] [options]", version="%prog 0.5.1")
-  parser.add_option("-u", "--update", dest="update", default=False,
-                    help="DEPRECATED: Behavior is default",
-                    action="store_true")
-  parser.add_option("-s", "--setup_file", dest="setup_file",
-                    metavar="DEPRECATED and IGNORED",
-                    help="DEPRECATED and IGNORED")
-  parser.add_option("-o", "--overlay", dest="overlay", default=False,
-                    help="DEPRECATED and IGNORED",
-                    action="store_true")
   parser.add_option("-n", "--nobuild", dest="nobuild", default=False,
                     help="skip the build step for the ROS stack",
                     action="store_true")
@@ -320,15 +311,6 @@ def rosinstall_main(argv):
   options.path = os.path.abspath(args[0])
 
   # Find out what the URI is (args, .rosinstall, or breadcrumb(for backwards compatability)
-
-  if options.update:
-    print "WARNING: update option is deprecated and will be ignored"
-  if options.setup_file:
-    print "WARNING: setup_file option is deprecated and will be ignored"
-  if options.overlay:
-    print "WARNING: overlay option is deprecated and will be ignored"
-
-
   config_uris = []
 
   if os.path.exists(os.path.join(options.path, ".rosinstall")):
