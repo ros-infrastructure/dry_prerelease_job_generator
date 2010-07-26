@@ -169,9 +169,71 @@ class RosinstallCommandlineOverlays(unittest.TestCase):
         shutil.rmtree(directory)
         self.directories.pop("tutorials2")
 
+class RosinstallOptionsTest(unittest.TestCase):
+
+    def setUp(self):
+        #self.rosinstall_tempfile = tempfile.NamedTemporaryFile(mode='a+b')
+        self.rosinstall_fn = ["rosrun", "rosinstall", "rosinstall"]
+        #urllib.urlretrieve("https://code.ros.org/svn/ros/installers/trunk/rosinstall/rosinstall2", self.rosinstall_fn)
+        #os.chmod(self.rosinstall_fn, stat.S_IRWXU)
+        self.directories = {}
+
+
+    def tearDown(self):
+        for d in self.directories:
+            shutil.rmtree(self.directories[d])
+        #os.remove(self.rosinstall_fn)
+
+
+    def test_rosinstall_delete_changes(self):
+        directory = tempfile.mkdtemp()
+        self.directories["delete"] = directory
+        cmd = self.rosinstall_fn
+        cmd.extend([directory, os.path.join(roslib.packages.get_pkg_dir("test_rosinstall"), "rosinstalls", "simple.rosinstall"), "-n"])
+        self.assertEqual(0,subprocess.call(cmd))
+
+        cmd.extend([directory, os.path.join(roslib.packages.get_pkg_dir("test_rosinstall"), "rosinstalls", "simple_changed_uri.rosinstall"), "--delete-changed-uri", "-n"])
+        self.assertEqual(0,subprocess.call(cmd))
+
+        shutil.rmtree(directory)
+        self.directories.pop("delete")
+
+    def test_rosinstall_abort_changes(self):
+        directory = tempfile.mkdtemp()
+        self.directories["abort"] = directory
+        cmd = self.rosinstall_fn
+        cmd.extend([directory, os.path.join(roslib.packages.get_pkg_dir("test_rosinstall"), "rosinstalls", "simple.rosinstall"), "-n"])
+        self.assertEqual(0,subprocess.call(cmd))
+
+        cmd.extend([directory, os.path.join(roslib.packages.get_pkg_dir("test_rosinstall"), "rosinstalls", "simple_changed_uri.rosinstall"), "--abort-changed-uri", "-n"])
+        self.assertEqual(1,subprocess.call(cmd))
+
+        shutil.rmtree(directory)
+        self.directories.pop("abort")
+
+    def test_rosinstall_backup_changes(self):
+        directory = tempfile.mkdtemp()
+        self.directories["backup"] = directory
+        cmd = self.rosinstall_fn
+        cmd.extend([directory, os.path.join(roslib.packages.get_pkg_dir("test_rosinstall"), "rosinstalls", "simple.rosinstall"), "-n"])
+        self.assertEqual(0,subprocess.call(cmd))
+
+        directory1 = tempfile.mkdtemp()
+        self.directories["backup1"] = directory1
+        cmd.extend([directory, os.path.join(roslib.packages.get_pkg_dir("test_rosinstall"), "rosinstalls", "simple_changed_uri.rosinstall"), "--backup-changed-uri=%s"%directory1, "-n"])
+        self.assertEqual(0,subprocess.call(cmd))
+
+        self.assertEqual(len(os.listdir(directory1)), 1)
+
+        shutil.rmtree(directory)
+        self.directories.pop("backup")
+        shutil.rmtree(directory1)
+        self.directories.pop("backup1")
 
 
 if __name__ == '__main__':
+    rostest.unitrun('test_rosinstall', 'test_commandline', RosinstallOptionsTest, coverage_packages=['rosinstall'])  
+    sys.exit(0)
     rostest.unitrun('test_rosinstall', 'test_commandline', RosinstallCommandlineTest, coverage_packages=['rosinstall'])  
     rostest.unitrun('test_rosinstall', 'test_commandline_overlay', RosinstallCommandlineOverlays, coverage_packages=['rosinstall'])  
 
