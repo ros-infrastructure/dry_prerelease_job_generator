@@ -39,7 +39,7 @@ class ConfigElement:
     self.path = path
   def get_path(self):
     return self.path
-  def install(self, backup_path):
+  def install(self, backup_path, mode):
     raise NotImplementedError, "ConfigElement install unimplemented"
   def get_ros_path(self):
     raise NotImplementedError, "ConfigElement get_ros_path unimplemented"
@@ -55,7 +55,7 @@ class ConfigElement:
 
 
 class OtherConfigElement(ConfigElement):
-  def install(self, backup_path):
+  def install(self, backup_path, mode):
     return True
 
   def get_ros_path(self):
@@ -76,17 +76,35 @@ class VCSConfigElement(ConfigElement):
     self.uri = uri
     self.version = version
 
-  def install(self, backup_path = None):
+  def install(self,  backup_path = None,mode = 'abort'):
     print "Updating %s to %s %s"%(self.path, self.uri, self.version)
     if not self.vcsc.path_exists():
       self.vcsc.checkout(self.uri, self.version)
     else:
       if not self.vcsc.detect_presence() or self.vcsc.get_url() != self.uri:
-        if not backup_path:
-          raise ROSInstallException("Directory '%s' already exists but is not of type %s"%(self.vcsc.get_path(), self.vcsc.get_vcs_type_name()))
-        else:
+        valid_modes = ['(d)elete', '(a)bort', '(b)ackup']
+        if mode == 'prompt':
+          mode_input = raw_input("%s does not have the same url as requested %s. %s: "%(self.path, self.uri, ", ".join(valid_modes)))
+          if mode_input == 'b' or mode_input == 'backup':
+            mode = 'backup'
+            backup_path = raw_input("Please enter backup pathname: ")
+          if mode_input == 'a' or mode_input =='abort':
+            mode = 'abort'
+          if mode_input == 'd' or mode_input =='delete':
+            mode = 'delete'            
+            
+        if mode == 'abort':
+          if not self.vcsc.detect_presence():
+            raise ROSInstallException("Directory '%s' already exists but is not of type %s"%(self.vcsc.get_path(), self.vcsc.get_vcs_type_name()))
+          else:
+            raise ROSInstallException("Directory '%s' already exists but is at url:%s not requested %s"%(self.vcsc.get_path(), self.vcsc.get_url(), self.uri))
+        elif mode == 'backup':
           self.backup(backup_path)
           self.vcsc.checkout(self.uri, self.version)
+        elif mode == 'delete':
+          shutil.rmtree(self.path)
+          self.vcsc.checkout(self.uri, self.version)
+
       self.vcsc.update(self.version)
     return True
   
@@ -187,11 +205,11 @@ class Config:
     f.write(yaml.safe_dump(self.source))
     f.close()
     
-  def execute_install(self):
+  def execute_install(self, backup_path, mode):
     if not os.path.exists(self.base_path):
       os.mkdir(self.base_path)
     for t in self.trees:
-      if not t.install(os.path.join(self.base_path, 'backup')):
+      if not t.install(os.path.join(self.base_path, backup_path), mode):
         raise ROSInstallException("Failed to install tree '%s'\n vcs not setup correctly"%t.get_path())
         
   # TODO go back and make sure that everything in options.path is described
@@ -300,12 +318,38 @@ def rosinstall_main(argv):
   parser.add_option("--rosdep-yes", dest="rosdep_yes", default=False,
                     help="Pass through --rosdep-yes to rosmake", 
                     action="store_true")
+
+  parser.add_option("--delete-changed-uris", dest="delete_changed", default=False,
+                    help="Delete the local copy of a directory before changing uri.", 
+                    action="store_true")
+  parser.add_option("--abort-changed-uris", dest="abort_changed", default=False,
+                    help="Abort if changed uri detected", 
+                    action="store_true")
+  parser.add_option("--backup-changed-uris", dest="backup_changed", default='',
+                    help="backup the local copy of a directory before changing uri to this directory.", 
+                    action="store")
+
   parser.add_option("--generate-versioned-rosinstall", dest="generate_versioned", default=None,
                     help="generate a versioned rosintall file", action="store")
   (options, args) = parser.parse_args(args)
     
   if len(args) < 1:
     parser.error("rosinstall requires at least 1 arguments")
+
+  mode = 'prompt'
+  if options.delete_changed:
+    mode = 'delete'
+  if options.abort_changed:
+    if mode == 'delete':
+      parser.error("delete-changed-uris is mutually exclusive with abort-changed-uris")
+    mode = 'abort'
+  if options.backup_changed != '':
+    if mode == 'delete':
+      parser.error("delete-changed-uris is mutually exclusive with backup-changed-uris")
+    if mode == 'abort':
+      parser.error("abort-changed-uris is mutually exclusive with backup-changed-uris")
+    mode = 'backup'
+    
 
   # Get the path to the rosinstall 
   options.path = os.path.abspath(args[0])
@@ -371,7 +415,7 @@ def rosinstall_main(argv):
   ## Save .rosinstall 
   config.write_source()
   ## install or update each element
-  config.execute_install()
+  config.execute_install(options.backup_changed, mode)
   ## Generate setup.sh and save
   config.generate_setup()
   ## bootstrap the build if installing ros
