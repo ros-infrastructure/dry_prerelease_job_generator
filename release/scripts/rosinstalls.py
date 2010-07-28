@@ -14,7 +14,7 @@ import traceback
 
 import roslib.scriptutil
 import roslib.stacks
-from roslib2.distro import Distro, DistroException
+from roslib.distro import Distro, DistroException
 
 print "WARNING: this script requires ROS *trunk*"
 
