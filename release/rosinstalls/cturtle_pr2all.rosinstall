@@ -47,6 +47,9 @@
     uri: https://code.ros.org/svn/ros-pkg/stacks/joystick_drivers/tags/cturtle
     local-name: stacks/joystick_drivers
 - svn:
+    uri: https://code.ros.org/svn/ros-pkg/stacks/joystick_drivers_tutorials/tags/cturtle
+    local-name: stacks/joystick_drivers_tutorials
+- svn:
     uri: https://code.ros.org/svn/wg-ros-pkg/stacks/kinematics/tags/cturtle
     local-name: stacks/kinematics
 - svn:
@@ -97,6 +100,9 @@
 - svn:
     uri: https://code.ros.org/svn/wg-ros-pkg/stacks/pr2_calibration/tags/cturtle
     local-name: stacks/pr2_calibration
+- svn:
+    uri: https://code.ros.org/svn/wg-ros-pkg/stacks/pr2_cockpit/tags/cturtle
+    local-name: stacks/pr2_cockpit
 - svn:
     uri: https://code.ros.org/svn/wg-ros-pkg/stacks/pr2_common/tags/cturtle
     local-name: stacks/pr2_common

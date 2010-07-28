@@ -32,6 +32,9 @@
     uri: https://code.ros.org/svn/ros-pkg/stacks/joystick_drivers/tags/cturtle
     local-name: stacks/joystick_drivers
 - svn:
+    uri: https://code.ros.org/svn/ros-pkg/stacks/joystick_drivers_tutorials/tags/cturtle
+    local-name: stacks/joystick_drivers_tutorials
+- svn:
     uri: https://code.ros.org/svn/ros-pkg/stacks/laser_drivers/tags/cturtle
     local-name: stacks/laser_drivers
 - svn:
