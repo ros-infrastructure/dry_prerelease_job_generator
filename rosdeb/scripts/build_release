@@ -226,7 +226,7 @@ def _build_command(argv):
 def setup_file_text(ros_root, package_path):
   return """export ROS_ROOT=%(ros_root)s
 export PATH=${ROS_ROOT}/bin:${PATH}
-export PYTHONPATH=${ROS_ROOT}/core/roslib/src
+export PYTHONPATH=${PYTHONPATH}:${ROS_ROOT}/core/roslib/src
 export ROS_PACKAGE_PATH=%(package_path)s
 if [ ! \"$ROS_MASTER_URI\" ] ; then export ROS_MASTER_URI=http://localhost:11311 ; fi
 
