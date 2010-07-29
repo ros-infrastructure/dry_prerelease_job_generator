@@ -8,6 +8,12 @@
     uri: https://code.ros.org/svn/wg-ros-pkg/stacks/executive_python/tags/cturtle
     local-name: stacks/executive_python
 - svn:
+    uri: https://code.ros.org/svn/ros-pkg/stacks/executive_smach/tags/cturtle
+    local-name: stacks/executive_smach
+- svn:
+    uri: https://code.ros.org/svn/ros-pkg/stacks/executive_smach_tutorials/tags/cturtle
+    local-name: stacks/executive_smach_tutorials
+- svn:
     uri: https://code.ros.org/svn/ros-pkg/stacks/graph_mapping/tags/cturtle
     local-name: stacks/graph_mapping
 - svn:
