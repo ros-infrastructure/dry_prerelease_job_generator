@@ -29,9 +29,6 @@
     uri: https://code.ros.org/svn/ros-pkg/stacks/executive_smach/tags/cturtle
     local-name: stacks/executive_smach
 - svn:
-    uri: https://code.ros.org/svn/ros-pkg/stacks/executive_smach_tutorials/tags/cturtle
-    local-name: stacks/executive_smach_tutorials
-- svn:
     uri: https://code.ros.org/svn/ros-pkg/stacks/geometry/tags/cturtle
     local-name: stacks/geometry
 - svn:
