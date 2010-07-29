@@ -148,7 +148,7 @@ def create_wg_all(release_name, tmpl, checkouts):
 
 def copy_to_server(filename):
     try:
-        dest = os.path.join('wgs32:/var/www/www.ros.org/html/rosinstalls/%s'%os.path.basename(filename))
+        dest = os.path.join('wgs32.willowgarage.com:/var/www/www.ros.org/html/rosinstalls/%s'%os.path.basename(filename))
         cmds = [['scp', filename, dest]]
         if not roslib.scriptutil.ask_and_call(cmds):    
             print "create_rosinstall will not copy the rosinstall to wgs32"
