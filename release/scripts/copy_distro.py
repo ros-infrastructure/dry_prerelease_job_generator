@@ -14,8 +14,8 @@ import traceback
 
 import roslib.scriptutil
 
-from roslib2.vcs.svn import SVNClient
-from roslib2.distro import Distro, DistroException
+from roslib.vcs.svn import SVNClient
+from roslib.distro import Distro, DistroException
 
 print "WARNING: this script requires ROS 1.1+"
 
