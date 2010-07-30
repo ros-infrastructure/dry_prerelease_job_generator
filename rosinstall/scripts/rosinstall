@@ -83,7 +83,7 @@ class VCSConfigElement(ConfigElement):
     else:
       if not self.vcsc.detect_presence() \
             or self.vcsc.get_url() != self.uri \
-            or (self.vcsc.get_vcs_type() == 'git' \
+            or (self.vcsc.get_vcs_type_name() == 'git' \
                   and self.vcsc.get_version() != self.version):
         valid_modes = ['(d)elete', '(a)bort', '(b)ackup']
         if mode == 'prompt':
