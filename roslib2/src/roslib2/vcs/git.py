@@ -40,7 +40,10 @@ import subprocess
 import os
 import vcs_base
 
+branch_name = "rosinstall_auto_branch"
+
 class GITClient(vcs_base.VCSClientBase):
+
     def get_url(self):
         """
         @return: GIT URL of the directory path (output of git info command), or None if it cannot be determined
@@ -60,27 +63,32 @@ class GITClient(vcs_base.VCSClientBase):
             return False
             
         cmd = "git clone %s %s"%(url, self._path)
-        if not subprocess.check_call(cmd, shell=True) == 0:
+        if not subprocess.call(cmd, shell=True) == 0:
             return False
-        cmd = "git checkout %s -b rosinstall"%(version)
-        if not subprocess.check_call(cmd, cwd=self._path, shell=True) == 0:
+        cmd = "git checkout %s -b %s"%(version, branch_name)
+        if not subprocess.call(cmd, cwd=self._path, shell=True) == 0:
             return False
         return True
 
     def update(self, version=''):
         if not self.detect_presence():
             return False
-        cmd = "git checkout master"
-        if not subprocess.check_call(cmd, cwd=self._path, shell=True) == 0:
+        cmd = "git branch -D rosinstall_temp"
+        subprocess.call(cmd, cwd=self._path, shell=True)
+        cmd = "git checkout -f -b rosinstall_temp"
+        if not subprocess.call(cmd, cwd=self._path, shell=True) == 0:
             return False
         cmd = "git fetch"
-        if not subprocess.check_call(cmd, cwd=self._path, shell=True) == 0:
+        if not subprocess.call(cmd, cwd=self._path, shell=True) == 0:
             return False
-        cmd = "git branch -D rosinstall"
-        if not subprocess.check_call(cmd, cwd=self._path, shell=True) == 0:
+        cmd = "git branch -D %s"%branch_name
+        if not subprocess.call(cmd, cwd=self._path, shell=True) == 0:
             pass # OK to fail return False
-        cmd = "git checkout %s -b rosinstall"%(version)
-        if not subprocess.check_call(cmd, cwd=self._path, shell=True) == 0:
+        cmd = "git checkout %s -f -b %s"%(version, branch_name)
+        if not subprocess.call(cmd, cwd=self._path, shell=True) == 0:
+            return False
+        cmd = "git branch -D rosinstall_temp"
+        if not subprocess.call(cmd, cwd=self._path, shell=True) == 0:
             return False
         return True
         

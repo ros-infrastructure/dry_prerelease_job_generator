@@ -81,7 +81,10 @@ class VCSConfigElement(ConfigElement):
     if not self.vcsc.path_exists():
       self.vcsc.checkout(self.uri, self.version)
     else:
-      if not self.vcsc.detect_presence() or self.vcsc.get_url() != self.uri:
+      if not self.vcsc.detect_presence() \
+            or self.vcsc.get_url() != self.uri \
+            or (self.vcsc.get_vcs_type() == 'git' \
+                  and self.vcsc.get_version() != self.version):
         valid_modes = ['(d)elete', '(a)bort', '(b)ackup']
         if mode == 'prompt':
           mode_input = raw_input("%s does not have the same url as requested %s. %s: "%(self.path, self.uri, ", ".join(valid_modes)))
