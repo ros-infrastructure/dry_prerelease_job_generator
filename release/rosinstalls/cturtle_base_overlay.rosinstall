@@ -79,3 +79,6 @@
 - svn:
     uri: https://code.ros.org/svn/ros-pkg/stacks/visualization_common/tags/cturtle
     local-name: stacks/visualization_common
+- svn:
+    uri: https://code.ros.org/svn/ros-pkg/stacks/visualization_tutorials/tags/cturtle
+    local-name: stacks/visualization_tutorials

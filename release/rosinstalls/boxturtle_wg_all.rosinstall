@@ -74,9 +74,6 @@
     uri: https://code.ros.org/svn/wg-ros-pkg/stacks/pr2_apps/tags/boxturtle
     local-name: stacks/pr2_apps
 - svn:
-    uri: https://code.ros.org/svn/wg-ros-pkg/stacks/pr2_apps/tags/boxturtle
-    local-name: stacks/pr2_apps
-- svn:
     uri: https://code.ros.org/svn/wg-ros-pkg/stacks/pr2_arm_navigation/tags/boxturtle
     local-name: stacks/pr2_arm_navigation
 - svn:
@@ -143,6 +140,9 @@
     uri: https://code.ros.org/svn/ros-pkg/stacks/robot_model/tags/boxturtle
     local-name: stacks/robot_model
 - svn:
+    uri: https://code.ros.org/svn/ros/stacks/ros_tutorials/tags/boxturtle
+    local-name: stacks/ros_tutorials
+- svn:
     uri: https://code.ros.org/svn/ros-pkg/stacks/simulator_gazebo/tags/boxturtle
     local-name: stacks/simulator_gazebo
 - svn:
@@ -179,10 +179,10 @@
     uri: https://code.ros.org/svn/wg-ros-pkg/stacks/wifi_drivers/tags/boxturtle
     local-name: stacks/wifi_drivers
 - svn:
-    uri: https://code.ros.org/svn/wg-ros-pkg/branches/trunk_boxturtle
+    uri: https://code.ros.org/svn/wg-ros-pkg/trunk
     local-name: wg-ros-pkg-unreleased
 - svn:
-    uri: https://code.ros.org/svn/ros-pkg/branches/trunk_boxturtle
+    uri: https://code.ros.org/svn/ros-pkg/trunk
     local-name: ros-pkg-unreleased
 - svn:
     uri: https://code.ros.org/svn/ros/stacks/ros_experimental/tags/boxturtle
