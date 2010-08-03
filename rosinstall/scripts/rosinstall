@@ -298,7 +298,7 @@ def insert_source_yaml(source_yaml, source, observed_paths, aggregate_source_yam
       return ''
 
 def rewrite_included_source(source_yaml, source_path):
-  print "before", source_yaml
+  #print "before", source_yaml
   for dir in source_yaml:
     types = ['svn', 'bzr', 'hg', 'git', 'other']
     for t in types:
@@ -307,14 +307,14 @@ def rewrite_included_source(source_yaml, source_path):
         del dir[t]
         dir['other'] = {}
         dir['other']['local-name'] = local_path
-  print "after", source_yaml  
+  #print "after", source_yaml  
   return source_yaml
 
 def rosinstall_main(argv):
   if len(argv) < 2:
     usage()
   args = argv[1:]
-  parser = OptionParser(usage="usage: %prog PATH [URI] [options]", version="%prog 0.5.3")
+  parser = OptionParser(usage="usage: %prog PATH [URI] [options]", version="%prog 0.5.4")
   parser.add_option("-n", "--nobuild", dest="nobuild", default=False,
                     help="skip the build step for the ROS stack",
                     action="store_true")
