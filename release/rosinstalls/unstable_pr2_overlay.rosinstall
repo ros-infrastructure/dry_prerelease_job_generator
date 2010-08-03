@@ -1,0 +1,27 @@
+- svn:
+    uri: https://code.ros.org/svn/wg-ros-pkg/stacks/pr2_common/tags/unstable
+    local-name: stacks/pr2_common
+- svn:
+    uri: https://code.ros.org/svn/wg-ros-pkg/stacks/pr2_controllers/tags/unstable
+    local-name: stacks/pr2_controllers
+- svn:
+    uri: https://code.ros.org/svn/wg-ros-pkg/stacks/pr2_ethercat_drivers/tags/unstable
+    local-name: stacks/pr2_ethercat_drivers
+- svn:
+    uri: https://code.ros.org/svn/wg-ros-pkg/stacks/pr2_gui/tags/unstable
+    local-name: stacks/pr2_gui
+- svn:
+    uri: https://code.ros.org/svn/wg-ros-pkg/stacks/pr2_mechanism/tags/unstable
+    local-name: stacks/pr2_mechanism
+- svn:
+    uri: https://code.ros.org/svn/wg-ros-pkg/stacks/pr2_power_drivers/tags/unstable
+    local-name: stacks/pr2_power_drivers
+- svn:
+    uri: https://code.ros.org/svn/wg-ros-pkg/stacks/pr2_robot/tags/unstable
+    local-name: stacks/pr2_robot
+- svn:
+    uri: https://code.ros.org/svn/wg-ros-pkg/stacks/pr2_simulator/tags/unstable
+    local-name: stacks/pr2_simulator
+- svn:
+    uri: https://code.ros.org/svn/wg-ros-pkg/stacks/web_interface/tags/unstable
+    local-name: stacks/web_interface
