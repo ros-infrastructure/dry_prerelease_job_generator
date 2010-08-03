@@ -99,9 +99,6 @@ def main():
             filename = os.path.join(rosinstall_dir, '%s_%s_overlay.rosinstall'%(release_name, name))
             variant_rosinstalls.append((filename, text))
 
-        filename = os.path.join(rosinstall_dir, '%s_wg_all.rosinstall'%(release_name))
-        variant_rosinstalls.append((filename, create_wg_all(release_name, tmpl, checkouts)))
-        
         # output rosinstalls
         for filename, text in variant_rosinstalls:
             d = os.path.dirname(filename)
@@ -116,35 +113,6 @@ def main():
         print >> sys.stderr, "ERROR: %s"%str(e)
         sys.exit(1)
 
-def create_wg_all(release_name, tmpl, checkouts):
-    # create the wg_all rosinstall
-    local_name = 'ros'
-    if release_name == 'boxturtle':
-        uri = 'https://code.ros.org/svn/ros/stacks/ros/branches/ros-1.0/'
-    else:
-        uri = checkouts['ros']
-    text_extended = tmpl%locals()
-
-    stack_names = sorted(checkouts.keys())
-    for stack_name in stack_names:
-        uri = checkouts[stack_name]
-        if stack_name == 'ros':
-            continue
-        else:
-            local_name = "stacks/%s"%stack_name
-        text_extended += tmpl%locals()
-
-    text_extended += """- svn:
-    uri: https://code.ros.org/svn/wg-ros-pkg/trunk
-    local-name: wg-ros-pkg-unreleased
-- svn:
-    uri: https://code.ros.org/svn/ros-pkg/trunk
-    local-name: ros-pkg-unreleased
-- svn:
-    uri: https://code.ros.org/svn/ros/stacks/ros_experimental/trunk
-    local-name: ros-experimental-trunk
-"""
-    return text_extended
 
 def copy_to_server(filename):
     try:
