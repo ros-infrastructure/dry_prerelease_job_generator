@@ -41,11 +41,14 @@ def main():
         for stack_name, stack in from_distro.stacks.iteritems():
             #if not stack_name in ['navigation', 'navigation_experimental', 'pr2_ethercat_drivers', 'pr2_robot', 'vision_opencv', 'web_interface']:
             #    continue
+            print "checking", stack_name
             from_uri = stack.distro_svn
             to_uri = to_distro.stacks[stack_name].distro_svn
             if not release.svn_url_exists(to_uri):
-                #cmds.append(['svn', 'rm', '-m', "resyncing from latest", to_uri]) 
-                cmds.append(['svn', 'cp', '-m', 'copying from %s to %s'%(from_release_name, to_release_name), from_uri, to_uri]) 
+                cmds.append(['svn', 'cp', '-m', 'copying from %s to %s'%(from_release_name, to_release_name), from_uri, to_uri])
+            else:
+                cmds.append(['svn', 'rm', '-m', "resyncing from latest", to_uri]) 
+                cmds.append(['svn', 'cp', '-m', 'copying from %s to %s'%(from_release_name, to_release_name), from_uri, to_uri])                
         
         if not hasattr(roslib.scriptutil, 'ask_and_call'):
             print >> sys.stderr, "this script only works with ROS 1.1+"
