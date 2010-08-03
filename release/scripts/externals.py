@@ -70,6 +70,8 @@ def main():
             external_uri = "https://code.ros.org/svn/wg-ros-pkg/externals/rosdoc"
             rosdoc_all += """ros-pkg-trunk https://code.ros.org/svn/ros-pkg/trunk
 wg-ros-pkg-trunk https://code.ros.org/svn/wg-ros-pkg/trunk
+ros-pkg-cturtle https://code.ros.org/svn/ros-pkg/branches/trunk_cturtle
+wg-ros-pkg-cturtle https://code.ros.org/svn/wg-ros-pkg/branches/trunk_cturtle
 """
             externals = (('rosdoc', rosdoc_all),)
         else:
