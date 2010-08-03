@@ -277,7 +277,7 @@ def insert_source_yaml(source_yaml, source, observed_paths, aggregate_source_yam
           if 'local-name' in element[k]:
             path = element[k]['local-name']
             if path in observed_paths:
-              print "local-name '%s' multiply redefined, first definition in %s, second definition in %s"%(path, observed_paths[path], source)
+              #print "local-name '%s' redefined, first definition in %s, second definition in %s"%(path, observed_paths[path], source)
               overlapping = []
               for agel in aggregate_source_yaml:
                 for vcs_type in agel:
