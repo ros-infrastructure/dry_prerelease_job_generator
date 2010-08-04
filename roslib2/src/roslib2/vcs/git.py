@@ -39,6 +39,8 @@ New in ROS C-Turtle.
 import subprocess
 import os
 import vcs_base
+import base64 
+import sys
 
 branch_name = "rosinstall_auto_branch"
 
@@ -66,6 +68,9 @@ class GITClient(vcs_base.VCSClientBase):
         if not subprocess.call(cmd, shell=True) == 0:
             return False
         cmd = "git checkout %s -b %s"%(version, branch_name)
+        if not self.is_hash(version):
+            cmd = cmd + " --track"
+            print "cmd", cmd
         if not subprocess.call(cmd, cwd=self._path, shell=True) == 0:
             return False
         return True
@@ -73,9 +78,15 @@ class GITClient(vcs_base.VCSClientBase):
     def update(self, version=''):
         if not self.detect_presence():
             return False
-        cmd = "git branch -D rosinstall_temp"
-        subprocess.call(cmd, cwd=self._path, shell=True)
-        cmd = "git checkout -f -b rosinstall_temp"
+        
+        ending = " --track"
+        # shortcut if version is the same as requested
+        if self.is_hash(version) :
+            ending = ""
+            if self.get_version() == version:
+                return True
+
+        cmd = "git checkout -f -b rosinstall_temp" 
         if not subprocess.call(cmd, cwd=self._path, shell=True) == 0:
             return False
         cmd = "git fetch"
@@ -84,7 +95,7 @@ class GITClient(vcs_base.VCSClientBase):
         cmd = "git branch -D %s"%branch_name
         if not subprocess.call(cmd, cwd=self._path, shell=True) == 0:
             pass # OK to fail return False
-        cmd = "git checkout %s -f -b %s"%(version, branch_name)
+        cmd = "git checkout %s -f -b %s"%(version, branch_name) + ending
         if not subprocess.call(cmd, cwd=self._path, shell=True) == 0:
             return False
         cmd = "git branch -D rosinstall_temp"
@@ -98,3 +109,25 @@ class GITClient(vcs_base.VCSClientBase):
     def get_version(self):
         output = subprocess.Popen(['git', 'log', "-1", "--format='%H'"], cwd= self._path, stdout=subprocess.PIPE).communicate()[0]
         return output.strip().strip("'")
+
+
+
+    def get_branch(self):
+        output = subprocess.Popen(['git', "branch"], cwd= self._path, stdout=subprocess.PIPE).communicate()
+        for l in output.split():
+            elems = l.split()
+            if len(elems) == 2 and elems[0] == '*':
+                return elems[1]
+        return None
+
+    def is_hash(self, hashstr):
+        """
+        Determine if the hashstr is a valid sha1 hash
+        """
+        if len(hashstr) == 40:
+            try:
+                base64.b64decode(hashstr)
+                return True
+            except Exception, ex:
+                pass
+        return False
