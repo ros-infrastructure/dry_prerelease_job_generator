@@ -42,6 +42,7 @@ import rostest
 
 import rosinstall.helpers
 
+
 class ConditionalAbspath(unittest.TestCase):
 
     def setUp(self):
@@ -101,14 +102,6 @@ class ConditionalAbspath(unittest.TestCase):
         y = rosinstall.helpers.get_yaml_from_uri(url)
         self.assertEqual(y, None)
 
-    def test_get_ros_root_from_file(self):
-        file = os.path.join(roslib.packages.get_pkg_dir("test_rosinstall"), "test", "example.sh")
-        self.assertEqual("/tmp/release/ros", rosinstall.helpers.get_ros_root_from_file(file))
-        
-#    def test_get_ros_root_from_bad_file(self):
-#        file = os.path.join(roslib.packages.get_pkg_dir("test_rosinstall"), "test", "bad_example.sh")
-#        self.assertEqual("", rosinstall.helpers.get_ros_root_from_file(file))
-        
         
 if __name__ == '__main__':
   rostest.unitrun('test_rosinstall', 'test_conditional_abspath', ConditionalAbspath, coverage_packages=['rosinstall'])  

@@ -233,7 +233,6 @@ class RosinstallOptionsTest(unittest.TestCase):
 
 if __name__ == '__main__':
     rostest.unitrun('test_rosinstall', 'test_commandline', RosinstallOptionsTest, coverage_packages=['rosinstall'])  
-    sys.exit(0)
     rostest.unitrun('test_rosinstall', 'test_commandline', RosinstallCommandlineTest, coverage_packages=['rosinstall'])  
     rostest.unitrun('test_rosinstall', 'test_commandline_overlay', RosinstallCommandlineOverlays, coverage_packages=['rosinstall'])  
 
