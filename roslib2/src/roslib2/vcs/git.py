@@ -79,28 +79,33 @@ class GITClient(vcs_base.VCSClientBase):
         if not self.detect_presence():
             return False
         
-        ending = " --track"
         # shortcut if version is the same as requested
         if self.is_hash(version) :
-            ending = ""
             if self.get_version() == version:
                 return True
 
-        cmd = "git checkout -f -b rosinstall_temp" 
-        if not subprocess.call(cmd, cwd=self._path, shell=True) == 0:
-            return False
-        cmd = "git fetch"
-        if not subprocess.call(cmd, cwd=self._path, shell=True) == 0:
-            return False
-        cmd = "git branch -D %s"%branch_name
-        if not subprocess.call(cmd, cwd=self._path, shell=True) == 0:
-            pass # OK to fail return False
-        cmd = "git checkout %s -f -b %s"%(version, branch_name) + ending
-        if not subprocess.call(cmd, cwd=self._path, shell=True) == 0:
-            return False
-        cmd = "git branch -D rosinstall_temp"
-        if not subprocess.call(cmd, cwd=self._path, shell=True) == 0:
-            return False
+            cmd = "git checkout -f -b rosinstall_temp" 
+            if not subprocess.call(cmd, cwd=self._path, shell=True) == 0:
+                return False
+            cmd = "git fetch"
+            if not subprocess.call(cmd, cwd=self._path, shell=True) == 0:
+                return False
+            cmd = "git branch -D %s"%branch_name
+            if not subprocess.call(cmd, cwd=self._path, shell=True) == 0:
+                pass # OK to fail return False
+            cmd = "git checkout %s -f -b %s"%(version, branch_name)
+            if not subprocess.call(cmd, cwd=self._path, shell=True) == 0:
+                return False
+            cmd = "git branch -D rosinstall_temp"
+            if not subprocess.call(cmd, cwd=self._path, shell=True) == 0:
+                return False
+        else:     # must be a branch name
+            if self.get_branch_parent() != version:
+                #cannot update if branch has changed
+                return False
+            cmd = "git pull"
+            if not subprocess.call(cmd, cwd=self._path, shell=True) == 0:
+                return False
         return True
         
     def get_vcs_type_name(self):
@@ -113,12 +118,24 @@ class GITClient(vcs_base.VCSClientBase):
 
 
     def get_branch(self):
-        output = subprocess.Popen(['git', "branch"], cwd= self._path, stdout=subprocess.PIPE).communicate()
-        for l in output.split():
+        output = subprocess.Popen(['git', "branch"], cwd= self._path, stdout=subprocess.PIPE).communicate()[0]
+        for l in output.split('\n'):
             elems = l.split()
             if len(elems) == 2 and elems[0] == '*':
                 return elems[1]
         return None
+
+    def get_branch_parent(self):
+        output = subprocess.Popen(['git', "config", "--get", "branch.%s.merge"%self.get_branch()], cwd= self._path, stdout=subprocess.PIPE).communicate()[0].strip()
+        if not output:
+            print "No output of get branch.%s.merge"%self.get_branch()
+            return None
+        elems = output.split('/')
+        if len(elems) != 3 or elems[0] != 'refs' or elems[1] != 'heads':
+            print "elems improperly formatted", elems
+            return None
+        else:
+            return elems[2]
 
     def is_hash(self, hashstr):
         """

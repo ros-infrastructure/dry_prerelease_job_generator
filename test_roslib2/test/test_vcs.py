@@ -199,82 +199,6 @@ class BZRClientTest(unittest.TestCase):
         self.directories.pop(subdir)
 
 
-class GITClientTest(unittest.TestCase):
-
-    def setUp(self):
-        self.directories = {}
-        directory = tempfile.mkdtemp()
-        name = "setUp"
-        self.directories[name] = directory
-        self.readonly_url = "http://github.com/ipa320/care-o-bot.git"
-        self.readonly_version = "d68b7ead0614228a2a352330aad17b617cac4c84"
-        self.readonly_path = os.path.join(directory, "readonly")
-        gitc = git.GITClient(self.readonly_path)
-        self.assertTrue(gitc.checkout(self.readonly_url, self.readonly_version))
-
-    def tearDown(self):
-        for d in self.directories:
-            shutil.rmtree(self.directories[d])
-
-    def test_get_url_by_reading(self):
-        gitc = git.GITClient(self.readonly_path)
-        self.assertTrue(gitc.path_exists())
-        self.assertTrue(gitc.detect_presence())
-        self.assertEqual(gitc.get_url(), self.readonly_url)
-        self.assertEqual(gitc.get_version(), self.readonly_version)
-
-
-    def test_get_type_name(self):
-        local_path = "/tmp/dummy"
-        gitc = git.GITClient(local_path)
-        self.assertEqual(gitc.get_vcs_type_name(), 'git')
-
-    def test_checkout(self):
-        directory = tempfile.mkdtemp()
-        self.directories["checkout_test"] = directory
-        local_path = os.path.join(directory, "ros")
-        url = "http://github.com/ipa320/care-o-bot.git"
-        gitc = git.GITClient(local_path)
-        self.assertFalse(gitc.path_exists())
-        self.assertFalse(gitc.detect_presence())
-        self.assertFalse(gitc.detect_presence())
-        self.assertTrue(gitc.checkout(url))
-        self.assertTrue(gitc.path_exists())
-        self.assertTrue(gitc.detect_presence())
-        self.assertEqual(gitc.get_path(), local_path)
-        self.assertEqual(gitc.get_url(), url)
-
-        #self.assertEqual(gitc.get_version(), '-r*')
-        
-
-        shutil.rmtree(directory)
-        self.directories.pop("checkout_test")
-
-    def test_checkout_specific_version_and_update(self):
-        directory = tempfile.mkdtemp()
-        subdir = "checkout_specific_version_test"
-        self.directories[subdir] = directory
-        local_path = os.path.join(directory, "ros")
-        url = "http://github.com/ipa320/care-o-bot.git"
-        version = "d68b7ead0614228a2a352330aad17b617cac4c84"
-        gitc = git.GITClient(local_path)
-        self.assertFalse(gitc.path_exists())
-        self.assertFalse(gitc.detect_presence())
-        self.assertFalse(gitc.detect_presence())
-        self.assertTrue(gitc.checkout(url, version))
-        self.assertTrue(gitc.path_exists())
-        self.assertTrue(gitc.detect_presence())
-        self.assertEqual(gitc.get_path(), local_path)
-        self.assertEqual(gitc.get_url(), url)
-        self.assertEqual(gitc.get_version(), version)
-        
-        new_version = '1fd87b781c64de366c6a6d4be8cdc76fbee5541e'
-        self.assertTrue(gitc.update(new_version))
-        self.assertEqual(gitc.get_version(), new_version)
-        
-        shutil.rmtree(directory)
-        self.directories.pop(subdir)
-
 
 class HGClientTest(unittest.TestCase):
 
@@ -354,7 +278,6 @@ class HGClientTest(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    rostest.unitrun('test_roslib2', 'test_vcs', GITClientTest, coverage_packages=['roslib2'])  
     rostest.unitrun('test_roslib2', 'test_vcs', BZRClientTest, coverage_packages=['roslib2'])  
     rostest.unitrun('test_roslib2', 'test_vcs', SVNClientTest, coverage_packages=['roslib2'])  
     rostest.unitrun('test_roslib2', 'test_vcs', HGClientTest,  coverage_packages=['roslib2'])  
