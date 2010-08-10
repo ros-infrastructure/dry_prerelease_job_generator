@@ -1,9 +1,14 @@
 #!/usr/bin/env bash
 
 # Argument are DISTRO, ARCH, ROSDISTRO
-DISTRO= $1
+DISTRO=$1
 ARCH=$2
 ROSDISTRO=$3
+
+echo "I have distro, arch, rosdistro:"
+echo $DISTRO
+echo $ARCH
+echo $ROSDISTRO
 
 set -o errexit
 source /tmp/ros-release/setup.sh
