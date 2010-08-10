@@ -1,4 +1,10 @@
 #!/usr/bin/env bash
+
+# Argument are DISTRO, ARCH, ROSDISTRO
+DISTRO= $1
+ARCH=$2
+ROSDISTRO=$3
+
 set -o errexit
 source /tmp/ros-release/setup.sh
 rosrun rosdeb build_release checkout $ROSDISTRO -r -w /opt/ros/cturtle
