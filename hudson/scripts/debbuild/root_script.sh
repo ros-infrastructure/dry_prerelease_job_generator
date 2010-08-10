@@ -5,7 +5,7 @@ DISTRO=$1
 ARCH=$2
 ROSDISTRO=$3
 
-echo "I have distro, arch, rosdistro:"
+echo "root_script has distro, arch, rosdistro:"
 echo $DISTRO
 echo $ARCH
 echo $ROSDISTRO

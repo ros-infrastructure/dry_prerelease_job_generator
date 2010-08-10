@@ -18,7 +18,7 @@ def execute_chroot(cmd, path, user='root'):
     else:
         full_cmd = ['sudo', 'chroot', path, 'su', user, '-c', '%s'%" ".join(cmd)]
     print "Executing", full_cmd
-    subprocess.check_call(full_cmd)
+    subprocess.check_call(full_cmd, env=os.environ.copy())
     
 
 
