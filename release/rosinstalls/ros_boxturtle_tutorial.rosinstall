@@ -1,6 +1,0 @@
-- svn:
-    uri: https://code.ros.org/svn/ros/stacks/ros_tutorials/branches/boxturtle
-    local-name: ros_tutorials
-- svn:
-    uri: https://code.ros.org/svn/ros-pkg/branches/trunk_boxturtle/stacks/ros_pkg_tutorials/
-    local-name: ros_pkg_tutorials

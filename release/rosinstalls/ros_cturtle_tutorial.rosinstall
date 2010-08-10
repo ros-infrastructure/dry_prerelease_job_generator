@@ -1,6 +1,0 @@
-- svn:
-    uri: https://code.ros.org/svn/ros/stacks/ros_tutorials/trunk
-    local-name: ros_tutorials
-- svn:
-    uri: https://code.ros.org/svn/ros-pkg/trunk/stacks/ros_pkg_tutorials/
-    local-name: ros_pkg_tutorials
