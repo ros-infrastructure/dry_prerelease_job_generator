@@ -7,6 +7,8 @@ chmod 755 /tmp/rosinstall
 /tmp/rosinstall --rosdep-yes /tmp/ros-release http://www.ros.org/rosinstalls/ros-release.rosinstall
 echo export JAVA_HOME=/usr/lib/jvm/java-6-sun >> /tmp/ros-release/setup.sh
 
+echo "setup)script env"
+echo env
 echo "setup_script has distro, arch, rosdistro:"
 echo $DISTRO
 echo $ARCH
