@@ -320,7 +320,7 @@ def run_chroot(options, path, workspace):
             cmd = ("chmod +x %s"%remote_script_name).split()
             chrti.execute(cmd)
             cmd = [remote_script_name]
-            print "env", "%s"%os.environ()
+            print "env: %s"%os.environ.copy()
             chrti.execute(cmd, user="rosbuild")
             
         else:
