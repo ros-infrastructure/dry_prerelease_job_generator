@@ -30,7 +30,7 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 #
-# Revision $Id: distro.py 9094 2010-04-15 00:48:13Z kwc $
+# Revision $Id: distro.py 10301 2010-07-09 01:21:23Z kwc $
 
 """
 Library for process rosdistro files.
@@ -171,30 +171,33 @@ class DistroStack(object):
 
     def __init__(self, stack_name, rules, stack_version, release_name, release_version):
         self.name = stack_name
-        self.version = stack_version
+        self.release_name = release_name
+        self.release_version = release_version        
 
-        #debian-specific stuff
-        #TODO: move to rosdeb
-        try:
-            self.debian_version = debianize_version(stack_version, release_version)
-            self.debian_name = debianize_name("ros-%s-%s"%(release_name,stack_name))
-        except DistroException:
-            # ignore on non debian systems. This really belongs in an extension
-            self.debian_version = self.debian_name = None
+        self._rules = rules
+        
+        # for password-protected repos
+        self.user_svn = rules.get('user-svn', None)
+        self.pass_svn = rules.get('pass-svn', None)
+    
+        self.update_version(stack_version)
+
+    def update_version(self, stack_version):
+        rules = self._rules
+        stack_name = self.name
+        release_name = self.release_name
+        release_version = self.release_version
+        self.version = stack_version
 
         #rosdistro key
         self.dev_svn = expand_rule(rules['dev-svn'], stack_name, stack_version, release_name)
         self.distro_svn = expand_rule(rules['distro-svn'], stack_name, stack_version, release_name)
         self.release_svn = expand_rule(rules['release-svn'], stack_name, stack_version, release_name)
-        # for password-protected repos
-        self.user_svn = rules.get('user-svn', None)
-        self.pass_svn = rules.get('pass-svn', None)
-    
         if 'source-tarball' in rules:
             self.source_tarball = expand_rule(rules['source-tarball'], stack_name, stack_version, release_name)
         else:
             self.source_tarball = None
-
+        
     def __eq__(self, other):
         if not isinstance(other, DistroStack):
             return False
@@ -299,38 +302,3 @@ class Distro(object):
         self.ros = self.stacks.get('ros', None)
 
     
-################################################################################
-# DEBIAN-SPECIFIC STUFF
-# TODO: move to rosdeb
-
-_ubuntu_map = { '10.10': 'mighty', '10.04': 'lucid', '9.10': 'karmic', '9.04': 'jaunty', '8.10': 'intrepid', '8.04': 'hardy'}
-def ubuntu_release():
-    """
-    WARNING: this can only be called on an Ubuntu system
-    """
-    if not os.path.isfile('/etc/issue'):
-        raise DistroException("this is not an ubuntu system")        
-    f = open('/etc/issue')
-    for s in f:
-        if s.startswith('Ubuntu'):
-            v = s.split()[1]
-            v = '.'.join(v.split('.')[:2])
-        try:
-            return _ubuntu_map[v]
-        except KeyError:
-            raise DistroException("unrecognized ubuntu version %s" % v)
-    raise DistroException("could not parse ubuntu release version")
-
-def debianize_name(name):
-    """
-    Convert ROS stack name to debian conventions (dashes, not underscores)
-    """
-    return name.replace('_', '-')
-
-def debianize_version(stack_version, distro_version, ubuntu_rel=None):
-    """
-    WARNING: this can only be called on an Ubuntu system
-    """
-    if ubuntu_rel is None:
-        ubuntu_rel = ubuntu_release()
-    return stack_version+'-'+distro_version+'~%s'%ubuntu_rel
