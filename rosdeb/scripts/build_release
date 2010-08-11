@@ -46,7 +46,8 @@ from optparse import OptionParser
 import email
 import stat
 
-from roslib2.distro import DistroException, Distro, debianize_name, debianize_version, ubuntu_release
+# TODO: switch over to roslib2 + rosdeb
+from roslib.distro import DistroException, Distro, debianize_name, debianize_version, ubuntu_release
 
 NAME='build_release'
 
