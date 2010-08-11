@@ -223,6 +223,11 @@ def control_data(stack_name, stack_version, stack_file=None):
     # do deps in two parts as ros stack depends need to become version
     # locked later on due to lack of ABI compat
     metadata['depends'] = [d.stack for d in m.depends]
+
+    metadata['rosdeps'] = rosdeps = {}
+    for platform in platforms():
+        
+        rosdeps[platform] = stack_rosdeps(stack_name, platform)
     
     return metadata
 

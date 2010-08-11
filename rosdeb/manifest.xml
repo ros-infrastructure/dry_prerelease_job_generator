@@ -1,16 +1,23 @@
 <package>
   <description brief="rosdeb">
 
+     <p>
      Tools for creating debian packages from ROS stacks, plus managing a debian repository.
+     </p>     
+     <p>
+     rosdeb includes the BeautifulSoup library, which is released under the Python license.
+     </p>
 
   </description>
   <author>Jeremy Leibs, Ken Conley, Morgan Quigley</author>
-  <license>BSD</license>
+  <license>BSD, Python License</license>
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/rosdeb</url>
   <depend package="roslib2"/>
   <depend package="roslib"/>
+  <depend package="rosdep"/>
 
+  <rosdep name="python-yaml" />
 </package>
 
 

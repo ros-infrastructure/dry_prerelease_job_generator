@@ -33,6 +33,16 @@
 # Revision $Id$
 # $Author$
 
+import os
+
+
+import roslib.manifest
+import roslib.stack_manifest
+import roslib.packages
+import roslib.stacks
+
+from rosdep.core import RosdepLookupPackage, YamlCache
+
 def convert_html_to_text(d):
     """
     Convert a HTML description to plain text. This routine still has
@@ -48,12 +58,10 @@ def convert_html_to_text(d):
         for p in paragraphs:
             s = ''.join([str(x) for x in p.contents])+"\n"
             p.replaceWith(s)
-        # this logic is incorrect, it only handles one-level-deep nesting of tags
-        reduce = ['a', 'b', 'i', 'tt', 'strong', 'em', 'li']
-        for t in reduce:
-            tags = soup.findAll(t)
-            for x in tags:
-                x.replaceWith(x.string)
+        # replace all links tags with their link text. This is probably unnecessary
+        tags = soup.findAll('a')
+        for x in tags:
+            x.replaceWith(x.string)
 
         # findAll text strips remaining tags
         d = ''.join(soup.findAll(text=True))
@@ -78,29 +86,71 @@ def convert_html_to_text(d):
         last = x
     return d_reduced
 
-def stack_rosdeps(stack_name):
+# based on code in roslib.stacks
+def package_manifests_of(stack_dir):
     """
-    calculate dependencies of stack, including both ROS stacks and their rosdep dependencies
-    
-    @return: list of debian package deps
+    @return: list of package names and manifest file paths for stack
+      dir. These will be returned as a list of (name, path) pairs.
+    @rtype: [(str, str)]
     """
-    ros_root = roslib.rosenv.get_ros_root()
+    l = [os.path.join(stack_dir, d) for d in os.listdir(stack_dir)]
+    manifests = []
+    packages = []
+    while l:
+        d = l.pop()
+        if os.path.isdir(d):
+            if roslib.packages.is_pkg_dir(d):
+                p = os.path.basename(d)
+                m_file = os.path.join(d, 'manifest.xml')
+                # this is sometimes true if we've descended into a build directory
+                if not p in packages:
+                    packages.append(p)
+                    manifests.append((p, m_file))
+            elif os.path.exists(os.path.join(d, 'rospack_nosubdirs')):
+                # don't descend
+                pass
+            elif os.path.basename(d) not in ['build', '.svn', '.git']: #recurse
+                l.extend([os.path.join(d, e) for e in os.listdir(d)])
+    return manifests
 
+def stack_rosdeps(stack_name, stack_dir, ubuntu_platform):
+    """
+    Calculate dependencies of stack on an 'ubuntu' OS, including both
+    ROS stacks and their rosdep dependencies, for the specified
+    ubuntu release version.
+    
+    NOTE: one flaw in this implementation is that it uses the rosdep
+    view from the *active environment* to generate the rosdeps. It
+    does not generate them from specific versions of stacks. The hope
+    is that rosdeps improve monotonically over time, so that this will
+    not be a major issue.
+
+    @return: list of debian package deps
+    @rtype: [str]
+    """
+    
     # - implicit deps of all ROS packages
     deb_deps = ['libc6','build-essential','cmake','python-yaml','subversion']     
-    
-    pkgs = roslib.stacks.packages_of(stack_name)
-    if not pkgs:
-        return []
 
-    cmd = [os.path.join(ros_root, 'bin', 'rosdep'),'satisfy','--include_duplicates'] + pkgs
-    rosdep_script = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()[0]
-    
-    marker = "sudo apt-get install"
-    install_line = [s for s in rosdep_script.split('\n') if s.startswith(marker)]
-    deb_deps += install_line[0][len(marker):].split() if install_line else []
+    os = 'ubuntu'
+    yc = YamlCache(os, ubuntu_platform)
+
+    package_manifests = package_manifests_of(stack_dir)
+    for p, m_file in package_manifests:
+        m = roslib.manifest.parse_file(m_file)
+        rosdeps = [d.name for d in m.rosdeps]
+        if not rosdeps:
+            continue
+            
+        rdlp = RosdepLookupPackage(os, ubuntu_platform, p, yc)
+        for r in rosdeps:
+            value = rdlp.lookup_rosdep(r)
+            if '\n' in value:
+                raise Exception("cannot generate rosdeps for stack [%s] on platform [%s]:\n\trosdep [%s] has a script binding"%(stack_name, ubuntu_platform, r))
+            deb_deps.extend([x for x in value.split(' ') if x.strip()])
+
     return deb_deps
-
+        
 if __name__ == '__main__':
     # test out our HTML converter on all known stacks        
     import roslib.stacks
