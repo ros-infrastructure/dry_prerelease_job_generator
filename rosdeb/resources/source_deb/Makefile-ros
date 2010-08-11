@@ -1,0 +1,16 @@
+ROS_DISTRO_DIR_FINAL=/opt/ros/${ROS_DISTR_NAME}
+ROS_DISTRO_DIR=${ROS_DESTDIR}${ROS_DISTRO_DIR_FINAL}
+ROS_STACK_DIR=${ROS_DISTRO_DIR}/stacks
+ROS_STACK_DIR_FINAL=${ROS_DISTRO_DIR_FINAL}/stacks
+
+${ROS_DISTRO_DIR}/ros: ros-${ROS_STACK_VERSION}.md5 ../ros-${ROS_STACK_VERSION}.tar.bz2
+	md5sum -c ros-${ROS_STACK_VERSION}.md5 && (mkdir -p ${ROS_DISTRO_DIR} && cd ${ROS_DISTRO_DIR} && tar -xjf $(CURDIR)/../ros-${ROS_STACK_VERSION}.tar.bz2 && mv ros-${ROS_STACK_VERSION} ros)
+
+install: ${ROS_DISTRO_DIR}/ros
+	bash -c ". setup_deb.sh && cd ${ROS_DISTRO_DIR}/ros && make"
+	bash -c ". setup_deb.sh && rosmake ros -i"
+	cp setup.sh ${ROS_DISTRO_DIR}/
+	./fixrpath.py --path ${ROS_DISTRO_DIR}/ros ${ROS_DISTRO_DIR} ${ROS_DISTRO_DIR_FINAL}
+
+clean:
+
