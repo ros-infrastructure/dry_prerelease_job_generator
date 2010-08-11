@@ -45,6 +45,8 @@ import roslib.stacks
 
 from rosdep.core import RosdepLookupPackage, YamlCache
 
+IMPLICIT_DEPS = ['libc6','build-essential','cmake','python-yaml','subversion']
+
 def _text_only(soup):
     return ''.join(soup.findAll(text=True))
 
@@ -144,7 +146,7 @@ def stack_rosdeps(stack_name, stack_dir, ubuntu_platform):
     """
     
     # - implicit deps of all ROS packages
-    deb_deps = ['libc6','build-essential','cmake','python-yaml','subversion']     
+    deb_deps = IMPLICIT_DEPS[:]
 
     os = 'ubuntu'
     yc = YamlCache(os, ubuntu_platform)

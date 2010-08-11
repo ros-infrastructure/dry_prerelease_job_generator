@@ -71,7 +71,7 @@ class RosutilTest(unittest.TestCase):
         # stick to stacks that should have high confidence of resolving properly
         stacks = ['ros', 'common', 'common_msgs', 'driver_common', 'geometry', 'image_common', 'image_pipeline', 'joystick_drivers', 'navigation', 'sound_drivers', 'visualization', 'visualization_common']
 
-        base_reqd = ['libc6','build-essential','cmake','python-yaml','subversion']
+        base_reqd = rosdeb.rosutil.IMPLICIT_DEPS
         
         rosdeps = {}
         for ubuntu_platform in platforms:
@@ -101,5 +101,5 @@ class RosutilTest(unittest.TestCase):
                 self.assert_(r in rosdeps['9.04'][stack])
 
 if __name__ == '__main__':
-    rostest.unitrun('rosdeb', 'test_rosdeb_rosutil', RosutilTest, coverage_packages=['rosdeb'])
+    rostest.unitrun('rosdeb', 'test_rosdeb_rosutil', RosutilTest, coverage_packages=['rosdeb.rosutil'])
 
