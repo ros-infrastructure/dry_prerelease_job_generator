@@ -75,7 +75,7 @@ import os
 import sys
 import optparse
 
-from roslib2.distro import Distro
+from roslib.distro import Distro
 
 def print_usage():
     print "./checkrepo.py ros_distro_uri repo_uri"
