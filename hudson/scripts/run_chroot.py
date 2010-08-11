@@ -313,6 +313,13 @@ def run_chroot(options, path, workspace):
         cmd = "apt-get install -y --force-yes build-essential python-yaml cmake subversion wget python-setuptools".split()
         chrti.execute(cmd)
 
+        if options.arch in ['i386', 'i686']:
+
+          setarch = 'setarch %s'%(options.arch)
+        else:
+          setarch = ''
+
+
         if options.script:
             remote_script_name = os.path.join(chrti.mount_path, os.path.basename(options.script))
             cmd = ["sudo", "cp", options.script, chrti.ws_remote_path]
@@ -323,7 +330,9 @@ def run_chroot(options, path, workspace):
             cmd = ("chmod +x %s"%remote_script_name).split()
             chrti.execute(cmd)
             cmd = [remote_script_name]
-            print "env: %s"%os.environ.copy()
+            if options.arch in ['i386', 'i686']:
+                cmd.insert(0, options.arch)
+                cmd.insert(0, "setarch")
             chrti.execute(cmd, user="rosbuild")
             
         else:
@@ -339,10 +348,6 @@ def run_chroot(options, path, workspace):
             print chrti.execute(cmd)
 
             #cmd = ["su", "rosbuild", "-c", "export JOB_NAME=ros-boxturtle-amazon && export BUILD_NUMBER=1 && export HUDSON_URL=http://build.willowgarage.com && export WORKSPACE=/tmp/ros && cd %s && %s/hudson_helper --dir-test ros build"%(chrti.mount_path, chrti.mount_path)]
-            if options.arch in ['i386', 'i686']:
-              setarch = 'setarch %s'%(options.arch)
-            else:
-              setarch = ''
 
             cmd = ["bash", "-c", "export PATH=/usr/lib/ccache:$PATH && export CCACHE_DIR=%s &&export JOB_NAME=%s && export BUILD_NUMBER=%s && export HUDSON_URL=%s && export WORKSPACE=/tmp/ros && cd %s && %s %s/hudson_helper %s"%(chrti.ccache_dir, os.getenv('JOB_NAME'), os.getenv('BUILD_NUMBER'), os.getenv('HUDSON_URL'), chrti.mount_path, setarch, chrti.mount_path, options.hudson_args)]
             chrti.execute(cmd, user='rosbuild')
