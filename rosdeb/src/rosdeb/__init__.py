@@ -30,7 +30,7 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 #
-# Revision $Id: distro.py 10301 2010-07-09 01:21:23Z kwc $
+# Revision $Id$
 
 import os
 import sys
@@ -227,20 +227,3 @@ def control_data(stack_name, stack_version, stack_file=None):
     return metadata
 
 
-if __name__ == '__main__':
-    # test out our HTML converter on all known stacks        
-    import roslib.stacks
-    from roslib.stack_manifest import parse_file, stack_file
-    for stack_name in roslib.stacks.list_stacks():
-        if 0:
-            stack_xml = stack_file(stack_name)
-            m = roslib.stack_manifest.parse_file(stack_xml)
-            print '#' * 80
-            print m.description
-            print '---'
-            print convert_html_to_text(m.description)
-            print '---'
-        if 1:
-            print stack_name
-            print stack_rosdeps(stack_name)
-    
