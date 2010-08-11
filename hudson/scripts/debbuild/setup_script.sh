@@ -5,7 +5,7 @@ sudo apt-get install -y --force-yes build-essential python-yaml cmake subversion
 wget --no-check-certificate http://ros.org/rosinstall -O /tmp/rosinstall
 chmod 755 /tmp/rosinstall
 /tmp/rosinstall --rosdep-yes /tmp/ros-release http://www.ros.org/rosinstalls/ros-release.rosinstall
-echo export JAVA_HOME=/usr/lib/jvm/java-6-sun >> /tmp/ros-release/setup.sh
+echo "export JAVA_HOME=/usr/lib/jvm/java-6-sun" >> /tmp/ros-release/setup.sh
 
 echo "setup)script env"
 echo `env`
