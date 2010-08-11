@@ -41,6 +41,25 @@ import rostest
 
 class RosutilTest(unittest.TestCase):
   
+    def test_convert_html_to_text(self):
+        import roslib.stacks
+        from rosdeb.rosutil import convert_html_to_text
+        from roslib.stack_manifest import parse_file, stack_file
+        for stack_name in roslib.stacks.list_stacks():
+            stack_xml = stack_file(stack_name)
+            m = roslib.stack_manifest.parse_file(stack_xml)
+            converted = convert_html_to_text(m.description)
+            # some stacks do in fact have empty descriptions
+            if stack_name in ['ros', 'common_msgs', 'navigation', 'geometry']:
+                self.assert_(converted)
+                
+            # hard to actually validate output stable-y
+            if stack_name == 'ros_release':
+                self.assert_('* rosinstall' in converted, converted)
+                self.assert_('* Debian toolchains' in converted, converted)
+                self.assert_('p>' not in converted)                
+                self.assert_('<ul>' not in converted)                
+        
     def test_stack_rosdeps(self):
         import rosdeb
         from rosdeb.rosutil import stack_rosdeps

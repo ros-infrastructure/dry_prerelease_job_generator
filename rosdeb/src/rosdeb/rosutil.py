@@ -35,6 +35,8 @@
 
 import os
 
+if __name__ == '__main__':
+    import roslib; roslib.load_manifest('rosdeb')
 
 import roslib.manifest
 import roslib.stack_manifest
@@ -42,6 +44,9 @@ import roslib.packages
 import roslib.stacks
 
 from rosdep.core import RosdepLookupPackage, YamlCache
+
+def _text_only(soup):
+    return ''.join(soup.findAll(text=True))
 
 def convert_html_to_text(d):
     """
@@ -51,23 +56,32 @@ def convert_html_to_text(d):
     """
     # check for presence of tags
     if '<' in d:
-        from release.BeautifulSoup import BeautifulSoup
+        from rosdeb.BeautifulSoup import BeautifulSoup
         soup = BeautifulSoup(d)
-        # convert all paragraphs to line breaks
-        paragraphs = soup.findAll('p')
-        for p in paragraphs:
-            s = ''.join([str(x) for x in p.contents])+"\n"
-            p.replaceWith(s)
-        # replace all links tags with their link text. This is probably unnecessary
-        tags = soup.findAll('a')
+
+        # first, target formatting tags with a straight replace
+        for t in ['b', 'strong', 'em', 'i', 'tt', 'a']:
+            tags = soup.findAll(t)
+            for x in tags:
+                x.replaceWith(_text_only(x))
+                
+        # second, target low-level container tags
+        tags = soup.findAll('li')
         for x in tags:
-            x.replaceWith(x.string)
+            x.replaceWith('* '+_text_only(x)+'\n')
+
+        # convert all high-level containers to line breaks
+        for t in ['p', 'div']:
+            tags = soup.findAll(t)
+            for t in tags:
+                t.replaceWith(_text_only(t)+'\n')
 
         # findAll text strips remaining tags
         d = ''.join(soup.findAll(text=True))
         
-    # double-whitespace is meaningless in HTML, so now we need to reduce
-    #  - remove leading whitespace
+    # reduce the whitespace as the debian parsers have strict rules
+    # about what is a paragraph and what is verbose based on leading
+    # whitespace.
     d = '\n'.join([x.strip() for x in d.split('\n')])
 
     d_reduced = ''
@@ -152,19 +166,13 @@ def stack_rosdeps(stack_name, stack_dir, ubuntu_platform):
     return deb_deps
         
 if __name__ == '__main__':
-    # test out our HTML converter on all known stacks        
     import roslib.stacks
+    from rosdeb.rosutil import convert_html_to_text
     from roslib.stack_manifest import parse_file, stack_file
     for stack_name in roslib.stacks.list_stacks():
-        if 0:
-            stack_xml = stack_file(stack_name)
-            m = roslib.stack_manifest.parse_file(stack_xml)
-            print '#' * 80
-            print m.description
-            print '---'
-            print convert_html_to_text(m.description)
-            print '---'
-        if 1:
+        stack_xml = stack_file(stack_name)
+        m = roslib.stack_manifest.parse_file(stack_xml)
+        if stack_name in ['ros_release']:
+            print '='*80
             print stack_name
-            print stack_rosdeps(stack_name)
-    
+            print convert_html_to_text(m.description)
