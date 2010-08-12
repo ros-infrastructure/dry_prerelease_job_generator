@@ -41,7 +41,7 @@ import yaml
 
 import roslib.rosenv
 
-from rosdeb.core import ubuntu_release, debianize_name, debianize_version, debianize_Distro, platforms
+from rosdeb.core import ubuntu_release, debianize_name, debianize_version, debianize_Distro, platforms, platforms
 from rosdeb.source_deb import make_source_deb, control_data
 
 
