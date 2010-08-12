@@ -36,6 +36,7 @@ import os
 import sys
 import time
 from subprocess import check_call
+import hashlib
 
 import yaml
 
@@ -66,26 +67,23 @@ def make_source_deb(distro_name, stack_name, stack_version, os_platform_name, st
     if not os.path.exists(debian_d):
         os.makedirs(debian_d)
 
-    for f in ['Makefile', 'rules', 'compat', 'postinst']:
-        if stack_name == 'ros':
-            f_src = f+'-ros'
-        else:
-            f_src = f
-            
+    # Files which go into debian dir
+    for f in ['rules', 'compat', 'postinst']:
         files.append( (os.path.join(tmpl_d, f), os.path.join(debian_d, f)) )
 
-    for f in ['fixrpath.py']:
+    # Files which go into stack dir
+    for f in ['fixrpath.py', 'Makefile', 'setup_deb.sh']:
         files.append( (os.path.join(tmpl_d, f), os.path.join(stack_d, f)) )
         
-    for f in ['setup_deb.sh']:
-        if stack_name == 'ros':
-            f_src = f+'-ros'
-        else:
-            f_src = f
-        files.append( (os.path.join(tmpl_d, f), os.path.join(stack_d, f)) )
-                      
+    # Files which go into stack dir and are different for ros stack
     if stack_name == 'ros':
-        file.append( (os.path.join(tmpl_d, 'setup.sh'), os.path.join(stack_d, 'setup.sh')))
+        for f in ['setup_deb.sh', 'Makefile']:
+            f_src = f+'-ros'
+            files.append( (os.path.join(tmpl_d, f_src), os.path.join(stack_d, f)) )
+                      
+    # Files which go into stack dir and only exist for ros
+    if stack_name == 'ros':
+        files.append( (os.path.join(tmpl_d, 'setup.sh'), os.path.join(stack_d, 'setup.sh')))
 
     for src, dst in files:
         with open(src, 'r') as f:
@@ -113,6 +111,13 @@ def make_source_deb(distro_name, stack_name, stack_version, os_platform_name, st
     with open(os.path.join(debian_d, 'changelog'), 'w') as f:
         f.write(changelog_file(metadata))
     
+    # MD5Sum of original stack tar.bz2:
+    with open(os.path.join(stack_d, '%s-%s.md5'%(stack_name, stack_version)),'w') as mf:
+        with open(os.path.join(staging_dir, '%s-%s.tar.bz2'%(stack_name, stack_version)),'r') as f:
+            m = hashlib.md5()
+            m.update(f.read())
+            mf.write('%s  %s\n'%(m.hexdigest(), '../%s-%s.tar.bz2'%(stack_name, stack_version)))
+
     # Note: this creates 3 files.  A .dsc, a .tar.gz, and a .changes
     check_call(['dpkg-buildpackage', '-S', '-uc', '-us'], cwd=stack_d)
     
