@@ -50,7 +50,7 @@ def make_source_deb(distro_name, stack_name, stack_version, os_platform_name, st
     @param os_platform_name: Name of OS platform/version, e.g. 'lucid'
     @type  os_platform_name: str
     """
-    debian_name = debianize_name(stack_name)
+    debian_name = 'ros-%s-%s'%(distro_name, debianize_name(stack_name))
 
     tmpl_d = os.path.join(roslib.packages.get_pkg_dir('rosdeb'), 'resources', 'source_deb')
     
@@ -104,6 +104,8 @@ def make_source_deb(distro_name, stack_name, stack_version, os_platform_name, st
     control_yaml = os.path.join(staging_dir, '%s-%s.yaml'%(stack_name, stack_version))
     with open(control_yaml, 'r') as f:
         metadata = yaml.load(f.read())
+    # make distro-specific
+    metadata['package'] = debian_name
     with open(os.path.join(debian_d, 'control'), 'w') as f:
         f.write(control_file(metadata, os_platform_name))
 
