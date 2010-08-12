@@ -114,7 +114,7 @@ def make_source_deb(distro_name, stack_name, stack_version, os_platform_name, st
         f.write(changelog_file(metadata))
     
     # Note: this creates 3 files.  A .dsc, a .tar.gz, and a .changes
-    check_call(['dpkg-buildpackage', '-S'], cwd=stack_d)
+    check_call(['dpkg-buildpackage', '-S', '-uc', '-us'], cwd=stack_d)
     
 def supported_platforms(control):
     return [version for version in control['rosdeps'].keys()]
