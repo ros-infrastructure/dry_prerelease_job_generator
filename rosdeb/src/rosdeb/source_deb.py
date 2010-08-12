@@ -142,6 +142,7 @@ def changelog_file(metadata, platform='lucid'):
     
 def control_file(metadata, platform_name):
     data = metadata.copy()
+    data['description-full'] = metadata['description-full'].rstrip()
     try:
         data['deb-depends'] = ', '.join(metadata['rosdeps'][platform_name])
     except KeyError:
@@ -192,7 +193,7 @@ def control_data(stack_name, stack_version, stack_file=None):
         metadata['description-brief'] = m.brief[:60]
 
     try:
-        description = convert_html_to_text(m.description)
+        description = convert_html_to_text(m.description).rstrip()
     except:
         description = "unknown"
 
@@ -200,7 +201,7 @@ def control_data(stack_name, stack_version, stack_file=None):
     desc_padded = ''
     for l in description.split('\n'):
         desc_padded += ' '+l+'\n'
-    metadata['description-full'] = desc_padded
+    metadata['description-full'] = desc_padded.rstrip()
 
     # do deps in two parts as ros stack depends need to become version
     # locked later on due to lack of ABI compat
