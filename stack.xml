@@ -1,5 +1,16 @@
 <stack>
-  <description brief="ros_release">ros_release</description>
+
+  <description brief="ros_release">
+    <p>
+      This stack contains tools for releasing and installing ROS-packaged software through various channels including:
+    <ul>
+      <li>rosinstall</li>
+      <li>Debian toolchains</li>
+      <li>Hudson continuous-integration infrastructure for releasing</li>
+    </ul>
+    </p>
+
+  </description>
   <author>Maintained by Kenneth Conley</author>
   <license>BSD</license>  
   <review status="unreviewed" notes=""/>
