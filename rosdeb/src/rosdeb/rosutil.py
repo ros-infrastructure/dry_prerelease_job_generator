@@ -43,6 +43,7 @@ import roslib.stack_manifest
 import roslib.packages
 import roslib.stacks
 
+import rosdeb.core
 from rosdep.core import RosdepLookupPackage, YamlCache
 
 IMPLICIT_DEPS = ['libc6','build-essential','cmake','python-yaml','subversion']
@@ -129,7 +130,7 @@ def package_manifests_of(stack_dir):
                 l.extend([os.path.join(d, e) for e in os.listdir(d)])
     return manifests
 
-def stack_rosdeps(stack_name, stack_dir, ubuntu_platform):
+def stack_rosdeps(stack_name, stack_dir, platform):
     """
     Calculate dependencies of stack on an 'ubuntu' OS, including both
     ROS stacks and their rosdep dependencies, for the specified
@@ -141,6 +142,8 @@ def stack_rosdeps(stack_name, stack_dir, ubuntu_platform):
     is that rosdeps improve monotonically over time, so that this will
     not be a major issue.
 
+    @param platform: platform name (e.g. lucid)
+    
     @return: list of debian package deps
     @rtype: [str]
     """
@@ -148,8 +151,12 @@ def stack_rosdeps(stack_name, stack_dir, ubuntu_platform):
     # - implicit deps of all ROS packages
     deb_deps = IMPLICIT_DEPS[:]
 
-    os = 'ubuntu'
-    yc = YamlCache(os, ubuntu_platform)
+    # hardcode OS for now as we don't build straight debian
+    os_name = 'ubuntu'
+    # reverse lookup version number, which is the key for rosdep
+    os_version = [k for k, v in rosdeb.core.ubuntu_map.iteritems() if v == platform][0]
+    
+    yc = YamlCache(os_name, os_version)
 
     package_manifests = package_manifests_of(stack_dir)
     for p, m_file in package_manifests:
@@ -158,11 +165,11 @@ def stack_rosdeps(stack_name, stack_dir, ubuntu_platform):
         if not rosdeps:
             continue
             
-        rdlp = RosdepLookupPackage(os, ubuntu_platform, p, yc)
+        rdlp = RosdepLookupPackage(os_name, os_version, p, yc)
         for r in rosdeps:
             value = rdlp.lookup_rosdep(r)
             if '\n' in value:
-                raise Exception("cannot generate rosdeps for stack [%s] on platform [%s]:\n\trosdep [%s] has a script binding"%(stack_name, ubuntu_platform, r))
+                raise Exception("cannot generate rosdeps for stack [%s] on platform [%s]:\n\trosdep [%s] has a script binding"%(stack_name, os_version, r))
             deb_deps.extend([x for x in value.split(' ') if x.strip()])
 
     return deb_deps

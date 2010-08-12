@@ -79,7 +79,7 @@ def source_deb_main():
 
     # COLLECT ARGS
     from optparse import OptionParser
-    parser = OptionParser(usage="usage: %prog <distro> <stack> <version> [dir]", prog=NAME)
+    parser = OptionParser(usage="usage: %prog <distro> <stack> <version> <ubuntu-version>", prog=NAME)
     # disabling for now, will be worth implementing soon enough
     #parser.add_option("-f", "--file",
     #                  dest="file", default=None,
@@ -90,12 +90,13 @@ def source_deb_main():
 
     (options, args) = parser.parse_args()
 
-    if len(args) != 3:
-        parser.error('please specify distro name, stack name, and stack version')
+    if len(args) != 4:
+        parser.error('please specify distro name, stack name, stack version, and ubuntu version (e.g. 10.04)')
 
     distro_name    = args[0]
     stack_name     = args[1]
     stack_version  = args[2]
+    ubuntu_version  = args[3]    
     
     staging_dir = options.staging_dir or os.getcwd()
     if not os.path.exists(staging_dir):
@@ -108,7 +109,7 @@ def source_deb_main():
         copy_tarball_to_dir(options.file, staging_dir)
 
     # CREATE THE SOURCE DEB
-    rosdeb.make_source_deb(distro_name, stack_name, stack_version, staging_dir)
+    rosdeb.make_source_deb(distro_name, stack_name, stack_version, 'ubuntu', ubuntu_version, staging_dir)
 
 if __name__ == '__main__':
     source_deb_main()

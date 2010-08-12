@@ -66,7 +66,7 @@ class RosutilTest(unittest.TestCase):
         from roslib.stacks import get_stack_dir
 
         # this test will have to be updated as we change our supported platform set
-        platforms = ['10.04', '9.10', '9.04']
+        platforms = ['lucid', 'jaunty', 'karmic']
 
         # stick to stacks that should have high confidence of resolving properly
         stacks = ['ros', 'common', 'common_msgs', 'driver_common', 'geometry', 'image_common', 'image_pipeline', 'joystick_drivers', 'navigation', 'sound_drivers', 'visualization', 'visualization_common']
@@ -74,12 +74,12 @@ class RosutilTest(unittest.TestCase):
         base_reqd = rosdeb.rosutil.IMPLICIT_DEPS
         
         rosdeps = {}
-        for ubuntu_platform in platforms:
-            rosdeps[ubuntu_platform] = {}
+        for platform in platforms:
+            rosdeps[platform] = {}
             for stack_name in stacks:
                 stack_dir = get_stack_dir(stack_name)
                 
-                rosdeps[ubuntu_platform][stack_name] = deps = stack_rosdeps(stack_name, stack_dir, ubuntu_platform)
+                rosdeps[platform][stack_name] = deps = stack_rosdeps(stack_name, stack_dir, platform)
                 for reqd in base_reqd:
                     self.assert_(reqd in deps)
 
@@ -90,15 +90,13 @@ class RosutilTest(unittest.TestCase):
             ]
 
         # make sure common_msgs has no additional rosdeps
-        self.failIf(set(rosdeps['9.04']['common_msgs']) ^ set(base_reqd))
-        self.failIf(set(rosdeps['9.10']['common_msgs']) ^ set(base_reqd))
-        self.failIf(set(rosdeps['10.04']['common_msgs']) ^ set(base_reqd))
+        for p in ['lucid', 'karmic', 'jaunty']:
+            self.failIf(set(rosdeps[p]['common_msgs']) ^ set(base_reqd))
 
         for stack, reqd in tests:
             for r in reqd:
-                self.assert_(r in rosdeps['10.04'][stack])
-                self.assert_(r in rosdeps['9.10'][stack])
-                self.assert_(r in rosdeps['9.04'][stack])
+                for p in ['lucid', 'karmic', 'jaunty']:
+                    self.assert_(r in rosdeps[p][stack])
 
 if __name__ == '__main__':
     rostest.unitrun('rosdeb', 'test_rosdeb_rosutil', RosutilTest, coverage_packages=['rosdeb.rosutil'])
