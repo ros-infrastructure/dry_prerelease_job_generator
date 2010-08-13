@@ -75,6 +75,20 @@ def copy_tarball_to_dir(tarball_file, staging_dir, stack_name, stack_version):
         print "copying\n  %s\n\t=>\n  %s"%(tarball_file, dest)
         shutil.copyfile(tarball_file, dest)
     
+def _source_deb_main(distro_name, stack_name, stack_version, os_platform, staging_dir):
+    if os_platform not in rosdeb.platforms():
+        print >> sys.stderr, "[%s] is not a known platform.\nSupported platforms are: %s"%(os_platform, ' '.join(rosdeb.platforms()))
+        sys.exit(1)
+    
+    if not os.path.exists(staging_dir):
+        print "creating staging dir: %s"%(staging_dir)
+        os.makedirs(staging_dir)
+
+    download_tarball(stack_name, stack_version, staging_dir)
+
+    # CREATE THE SOURCE DEB
+    rosdeb.make_source_deb(distro_name, stack_name, stack_version, os_platform, staging_dir)
+    
 def source_deb_main():
 
     # COLLECT ARGS
@@ -87,33 +101,41 @@ def source_deb_main():
     parser.add_option("-d", "--dir",
                       dest="staging_dir", default=None,
                       help="directory to use for staging source debs", metavar="STAGING_DIR")
+    parser.add_option("--hudson",
+                      dest="hudson", action='store_true', default=False,
+                      help="execute Hudson-style, which builds all platforms")
 
     (options, args) = parser.parse_args()
 
-    if len(args) != 4:
-        parser.error('please specify distro name, stack name, stack version, and ubuntu version (e.g. 10.04)')
-
+    if len(args) < 3:
+        parser.error('invalid args')
+        
     distro_name    = args[0]
     stack_name     = args[1]
     stack_version  = args[2]
-    os_platform    = args[3]
 
-    if os_platform not in rosdeb.platforms():
-        parser.error("[%s] is not a known platform.\nSupported platforms are: %s"%(os_platform, ' '.join(rosdeb.platforms())))
-    
-    staging_dir = options.staging_dir or os.getcwd()
-    if not os.path.exists(staging_dir):
-        print "creating staging dir: %s"%(staging_dir)
-        os.makedirs(staging_dir)
+    if options.hudson:
+        import tempfile, shutil
 
-    if 1 or options.file is None:
-        download_tarball(stack_name, stack_version, staging_dir)
+        if len(args) != 3:
+            parser.error('please specify distro name, stack name, and stack version')
+        if options.staging_dir:
+            parser.error("cannot override directory in Hudson mode")
+
+        for os_platform in ['lucid', 'karmic', 'jaunty']:
+            staging_dir = os.path.join(tempfile.gettempdir(), "rosdeb-%s"%(os_platform))
+            if os.path.exists(staging_dir):
+                shutil.rmtree(staging_dir)
+            os.mkdir(staging_dir)
+            _source_deb_main(distro_name, stack_name, stack_version, os_platform, staging_dir)
+
     else:
-        copy_tarball_to_dir(options.file, staging_dir)
-
-    # CREATE THE SOURCE DEB
-    rosdeb.make_source_deb(distro_name, stack_name, stack_version, os_platform, staging_dir)
-
+        if len(args) != 4:
+            parser.error('please specify distro name, stack name, stack version, and platform (e.g. lucid)')
+        os_platform    = args[3]
+        staging_dir = options.staging_dir or os.getcwd()
+        _source_deb_main(distro_name, stack_name, stack_version, os_platform, staging_dir)
+        
 if __name__ == '__main__':
     source_deb_main()
 
