@@ -108,12 +108,14 @@ class Hudson(object):
         if not self.job_exists(name):
             raise HudsonException("create[%s] failed"%(name))
     
-    def build_job(self, name, parameters=None):
+    def build_job(self, name, parameters=None, token=None):
         """
         @param parameters: parameters for job, or None.
         @type  parameters: dict
         """
         if parameters:
+            if token:
+                parameters['token'] = token
             if not self.job_exists(name):
                 raise HudsonException("no such job[%s]"%(name))
             url = self.server + BUILD_WITH_PARAMS_JOB%locals() + '?' + urllib.urlencode(parameters)
@@ -122,7 +124,11 @@ class Hudson(object):
         else:
             if not self.job_exists(name):
                 raise HudsonException("no such job[%s]"%(name))
-            return self.hudson_open(urllib2.Request(self.server + BUILD_JOB%locals(), ''))        
+            if token:
+                req = urllib2.Request(self.server + BUILD_JOB%locals() + '?' + urllib.urlencode({'token': token}), '')
+            else:
+                req = urllib2.Request(self.server + BUILD_JOB%locals(), '')
+            return self.hudson_open(req)
     
 def main():
     if len(sys.argv) == 3:
