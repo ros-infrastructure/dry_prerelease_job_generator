@@ -30,3 +30,5 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 #target_link_libraries(example ${PROJECT_NAME})
 
 rosbuild_add_pyunit(test/test_vcs.py TIMEOUT 500)
+rosbuild_add_pyunit(test/test_git.py TIMEOUT 500)
+rosbuild_add_pyunit(test/test_hg.py TIMEOUT 500)
