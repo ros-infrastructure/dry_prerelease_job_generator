@@ -47,8 +47,11 @@ class Hudson(object):
         if url[-1] == '/':
             self.server = url
         else:
-            self.server = url + '/'            
-        self.auth = auth_headers(username, password)
+            self.server = url + '/'
+        if username is not None and password is not None:            
+            self.auth = auth_headers(username, password)
+        else:
+            self.auth = None
         
     def get_job_info(self, name):
         try:
@@ -119,7 +122,6 @@ class Hudson(object):
             if not self.job_exists(name):
                 raise HudsonException("no such job[%s]"%(name))
             url = self.server + BUILD_WITH_PARAMS_JOB%locals() + '?' + urllib.urlencode(parameters)
-            # apparently we can also send JSON, but the Hudson docs on this are *very* inconsistent
             return self.hudson_open(urllib2.Request(url, ''))        
         else:
             if not self.job_exists(name):
