@@ -39,11 +39,15 @@ import roslib; roslib.load_manifest('rosdeb')
 
 import os
 import sys
+import subprocess
+import shutil
+import tempfile
 
 import rosdeb
-            
+from rosdeb.rosutil import checkout_svn_to_tmp
 
 NAME = 'create_source_deb.py' 
+TARBALL_URL = "https://code.ros.org/svn/release/download/stacks/%(stack_name)s/%(base_name)s/%(f_name)s"
     
 def download_tarball(stack_name, stack_version, staging_dir):
     import urllib
@@ -51,7 +55,7 @@ def download_tarball(stack_name, stack_version, staging_dir):
     for ext in ['tar.bz2', 'yaml']:
         f_name = "%s-%s.%s"%(stack_name, stack_version, ext)
         dest = os.path.join(staging_dir, f_name)
-        url = "http://code.ros.org/svn/release/download/stacks/%(stack_name)s/%(base_name)s/%(f_name)s"%locals()
+        url = TARBALL_URL%locals()
         urllib.urlretrieve(url, dest)
 
 def copy_tarball_to_dir(tarball_file, staging_dir, stack_name, stack_version):
@@ -75,6 +79,29 @@ def copy_tarball_to_dir(tarball_file, staging_dir, stack_name, stack_version):
         print "copying\n  %s\n\t=>\n  %s"%(tarball_file, dest)
         shutil.copyfile(tarball_file, dest)
     
+def upload_files(files, stack_name, stack_version):
+    base_name = "%s-%s"%(stack_name, stack_version)
+    f_name = '' #set f_name to None to get directory
+    tmp_dir = checkout_svn_to_tmp(base_name, TARBALL_URL%locals())
+    subdir = os.path.join(tmp_dir, base_name)
+    try:
+        # copy files to subdir
+        names = [os.path.basename(f) for f in files]
+        for f, base in zip(files, names):
+            to_path = os.path.join(subdir, base)
+            print "copying %s to %s"%(f, to_path)
+            assert os.path.exists(f)
+            shutil.copyfile(f, to_path)
+
+            # svn add file
+            subprocess.check_call(['svn', 'add', base], cwd=subdir)
+        # commit the new files
+        subprocess.check_call(['svn', 'ci', '-m', "source deb assets for %s-%s"%(stack_name, stack_version)]+names, cwd=subdir)
+
+    finally:
+        if os.path.exists(tmp_dir):
+            shutil.rmtree(tmp_dir)
+    
 def _source_deb_main(distro_name, stack_name, stack_version, os_platform, staging_dir):
     if os_platform not in rosdeb.platforms():
         print >> sys.stderr, "[%s] is not a known platform.\nSupported platforms are: %s"%(os_platform, ' '.join(rosdeb.platforms()))
@@ -87,7 +114,10 @@ def _source_deb_main(distro_name, stack_name, stack_version, os_platform, stagin
     download_tarball(stack_name, stack_version, staging_dir)
 
     # CREATE THE SOURCE DEB
-    rosdeb.make_source_deb(distro_name, stack_name, stack_version, os_platform, staging_dir)
+    files = rosdeb.make_source_deb(distro_name, stack_name, stack_version, os_platform, staging_dir)
+
+    upload_files(files, stack_name, stack_version)
+
     
 def source_deb_main():
 
@@ -115,7 +145,6 @@ def source_deb_main():
     stack_version  = args[2]
 
     if options.hudson:
-        import tempfile, shutil
 
         if len(args) != 3:
             parser.error('please specify distro name, stack name, and stack version')

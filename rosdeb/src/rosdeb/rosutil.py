@@ -34,6 +34,8 @@
 # $Author$
 
 import os
+import subprocess
+import tempfile
 
 if __name__ == '__main__':
     import roslib; roslib.load_manifest('rosdeb')
@@ -50,6 +52,23 @@ IMPLICIT_DEPS = ['libc6','build-essential','cmake','python-yaml','subversion']
 
 def _text_only(soup):
     return ''.join(soup.findAll(text=True))
+
+def checkout_svn_to_tmp(name, uri):
+    """
+    Checkout an SVN tree to the tmp dir.
+    
+    Utility routine -- need to replace with vcs
+    
+    @return: temporary directory that contains checkout of SVN tree in
+    directory 'name'. temporary directory will be a subdirectory of
+    OS-provided temporary space.
+    @rtype: str
+    """
+    tmp_dir = tempfile.mkdtemp()
+    dest = os.path.join(tmp_dir, name)
+    print 'Checking out a fresh copy of %s from %s to %s...'%(name, uri, dest)
+    subprocess.check_call(['svn', 'co', uri, dest])
+    return tmp_dir
 
 def convert_html_to_text(d):
     """

@@ -49,6 +49,8 @@ def make_source_deb(distro_name, stack_name, stack_version, os_platform_name, st
     """
     @param os_platform_name: Name of OS platform/version, e.g. 'lucid'
     @type  os_platform_name: str
+    @return: list of source-deb files
+    @rtype: [str]
     """
     debian_name = 'ros-%s-%s'%(distro_name, debianize_name(stack_name))
 
@@ -122,6 +124,13 @@ def make_source_deb(distro_name, stack_name, stack_version, os_platform_name, st
 
     # Note: this creates 3 files.  A .dsc, a .tar.gz, and a .changes
     check_call(['dpkg-buildpackage', '-S', '-uc', '-us'], cwd=stack_d)
+
+    # SOURCE DEB: .dsc plus tarball of debian dir. Ignore the changes for now
+    f_name  = "%s_%s-0"%(debian_name, stack_version)
+    files = [os.path.join(staging_dir, f_name+ext) for ext in ('.dsc', '.tar.gz')]
+    for f in files:
+        assert os.path.exists(f), f
+    return files
     
 def supported_platforms(control):
     return [version for version in control['rosdeps'].keys()]
