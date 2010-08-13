@@ -8,20 +8,31 @@ export ARCH=amd64
 export ROSDISTRO=cturtle
 export ROSSTACK=ros
 export ROSVERSION=1.2.0
+export DISTRO_TGZ=${DISTRO}-base.tgz
 export DEBNAME=ros-${ROSDISTRO}-`echo $ROSSTACK | sed -e 's/_/-/'`
-export DEBVERSION=1.2.0-0~${DISTRO}
+export DEBVERSION=${ROSVERSION}-0~${DISTRO}
 export ROSFILE=${ROSSTACK}-${ROSVERSION}
 export DEBFILE=${DEBNAME}_${DEBVERSION}
 
 sudo apt-get install pbuilder
-[ -e ${DISTRO}-base.tgz ] || 
+[ -e ${DISTRO_TGZ} ] || 
 {
-    sudo pbuilder --create --distribution ${DISTRO} --othermirror "deb http://code.ros.org/packages/ros/ubuntu ${DISTRO} main" --basetgz ${DISTRO}-base.tgz --components "main restricted universe multiverse" --extrapackages "wget lsb-release debhelper"
+    sudo pbuilder --create --distribution ${DISTRO} --othermirror "deb http://code.ros.org/packages/ros/ubuntu ${DISTRO} main" --basetgz ${DISTRO_TGZ} --components "main restricted universe multiverse" --extrapackages "wget lsb-release debhelper"
 }
 wget https://code.ros.org/svn/release/download/stacks/${ROSSTACK}/${ROSFILE}/${DEBFILE}.dsc -O ${DEBFILE}.dsc
 wget https://code.ros.org/svn/release/download/stacks/${ROSSTACK}/${ROSFILE}/${DEBFILE}.tar.gz -O ${DEBFILE}.tar.gz
 mkdir -p hookdir
 echo "wget https://code.ros.org/svn/release/download/stacks/${ROSSTACK}/${ROSFILE}/${ROSFILE}.tar.bz2 -O /tmp/buildd/${ROSFILE}.tar.bz2" > hookdir/A00fetch
 chmod +x hookdir/A00fetch
+#rm -rf result
 mkdir -p result
-sudo pbuilder --build --basetgz ${DISTRO}-base.tgz --hookdir hookdir  --buildresult result ${DEBFILE}.dsc
+#sudo pbuilder --build --basetgz ${DISTRO_TGZ} --hookdir hookdir  --buildresult result ${DEBFILE}.dsc
+dpkg-scanpackages . /dev/null > result/Packages
+cat > script.sh <<EOF
+set -o errexit
+echo "deb file:/home/leibs/workspace result/" > /etc/apt/sources.list.d/pbuild.list
+apt-get update
+apt-get install ${DEBNAME}=${DEBVERSION} -y --force-yes
+dpkg -l ${DEBNAME}
+EOF
+sudo pbuilder --execute --basetgz ${DISTRO_TGZ} --bindmounts /home/leibs/workspace/result script.sh
