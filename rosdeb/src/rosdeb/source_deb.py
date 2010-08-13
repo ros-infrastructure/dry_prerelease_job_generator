@@ -151,6 +151,21 @@ def changelog_file(metadata, platform='lucid'):
 \t
 """%data
     
+def deb_depends(metadata, distro_name, platform_name):
+    """
+    @return: list of debian package dependencies, or None if not supported on that platform
+    @rtype: [str]
+    """
+    # if a control file does not specify deb depends for the platform, it is not valid on that platform
+    if 'rosdeps' not in metadata:
+        return None
+    if platform_name not in metadata['rosdeps']:
+        return None      
+    rosdeps = metadata['rosdeps'][platform_name]
+    stackdeps = metadata.get('depends', [])
+    stackdeps = ['ros-%s-%s'%(distro_name, debianize_name(s)) for s in stackdeps]
+    return rosdeps + stackdeps
+        
 def control_file(metadata, platform_name):
     data = metadata.copy()
     data['description-full'] = metadata['description-full'].rstrip()
@@ -195,7 +210,10 @@ def control_data(stack_name, stack_version, stack_file=None):
     metadata['package']    = debianize_name(stack_name)
     metadata['version']    = stack_version
     metadata['homepage']   = m.url
-    metadata['maintainer'] = m.author
+    if m.author.startswith('Maintained by '):
+        metadata['maintainer'] = m.author[len('Maintained by '):]
+    else:
+        metadata['maintainer'] = m.author        
     metadata['priority']   = 'optional'
     if m.brief:
         # 60-char limit on control files

@@ -38,10 +38,32 @@ import unittest
 
 import rostest
 
+# yaml control file from pr2_arm_navigation to simplify test data setup
+yaml_control = """depends: [arm_navigation, collision_environment, common_msgs, image_pipeline, kinematics,
+  laser_pipeline, motion_planners, motion_planning_common, motion_planning_environment,
+  pr2_common, pr2_controllers, pr2_kinematics, pr2_kinematics_with_constraints, ros,
+  trajectory_filters]
+description-brief: pr2_arm_navigation
+description-full: ' This stack contains the launch files for arm navigation with the
+  PR2 robot arms.'
+homepage: http://ros.org/wiki/pr2_arm_navigation
+maintainer: Maintained by Sachin Chitta
+package: pr2-arm-navigation
+priority: optional
+rosdeps:
+  hardy: [libc6, build-essential, cmake, python-yaml, subversion]
+  intrepid: [libc6, build-essential, cmake, python-yaml, subversion]
+  jaunty: [libc6, build-essential, cmake, python-yaml, subversion]
+  karmic: [libc6, build-essential, cmake, python-yaml, subversion]
+  lucid: [libc6, build-essential, cmake, python-yaml, subversion]
+  mighty: [libc6, build-essential, cmake, python-yaml, subversion]
+stack: pr2_arm_navigation
+version: 0.2.3
+"""
+
 class SourceDebTest(unittest.TestCase):
   
     def test_control_data(self):
-        
         import roslib.stacks
         from roslib.stack_manifest import parse_file, stack_file
         
@@ -78,7 +100,36 @@ class SourceDebTest(unittest.TestCase):
                 except:
                     self.fail(d1['rosdeps'])
                 
-            
+    def test_deb_depends(self):
+        from rosdeb.source_deb import deb_depends
+        import yaml
+
+        # - should return None on unsupported platform
+        self.assertEquals(None, deb_depends({}, 'cturtle', 'lucid'))
+
+        # test that rosdeps pass-through for platform
+        metadata = {'rosdeps': {'lucid': ['python-yaml', 'subversion']}}
+        self.assertEquals(['python-yaml', 'subversion'], deb_depends(metadata, 'cturtle', 'lucid'))
+        # - should return None on unsupported platform
+        self.assertEquals(None, deb_depends(metadata, 'cturtle', 'karmic'))
+
+        # test that ROS stacks are transformed to their debian equivalent
+        metadata = yaml.load(yaml_control)
+
+        testval = ['ros-cturtle-arm-navigation', 'ros-cturtle-collision-environment',
+                   'ros-cturtle-common-msgs', 'ros-cturtle-image-pipeline', 'ros-cturtle-kinematics',
+                   'ros-cturtle-laser-pipeline', 'ros-cturtle-motion-planners',
+                   'ros-cturtle-motion-planning-common', 'ros-cturtle-motion-planning-environment',
+                   'ros-cturtle-pr2-common', 'ros-cturtle-pr2-controllers', 'ros-cturtle-pr2-kinematics',
+                   'ros-cturtle-pr2-kinematics-with-constraints', 'ros-cturtle-ros',
+                   'ros-cturtle-trajectory-filters']
+        testval = testval + metadata['rosdeps']['lucid']
+        # - should return None on unsupported platform
+        self.assertEquals(None, deb_depends(metadata, 'cturtle', 'badplatform'))
+
+        diff = set(testval) ^ set(deb_depends(metadata, 'cturtle', 'lucid'))
+        self.failIf(diff, diff)
+        
 if __name__ == '__main__':
     rostest.unitrun('rosdeb', 'test_rosdeb_source_deb', SourceDebTest, coverage_packages=['rosdeb.source_deb'])
 
