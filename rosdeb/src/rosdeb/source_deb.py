@@ -109,7 +109,7 @@ def make_source_deb(distro_name, stack_name, stack_version, os_platform_name, st
     # make distro-specific
     metadata['package'] = debian_name
     with open(os.path.join(debian_d, 'control'), 'w') as f:
-        f.write(control_file(metadata, os_platform_name))
+        f.write(control_file(metadata, distro_name, os_platform_name))
 
     # CHANGELOG
     with open(os.path.join(debian_d, 'changelog'), 'w') as f:
@@ -166,11 +166,14 @@ def deb_depends(metadata, distro_name, platform_name):
     stackdeps = ['ros-%s-%s'%(distro_name, debianize_name(s)) for s in stackdeps]
     return rosdeps + stackdeps
         
-def control_file(metadata, platform_name):
+def control_file(metadata, distro_name, platform_name):
     data = metadata.copy()
     data['description-full'] = metadata['description-full'].rstrip()
+    if data['maintainer'].startswith('Maintained by '):
+        data['maintainer'] = data['maintainer'][len('Maintained by '):]
+
     try:
-        data['deb-depends'] = ', '.join(metadata['rosdeps'][platform_name])
+        data['deb-depends'] = ', '.join(deb_depends(metadata, distro_name, platform_name))
     except KeyError:
         raise Exception("stack [%s] does not have rosdeps for release [%s]"%(metadata['stack'], platform_name))
     

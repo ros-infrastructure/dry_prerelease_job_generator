@@ -130,6 +130,28 @@ class SourceDebTest(unittest.TestCase):
         diff = set(testval) ^ set(deb_depends(metadata, 'cturtle', 'lucid'))
         self.failIf(diff, diff)
         
+    def test_control_file(self):
+        import yaml
+        metadata = yaml.load(yaml_control)
+        from rosdeb.source_deb import control_file
+        txt = control_file(metadata, 'cturtle', 'lucid')
+        test = """Source: pr2-arm-navigation
+Section: unknown
+Priority: optional
+Maintainer: Sachin Chitta
+Build-Depends: debhelper (>= 5), chrpath, libc6, build-essential, cmake, python-yaml, subversion, ros-cturtle-arm-navigation, ros-cturtle-collision-environment, ros-cturtle-common-msgs, ros-cturtle-image-pipeline, ros-cturtle-kinematics, ros-cturtle-laser-pipeline, ros-cturtle-motion-planners, ros-cturtle-motion-planning-common, ros-cturtle-motion-planning-environment, ros-cturtle-pr2-common, ros-cturtle-pr2-controllers, ros-cturtle-pr2-kinematics, ros-cturtle-pr2-kinematics-with-constraints, ros-cturtle-ros, ros-cturtle-trajectory-filters
+Standards-Version: 3.7.2
+
+Package: pr2-arm-navigation
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, libc6, build-essential, cmake, python-yaml, subversion, ros-cturtle-arm-navigation, ros-cturtle-collision-environment, ros-cturtle-common-msgs, ros-cturtle-image-pipeline, ros-cturtle-kinematics, ros-cturtle-laser-pipeline, ros-cturtle-motion-planners, ros-cturtle-motion-planning-common, ros-cturtle-motion-planning-environment, ros-cturtle-pr2-common, ros-cturtle-pr2-controllers, ros-cturtle-pr2-kinematics, ros-cturtle-pr2-kinematics-with-constraints, ros-cturtle-ros, ros-cturtle-trajectory-filters
+Description: pr2_arm_navigation
+ This stack contains the launch files for arm navigation with the PR2 robot arms."""
+
+        for actual, real in zip(txt.split('\n'), test.split('\n')):
+            self.assertEquals(actual, real)
+            
+
 if __name__ == '__main__':
     rostest.unitrun('rosdeb', 'test_rosdeb_source_deb', SourceDebTest, coverage_packages=['rosdeb.source_deb'])
 
