@@ -113,7 +113,7 @@ def make_source_deb(distro_name, stack_name, stack_version, os_platform_name, st
 
     # CHANGELOG
     with open(os.path.join(debian_d, 'changelog'), 'w') as f:
-        f.write(changelog_file(metadata))
+        f.write(changelog_file(metadata, os_platform_name))
     
     # MD5Sum of original stack tar.bz2:
     with open(os.path.join(stack_d, '%s-%s.md5'%(stack_name, stack_version)),'w') as mf:
@@ -126,7 +126,7 @@ def make_source_deb(distro_name, stack_name, stack_version, os_platform_name, st
     check_call(['dpkg-buildpackage', '-S', '-uc', '-us'], cwd=stack_d)
 
     # SOURCE DEB: .dsc plus tarball of debian dir. Ignore the changes for now
-    f_name  = "%s_%s-0"%(debian_name, stack_version)
+    f_name  = "%s_%s-0~%s"%(debian_name, stack_version, os_platform_name)
     files = [os.path.join(staging_dir, f_name+ext) for ext in ('.dsc', '.tar.gz')]
     for f in files:
         assert os.path.exists(f), f
@@ -141,9 +141,9 @@ def changelog_file(metadata, platform='lucid'):
     #day-of-week, dd month yyyy hh:mm:ss +zzzz
     data['date'] = time.strftime("%a, %d %b %Y %H:%M:%S +0000", time.gmtime())
     data['platform'] = platform
-    data['supported'] = ' '.join(supported_platforms(metadata))
+    data['supported'] = platform
     
-    return """%(package)s (%(version)s-0) %(supported)s; urgency=low
+    return """%(package)s (%(version)s-0~%(platform)s) %(supported)s; urgency=low
 
   * Please see https://ros.org/wiki/%(stack)s/ChangeList
 \t
