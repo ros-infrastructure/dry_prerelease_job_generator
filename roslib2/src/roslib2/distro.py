@@ -111,6 +111,10 @@ def get_rules(distro, stack_name):
     """
     if stack_name == 'ROS':
         stack_name = 'ros'
+        
+    # _rules: named section
+    named_rules_d = distro.get('_rules', {})
+    
     # there are three tiers of dictionaries that we look in for uri rules
     rules_d = [distro.get('stacks', {}),
                distro.get('stacks', {}).get(stack_name, {})]
@@ -119,7 +123,23 @@ def get_rules(distro, stack_name):
     props = {}
     for d in rules_d:
         if type(d) == dict:
-            props.update(d.get('_rules', {}))
+            update_r = d.get('_rules', {})
+            if type(update_r) == str:
+                try:
+                    update_r = named_rules_d[update_r]
+                except KeyError:
+                    raise DistroException("no _rules named [%s]"%(update_r))
+                
+            if 'svn' in update_r:
+                # new style
+                if 'svn' not in props:
+                    props['svn'] = {}
+                props['svn'].update(update_r['svn'])
+            else:
+                if not type(update_r) == dict:
+                    raise Exception("invalid rules: %s %s"%(d, type(d)))
+                # legacy
+                props.update(update_r)
 
     if not props:
         raise Exception("cannot load _rules")
@@ -176,9 +196,17 @@ class DistroStack(object):
 
         self._rules = rules
         
+        self.user_svn = self.pass_svn = None
         # for password-protected repos
-        self.user_svn = rules.get('user-svn', None)
-        self.pass_svn = rules.get('pass-svn', None)
+        # - for future SCM rules, we need to put them in a more
+        #   general representation. Leaving the SVN representation
+        #   as-is so as to not disturb existing scripts.
+        if 'svn' in rules:
+            self.user_svn = rules['svn'].get('username', None)
+            self.pass_svn = rules['svn'].get('password', None)
+        elif 'user-svn' in rules:
+            self.user_svn = rules.get('user-svn', None)
+            self.pass_svn = rules.get('pass-svn', None)
     
         self.update_version(stack_version)
 
@@ -190,27 +218,30 @@ class DistroStack(object):
         self.version = stack_version
 
         #rosdistro key
-        self.dev_svn = expand_rule(rules['dev-svn'], stack_name, stack_version, release_name)
-        self.distro_svn = expand_rule(rules['distro-svn'], stack_name, stack_version, release_name)
-        self.release_svn = expand_rule(rules['release-svn'], stack_name, stack_version, release_name)
-        if 'source-tarball' in rules:
-            self.source_tarball = expand_rule(rules['source-tarball'], stack_name, stack_version, release_name)
-        else:
-            self.source_tarball = None
+        # - for future SCM rules, we need to put them in a more
+        #   general representation. Leaving the SVN representation
+        #   as-is so as to not disturb existing scripts.
+        self.dev_svn = self.distro_svn = self.release_svn = None
+        if 'svn' in rules:
+            self.dev_svn     = expand_rule(rules['svn']['dev'], stack_name, stack_version, release_name)
+            self.distro_svn  = expand_rule(rules['svn']['distro-tag'], stack_name, stack_version, release_name)
+            self.release_svn = expand_rule(rules['svn']['release-tag'], stack_name, stack_version, release_name)
+        elif 'dev-svn' in rules:
+            #legacy support
+            self.dev_svn     = expand_rule(rules['dev-svn'], stack_name, stack_version, release_name)
+            self.distro_svn  = expand_rule(rules['distro-svn'], stack_name, stack_version, release_name)
+            self.release_svn = expand_rule(rules['release-svn'], stack_name, stack_version, release_name)
         
     def __eq__(self, other):
         if not isinstance(other, DistroStack):
             return False
         return self.name == other.name and \
             self.version == other.version and \
-            self.debian_version == other.debian_version and \
-            self.debian_name == other.debian_name and \
             self.dev_svn == other.dev_svn and \
             self.distro_svn == other.distro_svn and \
             self.release_svn == other.release_svn and \
             self.user_svn == other.user_svn and \
-            self.pass_svn == other.pass_svn and \
-            self.source_tarball == other.source_tarball
+            self.pass_svn == other.pass_svn
 
 class Variant(object):
     """
@@ -268,12 +299,15 @@ class Distro(object):
         self.distro_props = None
 
         try:
-            # load rosdistro file
+            # parse rosdistro yaml
             if os.path.isfile(source_uri):
+                # load rosdistro file
                 with open(source_uri) as f:
                     y = yaml.load(f.read())
             else:
+                # load via URL
                 y = yaml.load(urllib2.urlopen(source_uri))
+                
             self.distro_props = y
   
             stack_props = y['stacks']
@@ -300,5 +334,3 @@ class Distro(object):
 
         self.stacks = load_distro_stacks(self.distro_props, self.stack_names, release_name=self.release_name, version=self.version)
         self.ros = self.stacks.get('ros', None)
-
-    

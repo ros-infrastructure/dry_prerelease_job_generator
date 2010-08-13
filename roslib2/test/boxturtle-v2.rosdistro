@@ -1,135 +1,148 @@
 _rules:
-  rp-nobranch: &id002 {dev-svn: 'https://code.ros.org/svn/ros-pkg/stacks/$STACK_NAME/trunk',
-    distro-svn: 'https://code.ros.org/svn/ros-pkg/stacks/$STACK_NAME/tags/$RELEASE_NAME',
-    release-svn: 'https://code.ros.org/svn/ros-pkg/stacks/$STACK_NAME/tags/$STACK_NAME-$STACK_VERSION'}
-  wg-nobranch: &id001 {dev-svn: 'https://code.ros.org/svn/wg-ros-pkg/stacks/$STACK_NAME/trunk',
-    distro-svn: 'https://code.ros.org/svn/wg-ros-pkg/stacks/$STACK_NAME/tags/$RELEASE_NAME',
-    release-svn: 'https://code.ros.org/svn/wg-ros-pkg/stacks/$STACK_NAME/tags/$STACK_NAME-$STACK_VERSION'}
-  wg-ros-pkg: &id003 {dev-svn: 'https://code.ros.org/svn/wg-ros-pkg/stacks/$STACK_NAME/branches/$STACK_NAME-1.0',
-    distro-svn: 'https://code.ros.org/svn/wg-ros-pkg/stacks/$STACK_NAME/tags/$RELEASE_NAME',
-    release-svn: 'https://code.ros.org/svn/wg-ros-pkg/stacks/$STACK_NAME/tags/$STACK_NAME-$STACK_VERSION'}
+  rp-nobranch: 
+    svn:
+      dev: 'https://code.ros.org/svn/ros-pkg/stacks/$STACK_NAME/trunk'
+      distro-tag: 'https://code.ros.org/svn/ros-pkg/stacks/$STACK_NAME/tags/$RELEASE_NAME'
+      release-tag: 'https://code.ros.org/svn/ros-pkg/stacks/$STACK_NAME/tags/$STACK_NAME-$STACK_VERSION'
+  wg-nobranch: 
+    svn:
+      dev: 'https://code.ros.org/svn/wg-ros-pkg/stacks/$STACK_NAME/trunk'
+      distro-tag: 'https://code.ros.org/svn/wg-ros-pkg/stacks/$STACK_NAME/tags/$RELEASE_NAME'
+      release-tag: 'https://code.ros.org/svn/wg-ros-pkg/stacks/$STACK_NAME/tags/$STACK_NAME-$STACK_VERSION'
+  wg-ros-pkg:
+    svn:
+      dev: 'https://code.ros.org/svn/wg-ros-pkg/stacks/$STACK_NAME/branches/$STACK_NAME-1.0'
+      distro-tag: 'https://code.ros.org/svn/wg-ros-pkg/stacks/$STACK_NAME/tags/$RELEASE_NAME'
+      release-tag: 'https://code.ros.org/svn/wg-ros-pkg/stacks/$STACK_NAME/tags/$STACK_NAME-$STACK_VERSION'
 release: boxturtle
 stacks:
-  _rules: {dev-svn: 'https://code.ros.org/svn/ros-pkg/stacks/$STACK_NAME/branches/$STACK_NAME-1.0',
-    distro-svn: 'https://code.ros.org/svn/ros-pkg/stacks/$STACK_NAME/tags/$RELEASE_NAME',
-    release-svn: 'https://code.ros.org/svn/ros-pkg/stacks/$STACK_NAME/tags/$STACK_NAME-$STACK_VERSION'}
+  _rules: 
+      svn:
+        dev: 'https://code.ros.org/svn/ros-pkg/stacks/$STACK_NAME/branches/$STACK_NAME-1.0'
+        distro-tag: 'https://code.ros.org/svn/ros-pkg/stacks/$STACK_NAME/tags/$RELEASE_NAME'
+        release-tag: 'https://code.ros.org/svn/ros-pkg/stacks/$STACK_NAME/tags/$STACK_NAME-$STACK_VERSION'
   arm_navigation:
-    _rules: *id001
+    _rules: wg-nobranch
     version: 0.2.2
   camera_drivers:
-    _rules: *id002
+    _rules: rp-nobranch
     version: 0.9.2
   collision_environment:
-    _rules: *id001
+    _rules: wg-nobranch
     version: 0.2.0
   common: {version: 1.0.3}
   common_msgs: {version: 1.0.0}
   diagnostics: {version: 1.0.2}
   driver_common: {version: 1.0.1}
   executive_python:
-    _rules: *id001
+    _rules: wg-nobranch
     version: 0.1.0
   geometry: {version: 1.0.2}
   image_common: {version: 1.0.1}
   image_pipeline: {version: 1.0.0}
   image_transport_plugins:
-    _rules: *id002
+    _rules: rp-nobranch
     version: 0.1.1
   imu_drivers: {version: 1.0.1}
   joystick_drivers: {version: 1.0.1}
   kinematics:
-    _rules: *id001
+    _rules: wg-nobranch
     version: 0.1.0
   laser_drivers: {version: 1.0.4}
   laser_pipeline: {version: 1.0.1}
   motion_planners:
-    _rules: *id001
+    _rules: wg-nobranch
     version: 0.2.0
   motion_planning_common:
-    _rules: *id001
+    _rules: wg-nobranch
     version: 0.2.1
   motion_planning_environment:
-    _rules: *id001
+    _rules: wg-nobranch
     version: 0.2.0
   motion_planning_visualization:
-    _rules: *id001
+    _rules: wg-nobranch
     version: 0.2.0
   navigation: {version: 1.0.4}
   physics_ode: {version: 1.0.4}
   pr2_apps:
-    _rules: *id001
+    _rules: wg-nobranch
     version: 0.2.1
   pr2_arm_navigation:
-    _rules: *id001
+    _rules: wg-nobranch
     version: 0.2.1
   pr2_arm_navigation_apps:
-    _rules: *id001
+    _rules: wg-nobranch
     version: 0.2.0
   pr2_arm_navigation_tests:
-    _rules: *id001
+    _rules: wg-nobranch
     version: 0.2.0
   pr2_calibration:
-    _rules: *id001
+    _rules: wg-nobranch
     version: 0.1.2
   pr2_common:
-    _rules: *id003
+    _rules: wg-ros-pkg
     version: 1.0.2
   pr2_common_actions:
-    _rules: *id001
+    _rules: wg-nobranch
     version: 0.1.3
   pr2_controllers:
-    _rules: *id003
+    _rules: wg-ros-pkg
     version: 1.0.0
   pr2_doors:
-    _rules: *id001
+    _rules: wg-nobranch
     version: 0.2.9
   pr2_ethercat_drivers:
-    _rules: *id001
+    _rules: wg-nobranch
     version: 1.0.3
   pr2_gui:
-    _rules: *id003
+    _rules: wg-ros-pkg
     version: 1.0.0
   pr2_kinematics:
-    _rules: *id001
+    _rules: wg-nobranch
     version: 0.2.0
   pr2_kinematics_with_constraints:
-    _rules: *id001
+    _rules: wg-nobranch
     version: 0.2.0
   pr2_mechanism:
-    _rules: *id003
+    _rules: wg-ros-pkg
     version: 1.0.2
   pr2_navigation:
-    _rules: *id001
+    _rules: wg-nobranch
     version: 0.1.1
   pr2_navigation_apps:
-    _rules: *id001
+    _rules: wg-nobranch
     version: 0.1.1
   pr2_plugs:
-    _rules: *id001
+    _rules: wg-nobranch
     version: 0.2.3
   pr2_power_drivers:
-    _rules: *id001
+    _rules: wg-nobranch
     version: 1.0.2
   pr2_robot:
-    _rules: *id001
+    _rules: wg-nobranch
     version: 0.3.7
   pr2_simulator:
-    _rules: *id003
+    _rules: wg-ros-pkg
     version: 1.0.3
   pr2_web_apps:
-    _rules: *id001
+    _rules: wg-nobranch
     version: 0.3.4
   robot_calibration:
-    _rules: *id002
+    _rules: rp-nobranch
     version: 0.2.0
   robot_model: {version: 1.0.1}
   ros:
-    _rules: {dev-svn: 'https://code.ros.org/svn/ros/stacks/ros/tags/rc', distro-svn: 'https://code.ros.org/svn/ros/stacks/ros/tags/$RELEASE_NAME',
-      release-svn: 'https://code.ros.org/svn/ros/stacks/ros/tags/$STACK_NAME-$STACK_VERSION'}
+    _rules:
+      svn:
+        dev: 'https://code.ros.org/svn/ros/stacks/ros/tags/rc'
+        distro-tag: 'https://code.ros.org/svn/ros/stacks/ros/tags/$RELEASE_NAME'
+        release-tag: 'https://code.ros.org/svn/ros/stacks/ros/tags/$STACK_NAME-$STACK_VERSION'
     version: 1.0.1
   ros_experimental:
-    _rules: {dev-svn: 'https://code.ros.org/svn/ros/stacks/$STACK_NAME/trunk', distro-svn: 'https://code.ros.org/svn/ros/stacks/$STACK_NAME/tags/$RELEASE_NAME',
-      release-svn: 'https://code.ros.org/svn/ros/stacks/ros/tags/$STACK_NAME-$STACK_VERSION'}
+    _rules: 
+        dev: 'https://code.ros.org/svn/ros/stacks/$STACK_NAME/trunk'
+        distro-tag: 'https://code.ros.org/svn/ros/stacks/$STACK_NAME/tags/$RELEASE_NAME'
+        release-tag: 'https://code.ros.org/svn/ros/stacks/ros/tags/$STACK_NAME-$STACK_VERSION'
     version: 0.1.0
   simulator_gazebo: {version: 1.0.3}
   simulator_stage: {version: 1.0.0}
@@ -137,25 +150,26 @@ stacks:
   sound_drivers: {version: 1.0.3}
   test_rule_override:
     _rules:
-      dev-svn: 'https://madeup/stuff/$STACK_NAME/trunk'
+      svn:
+        dev: 'https://madeup/stuff/$STACK_NAME/trunk'
     version: 0.1.3
   trajectory_filters:
-    _rules: *id001
+    _rules: wg-nobranch
     version: 0.2.2
   vision_opencv: {version: 1.0.1}
   visualization: {version: 1.0.1}
   visualization_common: {version: 1.0.1}
   web_interface:
-    _rules: *id001
+    _rules: wg-nobranch
     version: 0.3.15
   wg_common:
-    _rules: *id001
+    _rules: wg-nobranch
     version: 0.1.2
   wg_pr2_apps:
-    _rules: *id001
+    _rules: wg-nobranch
     version: 0.1.1
   wifi_drivers:
-    _rules: *id001
+    _rules: wg-nobranch
     version: 0.1.3
 variants:
 - base:
