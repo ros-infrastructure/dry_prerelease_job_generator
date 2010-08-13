@@ -90,7 +90,8 @@ class GITClientTest(unittest.TestCase):
         self.assertTrue(gitc.detect_presence())
         self.assertEqual(gitc.get_path(), local_path)
         self.assertEqual(gitc.get_url(), url)
-        self.assertEqual(gitc.get_branch(), "rosinstall_auto_branch")
+        self.assertEqual(gitc.get_branch(), "master")
+        self.assertEqual(gitc.get_branch_parent(), "master")
         #self.assertEqual(gitc.get_version(), '-r*')
         
 

@@ -42,7 +42,7 @@ import vcs_base
 import base64 
 import sys
 
-branch_name = "rosinstall_auto_branch"
+branch_name = "rosinstall_tagged_branch"
 
 class GITClient(vcs_base.VCSClientBase):
 
@@ -59,7 +59,7 @@ class GITClient(vcs_base.VCSClientBase):
         return self.path_exists() and os.path.isdir(os.path.join(self._path, '.git'))
 
 
-    def checkout(self, url, version=''):
+    def checkout(self, url, version='master'):
         if self.path_exists():
             print >>sys.stderr, "Error: cannnot checkout into existing directory"
             return False
@@ -67,15 +67,21 @@ class GITClient(vcs_base.VCSClientBase):
         cmd = "git clone %s %s"%(url, self._path)
         if not subprocess.call(cmd, shell=True) == 0:
             return False
-        cmd = "git checkout %s -b %s"%(version, branch_name)
+        if self.get_branch_parent() == version:
+            # short circuit in default case
+            return True
+        elif self.is_remote_branch(version):  # remote branch
+            cmd = "git checkout remotes/origin/%s -b %s"%(version, version)
+        else:  # tag or hash
+            cmd = "git checkout %s -b %s"%(version, branch_name)
         if not self.is_hash(version):
             cmd = cmd + " --track"
-            print "cmd", cmd
+        #print "Git Installing: %s"%cmd
         if not subprocess.call(cmd, cwd=self._path, shell=True) == 0:
             return False
         return True
 
-    def update(self, version=''):
+    def update(self, version='master'):
         if not self.detect_presence():
             return False
         
@@ -116,6 +122,27 @@ class GITClient(vcs_base.VCSClientBase):
         return output.strip().strip("'")
 
 
+    def is_remote_branch(self, branch_name):
+        output = subprocess.Popen(['git', "branch", '-a'], cwd= self._path, stdout=subprocess.PIPE).communicate()[0]
+        for l in output.split('\n'):
+            elems = l.split()
+            if len(elems) == 1:
+                br_names = elems[0].split('/')
+                if len(br_names) == 3 and br_names[0] == 'remotes' and br_names[1] == 'origin' and br_names[2] == branch_name:
+                    return True
+        return False
+
+    def is_local_branch(self, branch_name):
+        output = subprocess.Popen(['git', "branch"], cwd= self._path, stdout=subprocess.PIPE).communicate()[0]
+        for l in output.split('\n'):
+            elems = l.split()
+            if len(elems) == 1:
+                if elems[0] == branch_name:
+                    return True
+            elif len(elems) == 2:
+                if elems[0] == '*' and elems[1] == branch_name:
+                    return True
+        return False
 
     def get_branch(self):
         output = subprocess.Popen(['git', "branch"], cwd= self._path, stdout=subprocess.PIPE).communicate()[0]
