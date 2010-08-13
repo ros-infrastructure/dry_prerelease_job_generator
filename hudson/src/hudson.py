@@ -43,7 +43,7 @@ def auth_headers(username, password):
 
 class Hudson(object):
     
-    def __init__(self, url, username, password):
+    def __init__(self, url, username=None, password=None):
         if url[-1] == '/':
             self.server = url
         else:
