@@ -6,10 +6,10 @@ export WORKSPACE=`pwd`
 export DISTRO=karmic
 export ARCH=amd64
 export ROSDISTRO=cturtle
-export ROSSTACK=common_msgs
+export ROSSTACK=ros
 export ROSVERSION=1.2.0
 export DEBNAME=ros-${ROSDISTRO}-`echo $ROSSTACK | sed -e 's/_/-/'`
-export DEBVERSION=1.2.0-0
+export DEBVERSION=1.2.0-0~${DISTRO}
 export ROSFILE=${ROSSTACK}-${ROSVERSION}
 export DEBFILE=${DEBNAME}_${DEBVERSION}
 
