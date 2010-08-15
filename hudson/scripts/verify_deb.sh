@@ -21,20 +21,28 @@ sudo apt-get install pbuilder
 {
     sudo pbuilder --create --distribution ${DISTRO} --othermirror "deb http://code.ros.org/packages/ros-shadow/ubuntu ${DISTRO} main" --basetgz ${DISTRO_TGZ} --components "main restricted universe multiverse" --extrapackages "wget lsb-release debhelper"
 }
-wget https://code.ros.org/svn/release/download/stacks/${ROSSTACK}/${ROSFILE}/${DEBFILE}.dsc -O ${DEBFILE}.dsc
-wget https://code.ros.org/svn/release/download/stacks/${ROSSTACK}/${ROSFILE}/${DEBFILE}.tar.gz -O ${DEBFILE}.tar.gz
+mkdir -p download
+wget https://code.ros.org/svn/release/download/stacks/${ROSSTACK}/${ROSFILE}/${DEBFILE}.dsc -O download/${DEBFILE}.dsc
+wget https://code.ros.org/svn/release/download/stacks/${ROSSTACK}/${ROSFILE}/${DEBFILE}.tar.gz -O download/${DEBFILE}.tar.gz
 mkdir -p hookdir
-cat > hookdir/A00fetch <<EOF
+cat > hookdir/A50fetch <<EOF
+#!/bin/sh
 set -o errexit
-wget https://code.ros.org/svn/release/download/stacks/${ROSSTACK}/${ROSFILE}/${ROSFILE}.tar.bz2 -O /tmp/buildd/${ROSFILE}.tar.bz2" > hookdir/A00fetch
+wget https://code.ros.org/svn/release/download/stacks/${ROSSTACK}/${ROSFILE}/${ROSFILE}.tar.bz2 -O /tmp/buildd/${ROSFILE}.tar.bz2
+EOF
+cat > hookdir/D50update <<EOF
+#!/bin/sh
+set -o errexit
 apt-get update
 EOF
-chmod +x hookdir/A00fetch
+chmod +x hookdir/A50fetch
+chmod +x hookdir/D50update
 rm -rf result
 mkdir -p result
-sudo pbuilder --build --basetgz ${DISTRO_TGZ} --hookdir hookdir  --buildresult result ${DEBFILE}.dsc
+sudo pbuilder --build --basetgz ${DISTRO_TGZ} --hookdir hookdir  --buildresult result download/${DEBFILE}.dsc
 dpkg-scanpackages . /dev/null > result/Packages
 cat > script.sh <<EOF
+#!/bin/sh
 set -o errexit
 echo "deb file:/home/leibs/workspace result/" > /etc/apt/sources.list.d/pbuild.list
 apt-get update
