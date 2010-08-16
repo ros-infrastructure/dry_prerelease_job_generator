@@ -225,7 +225,8 @@ class Config:
         else:
           success = False
       else:
-        print "%s successfully installed"%t
+          pass
+          #print "%s successfully installed"%t
     return success
 
   # TODO go back and make sure that everything in options.path is described
@@ -327,7 +328,7 @@ def rosinstall_main(argv):
   if len(argv) < 2:
     usage()
   args = argv[1:]
-  parser = OptionParser(usage="usage: %prog PATH [URI] [options]", version="%prog 0.5.5")
+  parser = OptionParser(usage="usage: %prog PATH [URI] [options]", version="%prog 0.5.6")
   parser.add_option("-n", "--nobuild", dest="nobuild", default=False,
                     help="skip the build step for the ROS stack",
                     action="store_true")
