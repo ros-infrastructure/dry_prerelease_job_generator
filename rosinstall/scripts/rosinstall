@@ -77,9 +77,10 @@ class VCSConfigElement(ConfigElement):
     self.version = version
 
   def install(self,  backup_path = None,mode = 'abort'):
-    print "Updating %s to %s %s"%(self.path, self.uri, self.version)
+    print "Installing %s to %s %s"%(self.path, self.uri, self.version)
     if not self.vcsc.path_exists():
-      self.vcsc.checkout(self.uri, self.version)
+        if not self.vcsc.checkout(self.uri, self.version):
+            return False
     else:
       if not self.vcsc.detect_presence() \
             or self.vcsc.get_url() != self.uri \
@@ -104,12 +105,15 @@ class VCSConfigElement(ConfigElement):
             raise ROSInstallException("Directory '%s' already exists but is at url:%s not requested %s"%(self.vcsc.get_path(), self.vcsc.get_url(), self.uri))
         elif mode == 'backup':
           self.backup(backup_path)
-          self.vcsc.checkout(self.uri, self.version)
         elif mode == 'delete':
           shutil.rmtree(self.path)
-          self.vcsc.checkout(self.uri, self.version)
+          
+        if not self.vcsc.checkout(self.uri, self.version):
+            return False
 
-      self.vcsc.update(self.version)
+      else:
+        if not self.vcsc.update(self.version):
+            return False
     return True
   
   def get_ros_path(self):
@@ -209,13 +213,21 @@ class Config:
     f.write(yaml.safe_dump(self.source))
     f.close()
     
-  def execute_install(self, backup_path, mode):
+  def execute_install(self, backup_path, mode, robust = False):
+    success = True
     if not os.path.exists(self.base_path):
       os.mkdir(self.base_path)
     for t in self.trees:
       if not t.install(os.path.join(self.base_path, backup_path), mode):
-        raise ROSInstallException("Failed to install tree '%s'\n vcs not setup correctly"%t.get_path())
-        
+        fail_str = "Failed to install tree '%s'\n vcs not setup correctly"%t.get_path()
+        if not robust:
+          raise ROSInstallException(fail_str)
+        else:
+          success = False
+      else:
+        print "%s successfully installed"%t
+    return success
+
   # TODO go back and make sure that everything in options.path is described
   # in the yaml, and offer to delete otherwise? not sure, but it could go here
 
@@ -322,7 +334,9 @@ def rosinstall_main(argv):
   parser.add_option("--rosdep-yes", dest="rosdep_yes", default=False,
                     help="Pass through --rosdep-yes to rosmake", 
                     action="store_true")
-
+  parser.add_option("--continue-on-error", dest="robust", default=False,
+                    help="Continue despite checkout errors", 
+                    action="store_true")
   parser.add_option("--delete-changed-uris", dest="delete_changed", default=False,
                     help="Delete the local copy of a directory before changing uri.", 
                     action="store_true")
@@ -419,7 +433,7 @@ def rosinstall_main(argv):
   ## Save .rosinstall 
   config.write_source()
   ## install or update each element
-  config.execute_install(options.backup_changed, mode)
+  install_success = config.execute_install(options.backup_changed, mode, options.robust)
   ## Generate setup.sh and save
   config.generate_setup()
   ## bootstrap the build if installing ros
@@ -431,9 +445,13 @@ def rosinstall_main(argv):
       subprocess.check_call("source %s && rosmake rostest --rosdep-install" % (os.path.join(options.path, 'setup.sh')), shell=True, executable='/bin/bash')
   print "\ndone. Now, type 'source %s/setup.sh' to set up your environment.\nAdd that to the bottom of your ~/.bashrc to set it up every time.\n\n" % options.path
 
+  if not install_success:
+     print "Warning: installation encountered errors, but --continue-on-error was requested.  Look above for warnings."
+  return True
+
 if __name__ == "__main__":
   try:
-    sys.exit(rosinstall_main(sys.argv) or 0)
+    sys.exit(not rosinstall_main(sys.argv))
   except ROSInstallException, e:
     print >> sys.stderr, "ERROR: %s"%str(e)
     sys.exit(1)

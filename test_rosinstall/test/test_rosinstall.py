@@ -231,6 +231,26 @@ class RosinstallOptionsTest(unittest.TestCase):
         self.directories.pop("backup1")
 
 
+    def test_rosinstall_invalid_fail(self):
+        directory = tempfile.mkdtemp()
+        self.directories["invalid_fail"] = directory
+        cmd = self.rosinstall_fn
+        cmd.extend([directory, os.path.join(roslib.packages.get_pkg_dir("test_rosinstall"), "rosinstalls", "broken.rosinstall"), "-n"])
+        self.assertEqual(1,subprocess.call(cmd))
+
+        shutil.rmtree(directory)
+        self.directories.pop("invalid_fail")
+
+    def test_rosinstall_invalid_continue(self):
+        directory = tempfile.mkdtemp()
+        self.directories["invalid_continue"] = directory
+        cmd = self.rosinstall_fn
+        cmd.extend([directory, os.path.join(roslib.packages.get_pkg_dir("test_rosinstall"), "rosinstalls", "broken.rosinstall"), "-n", "--continue-on-error"])
+        self.assertEqual(0,subprocess.call(cmd))
+
+        shutil.rmtree(directory)
+        self.directories.pop("invalid_continue")
+
 if __name__ == '__main__':
     rostest.unitrun('test_rosinstall', 'test_commandline', RosinstallOptionsTest, coverage_packages=['rosinstall'])  
     rostest.unitrun('test_rosinstall', 'test_commandline', RosinstallCommandlineTest, coverage_packages=['rosinstall'])  
