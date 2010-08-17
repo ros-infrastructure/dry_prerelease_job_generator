@@ -11,6 +11,7 @@ install: ${ROS_DISTRO_DIR}/ros
 	bash -c ". setup_deb.sh && rosmake ros -i"
 	cp setup.sh ${ROS_DISTRO_DIR}/
 	./fixrpath.py --path ${ROS_DISTRO_DIR}/ros ${ROS_DISTRO_DIR} ${ROS_DISTRO_DIR_FINAL}
+	./fixbinpath.py ${ROS_DISTRO_DIR}/ros/3rdparty/wxswig/bin/swig ${ROS_DISTRO_DIR}/ros/3rdparty/wxswig/share/swig/1.3.29 ${ROS_DISTRO_DIR_FINAL}/ros/3rdparty/wxswig/share/swig/1.3.29
 
 clean:
 
