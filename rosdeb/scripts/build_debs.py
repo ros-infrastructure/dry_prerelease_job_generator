@@ -84,16 +84,15 @@ def load_info(stack_name, stack_version):
 
 def compute_deps(distro, stack_name):
 
-    if stack_name not in distro.stacks:
-        print >> sys.stderr, "[%s] not found in distro."%(stack_name)
-        sys.exit(1)
-
     seen = set()
     ordered_deps = []
 
     def add_stack(s):
         if s in seen:
             return
+        if s not in distro.stacks:
+            print >> sys.stderr, "[%s] not found in distro."%(stack_name)
+            sys.exit(1)
         seen.add(s)
         v = distro.stacks[s].version
         si = load_info(s, v)
@@ -101,7 +100,11 @@ def compute_deps(distro, stack_name):
             add_stack(d)
         ordered_deps.append((s,v))
 
-    add_stack(stack_name)
+    if stack_name == 'ALL':
+        for s in distro.stacks.keys():
+            add_stack(s)
+    else:
+        add_stack(stack_name)
 
     return ordered_deps
 
@@ -114,7 +117,12 @@ def create_chroot(distro, distro_name, os_platform, arch):
 
     ros_info = load_info('ros', distro.stacks['ros'].version)
 
+    # Things that this build infrastructure depends on
     basedeps = ['wget', 'lsb-release', 'debhelper']
+    # Deps we claimed to have needed for building ROS
+    basedeps += ['build-essential', 'python-yaml', 'cmake', 'subversion', 'python-setuptools']
+    # Extra deps that some stacks seem to be missing
+    basedeps += ['libxml2-dev']
 
     deplist = ' '.join(basedeps+ros_info['rosdeps'][os_platform])
 
@@ -224,9 +232,11 @@ reprepro -b /var/packages/ros-shadow/ubuntu -V processincoming %(os_platform)s
         print >> sys.stderr, o
         sys.exit(1)
 
+
 def deb_in_repo(deb_name, deb_version, packagelist):
     str = 'Package: %s\nVersion: %s'%(deb_name, deb_version)
     return str in packagelist
+
 
 def build_debs(distro_name, stack_name, os_platform, arch, staging_dir, force):
 
@@ -235,7 +245,7 @@ def build_debs(distro_name, stack_name, os_platform, arch, staging_dir, force):
     distro_uri = "https://code.ros.org/svn/release/trunk/distros/%s.rosdistro"%distro_name
     distro = Distro(distro_uri)
 
-    if stack_name not in distro.stacks:
+    if stack_name != 'ALL' and stack_name not in distro.stacks:
         print >> sys.stderr, "[%s] not found in distro."%(stack_name)
         sys.exit(1)
 
@@ -290,8 +300,6 @@ def build_debs_main():
     if not os.path.exists(staging_dir):
         print "creating staging dir: %s"%(staging_dir)
         os.makedirs(staging_dir)
-
-
 
     build_debs(distro_name, stack_name, os_platform, arch, staging_dir, options.force)
 
