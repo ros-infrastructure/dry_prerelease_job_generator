@@ -233,7 +233,7 @@ reprepro -b /var/packages/ros-shadow/ubuntu -V processincoming %(os_platform)s
         sys.exit(1)
 
 
-def deb_in_repo(deb_name, deb_version):
+def deb_in_repo(deb_name, deb_version, os_platform, arch):
     # Retrieve the package list from the shadow repo
     packageurl="http://code.ros.org/packages/ros-shadow/ubuntu/dists/%(os_platform)s/main/binary-%(arch)s/Packages"%locals()
     packagelist = urllib2.urlopen(packageurl).read()
@@ -262,7 +262,7 @@ def build_debs(distro_name, stack_name, os_platform, arch, staging_dir, force):
     for (sn, sv) in deps:
         deb_name = "ros-%s-%s"%(distro_name, debianize_name(sn))
         deb_version = debianize_version(sv, '0', os_platform)
-        if not deb_in_repo(deb_name, deb_version) or (force and sn == stack_name):
+        if not deb_in_repo(deb_name, deb_version, os_platform, arch) or (force and sn == stack_name):
             do_deb_build(distro_name, sn, sv, os_platform, arch, staging_dir)
         else:
             print "Skipping %s (%s) since already built."%(sn,sv)
