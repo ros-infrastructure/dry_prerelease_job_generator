@@ -122,7 +122,7 @@ def create_chroot(distro, distro_name, os_platform, arch):
     # Deps we claimed to have needed for building ROS
     basedeps += ['build-essential', 'python-yaml', 'cmake', 'subversion', 'python-setuptools']
     # Extra deps that some stacks seem to be missing
-    basedeps += ['libxml2-dev']
+    basedeps += ['libxml2-dev', 'swig']
 
     deplist = ' '.join(basedeps+ros_info['rosdeps'][os_platform])
 
