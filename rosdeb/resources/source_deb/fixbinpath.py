@@ -31,8 +31,8 @@ def main(argv, stdout, environ):
 
   new_str_pad = new_str + chr(0)*(len(old_str)-len(new_str))
 
-  print 'Replacing: %s'%(len(old_str),old_str)
-  print '     with: %s'%(len(new_str_pad),new_str_pad)
+  print 'Replacing: %s'%(old_str)
+  print '     with: %s'%(new_str_pad)
 
   with open(path, 'r') as f:
     binstr = f.read()
