@@ -36,13 +36,13 @@ def main(argv, stdout, environ):
 
       if f[-3:] == '.pc':
 
-        with open(path, 'r') as f:
-          pcstr = f.read()
+        with open(os.path.join(root,f), 'r') as ff:
+          pcstr = ff.read()
 
-        pcstr = pcstr.replace(old_str,new_str)
+        pcstr = pcstr.replace(old_path,new_path)
 
-        with open(path, 'w') as f:
-          f.write(pcstr)
+        with open(os.path.join(root,f), 'w') as ff:
+          ff.write(pcstr)
         
 
 
