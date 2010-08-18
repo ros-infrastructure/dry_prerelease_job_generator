@@ -47,7 +47,7 @@ import email
 import stat
 
 from roslib2.distro import DistroException, Distro
-from rosdeb import debianize_name, debianize_version, ubuntu_release
+from rosdeb import debianize_name, debianize_version, ubuntu_release, debianize_Distro
 
 NAME='build_release'
 
@@ -123,7 +123,8 @@ def _checkout_command(argv):
   elif len(args) != 1:
     parser.error('you may only specify one distro file')    
   distro_uri = args[0]
-  d = Distro(distro_uri)
+  d = debianize_Distro(Distro(distro_uri))
+
   release_name = d.release_name # save typing
   workspace = options.workspace
   print "checking out %s to %s" % (release_name, workspace)
