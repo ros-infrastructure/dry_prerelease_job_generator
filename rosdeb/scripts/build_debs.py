@@ -258,14 +258,29 @@ def build_debs(distro_name, stack_name, os_platform, arch, staging_dir, force):
     # Find all the deps in the distro for this stack
     deps = compute_deps(distro, stack_name)
 
+    broken = set()
+    skipped = set()
+
     # Build the deps in order
     for (sn, sv) in deps:
         deb_name = "ros-%s-%s"%(distro_name, debianize_name(sn))
         deb_version = debianize_version(sv, '0', os_platform)
         if not deb_in_repo(deb_name, deb_version, os_platform, arch) or (force and sn == stack_name):
-            do_deb_build(distro_name, sn, sv, os_platform, arch, staging_dir)
+            si = load_info(sn, sv)
+            if set(si['depends')).isdisjoint(broken.union(skipped)):
+                try:
+                    do_deb_build(distro_name, sn, sv, os_platform, arch, staging_dir)
+                except:
+                    broken.add(sn)
+            else:
+                print "Skipping %s (%s) since dependencies not built: %s"%(sn, sv, broken.union(skipped))
+                skipped.add(sn)
         else:
             print "Skipping %s (%s) since already built."%(sn,sv)
+
+
+    if not broken.union(skipped):
+        print sys.stderr, "Broken stacks: %s.  Skipped stacks: %s"%(broken, skipped)
 
 
 def build_debs_main():
