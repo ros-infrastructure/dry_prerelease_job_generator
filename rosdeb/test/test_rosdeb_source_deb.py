@@ -72,7 +72,7 @@ class SourceDebTest(unittest.TestCase):
         import rosdeb.rosutil 
 
         stack_version = '1.2.3'
-        for stack_name in roslib.stacks.list_stacks():
+        for stack_name in ['ros', 'navigation', 'simulator_gazebo', 'geometry', 'common', 'pr2_common']:
             if stack_name == 'sandbox':
                 continue
 
