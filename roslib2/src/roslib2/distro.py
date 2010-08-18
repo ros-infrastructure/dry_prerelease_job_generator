@@ -177,11 +177,7 @@ def load_distro_stacks(distro_doc, stack_names, release_name=None, version=None)
         if stack_name[0] == '_':
             continue
 
-        try:
-            stack_version = stack_props[stack_name]['version']
-        except KeyError:
-            raise DistroException("stack [%s] is missing version key"%stack_name)
-
+        stack_version = stack_props[stack_name].get('version', 'unversioned')
         rules = get_rules(distro_doc, stack_name)
         stacks[stack_name] = DistroStack(stack_name, rules, stack_version, release_name, version)
     return stacks
