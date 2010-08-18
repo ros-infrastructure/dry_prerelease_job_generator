@@ -173,7 +173,10 @@ def control_file(metadata, distro_name, platform_name):
         data['maintainer'] = data['maintainer'][len('Maintained by '):]
 
     try:
-        data['deb-depends'] = ', '.join(deb_depends(metadata, distro_name, platform_name))
+        depends = deb_depends(metadata, distro_name, platform_name)
+        if depends is None:
+            raise Exception("stack [%s] does not have valid debian package dependencies for release [%s]"%(metadata['stack'], platform_name))
+        data['deb-depends'] = ', '.join(depends)
     except KeyError:
         raise Exception("stack [%s] does not have rosdeps for release [%s]"%(metadata['stack'], platform_name))
     
