@@ -75,6 +75,10 @@ def platforms():
 def debianize_Distro(distro):
     """
     Add debian-specific attributes to distro objects (DistroStack)
+
+    @param distro: distro instance
+    @type  distro: Distro
+    @return: distro object. This is the same instance as distro param and is only returned for assignment convenience.
     """
     for stack in distro.stacks.itervalues():
         try:
@@ -83,4 +87,5 @@ def debianize_Distro(distro):
         except DistroException:
             # ignore on non debian systems. This really belongs in an extension
             stack.debian_version = stack.debian_name = None
+    return distro
 
