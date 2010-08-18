@@ -267,7 +267,7 @@ def build_debs(distro_name, stack_name, os_platform, arch, staging_dir, force):
         deb_version = debianize_version(sv, '0', os_platform)
         if not deb_in_repo(deb_name, deb_version, os_platform, arch) or (force and sn == stack_name):
             si = load_info(sn, sv)
-            if set(si['depends')).isdisjoint(broken.union(skipped)):
+            if set(si['depends']).isdisjoint(broken.union(skipped)):
                 try:
                     do_deb_build(distro_name, sn, sv, os_platform, arch, staging_dir)
                 except:
@@ -281,6 +281,7 @@ def build_debs(distro_name, stack_name, os_platform, arch, staging_dir, force):
 
     if not broken.union(skipped):
         print sys.stderr, "Broken stacks: %s.  Skipped stacks: %s"%(broken, skipped)
+        sys.exit(1)
 
 
 def build_debs_main():
