@@ -91,7 +91,7 @@ def compute_deps(distro, stack_name):
         if s in seen:
             return
         if s not in distro.stacks:
-            print >> sys.stderr, "[%s] not found in distro."%(stack_name)
+            print >> sys.stderr, "[%s] not found in distro."%(s)
             sys.exit(1)
         seen.add(s)
         v = distro.stacks[s].version
