@@ -279,8 +279,8 @@ def build_debs(distro_name, stack_name, os_platform, arch, staging_dir, force):
             print "Skipping %s (%s) since already built."%(sn,sv)
 
 
-    if not broken.union(skipped):
-        print sys.stderr, "Broken stacks: %s.  Skipped stacks: %s"%(broken, skipped)
+    if broken.union(skipped):
+        print >> sys.stderr, "Broken stacks: %s.  Skipped stacks: %s"%(broken, skipped)
         sys.exit(1)
 
 
