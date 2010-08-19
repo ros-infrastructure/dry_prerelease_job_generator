@@ -318,7 +318,7 @@ def build_debs_main():
 
     build_debs(distro_name, stack_name, os_platform, arch, staging_dir, options.force)
 
-    if options.staging_dir is not None:
+    if options.staging_dir is None:
         shutil.rmtree(staging_dir)
         
 if __name__ == '__main__':
