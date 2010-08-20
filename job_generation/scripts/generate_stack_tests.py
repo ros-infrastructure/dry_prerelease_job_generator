@@ -42,20 +42,20 @@ HUDSON_DEVEL_CONFIG = """<?xml version='1.0' encoding='UTF-8'?>
       <command>
 #!/bin/bash
 set -o errexit
-bash
 wget http://code.ros.org/svn/ros/installers/trunk/hudson/hudson_helper
-if [ ! -f /etc/apt/sources.list.d/ros-latest.list ];
-then
-sudo sh -c 'echo "deb http://code.ros.org/packages/ros/ubuntu UBUNTUDISTRO main" > /etc/apt/sources.list.d/ros-latest.list'
-wget http://code.ros.org/packages/ros.key -O - | sudo apt-key add -
+if [ ! -f /etc/apt/sources.list.d/ros-latest.list ]; then
+  sudo sh -c 'echo "deb http://code.ros.org/packages/ros/ubuntu UBUNTUDISTRO main" > /etc/apt/sources.list.d/ros-latest.list'
+  wget http://code.ros.org/packages/ros.key -O - | sudo apt-key add -
 fi
 sudo apt-get update
 yes | sudo apt-get install ros-ROSDISTRO-STACKPACKAGENAME 
 export ROS_PACKAGE_PATH=/opt/ros/ROSDISTRO/stacks
 export ROS_ROOT=/opt/ros/ROSDISTRO/ros
+export ROS_TEST_RESULTS_DIR=`pwd`/test-results/
 chmod +x hudson_helper
 ./hudson_helper --dir-test STACKNAME build
 DELIM
+
 
 wget http://code.ros.org/svn/ros/installers/trunk/hudson/run_chroot.py --no-check-certificate -O $WORKSPACE/run_chroot.py
 chmod +x $WORKSPACE/run_chroot.py
@@ -101,7 +101,7 @@ SERVER      = 'http://build.willowgarage.com/'
 import roslib; roslib.load_manifest("hudson")
 from roslib import distro
 from roslib import rospack
-from hudson import hudson
+import hudson
 import sys
 
 
@@ -163,7 +163,7 @@ def main():
     devel_configs = {}
     for stack_name in distro_obj.stacks:
         devel_configs.update(create_devel_configs(distro_obj.release_name, stack_name, distro_obj.stacks))
-        create_prerelease_configs(distro_obj.release_name, stack_name, distro_obj.stacks)
+        #create_prerelease_configs(distro_obj.release_name, stack_name, distro_obj.stacks)
 
     # send tests to Hudson
     print "Username %s,  Password %s"%(username, password)
