@@ -1,0 +1,16 @@
+<package>
+  <description brief="job_generation">
+
+     job_generation
+
+  </description>
+  <author>Wim Meeussen</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/job_generation</url>
+  <depend package="hudson"/>
+  <depend package="roslib"/>
+
+</package>
+
+
