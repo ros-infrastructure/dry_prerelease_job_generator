@@ -79,7 +79,11 @@ def load_info(stack_name, stack_version):
 
     url = TARBALL_URL%locals()
 
-    return yaml.load(urllib2.urlopen(url))
+    try:
+        return yaml.load(urllib2.urlopen(url))
+    except:
+        print >> sys.stderr, "Problem fetching yaml info for %s %s (%s)"%(stack_name, stack_version, url)
+        sys.exit(1)
 
 
 def compute_deps(distro, stack_name):
