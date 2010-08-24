@@ -54,7 +54,7 @@ export ROS_TEST_RESULTS_DIR=`pwd`/test-results/
 mkdir -p /tmp/ros/
 cd /tmp/ros
 wget http://code.ros.org/svn/ros/installers/trunk/hudson/hudson_helper 
-python $WORKSPACE/hudson_helper --dir-test STACKNAME build
+python /tmp/ros/hudson_helper --dir-test STACKNAME build
 DELIM
 
 set -o errexit
