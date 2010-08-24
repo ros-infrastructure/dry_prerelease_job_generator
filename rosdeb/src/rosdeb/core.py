@@ -32,6 +32,8 @@
 #
 # Revision $Id: __init__.py 10652 2010-08-11 22:01:37Z kwc $
 
+import os
+import sys
 
 ubuntu_map = { '10.10': 'mighty', '10.04': 'lucid', '9.10': 'karmic', '9.04': 'jaunty', '8.10': 'intrepid', '8.04': 'hardy'}
 def ubuntu_release():
@@ -83,7 +85,7 @@ def debianize_Distro(distro):
     """
     for stack in distro.stacks.itervalues():
         try:
-            stack.debian_version = debianize_version(stack.stack_version, stack.release_version)
+            stack.debian_version = debianize_version(stack.version, stack.release_version)
             stack.debian_name    = debianize_name("ros-%s-%s"%(stack.release_name,stack.stack_name))
         except roslib2.distro.DistroException:
             # ignore on non debian systems. This really belongs in an extension

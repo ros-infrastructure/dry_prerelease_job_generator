@@ -31,6 +31,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 # Revision $Id: __init__.py 10652 2010-08-11 22:01:37Z kwc $
+from __future__ import with_statement
 
 import os
 import sys
