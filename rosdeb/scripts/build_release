@@ -433,7 +433,7 @@ def _package_command(argv):
   distro_uri = args[0]
   workspace = options.workspace # save typing
   porkspace = options.porkspace
-  distro = Distro(distro_uri)
+  distro = debianize_Distro(Distro(distro_uri))
   release_name = distro.release_name # save typing
 
   ros_root = os.path.join(workspace, 'ros')
