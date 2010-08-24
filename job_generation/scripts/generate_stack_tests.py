@@ -31,43 +31,52 @@ HUDSON_DEVEL_CONFIG = """<?xml version='1.0' encoding='UTF-8'?>
     <excludedRevprop></excludedRevprop> 
     <excludedCommitMessages></excludedCommitMessages> 
   </scm> 
-  <assignedNode>label-build-farm-chroot</assignedNode>
+  <assignedNode>hudson-devel</assignedNode>
   <canRoam>false</canRoam> 
   <disabled>false</disabled> 
   <blockBuildWhenUpstreamBuilding>false</blockBuildWhenUpstreamBuilding> 
-  <triggers class="vector"/> 
+  <triggers class="vector"> 
+    <hudson.triggers.SCMTrigger> 
+      <spec>*/5 * * * *</spec> 
+    </hudson.triggers.SCMTrigger> 
+  </triggers> 
   <concurrentBuild>false</concurrentBuild> 
   <builders> 
     <hudson.tasks.Shell> 
       <command>cat &gt; $WORKSPACE/script.sh &lt;&lt;DELIM
 #!/usr/bin/env bash
 set -o errexit
+echo "_________________________________BEGIN SCRIPT______________________________________"
 if [ ! -f /etc/apt/sources.list.d/ros-latest.list ]; then
   sudo sh -c 'echo "deb http://code.ros.org/packages/ros/ubuntu UBUNTUDISTRO main" > /etc/apt/sources.list.d/ros-latest.list'
   wget http://code.ros.org/packages/ros.key -O - | sudo apt-key add -
 fi
 sudo apt-get update
-sudo apt-get install ros-ROSDISTRO-STACKPACKAGENAME --yes
-export ROS_PACKAGE_PATH=/opt/ros/ROSDISTRO/stacks
-export ROS_ROOT=/opt/ros/ROSDISTRO/ros
-export ROS_TEST_RESULTS_DIR=`pwd`/test-results/
-mkdir -p /tmp/ros/
+sudo apt-get install ros-cturtle-geometry --yes
+export ROS_PACKAGE_PATH=/opt/ros/cturtle/stacks
+export ROS_ROOT=/opt/ros/cturtle/ros
+export ROS_TEST_RESULTS_DIR=/tmp/ros/test_results/
 cd /tmp/ros
 wget http://code.ros.org/svn/ros/installers/trunk/hudson/hudson_helper 
-python /tmp/ros/hudson_helper --dir-test STACKNAME build
+export WORKSPACE=/tmp/ros
+export JOB_NAME=$JOB_NAME
+export BUILD_NUMBER=$BUILD_NUMBER
+export HUDSON_URL=$HUDSON_URL
+python /tmp/ros/hudson_helper --dir-test geometry build
+echo "_________________________________END SCRIPT_______________________________________"
 DELIM
 
 set -o errexit
 
 wget http://code.ros.org/svn/ros/installers/trunk/hudson/run_chroot.py --no-check-certificate -O $WORKSPACE/run_chroot.py
 chmod +x $WORKSPACE/run_chroot.py
-cd $WORKSPACE &amp;&amp; $WORKSPACE/run_chroot.py --distro=UBUNTUDISTRO --arch=amd64  --persist-chroot --script=$WORKSPACE/script.sh
+cd $WORKSPACE &amp;&amp; $WORKSPACE/run_chroot.py --distro=UBUNTUDISTRO --arch=ARCH  --ramdisk --script=$WORKSPACE/script.sh
      </command> 
     </hudson.tasks.Shell> 
   </builders> 
   <publishers> 
     <hudson.tasks.junit.JUnitResultArchiver> 
-      <testResults>$WORKSPACE/test_results/_hudson/*.xml</testResults> 
+      <testResults>test_results/_hudson/*.xml</testResults> 
     </hudson.tasks.junit.JUnitResultArchiver> 
     <hudson.plugins.emailext.ExtendedEmailPublisher> 
       <recipientList>wim@willowgarage.com</recipientList> 
@@ -209,7 +218,7 @@ DELIM
 
 wget http://code.ros.org/svn/ros/installers/trunk/hudson/run_chroot.py --no-check-certificate -O $WORKSPACE/run_chroot.py
 chmod +x $WORKSPACE/run_chroot.py
-cd $WORKSPACE &amp;&amp; $WORKSPACE/run_chroot.py --distro=UBUNTUDISTRO --arch=amd64  --persist-chroot --script=$WORKSPACE/script.sh
+cd $WORKSPACE &amp;&amp; $WORKSPACE/run_chroot.py --distro=UBUNTUDISTRO --arch=ARCH  --persist-chroot --script=$WORKSPACE/script.sh
      </command> 
     </hudson.tasks.Shell> 
   </builders> 
@@ -226,9 +235,10 @@ ROSINSTALL_CONFIG = """
 """
 
 # the supported Ubuntu distro's for each ros distro
-UBUNTU_DISTROS = {'cturtle':['lucid', 'karmic'],
-                  'boxturtle':['hardy','karmic']}
+UBUNTU_DISTROS = {'cturtle':['lucid', 'karmic', 'jaunty'],
+                  'boxturtle':['hardy','karmic', 'jaunty']}
 
+ARCHS = ['amd64', 'i386']
 
 SERVER      = 'http://build.willowgarage.com/'
 
@@ -244,14 +254,16 @@ def create_devel_configs(distro_name, stack_name, stack_map):
     # create hudson config files for each ubuntu distro
     configs = {}
     for ubuntu in UBUNTU_DISTROS[distro_name]:
-        name = "stack_devel_"+ubuntu+'_'+distro_name+'_'+stack_name
-        hudson_config = HUDSON_DEVEL_CONFIG
-        hudson_config = hudson_config.replace('UBUNTUDISTRO', ubuntu)
-        hudson_config = hudson_config.replace('ROSDISTRO', distro_name)
-        hudson_config = hudson_config.replace('STACKNAME', stack_name)   
-        hudson_config = hudson_config.replace('STACKPACKAGENAME', stack_name.replace('_','-'))   
-        hudson_config = hudson_config.replace('STACKURI', stack_map[stack_name].dev_svn)    
-        configs[name] = hudson_config
+        for arch in ARCHS:
+            name = "_".join(['auto_stack_devel', stack_name, distro_name, ubuntu, arch])
+            hudson_config = HUDSON_DEVEL_CONFIG
+            hudson_config = hudson_config.replace('UBUNTUDISTRO', ubuntu)
+            hudson_config = hudson_config.replace('ARCH', arch)
+            hudson_config = hudson_config.replace('ROSDISTRO', distro_name)
+            hudson_config = hudson_config.replace('STACKNAME', stack_name)   
+            hudson_config = hudson_config.replace('STACKPACKAGENAME', stack_name.replace('_','-'))   
+            hudson_config = hudson_config.replace('STACKURI', stack_map[stack_name].dev_svn)    
+            configs[name] = hudson_config
     return configs
 
 
@@ -268,14 +280,16 @@ def create_prerelease_configs(distro_name, stack_name, stack_map):
     # create hudson config files for each ubuntu distro
     configs = {}
     for ubuntu in UBUNTU_DISTROS[distro_name]:
-        name = 'stack_pre_release_'+ubuntu+'_'+distro_name+'_'+stack_name
-        hudson_config = HUDSON_PRERELEASE_CONFIG
-        hudson_config = hudson_config.replace('ROSINSTALL', rosinstall_config_total)
-        hudson_config = hudson_config.replace('UBUNTUDISTRO', ubuntu)
-        hudson_config = hudson_config.replace('ROSDISTRO', distro_name)
-        hudson_config = hudson_config.replace('STACKNAME', stack_name)      
-        hudson_config = hudson_config.replace('STACKURI', stack_map[stack_name].dev_svn)
-        configs[name] = hudson_config
+        for arch in ARCHS:
+            name = "_".join(['auto_stack_prerelease', stack_name, distro_name, ubuntu, arch])
+            hudson_config = HUDSON_PRERELEASE_CONFIG
+            hudson_config = hudson_config.replace('ROSINSTALL', rosinstall_config_total)
+            hudson_config = hudson_config.replace('UBUNTUDISTRO', ubuntu)
+            hudson_config = hudson_config.replace('ARCH', arch)
+            hudson_config = hudson_config.replace('ROSDISTRO', distro_name)
+            hudson_config = hudson_config.replace('STACKNAME', stack_name)      
+            hudson_config = hudson_config.replace('STACKURI', stack_map[stack_name].dev_svn)
+            configs[name] = hudson_config
     return configs
     
 def main():
@@ -300,16 +314,14 @@ def main():
     print "Username %s,  Password %s"%(username, password)
     hudson_instance = hudson.Hudson(SERVER, username, password)
     for job_name in devel_configs:
-        if job_name.find('geometry') != -1:
-            print devel_configs[job_name]
-            if hudson_instance.job_exists(job_name):
-                hudson_instance.delete_job(job_name)
-                print "Deleting job %s"%job_name
-            print "Creating new job %s"%job_name
-            hudson_instance.create_job(job_name, devel_configs[job_name])
-            return
+        if hudson_instance.job_exists(job_name):
+            hudson_instance.delete_job(job_name)
+            print "Deleting job %s"%job_name
+        print "Creating new job %s"%job_name
+        hudson_instance.create_job(job_name, devel_configs[job_name])
 
 
+    return
     # send prerelease tests to Hudson
     for job_name in prerelease_configs:
         if job_name.find('geometry') != -1:
