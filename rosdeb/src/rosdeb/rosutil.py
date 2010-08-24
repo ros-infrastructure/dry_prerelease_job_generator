@@ -70,6 +70,59 @@ def checkout_svn_to_tmp(name, uri):
     subprocess.check_call(['svn', 'co', uri, dest])
     return tmp_dir
 
+#TODO: this logic really belongs in roslib2.vcs
+def checkout_vcs(vcs, uri, dest_path):
+    """
+    @param vcs: vcs name (e.g. 'svn')
+    @type  vcs: str
+    @param uri: resource URI
+    @type  uri: str
+    @param dest_path: file system directory to checkout into
+    @type  dest_path: str
+    """
+    if vcs == 'svn':
+        from roslib2.vcs.svn import SVNClient
+        client = SVNClient(dest_path)
+    elif vcs == 'git':
+        from roslib2.vcs.git import GITClient
+        client = GITClient(dest_path)
+    elif vcs == 'hg':
+        from roslib2.vcs.hg import HGClient
+        client = HGClient(dest_path)
+    elif vcs == 'bzr':
+        from roslib2.vcs.bzr import BZRClient
+        client = BZRClient(dest_path)
+    client.checkout(uri)
+    return client
+
+def checkout_dev_to_tmp(name, distro_stack):
+    """
+    Checkout an VCS-based 'dev' code tree to the tmp dir.
+    
+    Utility routine -- need to replace with vcs
+    
+    @return: temporary directory that contains checkout of SVN tree in
+    directory 'name'. temporary directory will be a subdirectory of
+    OS-provided temporary space.
+    @rtype: str
+    """
+    for key in ['svn', 'git', 'hz', 'bzr']:
+        if key in distro_stack._rules:
+            break
+    else:
+        raise Exception("stack [%s] does not have any supported checkout rules"%(name))
+
+    try:
+        uri = distro_stack.expand_rule(distro_stack._rules[key]['dev'])
+    except KeyError:
+        raise Exception("cannot checkout stack dev tree to tmp: %s rules have no 'dev' key"%(key))
+
+    tmp_dir = tempfile.mkdtemp()
+    dest = os.path.join(tmp_dir, name)
+    print 'Checking out a fresh copy of %s from %s to %s...'%(name, uri, dest)
+    checkout_vcs(key, uri, dest)
+    return tmp_dir
+
 def convert_html_to_text(d):
     """
     Convert a HTML description to plain text. This routine still has

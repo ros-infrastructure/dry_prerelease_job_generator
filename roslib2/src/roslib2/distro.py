@@ -208,9 +208,6 @@ class DistroStack(object):
 
     def update_version(self, stack_version):
         rules = self._rules
-        stack_name = self.name
-        release_name = self.release_name
-        release_version = self.release_version
         self.version = stack_version
 
         #rosdistro key
@@ -219,14 +216,20 @@ class DistroStack(object):
         #   as-is so as to not disturb existing scripts.
         self.dev_svn = self.distro_svn = self.release_svn = None
         if 'svn' in rules:
-            self.dev_svn     = expand_rule(rules['svn']['dev'], stack_name, stack_version, release_name)
-            self.distro_svn  = expand_rule(rules['svn']['distro-tag'], stack_name, stack_version, release_name)
-            self.release_svn = expand_rule(rules['svn']['release-tag'], stack_name, stack_version, release_name)
+            self.dev_svn     = self.expand_rule(rules['svn']['dev'])
+            self.distro_svn  = self.expand_rule(rules['svn']['distro-tag'])
+            self.release_svn = self.expand_rule(rules['svn']['release-tag'])
         elif 'dev-svn' in rules:
             #legacy support
-            self.dev_svn     = expand_rule(rules['dev-svn'], stack_name, stack_version, release_name)
-            self.distro_svn  = expand_rule(rules['distro-svn'], stack_name, stack_version, release_name)
-            self.release_svn = expand_rule(rules['release-svn'], stack_name, stack_version, release_name)
+            self.dev_svn     = self.expand_rule(rules['dev-svn'])
+            self.distro_svn  = self.expand_rule(rules['distro-svn'])
+            self.release_svn = self.expand_rule(rules['release-svn'])
+        
+    def expand_rule(self, rule):
+        """
+        Perform variable substitution on stack rule.
+        """
+        return expand_rule(rule, self.name, self.version, self.release_name)
         
     def __eq__(self, other):
         if not isinstance(other, DistroStack):
