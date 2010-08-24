@@ -52,9 +52,9 @@ if [ ! -f /etc/apt/sources.list.d/ros-latest.list ]; then
   wget http://code.ros.org/packages/ros.key -O - | sudo apt-key add -
 fi
 sudo apt-get update
-sudo apt-get install ros-cturtle-geometry --yes
-export ROS_PACKAGE_PATH=/opt/ros/cturtle/stacks
-export ROS_ROOT=/opt/ros/cturtle/ros
+sudo apt-get install ros-ROSDISTRO-STACKPACKAGENAME --yes
+export ROS_PACKAGE_PATH=/opt/ros/ROSDISTRO/stacks
+export ROS_ROOT=/opt/ros/ROSDISTRO/ros
 export ROS_TEST_RESULTS_DIR=/tmp/ros/test_results/
 cd /tmp/ros
 wget http://code.ros.org/svn/ros/installers/trunk/hudson/hudson_helper 
@@ -62,7 +62,7 @@ export WORKSPACE=/tmp/ros
 export JOB_NAME=$JOB_NAME
 export BUILD_NUMBER=$BUILD_NUMBER
 export HUDSON_URL=$HUDSON_URL
-python /tmp/ros/hudson_helper --dir-test geometry build
+python /tmp/ros/hudson_helper --dir-test STACKNAME build
 echo "_________________________________END SCRIPT_______________________________________"
 DELIM
 
@@ -79,7 +79,7 @@ cd $WORKSPACE &amp;&amp; $WORKSPACE/run_chroot.py --distro=UBUNTUDISTRO --arch=A
       <testResults>test_results/_hudson/*.xml</testResults> 
     </hudson.tasks.junit.JUnitResultArchiver> 
     <hudson.plugins.emailext.ExtendedEmailPublisher> 
-      <recipientList>wim@willowgarage.com</recipientList> 
+      <recipientList>wim+hudson_auto_stack@willowgarage.com</recipientList> 
       <configuredTriggers> 
         <hudson.plugins.emailext.plugins.trigger.UnstableTrigger> 
           <email> 
