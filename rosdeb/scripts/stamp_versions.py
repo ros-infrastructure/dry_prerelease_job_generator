@@ -100,14 +100,14 @@ def parse_deb_packages(text):
     return parsed
 
 
-def rewrite_control_file(control_file, distro_name, distro, stack_name, stack_version, os_platform, arch, release_ver):
+def rewrite_control_file(control_file, distro_name, distro, stack_name, stack_version, os_platform, arch):
 
     with open(control_file, 'r') as f:
         parsed = parse_deb_packages(f.read())
 
     deb_name = "ros-%s-%s"%(distro_name, debianize_name(stack_name))
     deb_version_old = debianize_version(stack_version, '0', os_platform)
-    deb_version_new = debianize_version(stack_version, release_ver, os_platform)
+    deb_version_new = debianize_version(stack_version, distro.version, os_platform)
     ros_file = "%s-%s"%(stack_name, stack_version)
     deb_file = "%s_%s"%(deb_name, deb_version_old)
 
@@ -143,7 +143,7 @@ def rewrite_control_file(control_file, distro_name, distro, stack_name, stack_ve
             pkg_strip = pkg[len(distro_prefix):].replace('-','_')
             if pkg_strip in distro.stacks:
                 pkg_ver = distro.stacks[pkg_strip].version
-                pkg_deb_ver = debianize_version(pkg_ver, release_ver, os_platform)
+                pkg_deb_ver = debianize_version(pkg_ver, distro.version, os_platform)
                 
                 locked_depends.append(pkg+' (= %s)'%pkg_deb_ver)
                 continue
@@ -167,11 +167,11 @@ Description: %(desc_format)s
 
 
 
-def do_download_and_fix(packagelist, distro, distro_name, stack_name, stack_version, os_platform, arch, staging_dir, release_ver):
+def do_download_and_fix(packagelist, distro, distro_name, stack_name, stack_version, os_platform, arch, staging_dir):
 
     deb_name = "ros-%s-%s"%(distro_name, debianize_name(stack_name))
     deb_version_old = debianize_version(stack_version, '0', os_platform)
-    deb_version_new = debianize_version(stack_version, release_ver, os_platform)
+    deb_version_new = debianize_version(stack_version, distro.version, os_platform)
     ros_file = "%s-%s"%(stack_name, stack_version)
     deb_file = "%s_%s"%(deb_name, deb_version_old)
     deb_file_new = "%s_%s"%(deb_name, deb_version_new)
@@ -209,7 +209,7 @@ def do_download_and_fix(packagelist, distro, distro_name, stack_name, stack_vers
             subprocess.check_call(['ar', 'x', dest, 'control.tar.gz'])
             subprocess.check_call(['tar', 'xzf', 'control.tar.gz', '-C', unpacked])
             control_file = os.path.join(workdir, 'unpack', 'control')
-            rewrite_control_file(control_file, distro_name, distro, stack_name, stack_version, os_platform, arch, release_ver)
+            rewrite_control_file(control_file, distro_name, distro, stack_name, stack_version, os_platform, arch)
             subprocess.check_call(['tar', 'czf', 'control.tar.gz', '-C', unpacked, 'control', 'md5sums', 'postinst'])
             subprocess.check_call(['ar', 'r', dest, 'control.tar.gz'])
             os.remove('control.tar.gz')
@@ -271,7 +271,7 @@ rm %(new_files)s
 
 
 
-def stamp_debs(distro_name, os_platform, arch, staging_dir, release_ver):
+def stamp_debs(distro_name, os_platform, arch, staging_dir):
 
     # Load the distro from the URL
     # TODO: Should this be done from file in release repo instead (and maybe updated in case of failure)
@@ -288,7 +288,7 @@ def stamp_debs(distro_name, os_platform, arch, staging_dir, release_ver):
     # Build the new debs
     for (sn,s) in distro.stacks.iteritems():
         sv = s.version
-        d = do_download_and_fix(packagelist, distro, distro_name, sn, sv, os_platform, arch, staging_dir, release_ver)
+        d = do_download_and_fix(packagelist, distro, distro_name, sn, sv, os_platform, arch, staging_dir)
         if d:
             debs.append(d)
 
@@ -307,10 +307,10 @@ def build_debs_main():
 
     (options, args) = parser.parse_args()
 
-    if len(args) != 4:
+    if len(args) != 3:
         parser.error('invalid args')
         
-    (distro_name, os_platform, arch, release_ver) = args
+    (distro_name, os_platform, arch) = args
 
     if options.staging_dir is not None:
         staging_dir    = options.staging_dir
@@ -326,7 +326,7 @@ def build_debs_main():
         print "creating staging dir: %s"%(staging_dir)
         os.makedirs(staging_dir)
 
-    stamp_debs(distro_name, os_platform, arch, staging_dir, release_ver)
+    stamp_debs(distro_name, os_platform, arch, staging_dir)
 
     if options.staging_dir is None:
         shutil.rmtree(staging_dir)
