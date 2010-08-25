@@ -21,7 +21,7 @@ def execute_chroot(cmd, path, user='root'):
         tempfh.flush()
         full_cmd = ['sudo', 'chroot', path, 'su', user, '-c', "bash", tempfh.name]
         print "Script %s reads"%tempfh.name
-        subprocess.check_call("echo tempfh.name".split())
+        subprocess.check_call(("cat %s"%tempfh.name).split())
         print "Executing", full_cmd
         subprocess.check_call(full_cmd)
         return
