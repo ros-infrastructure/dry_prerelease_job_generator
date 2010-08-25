@@ -55,6 +55,33 @@ from rosdeb.core import ubuntu_release, debianize_name, debianize_version, platf
 
 NAME = 'build_debs.py' 
 TARBALL_URL = "https://code.ros.org/svn/release/download/stacks/%(stack_name)s/%(base_name)s/%(f_name)s"
+
+import traceback
+
+# Stolen from chroot build
+class TempRamFS:
+    def __init__(self, path, size_str):
+        self.path = path
+        self.size= size_str
+        
+    def __enter__(self):
+        
+        cmd = ['sudo', 'mkdir', '-p', self.path]
+        subprocess.check_call(cmd)
+        cmd = ['sudo', 'mount', '-t', 'tmpfs', '-o', 'size=%s,mode=0755'%self.size, 'tmpfs', self.path]
+        subprocess.check_call(cmd)
+        cmd = ['sudo', 'chown', '-R', str(os.geteuid()), self.path]
+        subprocess.check_call(cmd)
+        return self
+
+    def __exit__(self, mtype, value, tb):
+        if tb:
+            print "Caught exception, closing out ramdisk"
+            traceback.print_exception(mtype, value, tb, file=sys.stdout)
+            
+        cmd = ['sudo', 'umount', '-f', self.path]
+        subprocess.check_call(cmd)
+
     
 def download_files(stack_name, stack_version, staging_dir, files):
     import urllib
@@ -66,7 +93,10 @@ def download_files(stack_name, stack_version, staging_dir, files):
     for f_name in files:
         dest = os.path.join(staging_dir, f_name)
         url = TARBALL_URL%locals()
-        urllib.urlretrieve(url, dest)
+        try:
+            urllib.urlretrieve(url, dest)
+        except Exception,e:
+            print e
         dl_files.append(dest)
 
     return dl_files
@@ -150,17 +180,22 @@ def do_deb_build(distro_name, stack_name, stack_version, os_platform, arch, stag
     # Download deb and tar.gz files:
     dsc_name = '%s.dsc'%(deb_file)
     tar_gz_name = '%s.tar.gz'%(deb_file)
+
     (dsc_file, tar_gz_file) = download_files(stack_name, stack_version, staging_dir, [dsc_name, tar_gz_name])
 
     # Create hook and results directories
     hook_dir = os.path.join(staging_dir, 'hooks')
     results_dir = os.path.join(staging_dir, 'results')
+    build_dir = os.path.join(staging_dir, 'pbuilder')
 
     if not os.path.exists(hook_dir):
         os.makedirs(hook_dir)
 
     if not os.path.exists(results_dir):
         os.makedirs(results_dir)
+
+    if not os.path.exists(build_dir):
+        os.makedirs(build_dir)
 
     # Hook script which will download our tar.bz2 into environment
     p = os.path.join(hook_dir, 'A50fetch')
@@ -169,7 +204,7 @@ def do_deb_build(distro_name, stack_name, stack_version, os_platform, arch, stag
 set -o errexit
 wget https://code.ros.org/svn/release/download/stacks/%(stack_name)s/%(stack_name)s-%(stack_version)s/%(stack_name)s-%(stack_version)s.tar.bz2 -O /tmp/buildd/%(stack_name)s-%(stack_version)s.tar.bz2"""%locals())
         os.chmod(p, stat.S_IRWXU)
-
+            
     # Hook script which makes sure we have updated our apt cache
     p = os.path.join(hook_dir, 'D50update')
     with open(p, 'w') as f:
@@ -178,8 +213,9 @@ set -o errexit
 apt-get update"""%locals())
         os.chmod(p, stat.S_IRWXU)
 
+
     # Actually build the deb.  This results in the deb being located in results_dir
-    subprocess.check_call(['sudo', 'pbuilder', '--build', '--basetgz', distro_tgz, '--hookdir', hook_dir, '--buildresult', results_dir, '--binary-arch', dsc_file])
+    subprocess.check_call(['sudo', 'pbuilder', '--build', '--basetgz', distro_tgz, '--hookdir', hook_dir, '--buildresult', results_dir, '--binary-arch', '--buildplace', build_dir, dsc_file])
 
     # Build a package db if we have to
     subprocess.check_call(['bash', '-c', 'cd %(staging_dir)s && dpkg-scanpackages . > %(results_dir)s/Packages'%locals()])
@@ -197,8 +233,8 @@ dpkg -l %(deb_name)s
 """%locals())
         os.chmod(verify_script, stat.S_IRWXU)
 
-    # Run pbuilder to verify that the deb can be installed
-    subprocess.check_call(['sudo', 'pbuilder', '--execute', '--basetgz', distro_tgz, '--bindmounts', results_dir, verify_script])
+
+    subprocess.check_call(['sudo', 'pbuilder', '--execute', '--basetgz', distro_tgz, '--bindmounts', results_dir, '--buildplace', build_dir, verify_script])
 
     # Upload the debs to the server
     base_files = [deb_file + x for x in ['_%s.deb'%(arch), '_%s.changes'%(arch)]]
@@ -320,7 +356,8 @@ def build_debs_main():
         print "creating staging dir: %s"%(staging_dir)
         os.makedirs(staging_dir)
 
-    build_debs(distro_name, stack_name, os_platform, arch, staging_dir, options.force)
+    with TempRamFS(staging_dir, "10G"):
+        build_debs(distro_name, stack_name, os_platform, arch, staging_dir, options.force)
 
     if options.staging_dir is None:
         shutil.rmtree(staging_dir)
