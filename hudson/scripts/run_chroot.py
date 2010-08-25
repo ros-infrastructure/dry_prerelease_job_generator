@@ -17,7 +17,8 @@ def execute_chroot(cmd, path, user='root'):
         tempfh.write("#!/usr/bin/env bash\n")
         for k,v in os.environ.copy().iteritems():
             tempfh.write("export %s='%s'\n"%(k, v))
-            
+
+        tempfs.write(" ".join(cmd))
         tempfh.flush()
         full_cmd = ['sudo', 'chroot', path, 'su', user, '-c', "bash", tempfh.name]
         print "Script %s reads"%tempfh.name
