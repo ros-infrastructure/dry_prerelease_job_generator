@@ -19,7 +19,7 @@ def execute_chroot(cmd, path, user='root'):
         envs = []
         for k,v in os.environ.copy().iteritems():
             envs.append("%s='%s'"%(k, v))
-        full_cmd = ['sudo', 'chroot', path, 'su', user, '-c', '%s %s'%(" ".join(envs), " ".join(cmd))]
+        full_cmd = ['sudo', 'chroot', path, 'su', user, '-s', '/bin/bash',  '-c', '%s %s'%(" ".join(envs), " ".join(cmd))]
     print "Executing", full_cmd
     subprocess.check_call(full_cmd)
     
