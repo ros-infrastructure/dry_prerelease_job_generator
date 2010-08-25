@@ -133,7 +133,7 @@ def trigger_hudson_build_debs(name, distro_name, os_platform):
         h.build_job('debbuild-sourcedeb', parameters=parameters, token='RELEASE_SOURCE_DEB')
 
 EMAIL_FROM_ADDR = 'ROS debian build system <noreply@willowgarage.com>'
-def send_mail(smtp_server, from_addr, to_addrs, subject, text):
+def send_email(smtp_server, from_addr, to_addrs, subject, text):
     import smtplib
     from email.mime.text import MIMEText
 
@@ -232,6 +232,10 @@ def source_deb_main():
                     email_msg = 'Stack [%s-%s] in distro [%s] successed on the following OS platforms:\n%s\n\n'%(stack_name, stack_version, distro_name, successes) + email_msg
                 subject = 'debian build [%s-%s] failed'%(stack_name, stack_version)
                 send_email(options.smtp, EMAIL_FROM_ADDR, to_addr, subject, email_msg)
+            elif not 'contact' in control:
+                print >> sys.stderr, "no contact e-mail in control file, will not send e-mail to owner"
+            elif not options.smtp:
+                print >> sys.stderr, "no SMTP server configured, will not send e-mail to owner"                
 
             # Exit with error code to signal build failure
             sys.exit(2)
