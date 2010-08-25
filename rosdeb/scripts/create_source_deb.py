@@ -48,7 +48,8 @@ from rosdeb.rosutil import checkout_svn_to_tmp
 
 NAME = 'create_source_deb.py' 
 TARBALL_URL = "https://code.ros.org/svn/release/download/stacks/%(stack_name)s/%(base_name)s/%(f_name)s"
-    
+SERVER = 'http://build.willowgarage.com/'
+
 def download_tarball(stack_name, stack_version, staging_dir):
     import urllib
     base_name = "%s-%s"%(stack_name, stack_version)
@@ -119,6 +120,33 @@ def _source_deb_main(distro_name, stack_name, stack_version, os_platform, stagin
     upload_files(files, stack_name, stack_version)
 
     
+def trigger_hudson_build_debs(name, distro_name, os_platform):
+    h = hudson.Hudson(SERVER)
+    parameters = {
+        'DISTRO_NAME': distro_name,
+        'STACK_NAME': name,
+        'OS_PLATFORM': os_platform,
+        }
+    for arch in ['i386', 'amd64']:
+        parameters['ARCH'] = arch
+        h.build_job('debbuild-sourcedeb', parameters=parameters, token='RELEASE_SOURCE_DEB')
+
+EMAIL_FROM_ADDR = 'ROS debian build system <noreply@willowgarage.com>'
+def send_mail(smtp_server, from_addr, to_addrs, subject, text):
+    import smtplib
+    from email.mime.text import MIMEText
+
+    msg = MIMEText(text)
+
+    msg['From'] = from_addr
+    msg['To'] = to_addrs
+    msg['Subject'] = subject
+
+    s = smtplib.SMTP(smtp_server)
+    print 'Sending mail to %s'%(to_addrs)
+    s.sendmail(msg['From'], [msg['To']], msg.as_string())
+    s.quit()
+
 def source_deb_main():
 
     # COLLECT ARGS
@@ -134,6 +162,9 @@ def source_deb_main():
     parser.add_option("--hudson",
                       dest="hudson", action='store_true', default=False,
                       help="execute Hudson-style, which builds all platforms")
+    parser.add_option("--smtp",
+                      dest="smtp", default=None,
+                      help="SMTP server to use for failure emails")
 
     (options, args) = parser.parse_args()
 
@@ -151,13 +182,56 @@ def source_deb_main():
         if options.staging_dir:
             parser.error("cannot override directory in Hudson mode")
 
+        errors = []
+        success = []
+
         for os_platform in ['lucid', 'karmic', 'jaunty']:
             staging_dir = os.path.join(tempfile.gettempdir(), "rosdeb-%s"%(os_platform))
             if os.path.exists(staging_dir):
                 shutil.rmtree(staging_dir)
             os.mkdir(staging_dir)
-            _source_deb_main(distro_name, stack_name, stack_version, os_platform, staging_dir)
+            try:
+                _source_deb_main(distro_name, stack_name, stack_version, os_platform, staging_dir)
+                success.append(os_platform)
+            except Exception, e:
+                errors.append((os_platform, e))
+                
+        for os_platform in success:
+            print "triggering build-debs for %s, %s, %s"%(stack_name, distro_name, os_platform)
+            trigger_hudson_build_debs(stack_name, distro_name, os_platform)
 
+        # Handle build failures:
+        #  - print out failed OS platforms
+        #  - send failure e-mail
+        if errors:
+
+            # create and print error message
+            error_msgs += 'Stack [%s-%s] in distro [%s] failed to build on the following OS platforms:\n%s\n\n'%(stack_name, stack_version, distro_name, [x for x, y in errors])
+            
+            error_msgs = '='*80 + '\nERRORS\n' + '='*80
+            for os_platform, e in errors:
+                error_msgs += '[%s]: %s\n'%(os_platform, str(e))
+                
+            print >> sys.stderr, error_msgs
+
+            # load the control data
+            import yaml
+            control_file = os.path.join(staging_dir, "%s-%s.yaml"%(stack_name, stack_version))
+            with open(control_file) as f:
+                control = yaml.load(f)
+
+            # Send e-mail for failed platforms if smtp server name is provided
+            if options.smtp and 'contact' in control:
+                to_addr = control_file['contact']
+                email_msg = error_msgs
+                if successes:
+                    email_msg = 'Stack [%s-%s] in distro [%s] successed on the following OS platforms:\n%s\n\n'%(stack_name, stack_version, distro_name, successes) + email_msg
+                subject = 'debian build [%s-%s] failed'%(stack_name, stack_version)
+                send_email(options.smtp, EMAIL_FROM_ADDR, to_addr, subject, email_msg)
+
+            # Exit with error code to signal build failure
+            sys.exit(2)
+            
     else:
         if len(args) != 4:
             parser.error('please specify distro name, stack name, stack version, and platform (e.g. lucid)')
