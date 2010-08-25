@@ -12,29 +12,31 @@ import urllib
 ROSBUILD_SSH_URI = 'https://home.willowgarage.com/wgwiki/Servers/hudson?action=AttachFile&do=get&target=rosbuild-ssh.tar'
 
 def execute_chroot(cmd, path, user='root'):
-    with tempfile.NamedTemporaryFile() as tempfh:
-        envs = []
-        tempfh.write("#!/usr/bin/env bash\n")
-        for k,v in os.environ.copy().iteritems():
-            tempfh.write("export %s='%s'\n"%(k, v))
+    if 0:
+        with tempfile.NamedTemporaryFile() as tempfh:
+            envs = []
+            tempfh.write("#!/usr/bin/env bash\n")
+            for k,v in os.environ.copy().iteritems():
+                tempfh.write("export %s='%s'\n"%(k, v))
 
-        tempfh.write(" ".join(cmd))
-        tempfh.flush()
-        os.fsync(tempfh.fileno())
-        contents = file(tempfh.name).read()
-        remote_name = os.path.join(path, tempfh.name.lstrip(os.sep))
-        print "Script %s reads {{{%s}}}"%(tempfh.name, contents)
-        print "copying script into chroot", tempfh.name, remote_name
-        subprocess.check_call(("sudo cp %s %s"%(tempfh.name, remote_name)).split())
+            tempfh.write(" ".join(cmd))
+            tempfh.flush()
+            os.fsync(tempfh.fileno())
+            contents = file(tempfh.name).read()
+            remote_name = os.path.join(path, tempfh.name.lstrip(os.sep))
+            print "Script %s reads {{{%s}}}"%(tempfh.name, contents)
+            print "copying script into chroot", tempfh.name, remote_name
+            subprocess.check_call(("sudo cp %s %s"%(tempfh.name, remote_name)).split())
 
-        if user == 'root':
-            full_cmd = ['sudo', 'chroot', path, "bash", tempfh.name]
-        else:
-            full_cmd = ['sudo', 'chroot', path, 'su', user, '-c', "bash", tempfh.name]
-        print "Executing", full_cmd
-        subprocess.check_call(full_cmd)
-        return
+            if user == 'root':
+                full_cmd = ['sudo', 'chroot', path, "bash", tempfh.name]
+            else:
+                full_cmd = ['sudo', 'chroot', path, 'su', user, '-c', "bash", tempfh.name]
+            print "Executing", full_cmd
+            subprocess.check_call(full_cmd)
+            return
 
+    else:
         if user == 'root':
             full_cmd = ["sudo", "chroot", path]
             full_cmd.extend(cmd)
