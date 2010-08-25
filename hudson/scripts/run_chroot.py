@@ -12,16 +12,31 @@ import urllib
 ROSBUILD_SSH_URI = 'https://home.willowgarage.com/wgwiki/Servers/hudson?action=AttachFile&do=get&target=rosbuild-ssh.tar'
 
 def execute_chroot(cmd, path, user='root'):
-    if user == 'root':
-        full_cmd = ["sudo", "chroot", path]
-        full_cmd.extend(cmd)
-    else:
+    with tempfile.NamedTemporaryFile() as tempfh:
         envs = []
+        tempfh.write("#!/usr/bin/env bash\n")
         for k,v in os.environ.copy().iteritems():
-            envs.append("%s='%s'"%(k, v))
+            tempfh.write("export %s='%s'\n"%(k, v))
+            
+        tempfh.flush()
+        full_cmd = ['sudo', 'chroot', path, 'su', user, '-c', "bash", tempfh.name]
+        print "Script %s reads"%tempfh.name
+        subprocess.check_call("echo tempfh.name".split())
+        print "Executing", full_cmd
+        subprocess.check_call(full_cmd)
+        return
+
+        if user == 'root':
+            full_cmd = ["sudo", "chroot", path]
+            full_cmd.extend(cmd)
+        else:
+            envs = []
+            for k,v in os.environ.copy().iteritems():
+                envs.append("%s='%s'"%(k, v))
+            full_cmd = ['sudo', 'chroot', path, 'su', user, '-s', '/bin/bash',  '-c', '%s %s'%(" ".join(envs), " ".join(cmd))]
         full_cmd = ['sudo', 'chroot', path, 'su', user, '-s', '/bin/bash',  '-c', '%s %s'%(" ".join(envs), " ".join(cmd))]
-    print "Executing", full_cmd
-    subprocess.check_call(full_cmd)
+        print "Executing", full_cmd
+        subprocess.check_call(full_cmd)
     
 
 
