@@ -22,7 +22,7 @@ def execute_chroot(cmd, path, user='root'):
         tempfh.flush()
         os.fsync(tempfh.fileno())
         contents = file(tempfh.name).read()
-        remote_name = os.path.join(path, tempfh.name.lstrip(os.sep)))).split()
+        remote_name = os.path.join(path, tempfh.name.lstrip(os.sep))
         print "Script %s reads {{{%s}}}"%(tempfh.name, contents)
         print "copying script into chroot", tempfh.name, remote_name
         subprocess.check_call(("sudo cp %s %s"%(tempfh.name, remote_name)).split())
