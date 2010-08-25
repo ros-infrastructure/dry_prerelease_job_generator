@@ -107,6 +107,9 @@ def make_source_deb(distro_name, stack_name, stack_version, os_platform_name, st
     control_yaml = os.path.join(staging_dir, '%s-%s.yaml'%(stack_name, stack_version))
     with open(control_yaml, 'r') as f:
         metadata = yaml.load(f.read())
+    if not type(metadata) == dict:
+        raise Exception("invalid control file: %s\nMetadata is [%s]"%(control_yaml, metadata))
+
     # make distro-specific
     metadata['package'] = debian_name
     with open(os.path.join(debian_d, 'control'), 'w') as f:
