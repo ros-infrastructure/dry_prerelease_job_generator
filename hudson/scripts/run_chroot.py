@@ -20,6 +20,7 @@ def execute_chroot(cmd, path, user='root'):
 
         tempfh.write(" ".join(cmd))
         tempfh.flush()
+        os.fsync(tempfh.fileno())
         contents = file(tempfh.name).read()
         print "Script %s reads {{{%s}}}"%(tempfh.name, contents)
 
