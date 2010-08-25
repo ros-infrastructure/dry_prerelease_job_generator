@@ -207,12 +207,15 @@ def source_deb_main():
         if errors:
 
             # create and print error message
-            error_msgs = 'Stack [%s-%s] in distro [%s] failed to build on the following OS platforms:\n%s\n\n'%(stack_name, stack_version, distro_name, [x for x, y in errors])
+            error_msgs = '='*80 + '\nERRORS\n' + '='*80 + '\n'
             
-            error_msgs += '='*80 + '\nERRORS\n' + '='*80
+            error_msgs += 'Stack [%s-%s] in distro [%s] failed to build on the following OS platforms:\n%s\n\n'%(stack_name, stack_version, distro_name, [x for x, y in errors])
+            
             for os_platform, e in errors:
                 error_msgs += '[%s]: %s\n'%(os_platform, str(e))
                 
+            error_msgs += '='*80 + '\n'
+            
             print >> sys.stderr, error_msgs
 
             # load the control data
