@@ -130,7 +130,7 @@ def trigger_hudson_build_debs(name, distro_name, os_platform):
         }
     for arch in ['i386', 'amd64']:
         parameters['ARCH'] = arch
-        h.build_job('debbuild-build-debs', parameters=parameters, token='RELEASE_BUILD_DEBS')
+        h.build_job('debbuild-build-debs-%s-%s-%s'%(distro_name, os_platform, arch), parameters=parameters, token='RELEASE_BUILD_DEBS')
 
 EMAIL_FROM_ADDR = 'ROS debian build system <noreply@willowgarage.com>'
 def send_email(smtp_server, from_addr, to_addrs, subject, text):
