@@ -14,12 +14,12 @@ ROSBUILD_SSH_URI = 'https://home.willowgarage.com/wgwiki/Servers/hudson?action=A
 def execute_chroot(cmd, path, user='root'):
     if user == 'root':
         full_cmd = ["sudo", "chroot", path]
-        full_cmd.extend(['bash', '-c', "'%s'"%" ".join(cmd)])
+        full_cmd.extend(['bash', '-c', "%s"%" ".join(cmd)])
     else:
         envs = []
         for k,v in os.environ.copy().iteritems():
             envs.append("%s='%s'"%(k, v))
-        full_cmd = ['sudo', 'chroot', path, 'su', user, '-c', "bash -c '%s %s'"%(" ".join(envs), " ".join(cmd))]
+        full_cmd = ['sudo', 'chroot', path, 'su', user, '-c', "bash -c %s %s"%(" ".join(envs), " ".join(cmd))]
     print "Executing", full_cmd
     subprocess.check_call(full_cmd)
     
@@ -67,7 +67,7 @@ class ChrootInstance:
         self.execute(['mount', '-t', 'sysfs', 'sysfs', '/sys'])
 
     def bootstrap(self):
-        cmd = ['sudo', 'apt-get', 'install', 'debootstrap']
+        cmd = ['sudo','apt-get', 'install', 'debootstrap']
         print cmd
         subprocess.check_call(cmd)
         
