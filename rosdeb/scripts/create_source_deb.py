@@ -226,7 +226,7 @@ def source_deb_main():
 
             # Send e-mail for failed platforms if smtp server name is provided
             if options.smtp and 'contact' in control:
-                to_addr = control_file['contact']
+                to_addr = control['contact']
                 email_msg = error_msgs
                 if successes:
                     email_msg = 'Stack [%s-%s] in distro [%s] successed on the following OS platforms:\n%s\n\n'%(stack_name, stack_version, distro_name, successes) + email_msg
