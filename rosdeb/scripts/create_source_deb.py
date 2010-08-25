@@ -228,8 +228,8 @@ def source_deb_main():
             if options.smtp and 'contact' in control:
                 to_addr = control['contact']
                 email_msg = error_msgs
-                if successes:
-                    email_msg = 'Stack [%s-%s] in distro [%s] successed on the following OS platforms:\n%s\n\n'%(stack_name, stack_version, distro_name, successes) + email_msg
+                if success:
+                    email_msg = 'Stack [%s-%s] in distro [%s] successed on the following OS platforms:\n%s\n\n'%(stack_name, stack_version, distro_name, success) + email_msg
                 subject = 'debian build [%s-%s] failed'%(stack_name, stack_version)
                 send_email(options.smtp, EMAIL_FROM_ADDR, to_addr, subject, email_msg)
             elif not 'contact' in control:
