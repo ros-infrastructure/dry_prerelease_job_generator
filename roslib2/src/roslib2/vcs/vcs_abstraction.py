@@ -36,7 +36,7 @@ import svn, bzr, hg, git
 import vcs_base
 
 class VCSClient(vcs_base.VCSClientBase):
-  def __init__(self, type, path):
+  def __init__(self, vcs_type, path):
     self._path = path
     self.vcs_types = {
       "svn": svn.SVNClient,
@@ -44,9 +44,9 @@ class VCSClient(vcs_base.VCSClientBase):
       "git": git.GITClient,
       "hg": hg.HGClient,
       }
-    if not type in self.vcs_types:
-      raise LookupError("%s VCS type undefined"%type)
-    self.vcs = self.vcs_types[type](path)
+    if not vcs_type in self.vcs_types:
+      raise LookupError("%s VCS type undefined"%vcs_type)
+    self.vcs = self.vcs_types[vcs_type](path)
     
   # pass through VCSClientBase API
   def get_version(self):
