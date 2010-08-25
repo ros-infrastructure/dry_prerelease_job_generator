@@ -20,12 +20,13 @@ def execute_chroot(cmd, path, user='root'):
 
         tempfh.write(" ".join(cmd))
         tempfh.flush()
+        contents = file(tempfh.name).read()
+        print "Script %s reads {{{%s}}}"%(tempfh.name, contents)
+
         if user == 'root':
             full_cmd = ['sudo', 'chroot', path, "bash", tempfh.name]
         else:
             full_cmd = ['sudo', 'chroot', path, 'su', user, '-c', "bash", tempfh.name]
-        tempfh.seek(0)
-        print "Script %s reads {{{%s}}}"%(tempfh.name, tempfh.read())
         print "Executing", full_cmd
         subprocess.check_call(full_cmd)
         return
