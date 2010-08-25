@@ -1,11 +1,94 @@
 #!/usr/bin/python
 
 
+EMAIL_PUBLISHER = """
+  <publishers> 
+    <hudson.tasks.junit.JUnitResultArchiver> 
+      <testResults>test_results/_hudson/*.xml</testResults> 
+    </hudson.tasks.junit.JUnitResultArchiver> 
+    <hudson.plugins.emailext.ExtendedEmailPublisher> 
+      <recipientList>wim+hudson_auto_stack@willowgarage.com</recipientList> 
+      <configuredTriggers> 
+        <hudson.plugins.emailext.plugins.trigger.UnstableTrigger> 
+          <email> 
+            <recipientList></recipientList> 
+            <subject>$PROJECT_DEFAULT_SUBJECT</subject> 
+            <body>$PROJECT_DEFAULT_CONTENT</body> 
+            <sendToDevelopers>true</sendToDevelopers> 
+            <sendToRecipientList>true</sendToRecipientList> 
+            <contentTypeHTML>false</contentTypeHTML> 
+            <script>true</script> 
+          </email> 
+        </hudson.plugins.emailext.plugins.trigger.UnstableTrigger> 
+        <hudson.plugins.emailext.plugins.trigger.FailureTrigger> 
+          <email> 
+            <recipientList></recipientList> 
+            <subject>$PROJECT_DEFAULT_SUBJECT</subject> 
+            <body>$PROJECT_DEFAULT_CONTENT</body> 
+            <sendToDevelopers>true</sendToDevelopers> 
+            <sendToRecipientList>true</sendToRecipientList> 
+            <contentTypeHTML>false</contentTypeHTML> 
+            <script>true</script> 
+          </email> 
+        </hudson.plugins.emailext.plugins.trigger.FailureTrigger> 
+        <hudson.plugins.emailext.plugins.trigger.StillFailingTrigger> 
+          <email> 
+            <recipientList></recipientList> 
+            <subject>$PROJECT_DEFAULT_SUBJECT</subject> 
+            <body>$PROJECT_DEFAULT_CONTENT</body> 
+            <sendToDevelopers>true</sendToDevelopers> 
+            <sendToRecipientList>true</sendToRecipientList> 
+            <contentTypeHTML>false</contentTypeHTML> 
+            <script>true</script> 
+          </email> 
+        </hudson.plugins.emailext.plugins.trigger.StillFailingTrigger> 
+        <hudson.plugins.emailext.plugins.trigger.FixedTrigger> 
+          <email> 
+            <recipientList></recipientList> 
+            <subject>$PROJECT_DEFAULT_SUBJECT</subject> 
+            <body>$PROJECT_DEFAULT_CONTENT</body> 
+            <sendToDevelopers>true</sendToDevelopers> 
+            <sendToRecipientList>true</sendToRecipientList> 
+            <contentTypeHTML>false</contentTypeHTML> 
+            <script>true</script> 
+          </email> 
+        </hudson.plugins.emailext.plugins.trigger.FixedTrigger> 
+        <hudson.plugins.emailext.plugins.trigger.StillUnstableTrigger> 
+          <email> 
+            <recipientList></recipientList> 
+            <subject>$PROJECT_DEFAULT_SUBJECT</subject> 
+            <body>$PROJECT_DEFAULT_CONTENT</body> 
+            <sendToDevelopers>true</sendToDevelopers> 
+            <sendToRecipientList>true</sendToRecipientList> 
+            <contentTypeHTML>false</contentTypeHTML> 
+            <script>true</script> 
+          </email> 
+        </hudson.plugins.emailext.plugins.trigger.StillUnstableTrigger> 
+      </configuredTriggers> 
+      <defaultSubject>$DEFAULT_SUBJECT</defaultSubject> 
+      <defaultContent>$DEFAULT_CONTENT&#xd;
+&#xd;
+&lt;% &#xd;
+def ws = build.getParent().getWorkspace()&#xd;
+def computer = build.getExecutor().getOwner()&#xd;
+def build_failures = hudson.util.RemotingDiagnostics.executeGroovy(&quot;new File(\&quot;${ws}/build_output/buildfailures.txt\&quot;).text&quot;,computer.getChannel())&#xd;
+println &quot;${build_failures}&quot;&#xd;
+def test_failures = hudson.util.RemotingDiagnostics.executeGroovy(&quot;new File(\&quot;${ws}/test_output/testfailures.txt\&quot;).text&quot;,computer.getChannel())&#xd;
+println &quot;${test_failures}&quot;&#xd;
+def build_failures_context = hudson.util.RemotingDiagnostics.executeGroovy(&quot;new File(\&quot;${ws}/build_output/buildfailures-with-context.txt\&quot;).text&quot;,computer.getChannel())&#xd;
+println &quot;${build_failures_context}&quot;&#xd;
+%&gt;</defaultContent> 
+      <defaultContentTypeHTML>false</defaultContentTypeHTML> 
+      <defaultContentIsScript>true</defaultContentIsScript> 
+    </hudson.plugins.emailext.ExtendedEmailPublisher> 
+  </publishers> 
+"""
+
 
 # template to create develop hudscon configuration file
 HUDSON_DEVEL_CONFIG = """<?xml version='1.0' encoding='UTF-8'?>
 <project> 
-  <description>Build of STACKNAME development branch for ROSDISTRO on UBUNTUDISTRO</description> 
+  <description>Build of STACKNAME development branch for ROSDISTRO on UBUNTUDISTRO, ARCH</description> 
  <logRotator> 
     <daysToKeep>5</daysToKeep> 
     <numToKeep>-1</numToKeep> 
@@ -47,113 +130,39 @@ HUDSON_DEVEL_CONFIG = """<?xml version='1.0' encoding='UTF-8'?>
 #!/usr/bin/env bash
 set -o errexit
 echo "_________________________________BEGIN SCRIPT______________________________________"
+
+echo "Install debian packages of this stacks and all stacks it depends on"
 if [ ! -f /etc/apt/sources.list.d/ros-latest.list ]; then
   sudo sh -c 'echo "deb http://code.ros.org/packages/ros/ubuntu UBUNTUDISTRO main" > /etc/apt/sources.list.d/ros-latest.list'
   wget http://code.ros.org/packages/ros.key -O - | sudo apt-key add -
 fi
 sudo apt-get update
-sudo apt-get install ros-ROSDISTRO-STACKPACKAGENAME --yes
-export ROS_PACKAGE_PATH=/opt/ros/ROSDISTRO/stacks
-export ROS_ROOT=/opt/ros/ROSDISTRO/ros
-export ROS_TEST_RESULTS_DIR=/tmp/ros/test_results/
+sudo apt-get install STACKDEB STACKDEPENDSDEB --yes
+. /opt/ros/ROSDISTRO/setup.sh
+rosdep install STACKNAME -y
+
+echo "Install hudson helper and build stack tests"
 cd /tmp/ros
 wget http://code.ros.org/svn/ros/installers/trunk/hudson/hudson_helper 
+export ROS_TEST_RESULTS_DIR=/tmp/ros/test_results/
 export WORKSPACE=/tmp/ros
 export JOB_NAME=$JOB_NAME
 export BUILD_NUMBER=$BUILD_NUMBER
 export HUDSON_URL=$HUDSON_URL
+echo "dummy test result file" > $ROS_TEST_RESULTS_DIR/_hudson/dummy.xml
 python /tmp/ros/hudson_helper --dir-test STACKNAME build
 echo "_________________________________END SCRIPT_______________________________________"
 DELIM
 
 set -o errexit
 
-wget http://code.ros.org/svn/ros/installers/trunk/hudson/run_chroot.py --no-check-certificate -O $WORKSPACE/run_chroot.py
+wget https://code.ros.org/svn/ros/stacks/ros_release/trunk/hudson/scripts/run_chroot.py --no-check-certificate -O $WORKSPACE/run_chroot.py
 chmod +x $WORKSPACE/run_chroot.py
 cd $WORKSPACE &amp;&amp; $WORKSPACE/run_chroot.py --distro=UBUNTUDISTRO --arch=ARCH  --ramdisk --script=$WORKSPACE/script.sh
      </command> 
     </hudson.tasks.Shell> 
   </builders> 
-  <publishers> 
-    <hudson.tasks.junit.JUnitResultArchiver> 
-      <testResults>test_results/_hudson/*.xml</testResults> 
-    </hudson.tasks.junit.JUnitResultArchiver> 
-    <hudson.plugins.emailext.ExtendedEmailPublisher> 
-      <recipientList>wim+hudson_auto_stack@willowgarage.com</recipientList> 
-      <configuredTriggers> 
-        <hudson.plugins.emailext.plugins.trigger.UnstableTrigger> 
-          <email> 
-            <recipientList></recipientList> 
-            <subject>$PROJECT_DEFAULT_SUBJECT</subject> 
-            <body>$PROJECT_DEFAULT_CONTENT</body> 
-            <sendToDevelopers>true</sendToDevelopers> 
-            <sendToRecipientList>true</sendToRecipientList> 
-            <contentTypeHTML>false</contentTypeHTML> 
-            <script>true</script> 
-          </email> 
-        </hudson.plugins.emailext.plugins.trigger.UnstableTrigger> 
-        <hudson.plugins.emailext.plugins.trigger.FailureTrigger> 
-          <email> 
-            <recipientList></recipientList> 
-            <subject>$PROJECT_DEFAULT_SUBJECT</subject> 
-            <body>$PROJECT_DEFAULT_CONTENT</body> 
-            <sendToDevelopers>true</sendToDevelopers> 
-            <sendToRecipientList>true</sendToRecipientList> 
-            <contentTypeHTML>false</contentTypeHTML> 
-            <script>true</script> 
-          </email> 
-        </hudson.plugins.emailext.plugins.trigger.FailureTrigger> 
-        <hudson.plugins.emailext.plugins.trigger.StillFailingTrigger> 
-          <email> 
-            <recipientList></recipientList> 
-            <subject>$PROJECT_DEFAULT_SUBJECT</subject> 
-            <body>$PROJECT_DEFAULT_CONTENT</body> 
-            <sendToDevelopers>true</sendToDevelopers> 
-            <sendToRecipientList>true</sendToRecipientList> 
-            <contentTypeHTML>false</contentTypeHTML> 
-            <script>true</script> 
-          </email> 
-        </hudson.plugins.emailext.plugins.trigger.StillFailingTrigger> 
-        <hudson.plugins.emailext.plugins.trigger.FixedTrigger> 
-          <email> 
-            <recipientList></recipientList> 
-            <subject>$PROJECT_DEFAULT_SUBJECT</subject> 
-            <body>$PROJECT_DEFAULT_CONTENT</body> 
-            <sendToDevelopers>true</sendToDevelopers> 
-            <sendToRecipientList>true</sendToRecipientList> 
-            <contentTypeHTML>false</contentTypeHTML> 
-            <script>true</script> 
-          </email> 
-        </hudson.plugins.emailext.plugins.trigger.FixedTrigger> 
-        <hudson.plugins.emailext.plugins.trigger.StillUnstableTrigger> 
-          <email> 
-            <recipientList></recipientList> 
-            <subject>$PROJECT_DEFAULT_SUBJECT</subject> 
-            <body>$PROJECT_DEFAULT_CONTENT</body> 
-            <sendToDevelopers>true</sendToDevelopers> 
-            <sendToRecipientList>true</sendToRecipientList> 
-            <contentTypeHTML>false</contentTypeHTML> 
-            <script>true</script> 
-          </email> 
-        </hudson.plugins.emailext.plugins.trigger.StillUnstableTrigger> 
-      </configuredTriggers> 
-      <defaultSubject>$DEFAULT_SUBJECT</defaultSubject> 
-      <defaultContent>$DEFAULT_CONTENT&#xd;
-&#xd;
-&lt;% &#xd;
-def ws = build.getParent().getWorkspace()&#xd;
-def computer = build.getExecutor().getOwner()&#xd;
-def build_failures = hudson.util.RemotingDiagnostics.executeGroovy(&quot;new File(\&quot;${ws}/build_output/buildfailures.txt\&quot;).text&quot;,computer.getChannel())&#xd;
-println &quot;${build_failures}&quot;&#xd;
-def test_failures = hudson.util.RemotingDiagnostics.executeGroovy(&quot;new File(\&quot;${ws}/test_output/testfailures.txt\&quot;).text&quot;,computer.getChannel())&#xd;
-println &quot;${test_failures}&quot;&#xd;
-def build_failures_context = hudson.util.RemotingDiagnostics.executeGroovy(&quot;new File(\&quot;${ws}/build_output/buildfailures-with-context.txt\&quot;).text&quot;,computer.getChannel())&#xd;
-println &quot;${build_failures_context}&quot;&#xd;
-%&gt;</defaultContent> 
-      <defaultContentTypeHTML>false</defaultContentTypeHTML> 
-      <defaultContentIsScript>true</defaultContentIsScript> 
-    </hudson.plugins.emailext.ExtendedEmailPublisher> 
-  </publishers> 
+  EMAIL_PUBLISHER
   <buildWrappers/> 
 </project>
 """
@@ -162,7 +171,7 @@ println &quot;${build_failures_context}&quot;&#xd;
 # template to create pre-release hudson configuration file
 HUDSON_PRERELEASE_CONFIG = """<?xml version='1.0' encoding='UTF-8'?>
 <project> 
-  <description>Build of STACKNAME development branch for ROSDISTRO on UBUNTUDISTRO</description> 
+  <description>Pre-release build of STACKNAME for ROSDISTRO on UBUNTUDISTRO, ARCH</description> 
  <logRotator> 
     <daysToKeep>5</daysToKeep> 
     <numToKeep>-1</numToKeep> 
@@ -186,6 +195,7 @@ HUDSON_PRERELEASE_CONFIG = """<?xml version='1.0' encoding='UTF-8'?>
 #!/usr/bin/env bash
 set -o errexit
 echo "_________________________________BEGIN SCRIPT______________________________________"
+echo "Install all available debian packages"
 if [ ! -f /etc/apt/sources.list.d/ros-latest.list ]; then
   sudo sh -c 'echo "deb http://code.ros.org/packages/ros/ubuntu UBUNTUDISTRO main" > /etc/apt/sources.list.d/ros-latest.list'
   wget http://code.ros.org/packages/ros.key -O - | sudo apt-key add -
@@ -193,150 +203,83 @@ fi
 sudo apt-get update
 sudo apt-get install ros-ROSDISTRO-pr2all --yes
 sudo apt-get install python-setuptools
+
+echo "Rosinstall all stacks that depend on this stack from source"
 sudo easy_install -U rosinstall
 echo "ROSINSTALL" > /tmp/ros/STACKNAME_depends_on.rosinstall
 rosinstall /tmp/ros/STACKNAME_depends_on /opt/ros/ROSDISTRO/ /tmp/ros/STACKNAME_depends_on.rosinstall
-export ROS_PACKAGE_PATH=/tmp/ros/STACKNAME_depends_on:/opt/ros/ROSDISTRO/stacks
-export ROS_ROOT=/opt/ros/ROSDISTRO/ros
-export ROS_TEST_RESULTS_DIR=/tmp/ros/test_results/
+. /tmp/ros/STACKNAME_depends_on/setup.sh
+
+echo "Install hudson helper and test all stacks that depend on this one"
 cd /tmp/ros
 wget http://code.ros.org/svn/ros/installers/trunk/hudson/hudson_helper 
+export ROS_TEST_RESULTS_DIR=/tmp/ros/test_results
 export WORKSPACE=/tmp/ros
 export JOB_NAME=$JOB_NAME
 export BUILD_NUMBER=$BUILD_NUMBER
 export HUDSON_URL=$HUDSON_URL
-python /tmp/ros/hudson_helper --distro-test ROSDISTRO build
+python /tmp/ros/hudson_helper --dir-test /tmp/ros/STACKNAME_depends_on build
 echo "_________________________________END SCRIPT_______________________________________"
 DELIM
 
 set -o errexit
 
-wget http://code.ros.org/svn/ros/installers/trunk/hudson/run_chroot.py --no-check-certificate -O $WORKSPACE/run_chroot.py
+wget https://code.ros.org/svn/ros/stacks/ros_release/trunk/hudson/scripts/run_chroot.py --no-check-certificate -O $WORKSPACE/run_chroot.py
 chmod +x $WORKSPACE/run_chroot.py
 cd $WORKSPACE &amp;&amp; $WORKSPACE/run_chroot.py --distro=UBUNTUDISTRO --arch=ARCH  --ramdisk --script=$WORKSPACE/script.sh
      </command> 
     </hudson.tasks.Shell> 
   </builders> 
-  <publishers> 
-    <hudson.tasks.junit.JUnitResultArchiver> 
-      <testResults>test_results/_hudson/*.xml</testResults> 
-    </hudson.tasks.junit.JUnitResultArchiver> 
-    <hudson.plugins.emailext.ExtendedEmailPublisher> 
-      <recipientList>wim+hudson_auto_stack@willowgarage.com</recipientList> 
-      <configuredTriggers> 
-        <hudson.plugins.emailext.plugins.trigger.UnstableTrigger> 
-          <email> 
-            <recipientList></recipientList> 
-            <subject>$PROJECT_DEFAULT_SUBJECT</subject> 
-            <body>$PROJECT_DEFAULT_CONTENT</body> 
-            <sendToDevelopers>true</sendToDevelopers> 
-            <sendToRecipientList>true</sendToRecipientList> 
-            <contentTypeHTML>false</contentTypeHTML> 
-            <script>true</script> 
-          </email> 
-        </hudson.plugins.emailext.plugins.trigger.UnstableTrigger> 
-        <hudson.plugins.emailext.plugins.trigger.FailureTrigger> 
-          <email> 
-            <recipientList></recipientList> 
-            <subject>$PROJECT_DEFAULT_SUBJECT</subject> 
-            <body>$PROJECT_DEFAULT_CONTENT</body> 
-            <sendToDevelopers>true</sendToDevelopers> 
-            <sendToRecipientList>true</sendToRecipientList> 
-            <contentTypeHTML>false</contentTypeHTML> 
-            <script>true</script> 
-          </email> 
-        </hudson.plugins.emailext.plugins.trigger.FailureTrigger> 
-        <hudson.plugins.emailext.plugins.trigger.StillFailingTrigger> 
-          <email> 
-            <recipientList></recipientList> 
-            <subject>$PROJECT_DEFAULT_SUBJECT</subject> 
-            <body>$PROJECT_DEFAULT_CONTENT</body> 
-            <sendToDevelopers>true</sendToDevelopers> 
-            <sendToRecipientList>true</sendToRecipientList> 
-            <contentTypeHTML>false</contentTypeHTML> 
-            <script>true</script> 
-          </email> 
-        </hudson.plugins.emailext.plugins.trigger.StillFailingTrigger> 
-        <hudson.plugins.emailext.plugins.trigger.FixedTrigger> 
-          <email> 
-            <recipientList></recipientList> 
-            <subject>$PROJECT_DEFAULT_SUBJECT</subject> 
-            <body>$PROJECT_DEFAULT_CONTENT</body> 
-            <sendToDevelopers>true</sendToDevelopers> 
-            <sendToRecipientList>true</sendToRecipientList> 
-            <contentTypeHTML>false</contentTypeHTML> 
-            <script>true</script> 
-          </email> 
-        </hudson.plugins.emailext.plugins.trigger.FixedTrigger> 
-        <hudson.plugins.emailext.plugins.trigger.StillUnstableTrigger> 
-          <email> 
-            <recipientList></recipientList> 
-            <subject>$PROJECT_DEFAULT_SUBJECT</subject> 
-            <body>$PROJECT_DEFAULT_CONTENT</body> 
-            <sendToDevelopers>true</sendToDevelopers> 
-            <sendToRecipientList>true</sendToRecipientList> 
-            <contentTypeHTML>false</contentTypeHTML> 
-            <script>true</script> 
-          </email> 
-        </hudson.plugins.emailext.plugins.trigger.StillUnstableTrigger> 
-      </configuredTriggers> 
-      <defaultSubject>$DEFAULT_SUBJECT</defaultSubject> 
-      <defaultContent>$DEFAULT_CONTENT&#xd;
-&#xd;
-&lt;% &#xd;
-def ws = build.getParent().getWorkspace()&#xd;
-def computer = build.getExecutor().getOwner()&#xd;
-def build_failures = hudson.util.RemotingDiagnostics.executeGroovy(&quot;new File(\&quot;${ws}/build_output/buildfailures.txt\&quot;).text&quot;,computer.getChannel())&#xd;
-println &quot;${build_failures}&quot;&#xd;
-def test_failures = hudson.util.RemotingDiagnostics.executeGroovy(&quot;new File(\&quot;${ws}/test_output/testfailures.txt\&quot;).text&quot;,computer.getChannel())&#xd;
-println &quot;${test_failures}&quot;&#xd;
-def build_failures_context = hudson.util.RemotingDiagnostics.executeGroovy(&quot;new File(\&quot;${ws}/build_output/buildfailures-with-context.txt\&quot;).text&quot;,computer.getChannel())&#xd;
-println &quot;${build_failures_context}&quot;&#xd;
-%&gt;</defaultContent> 
-      <defaultContentTypeHTML>false</defaultContentTypeHTML> 
-      <defaultContentIsScript>true</defaultContentIsScript> 
-    </hudson.plugins.emailext.ExtendedEmailPublisher> 
-  </publishers> 
+  EMAIL_PUBLISHER
   <buildWrappers/> 
 </project>
 """
 
 # template to create rosinstall file
-ROSINSTALL_CONFIG = """
-- svn:
-    uri: STACKURI
-    local-name: STACKNAME
-"""
+ROSINSTALL_CONFIG = """- svn: {uri: STACKURI, local-name: STACKNAME}"""
 
 # the supported Ubuntu distro's for each ros distro
 UBUNTU_DISTROS = {'cturtle':['lucid', 'karmic', 'jaunty'],
                   'boxturtle':['hardy','karmic', 'jaunty']}
-
+# supported architectures
 ARCHS = ['amd64', 'i386']
 
-SERVER      = 'http://build.willowgarage.com/'
+# path to hudson server
+SERVER = 'http://build.willowgarage.com/'
 
 import roslib; roslib.load_manifest("hudson")
-from roslib import distro
-from roslib import rospack
+from roslib import distro, rospack, stack_manifest
 import hudson
 import sys
+import re
+import urllib2
 
+
+def stack_to_deb(distro_name, stack_name):
+    return 'ros-'+distro_name+'-'+(str(stack_name).replace('_','-'))
 
 
 def create_devel_configs(distro_name, stack_name, stack_map):
+
+    # create list of stack dependencies
+    stack_file = urllib2.urlopen(stack_map[stack_name].dev_svn+'/stack.xml')
+    depends = roslib.stack_manifest.parse(stack_file.read()).depends
+    stack_file.close()
+
     # create hudson config files for each ubuntu distro
     configs = {}
     for ubuntu in UBUNTU_DISTROS[distro_name]:
         for arch in ARCHS:
-            name = "_".join(['auto_stack_devel', stack_name, distro_name, ubuntu, arch])
+            name = "_".join(['auto_stack_devel', distro_name, stack_name, ubuntu, arch])
             hudson_config = HUDSON_DEVEL_CONFIG
             hudson_config = hudson_config.replace('UBUNTUDISTRO', ubuntu)
             hudson_config = hudson_config.replace('ARCH', arch)
             hudson_config = hudson_config.replace('ROSDISTRO', distro_name)
             hudson_config = hudson_config.replace('STACKNAME', stack_name)   
-            hudson_config = hudson_config.replace('STACKPACKAGENAME', stack_name.replace('_','-'))   
-            hudson_config = hudson_config.replace('STACKURI', stack_map[stack_name].dev_svn)    
+            hudson_config = hudson_config.replace('STACKDEB', stack_to_deb(distro_name, stack_name))
+            hudson_config = hudson_config.replace('STACKDEPENDSDEB', ' '.join([stack_to_deb(distro_name, s) for s in depends]))
+            hudson_config = hudson_config.replace('STACKURI', stack_map[stack_name].dev_svn)
+            hudson_config = hudson_config.replace('EMAIL_PUBLISHER', EMAIL_PUBLISHER)
             configs[name] = hudson_config
     return configs
 
@@ -350,14 +293,14 @@ def create_prerelease_configs(distro_name, stack_name, stack_map):
             rosinstall_config = ROSINSTALL_CONFIG
             rosinstall_config = rosinstall_config.replace('STACKURI', stack_map[s].distro_svn)
             rosinstall_config = rosinstall_config.replace('STACKNAME', s)
-            rosinstall_config_total += rosinstall_config
+            rosinstall_config_total += rosinstall_config+'\n'
             stack_name_depends_on += ' '+s
 
     # create hudson config files for each ubuntu distro
     configs = {}
     for ubuntu in UBUNTU_DISTROS[distro_name]:
         for arch in ARCHS:
-            name = "_".join(['auto_stack_prerelease', stack_name, distro_name, ubuntu, arch])
+            name = "_".join(['auto_stack_prerelease', distro_name, stack_name, ubuntu, arch])
             hudson_config = HUDSON_PRERELEASE_CONFIG
             hudson_config = hudson_config.replace('ROSINSTALL', rosinstall_config_total)
             hudson_config = hudson_config.replace('UBUNTUDISTRO', ubuntu)
@@ -366,6 +309,7 @@ def create_prerelease_configs(distro_name, stack_name, stack_map):
             hudson_config = hudson_config.replace('STACK_DEPENDS_ON', stack_name_depends_on)
             hudson_config = hudson_config.replace('STACKNAME', stack_name)      
             hudson_config = hudson_config.replace('STACKURI', stack_map[stack_name].dev_svn)
+            hudson_config = hudson_config.replace('EMAIL_PUBLISHER', EMAIL_PUBLISHER)
             configs[name] = hudson_config
     return configs
     
@@ -375,10 +319,13 @@ def main():
     #    distro_file = sys.argv[3]
 
     delete = False
+    only_build = None
     if len(sys.argv) == 4:
         if sys.argv[3] == '--delete':
             delete = True
-        
+        else:
+            only_build = sys.argv[3]
+
     username = password = None
     if len(sys.argv) >= 3:
         username = sys.argv[1]
@@ -396,23 +343,24 @@ def main():
 
     # send prerelease tests to Hudson
     for job_name in prerelease_configs:
-        if job_name.find('geometry') != -1:
+        if not only_build or job_name.find(only_build) != -1:
             if hudson_instance.job_exists(job_name):
                 hudson_instance.delete_job(job_name)
                 print "Deleting job %s"%job_name
             if not delete:
                 print "Creating new job %s"%job_name
                 hudson_instance.create_job(job_name, prerelease_configs[job_name])
-                return
+
 
     # send devel tests to Hudson
     for job_name in devel_configs:
-        if hudson_instance.job_exists(job_name):
-            hudson_instance.delete_job(job_name)
-            print "Deleting job %s"%job_name
-        if not delete:
-            print "Creating new job %s"%job_name
-            hudson_instance.create_job(job_name, devel_configs[job_name])
+        if not only_build or job_name.find(only_build) != -1:
+            if hudson_instance.job_exists(job_name):
+                hudson_instance.delete_job(job_name)
+                print "Deleting job %s"%job_name
+            if not delete:
+                print "Creating new job %s"%job_name
+                hudson_instance.create_job(job_name, devel_configs[job_name])
 
 
 if __name__ == '__main__':
