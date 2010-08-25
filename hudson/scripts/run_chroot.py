@@ -12,7 +12,7 @@ import urllib
 ROSBUILD_SSH_URI = 'https://home.willowgarage.com/wgwiki/Servers/hudson?action=AttachFile&do=get&target=rosbuild-ssh.tar'
 
 def execute_chroot(cmd, path, user='root'):
-    if 1:
+    if 0:
         with tempfile.NamedTemporaryFile() as tempfh:
             envs = []
             tempfh.write("#!/usr/bin/env bash\n")
