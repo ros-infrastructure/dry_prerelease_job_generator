@@ -43,8 +43,11 @@ def execute_chroot(cmd, path, user='root'):
             full_cmd.extend(cmd)
         else:
             envs = []
+            #hudson_envs = ["BUILD_NUMBER", 'BUILD_ID', 'JOB_NAME', 'BUILD_TAG', 'EXECUTOR_NUMBER', 'WORKSPACE', 'HUDSON_URL', 'BUILD_URL', 'JOB_URL', 'SVN_REVISION', 'CVS_BRANCH']
+            hudson_envs = ["BUILD_NUMBER", 'BUILD_ID', 'JOB_NAME', 'BUILD_TAG', 'EXECUTOR_NUMBER', 'HUDSON_URL', 'BUILD_URL', 'JOB_URL', 'SVN_REVISION']
             for k,v in os.environ.copy().iteritems():
-                envs.append("%s='%s'"%(k, v))
+                if k in hudson_envs:
+                    envs.append("%s='%s'"%(k, v))
             full_cmd = ['sudo', 'chroot', path, 'su', user, '-s', '/bin/bash',  '-c', '%s %s'%(" ".join(envs), " ".join(cmd))]
         print "Executing", full_cmd
         subprocess.check_call(full_cmd)
