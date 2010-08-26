@@ -164,7 +164,7 @@ def create_chroot(distro, distro_name, os_platform, arch):
 
 
 def do_deb_build(distro_name, stack_name, stack_version, os_platform, arch, staging_dir):
-    print "Actually trying to build %s..."%(stack_name)
+    print "Actually trying to build %s-%s..."%(stack_name, stack_version)
 
     distro_tgz = os.path.join('/var/cache/pbuilder', "%s-%s.tgz"%(os_platform, arch))
     deb_name = "ros-%s-%s"%(distro_name, debianize_name(stack_name))
@@ -215,9 +215,11 @@ apt-get update"""%locals())
 
 
     # Actually build the deb.  This results in the deb being located in results_dir
+    print "starting pbuilder build of %s-%s"%(stack_name, stack_version)
     subprocess.check_call(['sudo', 'pbuilder', '--build', '--basetgz', distro_tgz, '--hookdir', hook_dir, '--buildresult', results_dir, '--binary-arch', '--buildplace', build_dir, dsc_file])
 
     # Build a package db if we have to
+    print "starting package db build of %s-%s"%(stack_name, stack_version)
     subprocess.check_call(['bash', '-c', 'cd %(staging_dir)s && dpkg-scanpackages . > %(results_dir)s/Packages'%locals()])
 
     # Script to execute for deb verification
@@ -234,11 +236,14 @@ dpkg -l %(deb_name)s
         os.chmod(verify_script, stat.S_IRWXU)
 
 
+    print "starting verify script for %s-%s"%(stack_name, stack_version)
     subprocess.check_call(['sudo', 'pbuilder', '--execute', '--basetgz', distro_tgz, '--bindmounts', results_dir, '--buildplace', build_dir, verify_script])
 
     # Upload the debs to the server
     base_files = [deb_file + x for x in ['_%s.deb'%(arch), '_%s.changes'%(arch)]]
     files = [os.path.join(results_dir, x) for x in base_files]
+    
+    print "uploading debs for %s-%s to pub5"%(stack_name, stack_version)
     subprocess.check_call(['scp'] + files + ['rosbuild@pub5:/var/packages/ros-shadow/ubuntu/incoming/%s'%os_platform])
 
     # Assemble string for moving all files from incoming to queue (while lock is being held)
