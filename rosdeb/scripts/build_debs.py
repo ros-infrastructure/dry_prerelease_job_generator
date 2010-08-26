@@ -312,13 +312,14 @@ def build_debs(distro_name, stack_name, os_platform, arch, staging_dir, force):
         deb_version = debianize_version(sv, '0', os_platform)
         if not deb_in_repo(deb_name, deb_version, os_platform, arch) or (force and sn == stack_name):
             si = load_info(sn, sv)
-            if set(si['depends']).isdisjoint(broken.union(skipped)):
+            depends = set(si['depends'])
+            if depends.isdisjoint(broken.union(skipped)):
                 try:
                     do_deb_build(distro_name, sn, sv, os_platform, arch, staging_dir)
                 except:
                     broken.add(sn)
             else:
-                print "Skipping %s (%s) since dependencies not built: %s"%(sn, sv, broken.union(skipped))
+                print "Skipping %s (%s) since dependencies not built: %s"%(sn, sv, broken.union(skipped)&depends)
                 skipped.add(sn)
         else:
             print "Skipping %s (%s) since already built."%(sn,sv)
