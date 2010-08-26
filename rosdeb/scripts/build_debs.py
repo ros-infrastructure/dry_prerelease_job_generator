@@ -218,7 +218,7 @@ apt-get update"""%locals())
 
     # Actually build the deb.  This results in the deb being located in results_dir
     print "starting pbuilder build of %s-%s"%(stack_name, stack_version)
-    subprocess.check_call(['sudo', 'pbuilder', '--build', '--basetgz', distro_tgz, '--configfile', conf_file, '--hookdir', hook_dir, '--buildresult', results_dir, '--binary-arch', '--buildplace', build_dir, dsc_file])
+    subprocess.check_call(['setarch', arch, 'sudo', 'pbuilder', '--build', '--basetgz', distro_tgz, '--configfile', conf_file, '--hookdir', hook_dir, '--buildresult', results_dir, '--binary-arch', '--buildplace', build_dir, dsc_file])
 
     # Build a package db if we have to
     print "starting package db build of %s-%s"%(stack_name, stack_version)
@@ -239,7 +239,7 @@ dpkg -l %(deb_name)s
 
 
     print "starting verify script for %s-%s"%(stack_name, stack_version)
-    subprocess.check_call(['sudo', 'pbuilder', '--execute', '--basetgz', distro_tgz, '--configfile', conf_file, '--bindmounts', results_dir, '--buildplace', build_dir, verify_script])
+    subprocess.check_call(['setarch', arch, 'sudo', 'pbuilder', '--execute', '--basetgz', distro_tgz, '--configfile', conf_file, '--bindmounts', results_dir, '--buildplace', build_dir, verify_script])
 
     # Upload the debs to the server
     base_files = [deb_file + x for x in ['_%s.deb'%(arch), '_%s.changes'%(arch)]]
