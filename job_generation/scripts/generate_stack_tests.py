@@ -289,13 +289,14 @@ def create_prerelease_configs(distro_name, stack_name, stack_map):
     # create rosinstall file with all stacks that depend on this stack
     rosinstall_config_total = ""
     stack_name_depends_on = ''
-    for s in rospack.rosstack_depends_on(stack_name):
+    for s in rospack.rosstack_depends_on(stack_name) + [stack_name]:
         if s in stack_map:
             rosinstall_config = ROSINSTALL_CONFIG
             rosinstall_config = rosinstall_config.replace('STACKURI', stack_map[s].distro_svn)
             rosinstall_config = rosinstall_config.replace('STACKNAME', s)
             rosinstall_config_total += rosinstall_config+'\n'
             stack_name_depends_on += ' '+s
+
 
     # create hudson config files for each ubuntu distro
     configs = {}
