@@ -165,7 +165,7 @@ def create_chroot(distro, distro_name, os_platform, arch):
     subprocess.check_call(['sudo', 'pbuilder', '--create', '--distribution', os_platform, '--debootstrapopts', '--arch=%s'%arch, '--othermirror', 'deb http://code.ros.org/packages/ros-shadow/ubuntu %s main'%(os_platform), '--basetgz', distro_tgz, '--components', 'main restricted universe multiverse', '--extrapackages', deplist])
 
 
-def do_deb_build(distro_name, stack_name, stack_version, os_platform, arch, staging_dir):
+def do_deb_build(distro_name, stack_name, stack_version, os_platform, arch, staging_dir, noupload, interactive):
     print "Actually trying to build %s-%s..."%(stack_name, stack_version)
 
     distro_tgz = os.path.join('/var/cache/pbuilder', "%s-%s.tgz"%(os_platform, arch))
@@ -208,7 +208,8 @@ def do_deb_build(distro_name, stack_name, stack_version, os_platform, arch, stag
 set -o errexit
 wget https://code.ros.org/svn/release/download/stacks/%(stack_name)s/%(stack_name)s-%(stack_version)s/%(stack_name)s-%(stack_version)s.tar.bz2 -O /tmp/buildd/%(stack_name)s-%(stack_version)s.tar.bz2"""%locals())
         os.chmod(p, stat.S_IRWXU)
-            
+
+
     # Hook script which makes sure we have updated our apt cache
     p = os.path.join(hook_dir, 'D50update')
     with open(p, 'w') as f:
@@ -216,6 +217,27 @@ wget https://code.ros.org/svn/release/download/stacks/%(stack_name)s/%(stack_nam
 set -o errexit
 apt-get update"""%locals())
         os.chmod(p, stat.S_IRWXU)
+
+    if interactive:
+        # Hook scripts to make us interactive:
+        p = os.path.join(hook_dir, 'B50interactive')
+        with open(p, 'w') as f:
+            f.write("""#!/bin/sh
+echo "Entering interactive environment.  Exit when done to continue pbuilder operation."
+bash </dev/tty
+echo "Resuming pbuilder"
+"""%locals())
+            os.chmod(p, stat.S_IRWXU)
+
+        # Hook scripts to make us interactive:
+        p = os.path.join(hook_dir, 'C50interactive')
+        with open(p, 'w') as f:
+            f.write("""#!/bin/sh
+echo "Entering interactive environment.  Exit when done to continue pbuilder operation."
+bash </dev/tty
+echo "Resuming pbuilder"
+"""%locals())
+            os.chmod(p, stat.S_IRWXU)
 
 
     if arch == 'amd64':
@@ -231,37 +253,40 @@ apt-get update"""%locals())
     print "starting package db build of %s-%s"%(stack_name, stack_version)
     subprocess.check_call(['bash', '-c', 'cd %(staging_dir)s && dpkg-scanpackages . > %(results_dir)s/Packages'%locals()])
 
-    # Script to execute for deb verification
-    # TODO: Add code to run all the unit-tests for the deb!
-    verify_script = os.path.join(staging_dir, 'verify_script.sh')
-    with open(verify_script, 'w') as f:
-        f.write("""#!/bin/sh
+
+    if not noupload:
+
+        # Script to execute for deb verification
+        # TODO: Add code to run all the unit-tests for the deb!
+        verify_script = os.path.join(staging_dir, 'verify_script.sh')
+        with open(verify_script, 'w') as f:
+            f.write("""#!/bin/sh
 set -o errexit
 echo "deb file:%(staging_dir)s results/" > /etc/apt/sources.list.d/pbuild.list
 apt-get update
 apt-get install %(deb_name)s=%(deb_version)s -y --force-yes
 dpkg -l %(deb_name)s
 """%locals())
-        os.chmod(verify_script, stat.S_IRWXU)
+            os.chmod(verify_script, stat.S_IRWXU)
 
+            
+        print "starting verify script for %s-%s"%(stack_name, stack_version)
+        subprocess.check_call(archcmd + ['sudo', 'pbuilder', '--execute', '--basetgz', distro_tgz, '--configfile', conf_file, '--bindmounts', results_dir, '--buildplace', build_dir, verify_script])
 
-    print "starting verify script for %s-%s"%(stack_name, stack_version)
-    subprocess.check_call(archcmd + ['sudo', 'pbuilder', '--execute', '--basetgz', distro_tgz, '--configfile', conf_file, '--bindmounts', results_dir, '--buildplace', build_dir, verify_script])
-
-    # Upload the debs to the server
-    base_files = [deb_file + x for x in ['_%s.deb'%(arch), '_%s.changes'%(arch)]]
-    files = [os.path.join(results_dir, x) for x in base_files]
+        # Upload the debs to the server
+        base_files = [deb_file + x for x in ['_%s.deb'%(arch), '_%s.changes'%(arch)]]
+        files = [os.path.join(results_dir, x) for x in base_files]
     
-    print "uploading debs for %s-%s to pub5"%(stack_name, stack_version)
-    subprocess.check_call(['scp'] + files + ['rosbuild@pub5:/var/packages/ros-shadow/ubuntu/incoming/%s'%os_platform])
+        print "uploading debs for %s-%s to pub5"%(stack_name, stack_version)
+        subprocess.check_call(['scp'] + files + ['rosbuild@pub5:/var/packages/ros-shadow/ubuntu/incoming/%s'%os_platform])
 
-    # Assemble string for moving all files from incoming to queue (while lock is being held)
-    mvstr = '\n'.join(['mv '+os.path.join('/var/packages/ros-shadow/ubuntu/incoming',os_platform,x)+' '+os.path.join('/var/packages/ros-shadow/ubuntu/queue',os_platform,x) for x in base_files])
+        # Assemble string for moving all files from incoming to queue (while lock is being held)
+        mvstr = '\n'.join(['mv '+os.path.join('/var/packages/ros-shadow/ubuntu/incoming',os_platform,x)+' '+os.path.join('/var/packages/ros-shadow/ubuntu/queue',os_platform,x) for x in base_files])
 
-    # This script moves files into queue directory, removes all dependent debs, removes the existing deb, and then processes the incoming files
-    remote_cmd = "TMPFILE=`mktemp` || exit 1 && cat > ${TMPFILE} && chmod +x ${TMPFILE} && ${TMPFILE}; ret=${?}; rm ${TMPFILE}; exit ${ret}"
-    run_script = subprocess.Popen(['ssh', 'rosbuild@pub5', remote_cmd], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    script_content = """
+        # This script moves files into queue directory, removes all dependent debs, removes the existing deb, and then processes the incoming files
+        remote_cmd = "TMPFILE=`mktemp` || exit 1 && cat > ${TMPFILE} && chmod +x ${TMPFILE} && ${TMPFILE}; ret=${?}; rm ${TMPFILE}; exit ${ret}"
+        run_script = subprocess.Popen(['ssh', 'rosbuild@pub5', remote_cmd], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        script_content = """
 #!/bin/bash
 set -o errexit
 (
@@ -278,13 +303,13 @@ reprepro -b /var/packages/ros-shadow/ubuntu -V processincoming %(os_platform)s
 """%locals()
 
     #Actually run script and check result
-    (o,e) = run_script.communicate(script_content)
-    res = run_script.wait()
-    print o
-    if res != 0:
-        print >> sys.stderr, "Could not run upload script"
-        print >> sys.stderr, o
-        sys.exit(1)
+        (o,e) = run_script.communicate(script_content)
+        res = run_script.wait()
+        print o
+        if res != 0:
+            print >> sys.stderr, "Could not run upload script"
+            print >> sys.stderr, o
+            sys.exit(1)
 
 
 def deb_in_repo(deb_name, deb_version, os_platform, arch):
@@ -295,7 +320,7 @@ def deb_in_repo(deb_name, deb_version, os_platform, arch):
     return str in packagelist
 
 
-def build_debs(distro_name, stack_name, os_platform, arch, staging_dir, force):
+def build_debs(distro_name, stack_name, os_platform, arch, staging_dir, force, noupload, interactive):
 
     # Load the distro from the URL
     # TODO: Should this be done from file in release repo instead (and maybe updated in case of failure)
@@ -324,7 +349,7 @@ def build_debs(distro_name, stack_name, os_platform, arch, staging_dir, force):
             depends = set(si['depends'])
             if depends.isdisjoint(broken.union(skipped)):
                 try:
-                    do_deb_build(distro_name, sn, sv, os_platform, arch, staging_dir)
+                    do_deb_build(distro_name, sn, sv, os_platform, arch, staging_dir, noupload, interactive)
                 except:
                     broken.add(sn)
             else:
@@ -349,6 +374,10 @@ def build_debs_main():
                       help="directory to use for staging source debs", metavar="STAGING_DIR")
     parser.add_option("--force",
                       dest="force", default=False, action="store_true")
+    parser.add_option("--noupload",
+                      dest="noupload", default=False, action="store_true")
+    parser.add_option("--interactive",
+                      dest="interactive", default=False, action="store_true")
 
     (options, args) = parser.parse_args()
 
@@ -372,7 +401,7 @@ def build_debs_main():
         os.makedirs(staging_dir)
 
     with TempRamFS(staging_dir, "20G"):
-        build_debs(distro_name, stack_name, os_platform, arch, staging_dir, options.force)
+        build_debs(distro_name, stack_name, os_platform, arch, staging_dir, options.force, options.noupload, options.interactive)
 
     if options.staging_dir is None:
         shutil.rmtree(staging_dir)
