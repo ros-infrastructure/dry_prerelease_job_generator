@@ -144,12 +144,11 @@ rosdep install STACKNAME -y
 echo "Install hudson helper and build stack tests"
 cd /tmp/ros
 wget http://code.ros.org/svn/ros/installers/trunk/hudson/hudson_helper 
-export ROS_TEST_RESULTS_DIR=/tmp/ros/test_results/
+export ROS_TEST_RESULTS_DIR=/tmp/ros/test_results
 export WORKSPACE=/tmp/ros
 export JOB_NAME=$JOB_NAME
 export BUILD_NUMBER=$BUILD_NUMBER
 export HUDSON_URL=$HUDSON_URL
-echo "dummy test result file" > $ROS_TEST_RESULTS_DIR/_hudson/dummy.xml
 python /tmp/ros/hudson_helper --dir-test STACKNAME build
 echo "_________________________________END SCRIPT_______________________________________"
 DELIM
@@ -202,9 +201,9 @@ if [ ! -f /etc/apt/sources.list.d/ros-latest.list ]; then
 fi
 sudo apt-get update
 sudo apt-get install ros-ROSDISTRO-pr2all --yes
-sudo apt-get install python-setuptools
 
 echo "Rosinstall all stacks that depend on this stack from source"
+sudo apt-get install python-setuptools
 sudo easy_install -U rosinstall
 echo "ROSINSTALL" > /tmp/ros/STACKNAME_depends_on.rosinstall
 rosinstall /tmp/ros/STACKNAME_depends_on /opt/ros/ROSDISTRO/ /tmp/ros/STACKNAME_depends_on.rosinstall
@@ -236,14 +235,16 @@ cd $WORKSPACE &amp;&amp; $WORKSPACE/run_chroot.py --distro=UBUNTUDISTRO --arch=A
 """
 
 # template to create rosinstall file
-ROSINSTALL_CONFIG = """- svn: {uri: STACKURI, local-name: STACKNAME}"""
+ROSINSTALL_CONFIG = """- svn: {uri: 'STACKURI', local-name: 'STACKNAME'}"""
 
 # the supported Ubuntu distro's for each ros distro
-UBUNTU_DISTROS = {'cturtle':['lucid', 'karmic', 'jaunty'],
-                  'boxturtle':['hardy','karmic', 'jaunty']}
+#UBUNTU_DISTROS = {'cturtle':['lucid', 'karmic', 'jaunty'],
+#                  'boxturtle':['hardy','karmic', 'jaunty']}
+UBUNTU_DISTROS = {'cturtle':['lucid'],
+                  'boxturtle':['hardy']}
 # supported architectures
-ARCHS = ['amd64', 'i386']
-
+#ARCHS = ['amd64', 'i386']
+ARCHS = ['amd64']
 # path to hudson server
 SERVER = 'http://build.willowgarage.com/'
 
@@ -351,7 +352,7 @@ def main():
                 print "Creating new job %s"%job_name
                 hudson_instance.create_job(job_name, prerelease_configs[job_name])
 
-
+    return
     # send devel tests to Hudson
     for job_name in devel_configs:
         if not only_build or job_name.find(only_build) != -1:
