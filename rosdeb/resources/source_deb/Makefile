@@ -4,7 +4,7 @@ ROS_STACK_DIR=${ROS_DISTRO_DIR}/stacks
 ROS_STACK_DIR_FINAL=${ROS_DISTRO_DIR_FINAL}/stacks
 
 ${ROS_DISTRO_DIR}/${ROS_STACK_NAME}: ${ROS_STACK_NAME}-${ROS_STACK_VERSION}.md5 ../${ROS_STACK_NAME}-${ROS_STACK_VERSION}.tar.bz2
-	md5sum -c ${ROS_STACK_NAME}-${ROS_STACK_VERSION}.md5 && (mkdir -p ${ROS_STACK_DIR} && cd ${ROS_STACK_DIR} && tar -xjf $(CURDIR)/../${ROS_STACK_NAME}-${ROS_STACK_VERSION}.tar.bz2 && sleep 1 && mv ${ROS_STACK_NAME}-${ROS_STACK_VERSION} ${ROS_STACK_NAME} && sleep 1)
+	md5sum -c ${ROS_STACK_NAME}-${ROS_STACK_VERSION}.md5 && (mkdir -p ${ROS_STACK_DIR} && cd ${ROS_STACK_DIR} && sleep 2 && tar -xjf $(CURDIR)/../${ROS_STACK_NAME}-${ROS_STACK_VERSION}.tar.bz2 && mv ${ROS_STACK_NAME}-${ROS_STACK_VERSION} ${ROS_STACK_NAME})
 
 install: ${ROS_DISTRO_DIR}/${ROS_STACK_NAME}
 	bash -c ". setup_deb.sh && rosmake ${ROS_STACK_NAME} -i"
