@@ -349,7 +349,7 @@ def build_debs(distro_name, stack_name, os_platform, arch, staging_dir, force, n
             depends = set(si['depends'])
             if depends.isdisjoint(broken.union(skipped)):
                 try:
-                    do_deb_build(distro_name, sn, sv, os_platform, arch, staging_dir, noupload, interactive)
+                    do_deb_build(distro_name, sn, sv, os_platform, arch, staging_dir, noupload, interactive and sn == stack_name)
                 except:
                     broken.add(sn)
             else:
