@@ -367,7 +367,7 @@ def build_debs(distro_name, stack_name, os_platform, arch, staging_dir, force, n
 def build_debs_main():
 
     from optparse import OptionParser
-    parser = OptionParser(usage="usage: %prog <distro> <stack> <version> <os-platform>", prog=NAME)
+    parser = OptionParser(usage="usage: %prog <distro> <stack> <os-platform> <arch>", prog=NAME)
 
     parser.add_option("-d", "--dir",
                       dest="staging_dir", default=None,
