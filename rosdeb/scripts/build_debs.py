@@ -371,7 +371,7 @@ def build_debs_main():
         print "creating staging dir: %s"%(staging_dir)
         os.makedirs(staging_dir)
 
-    with TempRamFS(staging_dir, "10G"):
+    with TempRamFS(staging_dir, "20G"):
         build_debs(distro_name, stack_name, os_platform, arch, staging_dir, options.force)
 
     if options.staging_dir is None:
