@@ -208,6 +208,7 @@ sudo easy_install -U rosinstall
 echo "ROSINSTALL" > /tmp/ros/STACKNAME_depends_on.rosinstall
 rosinstall /tmp/ros/STACKNAME_depends_on /opt/ros/ROSDISTRO/ /tmp/ros/STACKNAME_depends_on.rosinstall
 . /tmp/ros/STACKNAME_depends_on/setup.sh
+rosdep install STACKNAME -y
 
 echo "Install hudson helper and test all stacks that depend on this one"
 cd /tmp/ros
@@ -238,13 +239,13 @@ cd $WORKSPACE &amp;&amp; $WORKSPACE/run_chroot.py --distro=UBUNTUDISTRO --arch=A
 ROSINSTALL_CONFIG = """- svn: {uri: 'STACKURI', local-name: 'STACKNAME'}"""
 
 # the supported Ubuntu distro's for each ros distro
-#UBUNTU_DISTROS = {'cturtle':['lucid', 'karmic', 'jaunty'],
-#                  'boxturtle':['hardy','karmic', 'jaunty']}
-UBUNTU_DISTROS = {'cturtle':['lucid'],
-                  'boxturtle':['hardy']}
+UBUNTU_DISTROS = {'unstable': ['lucid','karmic'],
+                  'cturtle':  ['lucid', 'karmic', 'jaunty'],
+                  'boxturtle':['hardy','karmic', 'jaunty']}
+
 # supported architectures
-#ARCHS = ['amd64', 'i386']
-ARCHS = ['amd64']
+ARCHS = ['amd64', 'i386']
+
 # path to hudson server
 SERVER = 'http://build.willowgarage.com/'
 
@@ -318,17 +319,10 @@ def create_prerelease_configs(distro_name, stack_name, stack_map):
     
 def main():
     distro_file = 'http://www.ros.org/distros/cturtle.rosdistro'
-    #if len(sys.argv) == 4:
-    #    distro_file = sys.argv[3]
+    if len(sys.argv) == 4:
+        distro_file = sys.argv[3]
 
     delete = False
-    only_build = None
-    if len(sys.argv) == 4:
-        if sys.argv[3] == '--delete':
-            delete = True
-        else:
-            only_build = sys.argv[3]
-
     username = password = None
     if len(sys.argv) >= 3:
         username = sys.argv[1]
@@ -346,24 +340,25 @@ def main():
 
     # send prerelease tests to Hudson
     for job_name in prerelease_configs:
-        if not only_build or job_name.find(only_build) != -1:
-            if hudson_instance.job_exists(job_name):
-                hudson_instance.delete_job(job_name)
-                print "Deleting job %s"%job_name
-            if not delete:
-                print "Creating new job %s"%job_name
-                hudson_instance.create_job(job_name, prerelease_configs[job_name])
+        exists = hudson_instance.job_exists(job_name)
+        if exists and delete:
+            hudson_instance.delete_job(job_name)
+            exists = False
+            print "Deleting job %s"%job_name
+        if not exists:
+            print "Creating new job %s"%job_name
+            hudson_instance.create_job(job_name, prerelease_configs[job_name])
 
-    return
     # send devel tests to Hudson
     for job_name in devel_configs:
-        if not only_build or job_name.find(only_build) != -1:
-            if hudson_instance.job_exists(job_name):
-                hudson_instance.delete_job(job_name)
-                print "Deleting job %s"%job_name
-            if not delete:
-                print "Creating new job %s"%job_name
-                hudson_instance.create_job(job_name, devel_configs[job_name])
+        exists = hudson_instance.job_exists(job_name)
+        if exists and delete:
+            hudson_instance.delete_job(job_name)
+            exists = False
+            print "Deleting job %s"%job_name
+        if not exists:
+            print "Creating new job %s"%job_name
+            hudson_instance.create_job(job_name, devel_configs[job_name])
 
 
 if __name__ == '__main__':
