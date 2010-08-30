@@ -378,10 +378,14 @@ def main():
     if options.prerelease:
         for job_name in prerelease_configs:
             exists = hudson_instance.job_exists(job_name)
-            if exists and (options.delete or options.replace):
-                hudson_instance.delete_job(job_name)
-                exists = False
-                print "Deleting job %s"%job_name
+            if exists:
+                if options.delete or options.recreate:
+                    hudson_instance.delete_job(job_name)
+                    exists = False
+                    print "Deleting job %s"%job_name
+                elif not options.recreate:
+                    hudson_instance.reconfig_job(job_name, prerelease_configs[job_name])
+                    print "Reconfigure job %s"%job_name
             if not options.delete and not exists:
                 print "Creating new job %s"%job_name
                 hudson_instance.create_job(job_name, prerelease_configs[job_name])
@@ -390,10 +394,14 @@ def main():
     if options.devel:
         for job_name in devel_configs:
             exists = hudson_instance.job_exists(job_name)
-            if exists and (options.delete or options.replace):
-                hudson_instance.delete_job(job_name)
-                exists = False
-                print "Deleting job %s"%job_name
+            if exists:
+                if options.delete or options.recreate:
+                    hudson_instance.delete_job(job_name)
+                    exists = False
+                    print "Deleting job %s"%job_name
+                elif not options.recreate:
+                    hudson_instance.reconfig_job(job_name, devel_configs[job_name])
+                    print "Reconfigure job %s"%job_name
             if not options.delete and not exists:
                 print "Creating new job %s"%job_name
                 hudson_instance.create_job(job_name, devel_configs[job_name])
