@@ -239,12 +239,13 @@ cd $WORKSPACE &amp;&amp; $WORKSPACE/run_chroot.py --distro=UBUNTUDISTRO --arch=A
 ROSINSTALL_CONFIG = """- svn: {uri: 'STACKURI', local-name: 'STACKNAME'}"""
 
 # the supported Ubuntu distro's for each ros distro
-UBUNTU_DISTROS = {'unstable': ['lucid','karmic'],
-                  'cturtle':  ['lucid', 'karmic', 'jaunty'],
-                  'boxturtle':['hardy','karmic', 'jaunty']}
+UBUNTU_DISTRO_MAP = {'unstable': ['lucid','karmic'],
+                     'cturtle':  ['lucid', 'karmic', 'jaunty'],
+                     'boxturtle':['hardy','karmic', 'jaunty']}
 
-# supported architectures
-ARCHS = ['amd64', 'i386']
+ROS_DISTO_MAP = {'unstable': 'http://www.ros.org/distros/unstable.rosdistro',
+                 'cturtle': 'http://www.ros.org/distros/cturtle.rosdistro',
+                 'boxturtle': 'http://www.ros.org/distros/boxturtle.rosdistro'}
 
 # path to hudson server
 SERVER = 'http://build.willowgarage.com/'
@@ -255,14 +256,12 @@ import hudson
 import sys
 import re
 import urllib2
-
+import optparse 
 
 def stack_to_deb(distro_name, stack_name):
     return 'ros-'+distro_name+'-'+(str(stack_name).replace('_','-'))
 
-
-def create_devel_configs(distro_name, stack_name, stack_map):
-
+def create_devel_configs(ubuntu_distros, arches, distro_name, stack_name, stack_map):
     # create list of stack dependencies
     stack_file = urllib2.urlopen(stack_map[stack_name].dev_svn+'/stack.xml')
     depends = roslib.stack_manifest.parse(stack_file.read()).depends
@@ -270,8 +269,8 @@ def create_devel_configs(distro_name, stack_name, stack_map):
 
     # create hudson config files for each ubuntu distro
     configs = {}
-    for ubuntu in UBUNTU_DISTROS[distro_name]:
-        for arch in ARCHS:
+    for ubuntu in ubuntu_distros:
+        for arch in arches:
             name = "_".join(['auto_stack_devel', distro_name, stack_name, ubuntu, arch])
             hudson_config = HUDSON_DEVEL_CONFIG
             hudson_config = hudson_config.replace('UBUNTUDISTRO', ubuntu)
@@ -286,7 +285,7 @@ def create_devel_configs(distro_name, stack_name, stack_map):
     return configs
 
 
-def create_prerelease_configs(distro_name, stack_name, stack_map):
+def create_prerelease_configs(ubuntu_distros, arches, distro_name, stack_name, stack_map):
     # create rosinstall file with all stacks that depend on this stack
     rosinstall_config_total = ""
     for s in rospack.rosstack_depends_on(stack_name):
@@ -303,8 +302,8 @@ def create_prerelease_configs(distro_name, stack_name, stack_map):
 
     # create hudson config files for each ubuntu distro
     configs = {}
-    for ubuntu in UBUNTU_DISTROS[distro_name]:
-        for arch in ARCHS:
+    for ubuntu in ubuntu_distros:
+        for arch in arches:
             name = "_".join(['auto_stack_prerelease', distro_name, stack_name, ubuntu, arch])
             hudson_config = HUDSON_PRERELEASE_CONFIG
             hudson_config = hudson_config.replace('ROSINSTALL', rosinstall_config_total)
@@ -317,48 +316,87 @@ def create_prerelease_configs(distro_name, stack_name, stack_map):
             configs[name] = hudson_config
     return configs
     
-def main():
-    distro_file = 'http://www.ros.org/distros/cturtle.rosdistro'
-    if len(sys.argv) == 4:
-        distro_file = sys.argv[3]
 
-    delete = False
-    username = password = None
-    if len(sys.argv) >= 3:
-        username = sys.argv[1]
-        password = sys.argv[2]
+def main():
+    parser = optparse.OptionParser()
+    parser.add_option('--delete', dest = 'delete', default=False, action='store_true',
+                      help='Delete jobs from Hudson')    
+    parser.add_option('--recreate', dest = 'recreate', default=False, action='store_true',
+                      help='Re-create jobs instead of updating them')    
+    parser.add_option( '--ubuntu', dest = 'ubuntudistro', action='append',
+                      help="Specify the Ubuntu distro to create a job for (defaults to all supported Ubuntu distro's")
+    parser.add_option('--arch', dest = 'arch', action='append',
+                      help="Specify the architectures to operate on (defaults is [i386, amd64]")
+    parser.add_option('--stack', dest = 'stacks', action='append',
+                      help="Specify the stacks to operate on (defaults to all stacks)")
+    parser.add_option('--rosdistro', dest = 'rosdistro', action='store', default='cturtle',
+                      help="Specify the ros distro to operate on (defaults to cturtle)")
+    parser.add_option('--pre', dest='prerelease', action='store_true', default=False,
+                      help='Operate on pre-release scripts')
+    parser.add_option('--devel', dest='devel', action='store_true', default=False,
+                      help='Operate on devel scripts')
+    (options, args) = parser.parse_args()
+
+    # Parse distro file
+    distro_obj = distro.Distro(ROS_DISTO_MAP[options.rosdistro])
+    print 'Operating on ROS distro %s'%distro_obj.release_name
+
+    # set architctures
+    if options.arch:
+        archs=options.arch
+    else:
+        archs = ['amd64', 'i386']
+    print 'Operating on archs %s'%archs
+    
+    # set ubuntu distro's
+    if options.ubuntudistro:
+        ubuntudistro=options.ubuntudistro
+    else:
+        ubuntudistro=UBUNTU_DISTRO_MAP[distro_obj.release_name]
+    print 'Operating on Ubuntu distro %s'%ubuntudistro
+
+    # parse username and password
+    if len(args) != 2:
+        parser.error('Needs username and password as args')
+    username = args[0]
+    password = args[1]
 
     # generate hudson config files
-    distro_obj = distro.Distro(distro_file)
     devel_configs = {}
     prerelease_configs = {}
-    for stack_name in distro_obj.stacks:
-        devel_configs.update(create_devel_configs(distro_obj.release_name, stack_name, distro_obj.stacks))
-        prerelease_configs.update(create_prerelease_configs(distro_obj.release_name, stack_name, distro_obj.stacks))
+    if options.stacks:
+        stack_list = options.stacks
+    else:
+        stack_list = distro_obj.stacks
+    for stack_name in stack_list:
+        devel_configs.update(create_devel_configs(ubuntudistro, archs, distro_obj.release_name, stack_name, distro_obj.stacks))
+        prerelease_configs.update(create_prerelease_configs(ubuntudistro, archs , distro_obj.release_name, stack_name, distro_obj.stacks))
     hudson_instance = hudson.Hudson(SERVER, username, password)
 
 
     # send prerelease tests to Hudson
-    for job_name in prerelease_configs:
-        exists = hudson_instance.job_exists(job_name)
-        if exists and delete:
-            hudson_instance.delete_job(job_name)
-            exists = False
-            print "Deleting job %s"%job_name
-        if not exists:
-            print "Creating new job %s"%job_name
-            hudson_instance.create_job(job_name, prerelease_configs[job_name])
+    if options.prerelease:
+        for job_name in prerelease_configs:
+            exists = hudson_instance.job_exists(job_name)
+            if exists and (options.delete or options.replace):
+                hudson_instance.delete_job(job_name)
+                exists = False
+                print "Deleting job %s"%job_name
+            if not options.delete and not exists:
+                print "Creating new job %s"%job_name
+                hudson_instance.create_job(job_name, prerelease_configs[job_name])
 
     # send devel tests to Hudson
-    for job_name in devel_configs:
-        exists = hudson_instance.job_exists(job_name)
-        if exists and delete:
-            hudson_instance.delete_job(job_name)
-            exists = False
-            print "Deleting job %s"%job_name
-        if not exists:
-            print "Creating new job %s"%job_name
-            hudson_instance.create_job(job_name, devel_configs[job_name])
+    if options.devel:
+        for job_name in devel_configs:
+            exists = hudson_instance.job_exists(job_name)
+            if exists and (options.delete or options.replace):
+                hudson_instance.delete_job(job_name)
+                exists = False
+                print "Deleting job %s"%job_name
+            if not options.delete and not exists:
+                print "Creating new job %s"%job_name
+                hudson_instance.create_job(job_name, devel_configs[job_name])
 
 
 if __name__ == '__main__':
