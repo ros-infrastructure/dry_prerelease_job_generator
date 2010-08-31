@@ -5,7 +5,7 @@ def get_ubuntu_distro_map():
             'cturtle':  ['lucid', 'karmic', 'jaunty'],
             'boxturtle':['hardy','karmic', 'jaunty']}
 
-def get_rostinstall_config():
+def get_rosinstall_config():
     return "- svn: {uri: 'STACKURI', local-name: 'STACKNAME'}"
 
 def get_ros_distro_map():

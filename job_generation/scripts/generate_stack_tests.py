@@ -48,26 +48,23 @@ HUDSON_DEVEL_CONFIG = """<?xml version='1.0' encoding='UTF-8'?>
 set -o errexit
 echo "_________________________________BEGIN SCRIPT______________________________________"
 
-echo "install tools"
+echo "Step 1) install tools..."
 cd /tmp/ros
 wget http://code.ros.org/svn/ros/installers/trunk/hudson/hudson_helper
 wget http://code.ros.org/svn/ros/stacks/ros_release/trunk/job_generation/scripts/stack_depends_debs.py
+wget http://code.ros.org/svn/ros/stacks/ros_release/trunk/job_generation/scripts/job_generation_defines.py
 
-
-
-echo "Install debian packages of this stacks and all stacks it depends on"
+echo "Step 2) install debians..."
 if [ ! -f /etc/apt/sources.list.d/ros-latest.list ]; then
   sudo sh -c 'echo "deb http://code.ros.org/packages/ros/ubuntu UBUNTUDISTRO main" > /etc/apt/sources.list.d/ros-latest.list'
   wget http://code.ros.org/packages/ros.key -O - | sudo apt-key add -
 fi
 sudo apt-get update
-sudo apt-get install STACKDEB STACKDEPENDSDEB --yes
+sudo apt-get install STACKDEB `python /tmp/ros/stack_depends_debs.py  --rosdistro=ROSDISTRO --stack=STACKNAME` --yes
 . /opt/ros/ROSDISTRO/setup.sh
 rosdep install STACKNAME -y
 
-echo "Install hudson helper and build stack tests"
-cd /tmp/ros
-wget http://code.ros.org/svn/ros/installers/trunk/hudson/hudson_helper 
+echo "Step 3) Build test"
 export ROS_TEST_RESULTS_DIR=/tmp/ros/test_results
 export WORKSPACE=/tmp/ros
 export JOB_NAME=$JOB_NAME
@@ -337,18 +334,7 @@ println &quot;${build_failures_context}&quot;&#xd;
 </project>
 """
 
-# template to create rosinstall file
-ROSINSTALL_CONFIG = """- svn: {uri: 'STACKURI', local-name: 'STACKNAME'}"""
-
 # the supported Ubuntu distro's for each ros distro
-UBUNTU_DISTRO_MAP = {'unstable': ['lucid','karmic'],
-                     'cturtle':  ['lucid', 'karmic', 'jaunty'],
-                     'boxturtle':['hardy','karmic', 'jaunty']}
-
-ROS_DISTO_MAP = {'unstable': 'http://www.ros.org/distros/unstable.rosdistro',
-                 'cturtle': 'http://www.ros.org/distros/cturtle.rosdistro',
-                 'boxturtle': 'http://www.ros.org/distros/boxturtle.rosdistro'}
-
 DEFAULT_ARCHS = ['amd64', 'i386']
 
 # path to hudson server
@@ -356,6 +342,7 @@ SERVER = 'http://build.willowgarage.com/'
 
 import roslib; roslib.load_manifest("hudson")
 from roslib import distro, rospack, stack_manifest
+from job_generation_defines import *
 import hudson
 import sys
 import re
@@ -384,11 +371,11 @@ def create_devel_configs(ubuntu_distros, arches, distro_name, stack_name, stack_
             # check if this is the 'gold' job
             time_trigger = ''
             job_children = ''
-            if arch == DEFAULT_ARCHS[0] and ubuntu == UBUNTU_DISTRO_MAP[distro_name][0]:
+            if arch == DEFAULT_ARCHS[0] and ubuntu == get_ubuntu_distro_map()[distro_name][0]:
                 time_trigger = '*/5 * * * *'
                 job_children_list = []
                 for a in DEFAULT_ARCHS:
-                    for u in UBUNTU_DISTRO_MAP[distro_name]:
+                    for u in get_ubuntu_distro_map()[distro_name]:
                         child_name = devel_job_name(distro_name, stack_name, u, a)
                         if child_name != name:
                             job_children_list.append(child_name)
@@ -400,7 +387,6 @@ def create_devel_configs(ubuntu_distros, arches, distro_name, stack_name, stack_
             hudson_config = hudson_config.replace('ROSDISTRO', distro_name)
             hudson_config = hudson_config.replace('STACKNAME', stack_name)   
             hudson_config = hudson_config.replace('STACKDEB', stack_to_deb(distro_name, stack_name))
-            hudson_config = hudson_config.replace('STACKDEPENDSDEB', ' '.join([stack_to_deb(distro_name, s) for s in depends]))
             hudson_config = hudson_config.replace('STACKURI', stack_map[stack_name].dev_svn)
             hudson_config = hudson_config.replace('TIME_TRIGGER', time_trigger)
             hudson_config = hudson_config.replace('JOB_CHILDREN', job_children)
@@ -419,12 +405,12 @@ def create_prerelease_configs(ubuntu_distros, arches, distro_name, stack_name, s
     rosinstall_depends_on = ""
     for s in rospack.rosstack_depends_on(stack_name):
         if s in stack_map:
-            rosinstall_config = ROSINSTALL_CONFIG
+            rosinstall_config = get_rosinstall_config()
             rosinstall_config = rosinstall_config.replace('STACKURI', stack_map[s].distro_svn)
             rosinstall_config = rosinstall_config.replace('STACKNAME', s)
             rosinstall_depends_on += rosinstall_config+'\n'
 
-    rosinstall_stack = ROSINSTALL_CONFIG
+    rosinstall_stack = get_rosinstall_config()
     rosinstall_stack = rosinstall_stack.replace('STACKURI', stack_map[stack_name].dev_svn)
     rosinstall_stack = rosinstall_stack.replace('STACKNAME', stack_name)
 
@@ -471,7 +457,7 @@ def main():
     (options, args) = parser.parse_args()
 
     # Parse distro file
-    distro_obj = distro.Distro(ROS_DISTO_MAP[options.rosdistro])
+    distro_obj = distro.Distro(get_ros_distro_map()[options.rosdistro])
     print 'Operating on ROS distro %s'%distro_obj.release_name
 
     # set architctures
@@ -485,7 +471,7 @@ def main():
     if options.ubuntudistro:
         ubuntudistro=options.ubuntudistro
     else:
-        ubuntudistro=UBUNTU_DISTRO_MAP[distro_obj.release_name]
+        ubuntudistro=get_ubuntu_distro_map()[distro_obj.release_name]
     print 'Operating on Ubuntu distro %s'%ubuntudistro
 
     # parse username and password
