@@ -87,7 +87,7 @@ class ChrootInstance:
         cmd = ['sudo', 'umount', '-f',  "%s/proc"%self.chroot_path]
         print cmd
         subprocess.call(cmd)
-        cmd = ['sudo', 'umount', '-f', "%s/proc"%self.chroot_path]
+        cmd = ['sudo', 'umount', '-f', "%s/sys"%self.chroot_path]
         print cmd
         subprocess.call(cmd)
 
@@ -102,7 +102,7 @@ class ChrootInstance:
         cmd = ['sudo', 'mount', '--bind', "/proc", "%s/proc"%self.chroot_path]
         print cmd
         subprocess.call(cmd)
-        cmd = ['sudo', 'mount', '--bind', "/proc", "%s/proc"%self.chroot_path]
+        cmd = ['sudo', 'mount', '--bind', "/sys", "%s/sys"%self.chroot_path]
         print cmd
         subprocess.call(cmd)
         #self.execute(['mount', '-t', 'proc', 'proc', '/proc'])
