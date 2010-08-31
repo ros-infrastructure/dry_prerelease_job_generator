@@ -84,16 +84,29 @@ class ChrootInstance:
         subprocess.check_call(cmd)
 
     def unmount_proc_sys(self):
-        self.execute(['umount', '-f', '/proc'], True)
-        self.execute(['umount', '-f', '/sys'], True)
-        #self.execute(['umount', '-af'], True)
+        cmd = ['sudo', 'umount', '-f',  "%s/proc"%self.chroot_path]
+        print cmd
+        subprocess.call(cmd)
+        cmd = ['sudo', 'umount', '-f', "%s/proc"%self.chroot_path]
+        print cmd
+        subprocess.call(cmd)
+
+        
+        #self.execute(['umount', '-f', '/proc'], True)
+        #self.execute(['umount', '-f', '/sys'], True)
 
     def mount_proc_sys(self):
         #hack since we mount it in 2 places and umount is safe
         self.unmount_proc_sys()
 
-        self.execute(['mount', '-t', 'proc', 'proc', '/proc'])
-        self.execute(['mount', '-t', 'sysfs', 'sysfs', '/sys'])
+        cmd = ['sudo', 'mount', '--bind', "/proc", "%s/proc"%self.chroot_path]
+        print cmd
+        subprocess.call(cmd)
+        cmd = ['sudo', 'mount', '--bind', "/proc", "%s/proc"%self.chroot_path]
+        print cmd
+        subprocess.call(cmd)
+        #self.execute(['mount', '-t', 'proc', 'proc', '/proc'])
+        #self.execute(['mount', '-t', 'sysfs', 'sysfs', '/sys'])
 
     def bootstrap(self):
         cmd = ['sudo', 'apt-get', 'install', 'debootstrap']
