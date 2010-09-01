@@ -120,7 +120,7 @@ class ChrootInstance:
         print cmd
         subprocess.check_call(cmd)
         
-        deboot_url = 'http://aptproxy.willowgarage.com/us.archive.ubuntu'
+        deboot_url = 'http://aptproxy.willowgarage.com/us.archive.ubuntu.com'
         if self.distro in valid_debian_distros:
             deboot_url = 'http://ftp.us.debian.org/debian/'
 
