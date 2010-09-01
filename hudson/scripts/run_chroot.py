@@ -11,6 +11,13 @@ import urllib
 
 ROSBUILD_SSH_URI = 'https://home.willowgarage.com/wgwiki/Servers/hudson?action=AttachFile&do=get&target=rosbuild-ssh.tar'
 
+# Valid options
+valid_archs = ['i386', 'i686', 'amd64']
+valid_ubuntu_distros = ['hardy', 'jaunty', 'karmic', 'lucid']
+valid_debian_distros = ['lenny']
+
+
+
 def execute_chroot(cmd, path, user='root'):
     if 0:
         with tempfile.NamedTemporaryFile() as tempfh:
@@ -113,7 +120,11 @@ class ChrootInstance:
         print cmd
         subprocess.check_call(cmd)
         
-        cmd = ['sudo', 'debootstrap', '--arch', self.arch, self.distro, self.chroot_path, 'http://aptproxy.willowgarage.com/us.archive.ubuntu.com/ubuntu/']
+        deboot_url = 'http://aptproxy.willowgarage.com/us.archive.ubuntu'
+        if self.distro in valid_debian_distros:
+            deboot_url = 'http://ftp.us.debian.org/debian/'
+
+        cmd = ['sudo', 'debootstrap', '--arch', self.arch, self.distro, self.chroot_path, deboot_url]
         print cmd
         subprocess.check_call(cmd)
         print "Finished debootstrap"
@@ -168,7 +179,8 @@ class ChrootInstance:
 
         self.mount_proc_sys()
 
-        self.execute(['locale-gen', 'en_US.UTF-8'])
+        if self.distro in valid_ubuntu_distros:
+            self.execute(['locale-gen', 'en_US.UTF-8'])
 
         self.execute(['apt-get', 'update'])
 
@@ -458,10 +470,6 @@ class TempRamFS:
 
 
 
-# Valid options
-valid_archs = ['i386', 'i686', 'amd64']
-valid_distros = ['hardy', 'jaunty', 'karmic', 'lucid']
-
 
 workspace = os.getenv("WORKSPACE")
 if not workspace:
@@ -478,7 +486,7 @@ parser.add_option("--hudson", type="string", dest="hudson_args",
 parser.add_option("--arch", type="string", dest="arch",
                   help="What architecture %s"%valid_archs)
 parser.add_option("--distro", type="string", dest="distro",
-                  help="What distro %s "%valid_distros)
+                  help="What distro %s "%(valid_ubuntu_distros + valid_debian_distros))
 parser.add_option("--persist-chroot", action="store_true", dest="persist", default=False,
                   help="do not clear the chroot before running")
 parser.add_option("--chroot-dir", action="store", dest="chroot_dir", default="/home/rosbuild/chroot",
@@ -494,8 +502,8 @@ parser.add_option("--script", action="store", dest="script",
 
 if not options.script and not options.hudson_args:
     parser.error("hudson_helper needs args")
-if options.distro not in valid_distros:
-    parser.error("%s is not a valid distro: %s"%(options.distro, valid_distros))
+if options.distro not in (valid_ubuntu_distros + valid_debian_distros):
+    parser.error("%s is not a valid distro: %s"%(options.distro, valid_ubuntu_distros+ valid_debian_distros))
 if options.arch not in valid_archs:
     parser.error("%s is not a valid arch: %s"%(options.arch, valid_archs))
 
