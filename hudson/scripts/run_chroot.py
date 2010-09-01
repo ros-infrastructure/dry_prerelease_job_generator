@@ -146,23 +146,20 @@ class ChrootInstance:
             tf.write("deb http://aptproxy.willowgarage.com/us.archive.ubuntu.com/ubuntu %s main restricted universe multiverse\n" % self.distro)
             tf.write("deb http://aptproxy.willowgarage.com/us.archive.ubuntu.com/ubuntu %s-updates main restricted universe multiverse\n" % self.distro)
             tf.write("deb http://aptproxy.willowgarage.com/us.archive.ubuntu.com/ubuntu %s-security main restricted universe multiverse\n" % self.distro)
-            # This extra source is to pull in the very latest
-            # nvidia-current package from our mirror.  It's only guaranteed
-            # to be available for Lucid, but we only need it for Lucid.
-            if self.distro == 'lucid':
-                tf.write("deb http://wgs1.willowgarage.com/wg-packages/ %s-wg main\n" % self.distro)
 
             tf.flush()
             cmd = ['sudo', 'cp', tf.name, sources]
             print "Runing cmd", cmd
             subprocess.check_call(cmd)
 
+        
+        self.add_ros_sources()
+
+        # This extra source is to pull in the very latest
+        # nvidia-current package from our mirror.  It's only guaranteed
+        # to be available for Lucid, but we only need it for Lucid.
         if self.distro == 'lucid':
-            self.execute("sudo apt-get update".split())
-            self.execute("sudo apt-get install wget".split())
-            self.execute("wget http://wgs1.willowgarage.com/wg-packages/wg.key".split())
-            self.execute("sudo apt-key add wg.key".split())
-            self.execute("sudo apt-get update".split())
+            self.add_wg_sources()
 
         #disable start-stop-daemon and invokerc
 
@@ -238,6 +235,46 @@ class ChrootInstance:
         print self.execute(cmd)
 
         self.setup_ssh_client()
+
+    def add_ros_sources(self):
+        """
+        Add code.ros.org sources to the apt sources
+        """
+        ros_source=os.path.join(self.chroot_path, 'etc', 'apt', 'sources.list.d', 'ros-latest.list')
+        with tempfile.NamedTemporaryFile() as tf:
+            print "Adding code.ros.org as source"
+            tf.write("deb http://code.ros.org/packages/ros/ubuntu %s main\n" % self.distro)
+            tf.flush()
+            cmd = ['sudo', 'cp', tf.name, ros_source]
+            print "Runing cmd", cmd
+            subprocess.check_call(cmd)
+
+            
+        key_file = 'tmp/ros.key'
+        abs_key_file =os.path.join(self.chroot_path, key_file)
+        urllib.urlretrieve('http://code.ros.org/packages/ros.key', abs_key_file)
+        cmd = ['apt-key', 'add', os.path.join('/', key_file)]
+        self.execute(cmd) 
+
+    def add_wg_sources(self):
+        """ 
+        Add wg-packages to apt sources for nvidia-current drivers.   
+        """
+        nvidia_source=os.path.join(self.chroot_path, 'etc', 'apt', 'sources.list.d', 'wg.list')
+        with tempfile.NamedTemporaryFile() as tf:
+            print "Adding code.ros.org as source"
+            tf.write("deb http://wgs1.willowgarage.com/wg-packages/ %s-wg main\n" % self.distro)
+            tf.flush()
+            cmd = ['sudo', 'cp', tf.name, nvidia_source]
+            print "Runing cmd", cmd
+            subprocess.check_call(cmd)
+
+            
+        key_file = 'tmp/wg.key'
+        abs_key_file =os.path.join(self.chroot_path, key_file)
+        urllib.urlretrieve('http://wgs1.willowgarage.com/wg-packages/wg.key', abs_key_file)
+        cmd = ['apt-key', 'add', os.path.join('/', key_file)]
+        self.execute(cmd) 
 
     def setup_ssh_client(self):
         print 'Setting up ssh client'
