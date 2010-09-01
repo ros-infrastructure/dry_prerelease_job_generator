@@ -7,7 +7,7 @@ HUDSON_DEVEL_CONFIG = """<?xml version='1.0' encoding='UTF-8'?>
 <project> 
   <description>Build of STACKNAME development branch for ROSDISTRO on UBUNTUDISTRO, ARCH</description> 
  <logRotator> 
-    <daysToKeep>5</daysToKeep> 
+    <daysToKeep>21</daysToKeep> 
     <numToKeep>-1</numToKeep> 
   </logRotator> 
   <keepDependencies>false</keepDependencies> 
@@ -50,7 +50,7 @@ echo "_________________________________BEGIN SCRIPT_____________________________
 
 echo "Step 1) install tools..."
 sudo apt-get update
-sudo apt-get install ros-ROSDISTRO-ros
+sudo apt-get install ros-ROSDISTRO-ros -y
 . /opt/ros/ROSDISTRO/setup.sh
 cd /tmp/ros
 wget http://code.ros.org/svn/ros/installers/trunk/hudson/hudson_helper
@@ -58,7 +58,7 @@ wget http://code.ros.org/svn/ros/stacks/ros_release/trunk/job_generation/scripts
 wget http://code.ros.org/svn/ros/stacks/ros_release/trunk/job_generation/scripts/job_generation_defines.py
 
 echo "Step 2) install debians..."
-sudo apt-get install STACKDEB `python /tmp/ros/stack_depends_debs.py  --rosdistro=ROSDISTRO --stackuri=STACKURI` --yes
+sudo apt-get install STACKDEB \`python stack_depends_debs.py  --rosdistro=ROSDISTRO --stackuri=STACKURI\` --yes
 . /opt/ros/ROSDISTRO/setup.sh
 rosdep install STACKNAME -y
 
