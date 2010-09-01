@@ -49,18 +49,16 @@ set -o errexit
 echo "_________________________________BEGIN SCRIPT______________________________________"
 
 echo "Step 1) install tools..."
+sudo apt-get update
+sudo apt-get install ros-ROSDISTRO-ros
+. /opt/ros/ROSDISTRO/setup.sh
 cd /tmp/ros
 wget http://code.ros.org/svn/ros/installers/trunk/hudson/hudson_helper
 wget http://code.ros.org/svn/ros/stacks/ros_release/trunk/job_generation/scripts/stack_depends_debs.py
 wget http://code.ros.org/svn/ros/stacks/ros_release/trunk/job_generation/scripts/job_generation_defines.py
 
 echo "Step 2) install debians..."
-if [ ! -f /etc/apt/sources.list.d/ros-latest.list ]; then
-  sudo sh -c 'echo "deb http://code.ros.org/packages/ros/ubuntu UBUNTUDISTRO main" > /etc/apt/sources.list.d/ros-latest.list'
-  wget http://code.ros.org/packages/ros.key -O - | sudo apt-key add -
-fi
-sudo apt-get update
-sudo apt-get install STACKDEB `python /tmp/ros/stack_depends_debs.py  --rosdistro=ROSDISTRO --stack=STACKNAME` --yes
+sudo apt-get install STACKDEB `python /tmp/ros/stack_depends_debs.py  --rosdistro=ROSDISTRO --stackuri=STACKURI` --yes
 . /opt/ros/ROSDISTRO/setup.sh
 rosdep install STACKNAME -y
 
