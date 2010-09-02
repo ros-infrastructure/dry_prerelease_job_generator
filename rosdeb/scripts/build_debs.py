@@ -376,6 +376,8 @@ def build_debs_main():
                       dest="force", default=False, action="store_true")
     parser.add_option("--noupload",
                       dest="noupload", default=False, action="store_true")
+    parser.add_option("--noramdisk",
+                      dest="ramdisk", default=True, action="store_false")
     parser.add_option("--interactive",
                       dest="interactive", default=False, action="store_true")
 
@@ -400,9 +402,12 @@ def build_debs_main():
         print "creating staging dir: %s"%(staging_dir)
         os.makedirs(staging_dir)
 
-    with TempRamFS(staging_dir, "20G"):
+    if options.ramdisk:
+        with TempRamFS(staging_dir, "20G"):
+            build_debs(distro_name, stack_name, os_platform, arch, staging_dir, options.force, options.noupload, options.interactive)
+    else:
         build_debs(distro_name, stack_name, os_platform, arch, staging_dir, options.force, options.noupload, options.interactive)
-
+            
     if options.staging_dir is None:
         shutil.rmtree(staging_dir)
         

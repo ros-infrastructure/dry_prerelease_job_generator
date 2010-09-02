@@ -132,26 +132,48 @@ def list_missing(distro_name, os_platform, arch):
             else:
                 missing_dep.add(sn)
 
-    print "For %s %s %s:"%(distro_name, os_platform, arch)
-    print "The following stacks are missing but have deps satisfied: "
-    print missing_primary
-    print "The following stacks are missing deps: "
-    print missing_dep
+    print "[%s %s %s]"%(distro_name, os_platform, arch)
+    print "\nThe following stacks are missing but have deps satisfied: "
+    print '\n'.join([" %s"%x for x in missing_primary])
+    print "\nThe following stacks are missing deps: "
+    print '\n'.join([" %s"%x for x in missing_dep])
 
+    return missing_primary, missing_dep
+    
 def list_missing_main():
 
     from optparse import OptionParser
     parser = OptionParser(usage="usage: %prog <distro> <os-platform> <arch>", prog=NAME)
-
+    parser.add_option("--all", 
+                      dest="all", default=False, action="store_true")
 
     (options, args) = parser.parse_args()
 
-    if len(args) != 3:
-        parser.error('invalid args')
+    if not options.all:
+        if len(args) != 3:
+            parser.error('invalid args')
         
-    (distro_name, os_platform, arch) = args
+        distro_name, os_platform, arch = args
+        list_missing(distro_name, os_platform, arch)
+    else:
+        if len(args) != 1:
+            parser.error('invalid args: only specify <distro> when using --all')
+        distro_name = args[0]
 
-    list_missing(distro_name, os_platform, arch)
+        bad = {}
+        missing_primary = None
+        missing_dep = None
+        for os_platform in ['jaunty', 'karmic', 'lucid']:
+            for arch in ['amd64', 'i386']:
+                missing_primary, missing_dep = list_missing(distro_name, os_platform, arch)
+                bad[os_platform+arch] = missing_primary, missing_dep
+                print '-'*80
+
+        all = missing_primary | missing_dep
+        for p, d in bad.itervalues():
+            all = all & (p | d)
+        print "[ALL]"
+        print '\n'.join([" %s"%x for x in all])
         
 if __name__ == '__main__':
     list_missing_main()
