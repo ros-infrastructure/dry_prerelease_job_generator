@@ -17,6 +17,83 @@ valid_ubuntu_distros = ['hardy', 'jaunty', 'karmic', 'lucid']
 valid_debian_distros = ['lenny']
 
 
+def get_mount_points(pattern = "chroot"):
+    mnt = subprocess.Popen("mount", stdout=subprocess.PIPE)
+    out = mnt.communicate()[0]
+    lines = out.split('\n')
+    mounts = []
+    for l in lines:
+        if pattern in l:
+            elements = l.split()
+            if len(elements) == 6:
+                mount_point = elements[2]
+                # TODO use os.path.ismount to verify
+                mounts.append(mount_point)
+    return mounts
+
+def get_chroot_processes(patterns):
+    mnt = subprocess.Popen(["sudo", "lsof"], stdout=subprocess.PIPE)
+    out = mnt.communicate()[0]
+    lines = out.split('\n')
+    processes = set()
+    for l in lines:
+        for p in patterns:
+            if p in l:
+                elements = l.split()
+                if len(elements) > 6:
+                    process = elements[1]
+                    processes.add(process)
+    return processes
+
+
+def unmount_directories(mounts):
+    for m in mounts:
+        print "Unmounting %s:"%m
+        cmd = "sudo umount -f %s"%m
+        subprocess.check_call(cmd.split())
+
+def kill_processes(processes, level=''):
+    for p in processes:
+        print "Killing %s %s:"%(level, p)
+        cmd = "sudo kill %s %s"%(level, p)
+        subprocess.check_call(cmd.split())
+
+def clean_up_chroots():
+    ### Try 1
+    mounts = get_mount_points()
+    mounts.reverse()
+
+    mounted_processes = get_chroot_processes(mounts)
+    for p in mounted_processes:
+        print "the following processes are in chroot", p
+    kill_processes(mounted_processes)
+
+    remaining_processes = get_chroot_processes(mounts)
+    print "Remaining processes %s"%remaining_processes
+    unmount_directories(mounts)
+
+
+    mounts = get_mount_points()
+    mounts.reverse()
+    # test for success
+    if len(remaining_processes) == 0 and len(mounts) == 0:
+        return True
+    print "Escalating to -9 kills"
+
+    remaining_processes = get_chroot_processes(mounts)
+    print "Remaining processes %s"%remaining_processes
+
+
+    kill_processes(remaining_processes, '-9')
+    unmount_directories(mounts)
+
+
+    remaining_processes = get_chroot_processes(mounts)
+    mounts = get_mount_points()
+    if len(remaining_processes) == 0 and len(mounts) == 0:
+        return True
+    return False
+
 
 def execute_chroot(cmd, path, user='root'):
     if 0:
@@ -515,6 +592,11 @@ print "hudson_args", options.hudson_args
 print "distro", options.distro
 print "arch", options.arch
 print "workspace", workspace
+
+print "Checking for abandoned chroots"
+if not clean_up_chroots():
+    print "Failed to clean up abandoned chroots, continuing."
+
 
 if options.ramdisk:
     with TempRamFS(options.chroot_dir, options.ramdisk_size):
