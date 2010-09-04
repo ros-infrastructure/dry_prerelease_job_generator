@@ -43,6 +43,7 @@ import subprocess
 import shutil
 import tempfile
 import yaml
+import urllib
 import urllib2
 import stat
 import tempfile
@@ -58,8 +59,9 @@ TARBALL_URL = "https://code.ros.org/svn/release/download/stacks/%(stack_name)s/%
 
 import traceback
 
+_distro_yaml_cache = {}
+
 def load_info(stack_name, stack_version):
-    import urllib
     
     base_name = "%s-%s"%(stack_name, stack_version)
     f_name = base_name + '.yaml'
@@ -67,7 +69,11 @@ def load_info(stack_name, stack_version):
     url = TARBALL_URL%locals()
 
     try:
-        return yaml.load(urllib2.urlopen(url))
+        if url in _distro_yaml_cache:
+            return _distro_yaml_cache[url]
+        else:
+            _distro_yaml_cache[url] = l = yaml.load(urllib2.urlopen(url))
+            return l
     except:
         print >> sys.stderr, "Problem fetching yaml info for %s %s (%s)"%(stack_name, stack_version, url)
         sys.exit(1)
@@ -99,10 +105,15 @@ def compute_deps(distro, stack_name):
     return ordered_deps
 
 
+_Packages_cache = {}
+
 def deb_in_repo(deb_name, deb_version, os_platform, arch):
     # Retrieve the package list from the shadow repo
     packageurl="http://code.ros.org/packages/ros-shadow/ubuntu/dists/%(os_platform)s/main/binary-%(arch)s/Packages"%locals()
-    packagelist = urllib2.urlopen(packageurl).read()
+    if packageurl in _Packages_cache:
+        packagelist = _Packages_cache[packageurl]
+    else:
+        _Packages_cache[packageurl] = packagelist = urllib2.urlopen(packageurl).read()
     str = 'Package: %s\nVersion: %s'%(deb_name, deb_version)
     return str in packagelist
 
