@@ -50,13 +50,13 @@ def unmount_directories(mounts):
     for m in mounts:
         print "Unmounting %s:"%m
         cmd = "sudo umount -f %s"%m
-        subprocess.check_call(cmd.split())
+        subprocess.call(cmd.split())
 
 def kill_processes(processes, level=''):
     for p in processes:
         print "Killing %s %s:"%(level, p)
         cmd = "sudo kill %s %s"%(level, p)
-        subprocess.check_call(cmd.split())
+        subprocess.call(cmd.split())
 
 def clean_up_chroots():
     ### Try 1
