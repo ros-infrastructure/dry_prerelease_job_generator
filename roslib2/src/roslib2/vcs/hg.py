@@ -60,10 +60,10 @@ class HGClient(vcs_base.VCSClientBase):
             return False
             
         cmd = "hg clone %s %s"%(url, self._path)
-        if not subprocess.check_call(cmd, shell=True) == 0:
+        if not subprocess.call(cmd, shell=True) == 0:
             return False
         cmd = "hg checkout %s"%(version)
-        if not subprocess.check_call(cmd, cwd=self._path, shell=True) == 0:
+        if not subprocess.call(cmd, cwd=self._path, shell=True) == 0:
             return False
         return True
 
@@ -71,10 +71,10 @@ class HGClient(vcs_base.VCSClientBase):
         if not self.detect_presence():
             return False
         cmd = "hg pull"
-        if not subprocess.check_call(cmd, cwd=self._path, shell=True) == 0:
+        if not subprocess.call(cmd, cwd=self._path, shell=True) == 0:
             return False
         cmd = "hg checkout %s"%version
-        if not subprocess.check_call(cmd, cwd=self._path, shell=True) == 0:
+        if not subprocess.call(cmd, cwd=self._path, shell=True) == 0:
             return False
         return True
         
