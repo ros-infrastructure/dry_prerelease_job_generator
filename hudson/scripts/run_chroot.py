@@ -543,7 +543,10 @@ class TempRamFS:
             traceback.print_exception(mtype, value, tb, file=sys.stdout)
             
         cmd = ['sudo', 'umount', '-f', self.path]
-        subprocess.check_call(cmd)
+        if not subprocess.call(cmd):
+            print "WARNING: UNCLEAN TMPFS CHROOT UNMONT"
+        else:
+            print "Successfully umounted tmpfs chroot."
 
 
 
