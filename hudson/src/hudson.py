@@ -13,6 +13,7 @@ Q_INFO       = 'queue/api/python?depth=0'
 CREATE_JOB   = 'createItem?name=%(name)s' #also post config.xml
 RECONFIG_JOB = 'job/%(name)s/config.xml'
 DELETE_JOB   = 'job/%(name)s/doDelete'
+ENABLE_JOB   = 'job/%(name)s/enable'
 DISABLE_JOB  = 'job/%(name)s/disable'
 COPY_JOB     = 'createItem?name=%(to_name)s&mode=copy&from=%(from_name)s'
 BUILD_JOB    = 'job/%(name)s/build'
@@ -34,6 +35,7 @@ EMPTY_CONFIG_XML = """<?xml version='1.0' encoding='UTF-8'?>
   <buildWrappers/>
 </project>"""
 
+#for testing only
 RECONFIG_XML = """<?xml version='1.0' encoding='UTF-8'?>
 <project>
   <keepDependencies>false</keepDependencies>
@@ -111,6 +113,14 @@ class Hudson(object):
         if self.job_exists(name):
             raise HudsonException("delete[%s] failed"%(name))
     
+    def enable_job(self, name):
+        self.get_job_info(name)
+        self.hudson_open(urllib2.Request(self.server + ENABLE_JOB%locals(), ''))
+
+    def disable_job(self, name):
+        self.get_job_info(name)
+        self.hudson_open(urllib2.Request(self.server + DISABLE_JOB%locals(), ''))
+
     def job_exists(self, name):
         try:
             self.get_job_info(name)
@@ -171,10 +181,13 @@ def main():
 
     hudson = Hudson(SERVER, username, password)
     if 0:
-        if 1:
+        if 0:
             hudson.create_job('empty', EMPTY_CONFIG_XML)
+            hudson.disable_job('empty')
             hudson.copy_job('empty', 'empty_copy')
-            hudson.reconfig_job('empty_copy', RECONFIG_XML)
+            hudson.enable_job('empty_copy')
+            if 0:
+                hudson.reconfig_job('empty_copy', RECONFIG_XML)
         if 1:
             hudson.delete_job('empty')
             hudson.delete_job('empty_copy')
