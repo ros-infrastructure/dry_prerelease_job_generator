@@ -53,6 +53,28 @@ class ConfigElement:
     shutil.move(self.path, backup_path)
 
 
+def prompt_del_abort_retry(prompt):
+    backup_path = None
+    mode = "abort"
+
+    mode_input = raw_input(prompt)
+    if mode_input == 'b' or mode_input == 'backup':
+        mode = 'backup'
+    elif mode_input == 'd' or mode_input =='delete':
+        mode = 'delete'            
+    elif mode_input == 'a' or mode_input =='abort':
+        mode = 'abort'
+    else:
+        print "Failed to get valid prompt from user, aborting"
+        mode = 'abort'
+        
+    return mode
+
+
+def get_backup_path():
+    backup_path = raw_input("Please enter backup pathname: ")
+    print "backing up to %s"%backup_path
+    return backup_path
 
 class OtherConfigElement(ConfigElement):
   def install(self, backup_path, mode):
@@ -76,7 +98,8 @@ class VCSConfigElement(ConfigElement):
     self.uri = uri
     self.version = version
 
-  def install(self,  backup_path = None,mode = 'abort'):
+  def install(self,  backup_path = None,arg_mode = 'abort'):
+    mode = arg_mode
     print "Installing %s to %s %s"%(self.path, self.uri, self.version)
     if not self.vcsc.path_exists():
         if not self.vcsc.checkout(self.uri, self.version):
@@ -87,17 +110,11 @@ class VCSConfigElement(ConfigElement):
             or (self.vcsc.get_vcs_type_name() == 'git' \
                   and (self.vcsc.get_version() != self.version \
                          or self.vcsc.get_branch_parent() != self.version)):
-        valid_modes = ['(d)elete', '(a)bort', '(b)ackup']
         if mode == 'prompt':
-          mode_input = raw_input("%s does not have the same url as requested %s. %s: "%(self.path, self.uri, ", ".join(valid_modes)))
-          if mode_input == 'b' or mode_input == 'backup':
-            mode = 'backup'
-            backup_path = raw_input("Please enter backup pathname: ")
-          if mode_input == 'a' or mode_input =='abort':
-            mode = 'abort'
-          if mode_input == 'd' or mode_input =='delete':
-            mode = 'delete'            
-            
+            valid_modes = ['(d)elete', '(a)bort', '(b)ackup']
+            mode = prompt_del_abort_retry("%s does not have the same url as requested %s. %s: "%(self.path, self.uri, ", ".join(valid_modes)))
+            if mode == 'backup':
+              backup_path = get_backup_path()
         if mode == 'abort':
           if not self.vcsc.detect_presence():
             raise ROSInstallException("Directory '%s' already exists but is not of type %s"%(self.vcsc.get_path(), self.vcsc.get_vcs_type_name()))
@@ -109,11 +126,40 @@ class VCSConfigElement(ConfigElement):
           shutil.rmtree(self.path)
           
         if not self.vcsc.checkout(self.uri, self.version):
-            return False
+            if arg_mode == 'prompt':
+                valid_modes = ['(d)elete', '(a)bort', '(b)ackup']
+                mode = prompt_del_abort_retry("Checkout of %s into %s failed. %s: "%(self.uri, self.path, ", ".join(valid_modes)))
+                if mode == 'backup':
+                    backup_path = get_backup_path()
+                
+            if mode == 'abort':
+                raise ROSInstallException("Failed to checkout %s into %s"%(self.uri, self.path))
+            elif mode == 'backup':
+                self.backup(backup_path)
+            elif mode == "delete":
+                shutil.rmtree(self.path)
+            else:
+                raise ROSInstallException("Invalid mode '%s"%mode)
+            return self.vcsc.checkout(self.uri, self.version)
 
       else:
         if not self.vcsc.update(self.version):
-            return False
+            if arg_mode == 'prompt':
+                valid_modes = ['(d)elete', '(a)bort', '(b)ackup']
+                mode = prompt_del_abort_retry("Checkout of %s into %s failed. %s: "%(self.uri, self.path, ", ".join(valid_modes)))
+                if mode == 'backup':
+                    backup_path = get_backup_path()
+                
+            if mode == 'abort':
+                raise ROSInstallException("Failed to checkout %s into %s"%(self.uri, self.path))
+            elif mode == 'backup':
+                self.backup(backup_path)
+            elif mode == "delete":
+                shutil.rmtree(self.path)
+            else:
+                raise ROSInstallException("Invalid mode '%s"%mode)
+            return self.vcsc.update(self.version)
+
     return True
   
   def get_ros_path(self):
@@ -328,7 +374,7 @@ def rosinstall_main(argv):
   if len(argv) < 2:
     usage()
   args = argv[1:]
-  parser = OptionParser(usage="usage: %prog PATH [URI] [options]", version="%prog 0.5.6")
+  parser = OptionParser(usage="usage: %prog PATH [URI] [options]", version="%prog 0.5.7")
   parser.add_option("-n", "--nobuild", dest="nobuild", default=False,
                     help="skip the build step for the ROS stack",
                     action="store_true")
