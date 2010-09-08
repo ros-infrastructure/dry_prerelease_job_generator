@@ -450,6 +450,8 @@ def main():
                       help='Operate on pre-release scripts')
     parser.add_option('--devel', dest='devel', action='store_true', default=False,
                       help='Operate on devel scripts')
+    parser.add_option('--disable', dest='disable', action='store_true', default=False,
+                      help='Disable Scripts')
     parser.add_option('--email', dest='email', action='store', default='wim+hudson_auto_stack@willowgarage.com',
                       help='Send email to this address')
     (options, args) = parser.parse_args()
@@ -518,8 +520,12 @@ def main():
                     print "Deleting job %s"%job_name
                 elif not options.recreate:
                     hudson_instance.reconfig_job(job_name, devel_configs[job_name])
+                    if not options.disable: # don't enable if about to disable
+                        hudson_instance.enable_job(job_name) # only necessary if disabled, but I don't know how to test if disabled
                     print "Reconfigure job %s"%job_name
-            if not options.delete and not exists:
+                if options.disable:
+                    hudson_instance.disable_job(job_name)
+            if not options.delete and not options.disable and not exists:
                 print "Creating new job %s"%job_name
                 hudson_instance.create_job(job_name, devel_configs[job_name])
 
