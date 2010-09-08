@@ -33,7 +33,8 @@
 
 
 import svn, bzr, hg, git
-import vcs_base
+import os
+
 
 class VCSClient: 
   def __init__(self, vcs_type, path):
@@ -48,6 +49,12 @@ class VCSClient:
       raise LookupError("%s VCS type undefined"%vcs_type)
     self.vcs = self.vcs_types[vcs_type](path)
     
+  def path_exists(self):
+      return os.path.exists(self._path)
+
+  def get_path(self):
+      return self._path
+
   # pass through VCSClientBase API
   def get_version(self):
     return self.vcs.get_version()
