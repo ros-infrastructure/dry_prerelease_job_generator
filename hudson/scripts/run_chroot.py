@@ -9,7 +9,8 @@ import optparse
 import traceback
 import urllib
 
-ROSBUILD_SSH_URI = 'https://home.willowgarage.com/wgwiki/Servers/hudson?action=AttachFile&do=get&target=rosbuild-ssh.tar'
+#ROSBUILD_SSH_URI = 'https://home.willowgarage.com/wgwiki/Servers/hudson?action=AttachFile&do=get&target=rosbuild-ssh.tar'
+ROSBUILD_SSH_URI = 'http://wgs24.willowgarage.com/hudson_slave_configuration_files/rosbuild-ssh.tar'
 
 # Valid options
 valid_archs = ['i386', 'i686', 'amd64']
@@ -364,10 +365,12 @@ class ChrootInstance:
         #if not os.path.exists(tardestname):
         local_tmp_dir = tempfile.mkdtemp()
         local_tmp = os.path.join(local_tmp_dir, "rosbuild_ssh.tar.gz")
+        print "retrieving %s to %s"%(ROSBUILD_SSH_URI, local_tmp)
         urllib.urlretrieve(ROSBUILD_SSH_URI, local_tmp)
             
         if not os.path.exists(tardestdir):
             os.makedirs(tardestdir)
+        print "untarring %s"%local_tmp
         subprocess.check_call(['sudo', 'tar', 'xf', local_tmp], cwd=tardestdir)
         #subprocess.check_call(['sudo', 'rm', '-rf', local_tmp_dir])
         shutil.rmtree(local_tmp_dir)
