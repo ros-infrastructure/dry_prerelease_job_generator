@@ -8,6 +8,7 @@ ${ROS_DISTRO_DIR}/${ROS_STACK_NAME}: ${ROS_STACK_NAME}-${ROS_STACK_VERSION}.md5 
 
 install: ${ROS_DISTRO_DIR}/${ROS_STACK_NAME}
 	bash -c ". setup_deb.sh && rosmake ${ROS_STACK_NAME} -i -V --status-rate=0"
+	rm -rf ${ROS_STACK_DIR}/${ROS_STACK_NAME}/*/build/CMakeFiles
 	./fixrpath.py ${ROS_STACK_DIR}/${ROS_STACK_NAME} ${ROS_DISTRO_DIR} ${ROS_DISTRO_DIR_FINAL}
 	./fixpc.py ${ROS_STACK_DIR}/${ROS_STACK_NAME} ${ROS_DISTRO_DIR} ${ROS_DISTRO_DIR_FINAL}
 
