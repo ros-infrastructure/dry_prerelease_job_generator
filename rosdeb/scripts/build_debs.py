@@ -261,25 +261,26 @@ echo "Resuming pbuilder"
     subprocess.check_call(['bash', '-c', 'cd %(staging_dir)s && dpkg-scanpackages . > %(results_dir)s/Packages'%locals()])
 
 
-    if not noupload:
 
-        # Script to execute for deb verification
-        # TODO: Add code to run all the unit-tests for the deb!
-        verify_script = os.path.join(staging_dir, 'verify_script.sh')
-        with open(verify_script, 'w') as f:
-            f.write("""#!/bin/sh
+
+    # Script to execute for deb verification
+    # TODO: Add code to run all the unit-tests for the deb!
+    verify_script = os.path.join(staging_dir, 'verify_script.sh')
+    with open(verify_script, 'w') as f:
+        f.write("""#!/bin/sh
 set -o errexit
 echo "deb file:%(staging_dir)s results/" > /etc/apt/sources.list.d/pbuild.list
 apt-get update
 apt-get install %(deb_name)s=%(deb_version)s -y --force-yes
 dpkg -l %(deb_name)s
 """%locals())
-            os.chmod(verify_script, stat.S_IRWXU)
+        os.chmod(verify_script, stat.S_IRWXU)
 
             
-        print "starting verify script for %s-%s"%(stack_name, stack_version)
-        subprocess.check_call(archcmd + ['sudo', 'pbuilder', '--execute', '--basetgz', distro_tgz, '--configfile', conf_file, '--bindmounts', results_dir, '--buildplace', build_dir, verify_script])
+    print "starting verify script for %s-%s"%(stack_name, stack_version)
+    subprocess.check_call(archcmd + ['sudo', 'pbuilder', '--execute', '--basetgz', distro_tgz, '--configfile', conf_file, '--bindmounts', results_dir, '--buildplace', build_dir, verify_script])
 
+    if not noupload:
         # Upload the debs to the server
         base_files = [deb_file + x for x in ['_%s.deb'%(arch), '_%s.changes'%(arch)]]
         files = [os.path.join(results_dir, x) for x in base_files]
@@ -294,6 +295,7 @@ dpkg -l %(deb_name)s
         remote_cmd = "TMPFILE=`mktemp` || exit 1 && cat > ${TMPFILE} && chmod +x ${TMPFILE} && ${TMPFILE}; ret=${?}; rm ${TMPFILE}; exit ${ret}"
         run_script = subprocess.Popen(['ssh', 'rosbuild@pub5', remote_cmd], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         invalidate = [deb_name] + get_depends(deb_name, os_platform, arch)
+        invalidate_str = " ".join(invalidate)
         script_content = """
 #!/bin/bash
 set -o errexit
@@ -302,7 +304,7 @@ flock 200
 # Move from incoming to queue
 %(mvstr)s
 # Remove all debs that depend on this package
-cat /var/packages/ros-shadow/ubuntu/dists/%(os_platform)s/main/binary-%(arch)s/Packages | sed -nre 's/^Package: (.*)/\\1/;t hold;/^Depends: .*%(deb_name)s.*/{g;p};b;:hold h' | xargs -I{} reprepro -b /var/packages/ros-shadow/ubuntu -V -A %(arch)s removefilter %(os_platform)s 'Package (=={})'
+echo %(invalidate_str)s | xargs -I{} reprepro -b /var/packages/ros-shadow/ubuntu -V -A %(arch)s removefilter %(os_platform)s 'Package (=={})'
 # Remove this deb itself
 reprepro -b /var/packages/ros-shadow/ubuntu -V -A %(arch)s removefilter %(os_platform)s 'Package (==%(deb_name)s)'
 # Load it into the repo
@@ -310,7 +312,7 @@ reprepro -b /var/packages/ros-shadow/ubuntu -V processincoming %(os_platform)s
 ) 200>/var/lock/ros-shadow.lock
 """%locals()
 
-    #Actually run script and check result
+        #Actually run script and check result
         (o,e) = run_script.communicate(script_content)
         res = run_script.wait()
         print o
