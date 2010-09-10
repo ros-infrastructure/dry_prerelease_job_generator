@@ -293,6 +293,7 @@ dpkg -l %(deb_name)s
         # This script moves files into queue directory, removes all dependent debs, removes the existing deb, and then processes the incoming files
         remote_cmd = "TMPFILE=`mktemp` || exit 1 && cat > ${TMPFILE} && chmod +x ${TMPFILE} && ${TMPFILE}; ret=${?}; rm ${TMPFILE}; exit ${ret}"
         run_script = subprocess.Popen(['ssh', 'rosbuild@pub5', remote_cmd], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        invalidate = [deb_name] + get_depends(deb_name, os_platform, arch)
         script_content = """
 #!/bin/bash
 set -o errexit
