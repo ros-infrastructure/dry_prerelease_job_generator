@@ -158,7 +158,7 @@ class VCSConfigElement(ConfigElement):
                 shutil.rmtree(self.path)
             else:
                 raise ROSInstallException("Invalid mode '%s"%mode)
-            return self.vcsc.update(self.version)
+            return self.vcsc.checkout(self.uri, self.version)
 
     return True
   
