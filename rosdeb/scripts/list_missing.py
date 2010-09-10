@@ -144,9 +144,9 @@ def list_missing(distro_name, os_platform, arch):
                 missing_dep.add(sn)
 
     print "[%s %s %s]"%(distro_name, os_platform, arch)
-    print "\nThe following stacks are missing but have deps satisfied: "
+    print "\nThe following stacks are missing but have deps satisfied: (%s)"%(len(missing_primary))
     print '\n'.join([" %s"%x for x in missing_primary])
-    print "\nThe following stacks are missing deps: "
+    print "\nThe following stacks are missing deps: (%s)"%(len(missing_dep))
     print '\n'.join([" %s"%x for x in missing_dep])
 
     return missing_primary, missing_dep

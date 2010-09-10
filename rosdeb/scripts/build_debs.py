@@ -55,7 +55,8 @@ from rosdeb.core import ubuntu_release, debianize_name, debianize_version, platf
 
 NAME = 'build_debs.py' 
 TARBALL_URL = "https://code.ros.org/svn/release/download/stacks/%(stack_name)s/%(base_name)s/%(f_name)s"
-
+PACKAGES_URL="http://code.ros.org/packages/ros-shadow/ubuntu/dists/%(os_platform)s/main/binary-%(arch)s/Packages"
+    
 import traceback
 
 # Stolen from chroot build
@@ -82,6 +83,12 @@ class TempRamFS:
         cmd = ['sudo', 'umount', '-f', self.path]
         subprocess.check_call(cmd)
 
+    
+def deb_in_repo(deb_name, deb_version, os_platform, arch):
+    return rosdeb.deb_in_repo(PACKAGES_URL%locals(), deb_name, deb_version)
+
+def get_depends(deb_name, os_platform, arch):
+    return rosdeb.get_depends(PACKAGES_URL%locals(), deb_name)
     
 def download_files(stack_name, stack_version, staging_dir, files):
     import urllib
@@ -310,14 +317,6 @@ reprepro -b /var/packages/ros-shadow/ubuntu -V processincoming %(os_platform)s
             print >> sys.stderr, "Could not run upload script"
             print >> sys.stderr, o
             sys.exit(1)
-
-
-def deb_in_repo(deb_name, deb_version, os_platform, arch):
-    # Retrieve the package list from the shadow repo
-    packageurl="http://code.ros.org/packages/ros-shadow/ubuntu/dists/%(os_platform)s/main/binary-%(arch)s/Packages"%locals()
-    packagelist = urllib2.urlopen(packageurl).read()
-    str = 'Package: %s\nVersion: %s'%(deb_name, deb_version)
-    return str in packagelist
 
 
 def build_debs(distro_name, stack_name, os_platform, arch, staging_dir, force, noupload, interactive):
