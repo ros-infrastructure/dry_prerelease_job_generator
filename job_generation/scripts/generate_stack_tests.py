@@ -356,7 +356,12 @@ def devel_job_name(distro_name, stack_name, ubuntu, arch):
 
 def create_devel_configs(ubuntu_distros, arches, distro_name, stack_name, stack_map, email):
     # create list of stack dependencies
-    stack_file = urllib2.urlopen(stack_map[stack_name].dev_svn+'/stack.xml')
+    stack_file_uri = stack_map[stack_name].dev_svn+'/stack.xml'
+    try:
+        stack_file = urllib2.urlopen(stack_file_uri)
+    except urllib2.HTTPError, ex:
+        print "Failed to get stack_file %s, with error: %s"%(stack_file_uri, ex)
+        raise ex
     depends = roslib.stack_manifest.parse(stack_file.read()).depends
     stack_file.close()
 
