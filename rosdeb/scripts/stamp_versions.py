@@ -248,7 +248,7 @@ def create_meta_pkg(packagelist, distro, distro_name, metapackage, deps, os_plat
 
     for stack in deps:
         if stack in distro.stacks:
-            stack_deb_name = "ros-%s-%s"%(distro_name, stack)
+            stack_deb_name = "ros-%s-%s"%(distro_name, stack.replace('_','-'))
             stack_ver = distro.stacks[stack].version
             stack_deb_ver = debianize_version(stack_ver, distro.version, os_platform)
             locked_depends.append(stack_deb_name+' (= %s)'%stack_deb_ver)
