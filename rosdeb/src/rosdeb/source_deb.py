@@ -86,7 +86,8 @@ def make_source_deb(distro_name, stack_name, stack_version, os_platform_name, st
                       
     # Files which go into stack dir and only exist for ros
     if stack_name == 'ros':
-        files.append( (os.path.join(tmpl_d, 'setup.sh'), os.path.join(stack_d, 'setup.sh')))
+        for f in ['setup.sh', 'swig']:
+            files.append( (os.path.join(tmpl_d, f), os.path.join(stack_d, f)))
 
     for src, dst in files:
         with open(src, 'r') as f:
