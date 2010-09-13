@@ -306,14 +306,18 @@ class Distro(object):
                 # load rosdistro file
                 with open(source_uri) as f:
                     y = yaml.load(f.read())
-            else:
-                # Create a temp directory and fetch via svn export
+            elif 'code.ros.org/svn' in source_uri:
+                # Create a temp directory and fetch via svn export so
+                # that keywords are evaluated. The test for
+                # code.ros.org is a big hack.
                 tmp_dir = tempfile.mkdtemp()
                 tmp_distro_file = os.path.join(tmp_dir, os.path.split(source_uri)[-1])
                 subprocess.check_call(['svn','export',source_uri,tmp_distro_file])
                 with open(tmp_distro_file) as f:
                     y = yaml.load(f.read())
                 shutil.rmtree(tmp_dir)
+            else:
+                y = yaml.load(urllib2.urlopen(source_uri))
                 
             self.distro_props = y
   
