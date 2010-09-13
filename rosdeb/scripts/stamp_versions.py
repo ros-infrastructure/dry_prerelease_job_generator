@@ -184,7 +184,6 @@ def do_download_and_fix(packagelist, distro, distro_name, stack_name, stack_vers
             f_name = packagelist[deb_name]['Filename'].split('/')[-1]
 
             workdir = staging_dir
-#            workdir = os.path.join(staging_dir, stack_name)
 
             if not os.path.exists(workdir):
                 os.makedirs(workdir)
@@ -228,7 +227,60 @@ def do_download_and_fix(packagelist, distro, distro_name, stack_name, stack_vers
 
     else:
         print >> sys.stderr, "Could not find deb for: %s"%(deb_name)
-#        sys.exit(1)
+
+
+def create_meta_pkg(packagelist, distro, distro_name, metapackage, deps, os_platform, arch, staging_dir):
+    workdir = staging_dir
+    metadir = os.path.join(workdir, 'meta')
+    if not os.path.exists(metadir):
+        os.makedirs(metadir)
+    debdir = os.path.join(metadir, 'DEBIAN')
+    if not os.path.exists(debdir):
+        os.makedirs(debdir)
+    control_file = os.path.join(debdir, 'control')
+
+    deb_name = "ros-%s-%s"%(distro_name, metapackage)
+    deb_version = "1.0.0-%s~%s"%(distro.version, os_platform)
+
+    locked_depends = []
+
+    missing = False
+
+    for stack in deps:
+        if stack in distro.stacks:
+            stack_deb_name = "ros-%s-%s"%(distro_name, stack)
+            stack_ver = distro.stacks[stack].version
+            stack_deb_ver = debianize_version(stack_ver, distro.version, os_platform)
+            locked_depends.append(stack_deb_name+' (= %s)'%stack_deb_ver)
+        else:
+            print >> sys.stderr, "Variant %s depends on non-exist stack, %s"%(metapackage, stack)
+            missing = True
+
+    locked_depends_str = ', '.join(locked_depends)
+
+    with open(control_file, 'w') as f:
+        f.write("""
+Package: %(deb_name)s
+Version: %(deb_version)s
+Architecture: %(arch)s
+Maintainer: The ROS community <ros-user@lists.sourceforge.net>
+Installed-Size:
+Depends: %(locked_depends_str)s
+Section: unknown
+Priority: optional
+WG-rosdistro: %(distro_name)s
+Description: Meta package for %(metapackage)s variant of ROS.
+"""%locals())
+
+    if not missing:
+        dest_deb = os.path.join(workdir, "%(deb_name)s_%(deb_version)s_%(arch)s.deb"%locals())
+        subprocess.check_call(['dpkg-deb', '--nocheck', '--build', metadir, dest_deb])
+    else:
+        dest_deb = None
+
+    shutil.rmtree(metadir)
+    return dest_deb
+
 
 def upload_debs(files,distro_name,os_platform,arch):
 
@@ -285,14 +337,36 @@ def stamp_debs(distro_name, os_platform, arch, staging_dir):
 
     debs = []
 
+    missing = False
+
     # Build the new debs
     for (sn,s) in distro.stacks.iteritems():
         sv = s.version
         d = do_download_and_fix(packagelist, distro, distro_name, sn, sv, os_platform, arch, staging_dir)
         if d:
             debs.append(d)
+        else:
+            missing = True
 
-    upload_debs(debs, distro_name, os_platform, arch)
+    # Build the new meta packages
+    for (v,d) in distro.variants.iteritems():
+        d = create_meta_pkg(packagelist, distro, distro_name, v, d.stack_names, os_platform, arch, staging_dir)
+        if d:
+            debs.append(d)
+        else:
+            missing = True
+
+    # Build the special "all" metapackage
+    d = create_meta_pkg(packagelist, distro, distro_name, "all", distro.stack_names, os_platform, arch, staging_dir)
+    if d:
+        debs.append(d)
+    else:
+        missing = True
+
+    if not missing:
+        upload_debs(debs, distro_name, os_platform, arch)
+    else:
+        sys.exit(1)
 
 def build_debs_main():
 
