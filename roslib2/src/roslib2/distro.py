@@ -46,6 +46,9 @@ import yaml
 import urllib2
 import re
 import string
+import subprocess
+import tempfile
+import shutil
 
 class DistroException(Exception): pass
 
@@ -304,8 +307,13 @@ class Distro(object):
                 with open(source_uri) as f:
                     y = yaml.load(f.read())
             else:
-                # load via URL
-                y = yaml.load(urllib2.urlopen(source_uri))
+                # Create a temp directory and fetch via svn export
+                tmp_dir = tempfile.mkdtemp()
+                tmp_distro_file = os.path.join(tmp_dir, os.path.split(source_uri)[-1])
+                subprocess.check_call(['svn','export',source_uri,tmp_distro_file])
+                with open(tmp_distro_file) as f:
+                    y = yaml.load(f.read())
+                shutil.rmtree(tmp_dir)
                 
             self.distro_props = y
   
