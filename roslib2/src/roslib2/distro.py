@@ -59,7 +59,7 @@ def distro_version(version_val):
     # Check that is a valid version string
     valid = string.ascii_letters + string.digits + '.+~'
     if False in (c in valid for c in version_val):
-        raise DistroException("Version string %s not valid"%self.version)
+        raise DistroException("Version string %s not valid"%version_val)
     return version_val
 
 def expand_rule(rule, stack_name, stack_ver, release_name, revision=None):
