@@ -119,7 +119,10 @@ def deb_in_repo(deb_name, deb_version, os_platform, arch):
 
 class ExclusionList(object):
     def __init__(self, uri, distro_name, os_platform, arch):
-        self.excludes_yaml = yaml.load(urllib2.urlopen(uri).read())
+        try:
+            self.excludes_yaml = yaml.load(urllib2.urlopen(uri).read())
+        except urllib2.HTTPError:
+            self.excludes_yaml = {}
         if distro_name in self.excludes_yaml:
             self.excludes = self.excludes_yaml[distro_name]
         else:
