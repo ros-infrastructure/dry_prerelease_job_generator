@@ -9,6 +9,8 @@ ${ROS_DISTRO_DIR}/ros: ros-${ROS_STACK_VERSION}.md5 ../ros-${ROS_STACK_VERSION}.
 install: ${ROS_DISTRO_DIR}/ros
 	bash -c ". setup_deb.sh && cd ${ROS_DISTRO_DIR}/ros && make"
 	bash -c ". setup_deb.sh && rosmake ros -i"
+        # Build the tests for now.  Eventually we will split this into a different deb target
+	bash -c ". setup_deb.sh && rosmake ros --target=tests"
 	rm -rf ${ROS_DISTRO_DIR}/ros/*/build/CMakeFiles
 	cp setup.sh ${ROS_DISTRO_DIR}/
 	./fixrpath.py ${ROS_DISTRO_DIR}/ros ${ROS_DISTRO_DIR} ${ROS_DISTRO_DIR_FINAL}
