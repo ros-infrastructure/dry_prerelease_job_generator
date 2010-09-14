@@ -163,11 +163,11 @@ def list_missing(distro_name, os_platform, arch):
                 missing_primary.add(sn)
             else:
                 missing_dep.add(sn)
-                if not depends.isdisjoint(missing_excluded):
+                if not depends.isdisjoint(missing_excluded.union(missing_excluded_dep)):
                     missing_excluded_dep.add(sn)
 
     missing_primary -= missing_excluded
-    missing_excluded -= missing_excluded_dep
+    missing_dep -= missing_excluded_dep
 
     print "[%s %s %s]"%(distro_name, os_platform, arch)
     print "\nThe following stacks are missing but have deps satisfied: (%s)"%(len(missing_primary))
