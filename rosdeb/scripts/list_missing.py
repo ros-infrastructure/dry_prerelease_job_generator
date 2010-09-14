@@ -174,10 +174,12 @@ def list_missing(distro_name, os_platform, arch):
     print '\n'.join([" %s"%x for x in missing_primary])
     print "\nThe following stacks are missing deps: (%s)"%(len(missing_dep))
     print '\n'.join([" %s"%x for x in missing_dep])
-    print "\nThe following stacks are excluded: (%s)"%(len(missing_excluded))
-    print '\n'.join([" %s"%x for x in missing_excluded])
-    print "\nThe following stacks have deps on excluded stacks: (%s)"%(len(missing_excluded_dep))
-    print '\n'.join([" %s"%x for x in missing_excluded_dep])
+    if missing_excluded:
+        print "\nThe following stacks are excluded: (%s)"%(len(missing_excluded))
+        print '\n'.join([" %s"%x for x in missing_excluded])
+    if missing_excluded_dep:
+        print "\nThe following stacks have deps on excluded stacks: (%s)"%(len(missing_excluded_dep))
+        print '\n'.join([" %s"%x for x in missing_excluded_dep])
 
 
     return missing_primary, missing_dep
