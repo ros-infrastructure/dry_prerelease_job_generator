@@ -36,6 +36,8 @@ import os
 import sys
 
 ubuntu_map = { '10.10': 'mighty', '10.04': 'lucid', '9.10': 'karmic', '9.04': 'jaunty', '8.10': 'intrepid', '8.04': 'hardy'}
+def get_ubuntu_map():
+    return ubuntu_map
 def ubuntu_release():
     """
     WARNING: this can only be called on an Ubuntu system

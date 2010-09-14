@@ -45,7 +45,7 @@ import roslib.stack_manifest
 import roslib.packages
 import roslib.stacks
 
-import rosdeb.core
+import rosdeb
 from rosdep.core import RosdepLookupPackage, YamlCache
 
 IMPLICIT_DEPS = ['libc6','build-essential','cmake','python-yaml','subversion']
@@ -248,7 +248,7 @@ def stack_rosdeps(stack_name, stack_dir, platform):
     # hardcode OS for now as we don't build straight debian
     os_name = 'ubuntu'
     # reverse lookup version number, which is the key for rosdep
-    os_version = [k for k, v in rosdeb.core.ubuntu_map.iteritems() if v == platform][0]
+    os_version = [k for k, v in rosdeb.get_ubuntu_map().iteritems() if v == platform][0]
     
     yc = YamlCache(os_name, os_version)
 
