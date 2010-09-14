@@ -117,6 +117,18 @@ def deb_in_repo(deb_name, deb_version, os_platform, arch):
     str = 'Package: %s\nVersion: %s'%(deb_name, deb_version)
     return str in packagelist
 
+class ExclusionList(object):
+    def __init__(self, uri, distro_name, os_platform, arch):
+        self.excludes_yaml = yaml.load(urllib2.urlopen(uri).read())
+        if distro_name in self.excludes_yaml:
+            self.excludes = self.excludes_yaml[distro_name]
+        else:
+            self.excludes = {}
+        self.key = "%s-%s"%(os_platform,arch)
+
+    def check(self, stack):
+        return stack in self.excludes and self.key in self.excludes[stack]
+
 
 def list_missing(distro_name, os_platform, arch):
 
@@ -125,11 +137,17 @@ def list_missing(distro_name, os_platform, arch):
     distro_uri = "https://code.ros.org/svn/release/trunk/distros/%s.rosdistro"%distro_name
     distro = Distro(distro_uri)
 
+    # Load the list of exclusions
+    excludes_uri = "https://code.ros.org/svn/release/trunk/distros/%s.excludes"%distro_name
+    excludes = ExclusionList(excludes_uri, distro_name, os_platform, arch)
+
     # Find all the deps in the distro for this stack
     deps = compute_deps(distro, 'ALL')
 
     missing_primary = set()
     missing_dep = set()
+    missing_excluded = set()
+    missing_excluded_dep = set()
 
     # Build the deps in order
     for (sn, sv) in deps:
@@ -138,16 +156,29 @@ def list_missing(distro_name, os_platform, arch):
         if not deb_in_repo(deb_name, deb_version, os_platform, arch):
             si = load_info(sn, sv)
             depends = set(si['depends'])
-            if depends.isdisjoint(missing_primary.union(missing_dep)):
+            if excludes.check(sn):
+                missing_excluded.add(sn)
+                missing_primary.add(sn)
+            elif depends.isdisjoint(missing_primary.union(missing_dep)):
                 missing_primary.add(sn)
             else:
                 missing_dep.add(sn)
+                if not depends.isdisjoint(missing_excluded):
+                    missing_excluded_dep.add(sn)
+
+    missing_primary -= missing_excluded
+    missing_excluded -= missing_excluded_dep
 
     print "[%s %s %s]"%(distro_name, os_platform, arch)
     print "\nThe following stacks are missing but have deps satisfied: (%s)"%(len(missing_primary))
     print '\n'.join([" %s"%x for x in missing_primary])
     print "\nThe following stacks are missing deps: (%s)"%(len(missing_dep))
     print '\n'.join([" %s"%x for x in missing_dep])
+    print "\nThe following stacks are excluded: (%s)"%(len(missing_excluded))
+    print '\n'.join([" %s"%x for x in missing_excluded])
+    print "\nThe following stacks have deps on excluded stacks: (%s)"%(len(missing_excluded_dep))
+    print '\n'.join([" %s"%x for x in missing_excluded_dep])
+
 
     return missing_primary, missing_dep
     
