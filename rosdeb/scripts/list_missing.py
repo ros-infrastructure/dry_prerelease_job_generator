@@ -205,14 +205,14 @@ def generate_allhtml_report(output, distro_name, os_platforms):
         stacks[stack] = {}
 
     MISSING_PRIMARY = '-'
-    MISSING_DEP = '<-'
+    MISSING_DEP = '&lt;-'
     MISSING_EXCLUDED = 'X'
-    MISSING_EXCLUDED_DEP = '<X'
+    MISSING_EXCLUDED_DEP = '&lt;X'
     colors = {
         MISSING_PRIMARY: 'red',
         MISSING_DEP: 'pink',
         MISSING_EXCLUDED: 'grey',
-        MISSING_EXCLUDED_DEP: 'grey',
+        MISSING_EXCLUDED_DEP: 'lightgrey',
         }
     
     arches = ['amd64', 'i386']
