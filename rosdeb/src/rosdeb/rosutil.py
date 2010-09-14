@@ -114,7 +114,7 @@ def checkout_tag_to_tmp(name, distro_stack):
     tmp_dir = tempfile.mkdtemp()
     dest = os.path.join(tmp_dir, name)
     print 'Checking out a fresh copy of %s from %s to %s...'%(name, uri, dest)
-    checkout_vcs(key, uri, dest)
+    checkout_vcs('svn', uri, dest)
     return tmp_dir
 
 def checkout_dev_to_tmp(name, distro_stack):

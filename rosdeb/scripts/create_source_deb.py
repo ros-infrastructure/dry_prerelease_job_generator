@@ -182,11 +182,16 @@ def source_deb_main():
             parser.error('please specify distro name, stack name, and stack version')
         if options.staging_dir:
             parser.error("cannot override directory in Hudson mode")
+        try:
+            import rosdeb.targets
+            targets = rosdeb.targets.os_platform[distro_name]
+        except:
+            parser.error("unknown distro [%s]"%(distro_name)
 
         errors = []
         success = []
 
-        for os_platform in ['lucid', 'karmic', 'jaunty']:
+        for os_platform in targets:
             staging_dir = os.path.join(tempfile.gettempdir(), "rosdeb-%s"%(os_platform))
             if os.path.exists(staging_dir):
                 shutil.rmtree(staging_dir)

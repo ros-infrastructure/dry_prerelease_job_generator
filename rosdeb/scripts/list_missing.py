@@ -203,11 +203,16 @@ def list_missing_main():
         if len(args) != 1:
             parser.error('invalid args: only specify <distro> when using --all')
         distro_name = args[0]
+        try:
+            import rosdeb.targets
+            targets = rosdeb.targets.os_platform[distro_name]
+        except:
+            parser.error("unknown distro for --all target")
 
         bad = {}
         missing_primary = None
         missing_dep = None
-        for os_platform in ['jaunty', 'karmic', 'lucid']:
+        for os_platform in targets:
             for arch in ['amd64', 'i386']:
                 missing_primary, missing_dep = list_missing(distro_name, os_platform, arch)
                 bad[os_platform+arch] = missing_primary, missing_dep
