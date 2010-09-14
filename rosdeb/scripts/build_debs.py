@@ -289,24 +289,23 @@ dpkg -l %(deb_name)s
         subprocess.check_call(['scp'] + files + ['rosbuild@pub5:/var/packages/ros-shadow/ubuntu/incoming/%s'%os_platform])
 
         # Assemble string for moving all files from incoming to queue (while lock is being held)
-        mvstr = '\n'.join(['mv '+os.path.join('/var/packages/ros-shadow/ubuntu/incoming',os_platform,x)+' '+os.path.join('/var/packages/ros-shadow/ubuntu/queue',os_platform,x) for x in base_files])
+        move_str = '\n'.join(['mv '+os.path.join('/var/packages/ros-shadow/ubuntu/incoming',os_platform,x)+' '+os.path.join('/var/packages/ros-shadow/ubuntu/queue',os_platform,x) for x in base_files])
 
         # This script moves files into queue directory, removes all dependent debs, removes the existing deb, and then processes the incoming files
         remote_cmd = "TMPFILE=`mktemp` || exit 1 && cat > ${TMPFILE} && chmod +x ${TMPFILE} && ${TMPFILE}; ret=${?}; rm ${TMPFILE}; exit ${ret}"
         run_script = subprocess.Popen(['ssh', 'rosbuild@pub5', remote_cmd], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         invalidate = [deb_name] + get_depends(deb_name, os_platform, arch)
-        invalidate_str = " ".join(invalidate)
+        invalidate_cmds = ["reprepro -b /var/packages/ros-shadow/ubuntu -V -A %(arch)s removefilter %(os_platform)s 'Package (==%(deb_name_x)s)'"%locals() for deb_name_x in  invalidate]
+        invalidate_str = "\n".join(invalidate_cmds)
         script_content = """
 #!/bin/bash
 set -o errexit
 (
 flock 200
 # Move from incoming to queue
-%(mvstr)s
+%(move_str)s
 # Remove all debs that depend on this package
-echo %(invalidate_str)s | xargs -I{} reprepro -b /var/packages/ros-shadow/ubuntu -V -A %(arch)s removefilter %(os_platform)s 'Package (=={})'
-# Remove this deb itself
-reprepro -b /var/packages/ros-shadow/ubuntu -V -A %(arch)s removefilter %(os_platform)s 'Package (==%(deb_name)s)'
+%(invalidate_str)s
 # Load it into the repo
 reprepro -b /var/packages/ros-shadow/ubuntu -V processincoming %(os_platform)s
 ) 200>/var/lock/ros-shadow.lock
