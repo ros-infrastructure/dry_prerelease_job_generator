@@ -130,15 +130,10 @@ class ExclusionList(object):
         return stack in self.excludes and self.key in self.excludes[stack]
 
 
-def list_missing(distro_name, os_platform, arch):
-
-    # Load the distro from the URL
-    # TODO: Should this be done from file in release repo instead (and maybe updated in case of failure)
-    distro_uri = "https://code.ros.org/svn/release/trunk/distros/%s.rosdistro"%distro_name
-    distro = Distro(distro_uri)
-
+def get_missing(distro, os_platform, arch):
+    distro_name = distro.release_name
     # Load the list of exclusions
-    excludes_uri = "https://code.ros.org/svn/release/trunk/distros/%s.excludes"%distro_name
+    excludes_uri = "https://code.ros.org/svn/release/trunk/distros/%s.excludes"%(distro_name)
     excludes = ExclusionList(excludes_uri, distro_name, os_platform, arch)
 
     # Find all the deps in the distro for this stack
@@ -169,6 +164,12 @@ def list_missing(distro_name, os_platform, arch):
     missing_primary -= missing_excluded
     missing_dep -= missing_excluded_dep
 
+    return missing_primary, missing_dep, missing_excluded, missing_excluded_dep
+
+def list_missing(distro, os_platform, arch):
+    distro_name = distro.release_name
+    missing_primary, missing_dep, missing_excluded, missing_excluded_dep = get_missing(distro, os_platform, arch)
+
     print "[%s %s %s]"%(distro_name, os_platform, arch)
     print "\nThe following stacks are missing but have deps satisfied: (%s)"%(len(missing_primary))
     print '\n'.join([" %s"%x for x in missing_primary])
@@ -183,23 +184,120 @@ def list_missing(distro_name, os_platform, arch):
 
 
     return missing_primary, missing_dep
+
+def load_distro(distro_name):
+    # Load the distro from the URL
+    # TODO: Should this be done from file in release repo instead (and maybe updated in case of failure)
+    distro_uri = "https://code.ros.org/svn/release/trunk/distros/%s.rosdistro"%distro_name
+    return Distro(distro_uri)
+
+def generate_allhtml_report(output, distro_name, os_platforms):
+    distro = load_distro(distro_name)
+    missing_primary = None
+    missing_dep = None
+
+    bad = {}
+    for os_platform in os_platforms:
+        bad[os_platform] = {}
+
+    stacks = {}
+    for stack in distro.stacks.keys():
+        stacks[stack] = {}
+
+    MISSING_PRIMARY = '-'
+    MISSING_DEP = '<-'
+    MISSING_EXCLUDED = 'X'
+    MISSING_EXCLUDED_DEP = '<X'
+    colors = {
+        MISSING_PRIMARY: 'red',
+        MISSING_DEP: 'pink',
+        MISSING_EXCLUDED: 'grey',
+        MISSING_EXCLUDED_DEP: 'grey',
+        }
     
+    arches = ['amd64', 'i386']
+    for os_platform in os_platforms:
+        for arch in arches:
+           missing_primary, missing_dep, missing_excluded, missing_excluded_dep = get_missing(distro, os_platform, arch)
+           key = "%s-%s"%(os_platform, arch)
+           for s in missing_primary:
+               stacks[s][key] = MISSING_PRIMARY
+           for s in missing_dep:
+               stacks[s][key] = MISSING_DEP
+           for s in missing_excluded:
+               stacks[s][key] = MISSING_EXCLUDED
+           for s in missing_excluded_dep:
+               stacks[s][key] = MISSING_EXCLUDED_DEP
+           
+    with open(output, 'w') as f:
+        f.write("""<html>
+<head>
+<title>
+%(distro_name)s: debbuild report
+</title>
+</head>
+<style type="text/css">
+body {
+  font-family: 'Helvetica, Arial, Verdana, sans-serif';
+}
+</style>
+<body>
+<h1>%(distro_name)s: debbuild report</h1>"""%locals())
+
+        f.write("""Legend:
+<ul>
+<li>Missing: %s</li>
+<li>Depends Missing: %s</li>
+<li>Excluded: %s</li>
+<li>Depends Excluded: %s</li>
+</ul>"""%(MISSING_PRIMARY, MISSING_DEP,MISSING_EXCLUDED, MISSING_EXCLUDED_DEP))
+        f.write("""<table cellspacing=0 border="1">
+<tr>
+<th>Stack</th>""")
+        
+        for os_platform in os_platforms:
+            for arch in arches:
+                f.write('<th>%s-%s</th>'%(os_platform, arch))
+        f.write('</tr>')
+
+        stack_names = sorted(stacks.keys())
+        for stack in stack_names:
+            d = stacks[stack]
+            f.write('<tr><td>%s</td>'%(stack))
+            for os_platform in os_platforms:
+                for arch in arches:
+                    key = "%s-%s"%(os_platform, arch)
+                    if key in d:
+                        val = d[key]
+                        color = colors[val]
+                        f.write('<td bgcolor="%s">%s</td>'%(color, val))
+                    else:
+                        f.write('<td>&nbsp;</td>')
+            f.write('</tr>\n')            
+
+        f.write('\n</table></body></html>')
+        
+
 def list_missing_main():
 
     from optparse import OptionParser
     parser = OptionParser(usage="usage: %prog <distro> <os-platform> <arch>", prog=NAME)
-    parser.add_option("--all", 
+    parser.add_option("--all", help="run on all os/arch combos for known distro",
                       dest="all", default=False, action="store_true")
+    parser.add_option("--allhtml", help="generate html report", 
+                      dest="allhtml", default=False, action="store_true")
 
     (options, args) = parser.parse_args()
 
-    if not options.all:
+    if not options.all and not options.allhtml:
         if len(args) != 3:
             parser.error('invalid args')
         
         distro_name, os_platform, arch = args
-        list_missing(distro_name, os_platform, arch)
-    else:
+        list_missing(load_distro(distro_name), os_platform, arch)
+
+    # the logic here allows both --all and --allhtml to be invoked 
+    if options.all:
         if len(args) != 1:
             parser.error('invalid args: only specify <distro> when using --all')
         distro_name = args[0]
@@ -209,20 +307,28 @@ def list_missing_main():
         except:
             parser.error("unknown distro for --all target")
 
-        bad = {}
+        distro = load_distro(distro_name)
         missing_primary = None
         missing_dep = None
         for os_platform in targets:
             for arch in ['amd64', 'i386']:
-                missing_primary, missing_dep = list_missing(distro_name, os_platform, arch)
-                bad[os_platform+arch] = missing_primary, missing_dep
+                list_missing(distro, os_platform, arch)
                 print '-'*80
+                
+    if options.allhtml:
 
-        all = missing_primary | missing_dep
-        for p, d in bad.itervalues():
-            all = all & (p | d)
-        print "[ALL]"
-        print '\n'.join([" %s"%x for x in all])
+        if len(args) != 1:
+            parser.error('invalid args: only specify <distro> when using --all')
+        distro_name = args[0]
+        try:
+            import rosdeb.targets
+            os_platforms = rosdeb.targets.os_platform[distro_name]
+        except:
+            parser.error("unknown distro for --all target")
+
+        output = 'report.html'
+        generate_allhtml_report(output, distro_name, os_platforms)
+        
         
 if __name__ == '__main__':
     list_missing_main()
