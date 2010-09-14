@@ -49,6 +49,8 @@ import stat
 import tempfile
 
 import rosdeb
+import rosdeb.targets
+
 from rosdeb.rosutil import checkout_svn_to_tmp
 
 from roslib2.distro import Distro
@@ -378,13 +380,29 @@ def build_debs_main():
                       help="directory to use for staging source debs", metavar="STAGING_DIR")
     parser.add_option("--force",
                       dest="force", default=False, action="store_true")
+    parser.add_option("--all", help="stamp all os/arch combinations",
+                      dest="all", default=False, action="store_true")
 
     (options, args) = parser.parse_args()
 
-    if len(args) != 3:
-        parser.error('invalid args')
-        
-    (distro_name, os_platform, arch) = args
+    if not options.all:
+        if len(args) != 3:
+            parser.error('invalid args')
+    elif len(args) != 1:
+        parser.error('invalid args. please only specify a distro name')
+    distro_name = args[0]
+
+    if not options.all:
+        to_stamp = [args]
+    else:
+        try:
+            platforms = rosdeb.targets.os_platform[distro_name]
+        except:
+            parser.error("unknown distro [%s]"%(distro_name))
+        to_stamp = []
+        for os_platform in platforms:
+            for arch in ['i386', 'amd64']:
+                to_stamp.append((distro_name, os_platform, arch))
 
     if options.staging_dir is not None:
         staging_dir    = options.staging_dir
@@ -392,18 +410,21 @@ def build_debs_main():
     else:
         staging_dir = tempfile.mkdtemp()
 
-    if os_platform not in rosdeb.platforms():
-        print >> sys.stderr, "[%s] is not a known platform.\nSupported platforms are: %s"%(os_platform, ' '.join(rosdeb.platforms()))
-        sys.exit(1)
-    
-    if not os.path.exists(staging_dir):
-        print "creating staging dir: %s"%(staging_dir)
-        os.makedirs(staging_dir)
 
-    stamp_debs(distro_name, os_platform, arch, staging_dir)
+    for distro_name, os_platform, arch in to_stamp:
 
-    if options.staging_dir is None:
-        shutil.rmtree(staging_dir)
+        if os_platform not in rosdeb.platforms():
+            print >> sys.stderr, "[%s] is not a known platform.\nSupported platforms are: %s"%(os_platform, ' '.join(rosdeb.platforms()))
+            sys.exit(1)
+
+        if not os.path.exists(staging_dir):
+            print "creating staging dir: %s"%(staging_dir)
+            os.makedirs(staging_dir)
+
+        stamp_debs(distro_name, os_platform, arch, staging_dir)
+
+        if options.staging_dir is None:
+            shutil.rmtree(staging_dir)
         
 if __name__ == '__main__':
     build_debs_main()
