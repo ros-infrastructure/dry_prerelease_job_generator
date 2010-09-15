@@ -71,7 +71,7 @@ def checkout_svn_to_tmp(name, uri):
     return tmp_dir
 
 #TODO: this logic really belongs in roslib2.vcs
-def checkout_vcs(vcs, uri, dest_path):
+def checkout_vcs(vcs, uri, dest_path, version = ''):
     """
     @param vcs: vcs name (e.g. 'svn')
     @type  vcs: str
@@ -92,7 +92,7 @@ def checkout_vcs(vcs, uri, dest_path):
     elif vcs == 'bzr':
         from roslib2.vcs.bzr import BZRClient
         client = BZRClient(dest_path)
-    client.checkout(uri)
+    client.checkout(uri, version)
     return client
 
 def checkout_tag_to_tmp(name, distro_stack):
@@ -106,15 +106,30 @@ def checkout_tag_to_tmp(name, distro_stack):
     OS-provided temporary space.
     @rtype: str
     """
+
+    for key in ['svn', 'git', 'hz', 'bzr']:
+        if key in distro_stack._rules:
+            break
+    else:
+        raise Exception("stack [%s] does not have any supported checkout rules"%(name))
+
     try:
-        uri = distro_stack.expand_rule(distro_stack._rules['svn']['release-tag'])
+        if key == 'svn':
+            uri = distro_stack.expand_rule(distro_stack._rules[key]['release-tag'])
+            version = ''
+        elif key == 'hg':
+            uri = distro_stack.expand_rule(distro_stack._rules[key]['uri'])
+            version = distro_stack.expand_rule(distro_stack._rules[key]['release-tag'])
+        else:
+            raise Exception ("key %s not implemented"%key)
+
     except KeyError:
-        raise Exception("cannot checkout stack dev tree to tmp: %s rules have no 'release-tag' key"%(key))
+        raise Exception("cannot checkout stack dev tree to tmp: %s rules have no 'dev' key"%(key))
 
     tmp_dir = tempfile.mkdtemp()
     dest = os.path.join(tmp_dir, name)
     print 'Checking out a fresh copy of %s from %s to %s...'%(name, uri, dest)
-    checkout_vcs('svn', uri, dest)
+    checkout_vcs('svn', uri, dest, version)
     return tmp_dir
 
 def checkout_dev_to_tmp(name, distro_stack):
@@ -135,14 +150,22 @@ def checkout_dev_to_tmp(name, distro_stack):
         raise Exception("stack [%s] does not have any supported checkout rules"%(name))
 
     try:
-        uri = distro_stack.expand_rule(distro_stack._rules[key]['dev'])
+        if key == 'svn':
+            uri = distro_stack.expand_rule(distro_stack._rules[key]['dev'])
+            version = ''
+        elif key == 'hg':
+            uri = distro_stack.expand_rule(distro_stack._rules[key]['uri'])
+            version = distro_stack.expand_rule(distro_stack._rules[key]['dev-branch'])
+        else:
+            raise Exception ("key %s not implemented"%key)
+
     except KeyError:
         raise Exception("cannot checkout stack dev tree to tmp: %s rules have no 'dev' key"%(key))
 
     tmp_dir = tempfile.mkdtemp()
     dest = os.path.join(tmp_dir, name)
     print 'Checking out a fresh copy of %s from %s to %s...'%(name, uri, dest)
-    checkout_vcs(key, uri, dest)
+    checkout_vcs(key, uri, dest, version)
     return tmp_dir
 
 def convert_html_to_text(d):
