@@ -196,7 +196,7 @@ def do_download_and_fix(packagelist, distro, distro_name, stack_name, stack_vers
             conn = urllib.urlopen(url)
             if conn.getcode() != 200:
                 print >> sys.stderr, "%d problem downloading: %s"%(conn.getcode(), url)
-                sys.exit(1)
+                return None
 
             with open(dest, 'w') as f:
                 f.write(conn.read())
@@ -321,7 +321,9 @@ rm %(new_files)s
     if res != 0:
         print >> sys.stderr, "Could not run upload script"
         print >> sys.stderr, o
-        sys.exit(1)
+        return 1
+    else:
+        return 0
 
 
 
@@ -366,10 +368,10 @@ def stamp_debs(distro_name, os_platform, arch, staging_dir):
         missing = True
 
     if not missing:
-        upload_debs(debs, distro_name, os_platform, arch)
+        return upload_debs(debs, distro_name, os_platform, arch)
     else:
         print >> sys.stderr, "Missing debs expected from distro file.  Aborting"
-        sys.exit(1)
+        return 1
 
 def build_debs_main():
 
@@ -422,10 +424,12 @@ def build_debs_main():
             print "creating staging dir: %s"%(staging_dir)
             os.makedirs(staging_dir)
 
-        stamp_debs(distro_name, os_platform, arch, staging_dir)
+        ret = stamp_debs(distro_name, os_platform, arch, staging_dir)
 
         if options.staging_dir is None:
             shutil.rmtree(staging_dir)
+
+        sys.exit(ret)
         
 if __name__ == '__main__':
     build_debs_main()
