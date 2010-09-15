@@ -356,6 +356,8 @@ def list_missing_main():
                       dest="all", default=False, action="store_true")
     parser.add_option("--allhtml", help="generate html report", 
                       dest="allhtml", default=False, action="store_true")
+    parser.add_option("-o", help="generate html report", 
+                      dest="output_file", default=None, metavar="OUTPUT")
 
     (options, args) = parser.parse_args()
 
@@ -396,7 +398,7 @@ def list_missing_main():
         except:
             parser.error("unknown distro for --all target")
 
-        output = 'report.html'
+        output = options.output_file or 'report.html'
         generate_allhtml_report(output, distro_name, os_platforms)
         
         
