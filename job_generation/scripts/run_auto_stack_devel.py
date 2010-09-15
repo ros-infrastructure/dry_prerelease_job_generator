@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-from roslib import distro, rospack, stack_manifest
+from roslib import distro, stack_manifest
 import sys
 import re
 import os
@@ -69,7 +69,7 @@ def main():
 
     # Start Hudson Helper
     print 'Running Hudson Helper'
-    res, err = subprocess.Popen(('./hudson_helper --dir-test %s build'%options.stack).split(' '),
+    res, err = subprocess.Popen(('python hudson_helper --dir-test %s build'%options.stack).split(' '),
                                  stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=ENV).communicate()
     print '????????????????: %s'%res
     print '!!!!!!!!!!!!!!!!: %s'%err
