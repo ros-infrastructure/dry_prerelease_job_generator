@@ -135,20 +135,21 @@ def get_rules(distro, stack_name):
                 except KeyError:
                     raise DistroException("no _rules named [%s]"%(update_r))
                 
-            if 'svn' in update_r:
-                # new style
-                if 'svn' not in props:
-                    props['svn'] = {}
-                props['svn'].update(update_r['svn'])
-            if 'hg' in update_r:
-                if 'hg' not in props:
-                    props['hg'] = {}
-                props['hg'].update(update_r['hg'])
-                props.pop('svn')  ### NOT CLEAN NEED CLEANUP only works if hg is last rule set
-            else:
+            new_style = True
+            for k in ['distro-svn', 'release-svn', 'dev-svn']:
+                if k in update_r:
+                    new_style = False
+            if new_style:
+                # in new style, we do not do additive rules
                 if not type(update_r) == dict:
                     raise Exception("invalid rules: %s %s"%(d, type(d)))
-                # legacy
+                # ignore empty definition
+                if update_r:
+                    props = update_r
+            else:
+                # legacy: rules overlay higher level rules
+                if not type(update_r) == dict:
+                    raise Exception("invalid rules: %s %s"%(d, type(d)))
                 props.update(update_r)
 
     if not props:
