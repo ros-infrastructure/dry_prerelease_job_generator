@@ -404,7 +404,7 @@ def build_debs_main():
         os.makedirs(staging_dir)
 
     if options.ramdisk:
-        with TempRamFS(staging_dir, "20G"):
+        with TempRamFS(staging_dir, "25G"):
             build_debs(distro_name, stack_name, os_platform, arch, staging_dir, options.force, options.noupload, options.interactive)
     else:
         build_debs(distro_name, stack_name, os_platform, arch, staging_dir, options.force, options.noupload, options.interactive)
