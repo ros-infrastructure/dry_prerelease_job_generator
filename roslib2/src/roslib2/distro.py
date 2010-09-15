@@ -112,6 +112,7 @@ def get_rules(distro, stack_name):
     @param stack_name: name of stack to get rules for
     @type  stack_name: str
     """
+
     if stack_name == 'ROS':
         stack_name = 'ros'
         
@@ -122,6 +123,7 @@ def get_rules(distro, stack_name):
     rules_d = [distro.get('stacks', {}),
                distro.get('stacks', {}).get(stack_name, {})]
     rules_d = [d for d in rules_d if d]
+
     # load the '_rules' from the dictionaries, in order
     props = {}
     for d in rules_d:
@@ -138,6 +140,11 @@ def get_rules(distro, stack_name):
                 if 'svn' not in props:
                     props['svn'] = {}
                 props['svn'].update(update_r['svn'])
+            if 'hg' in update_r:
+                if 'hg' not in props:
+                    props['hg'] = {}
+                props['hg'].update(update_r['hg'])
+                props.pop('svn')  ### NOT CLEAN NEED CLEANUP only works if hg is last rule set
             else:
                 if not type(update_r) == dict:
                     raise Exception("invalid rules: %s %s"%(d, type(d)))
@@ -218,10 +225,16 @@ class DistroStack(object):
         #   general representation. Leaving the SVN representation
         #   as-is so as to not disturb existing scripts.
         self.dev_svn = self.distro_svn = self.release_svn = None
+        self.repo_uri = self.dev_branch = self.distro_branch = self.release_tag = None
         if 'svn' in rules:
             self.dev_svn     = self.expand_rule(rules['svn']['dev'])
             self.distro_svn  = self.expand_rule(rules['svn']['distro-tag'])
             self.release_svn = self.expand_rule(rules['svn']['release-tag'])
+        elif 'hg' in rules:
+            self.repo_uri = self.expand_rule(rules['hg']['uri'])
+            self.dev_branch     = self.expand_rule(rules['hg']['dev-branch'])
+            self.distro_branch  = self.expand_rule(rules['hg']['distro-branch'])
+            self.release_tag = self.expand_rule(rules['hg']['release-tag'])
         elif 'dev-svn' in rules:
             #legacy support
             self.dev_svn     = self.expand_rule(rules['dev-svn'])
@@ -242,6 +255,10 @@ class DistroStack(object):
             self.dev_svn == other.dev_svn and \
             self.distro_svn == other.distro_svn and \
             self.release_svn == other.release_svn and \
+            self.repo_uri == other.repo_uri and \
+            self.dev_branch == other.dev_branch and \
+            self.distro_branch == other.distro_branch and \
+            self.release_tag == other.release_tag and \
             self.user_svn == other.user_svn and \
             self.pass_svn == other.pass_svn
 
