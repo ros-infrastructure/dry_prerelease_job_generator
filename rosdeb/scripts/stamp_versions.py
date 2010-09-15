@@ -60,6 +60,8 @@ from rosdeb.source_deb import control_file
 
 import atexit
 
+import list_missing
+
 NAME = 'stamp_versions.py' 
 TARBALL_URL = "https://code.ros.org/svn/release/download/stacks/%(stack_name)s/%(base_name)s/%(f_name)s"
 SOURCE_REPO='ros-shadow'
@@ -253,7 +255,11 @@ def create_meta_pkg(packagelist, distro, distro_name, metapackage, deps, os_plat
             stack_deb_name = "ros-%s-%s"%(distro_name, stack.replace('_','-'))
             stack_ver = distro.stacks[stack].version
             stack_deb_ver = debianize_version(stack_ver, distro.version, os_platform)
-            locked_depends.append(stack_deb_name+' (= %s)'%stack_deb_ver)
+            if stack_deb_name in packagelist:
+                locked_depends.append(stack_deb_name+' (= %s)'%stack_deb_ver)
+            else:
+                print >> sys.stderr, "Variant %s depends on non-built deb, %s"%(metapackage, stack)
+                missing = True
         else:
             print >> sys.stderr, "Variant %s depends on non-exist stack, %s"%(metapackage, stack)
             missing = True
@@ -343,6 +349,10 @@ def stamp_debs(distro_name, os_platform, arch, staging_dir):
 
     missing = False
 
+    missing_primary, missing_dep, missing_excluded, missing_excluded_dep = list_missing.get_missing(distro, os_platform, arch)
+
+    missing_ok = missing_excluded.union(missing_excluded_dep)
+
     # Build the new debs
     for (sn,s) in distro.stacks.iteritems():
         sv = s.version
@@ -350,18 +360,21 @@ def stamp_debs(distro_name, os_platform, arch, staging_dir):
         if d:
             debs.append(d)
         else:
-            missing = True
+            if sn not in missing_ok:
+                missing = True
+            else:
+                print "%s skipped due to exclusion rule"%sn
 
     # Build the new meta packages
     for (v,d) in distro.variants.iteritems():
-        d = create_meta_pkg(packagelist, distro, distro_name, v, d.stack_names, os_platform, arch, staging_dir)
+        d = create_meta_pkg(packagelist, distro, distro_name, v, set(d.stack_names) - missing_ok, os_platform, arch, staging_dir)
         if d:
             debs.append(d)
         else:
             missing = True
 
     # Build the special "all" metapackage
-    d = create_meta_pkg(packagelist, distro, distro_name, "all", distro.stack_names, os_platform, arch, staging_dir)
+    d = create_meta_pkg(packagelist, distro, distro_name, "all", set(distro.stack_names) - missing_ok, os_platform, arch, staging_dir)
     if d:
         debs.append(d)
     else:
