@@ -253,7 +253,7 @@ class Hudson(object):
         reconfig_url = self.server + RECONFIG_JOB%locals()
         self.hudson_open(urllib2.Request(reconfig_url, config_xml, headers))
 
-    def build_job(self, name, parameters=None, token=None):
+    def build_job_url(self, name, parameters=None, token=None):
         """
         @param parameters: parameters for job, or None.
         @type  parameters: dict
@@ -261,16 +261,18 @@ class Hudson(object):
         if parameters:
             if token:
                 parameters['token'] = token
-            if not self.job_exists(name):
-                raise HudsonException("no such job[%s]"%(name))
-            url = self.server + BUILD_WITH_PARAMS_JOB%locals() + '?' + urllib.urlencode(parameters)
-            return self.hudson_open(urllib2.Request(url, ''))        
+            return self.server + BUILD_WITH_PARAMS_JOB%locals() + '?' + urllib.urlencode(parameters)
+        elif token:
+            return self.server + BUILD_JOB%locals() + '?' + urllib.urlencode({'token': token})
         else:
-            if not self.job_exists(name):
-                raise HudsonException("no such job[%s]"%(name))
-            if token:
-                req = urllib2.Request(self.server + BUILD_JOB%locals() + '?' + urllib.urlencode({'token': token}), '')
-            else:
-                req = urllib2.Request(self.server + BUILD_JOB%locals(), '')
-            return self.hudson_open(req)
+            return self.server + BUILD_JOB%locals()
+
+    def build_job(self, name, parameters=None, token=None):
+        """
+        @param parameters: parameters for job, or None.
+        @type  parameters: dict
+        """
+        if not self.job_exists(name):
+            raise HudsonException("no such job[%s]"%(name))
+        return self.hudson_open(urllib2.Request(build_job_url(name, parameters, token), ''))        
     
