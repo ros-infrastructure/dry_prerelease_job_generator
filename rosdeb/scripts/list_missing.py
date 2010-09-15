@@ -56,6 +56,7 @@ from rosdeb.core import ubuntu_release, debianize_name, debianize_version, platf
 
 NAME = 'list_missing.py' 
 TARBALL_URL = "https://code.ros.org/svn/release/download/stacks/%(stack_name)s/%(base_name)s/%(f_name)s"
+SERVER='http://build.willowgarage.com/'
 
 import traceback
 
@@ -199,10 +200,7 @@ def generate_allhtml_report(output, distro_name, os_platforms):
     missing_primary = None
     missing_dep = None
 
-    bad = {}
-    for os_platform in os_platforms:
-        bad[os_platform] = {}
-
+    counts = {}
     stacks = {}
     for stack in distro.stacks.keys():
         stacks[stack] = {}
@@ -222,7 +220,10 @@ def generate_allhtml_report(output, distro_name, os_platforms):
     for os_platform in os_platforms:
         for arch in arches:
            missing_primary, missing_dep, missing_excluded, missing_excluded_dep = get_missing(distro, os_platform, arch)
+           args = get_missing(distro, os_platform, arch)
            key = "%s-%s"%(os_platform, arch)
+           counts[key] = ','.join([str(len(x)) for x in args])
+           missing_primary, missing_dep, missing_excluded, missing_excluded_dep = args
            for s in missing_primary:
                stacks[s][key] = MISSING_PRIMARY
            for s in missing_dep:
@@ -241,28 +242,60 @@ def generate_allhtml_report(output, distro_name, os_platforms):
 </head>
 <style type="text/css">
 body {
-  font-family: 'Helvetica, Arial, Verdana, sans-serif';
+  font-family: Helvetica, Arial, Verdana, sans-serif;
+  font-size: 12px;
+}
+.title {
+  background-color: lightgrey;
+  padding: 10px;
+}
+table {
+  border: 1px solid lightgrey;
+}
+th {
+  border: 1px solid lightgrey;
+}
+td {
+  font-size: 12px;
+  border: 1px solid lightgrey;
 }
 </style>
 <body>
-<h1>%(distro_name)s: debbuild report</h1>"""%locals())
+<h1><span class="title">%(distro_name)s: debbuild report</span></h1>"""%locals())
 
         f.write("""Legend:
 <ul>
-<li>Missing: %s</li>
-<li>Depends Missing: %s</li>
-<li>Excluded: %s</li>
-<li>Depends Excluded: %s</li>
-</ul>"""%(MISSING_PRIMARY, MISSING_DEP,MISSING_EXCLUDED, MISSING_EXCLUDED_DEP))
+<li>Missing: <span style="background-color: %s;">&nbsp;%s&nbsp;</span></li>
+<li>Depends Missing: <span style="background-color: %s;">&nbsp;%s&nbsp;</span></li>
+<li>Excluded: <span style="background-color: %s;">&nbsp;%s&nbsp;</span></li>
+<li>Depends Excluded: <span style="background-color: %s;">&nbsp;%s&nbsp;</span></li> 
+</ul>"""%(colors[MISSING_PRIMARY], MISSING_PRIMARY, 
+          colors[MISSING_DEP], MISSING_DEP, 
+          colors[MISSING_EXCLUDED], MISSING_EXCLUDED, 
+          colors[MISSING_EXCLUDED_DEP], MISSING_EXCLUDED_DEP
+          ))
+        f.write("<strong>Click [+] to trigger a new build of the selected stack/platform</strong>")
         f.write("""<table cellspacing=0 border="1">
 <tr>
 <th>Stack</th>""")
-        
+
+        job = 'debbuild-build-debs'
+        import hudson
+        h = hudson.Hudson(SERVER)
+
+        params = {'STACK_NAME': 'ALL'}
         for os_platform in os_platforms:
             for arch in arches:
-                f.write('<th>%s-%s</th>'%(os_platform, arch))
+                url = h.build_job_url('%s-%s-%s-%s'%(job, distro_name, os_platform, arch), parameters=params)
+                f.write('<th>%s-%s<a href="%s">[+]</a></th>'%(os_platform, arch, url))
         f.write('</tr>')
-
+        
+        f.write('<tr><td>&nbsp;</td>')
+        for os_platform in os_platforms:
+            for arch in arches:
+                f.write('<td>%s</td>'%counts['%s-%s'%(os_platform, arch)])
+        f.write('</tr>')
+        
         stack_names = sorted(stacks.keys())
         for stack in stack_names:
             d = stacks[stack]
@@ -273,7 +306,9 @@ body {
                     if key in d:
                         val = d[key]
                         color = colors[val]
-                        f.write('<td bgcolor="%s">%s</td>'%(color, val))
+                        params = {'STACK_NAME': stack}
+                        url = h.build_job_url('%s-%s-%s-%s'%(job, distro_name, os_platform, arch), parameters=params)
+                        f.write('<td bgcolor="%s">%s <span style="align: right;"><a href="%s">[+]</a></span></td>'%(color, val, url))
                     else:
                         f.write('<td>&nbsp;</td>')
             f.write('</tr>\n')            
