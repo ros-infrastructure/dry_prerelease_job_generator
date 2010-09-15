@@ -274,5 +274,5 @@ class Hudson(object):
         """
         if not self.job_exists(name):
             raise HudsonException("no such job[%s]"%(name))
-        return self.hudson_open(urllib2.Request(build_job_url(name, parameters, token), ''))        
+        return self.hudson_open(urllib2.Request(self.build_job_url(name, parameters, token), ''))        
     
