@@ -143,7 +143,7 @@ def checkout_dev_to_tmp(name, distro_stack):
     OS-provided temporary space.
     @rtype: str
     """
-    for key in ['svn', 'git', 'hz', 'bzr']:
+    for key in ['svn', 'git', 'hg', 'bzr']:
         if key in distro_stack._rules:
             break
     else:
