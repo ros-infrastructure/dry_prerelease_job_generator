@@ -55,6 +55,8 @@ def main():
     depends = stack_manifest.parse(stack_file.read()).depends
     stack_file.close()
     print 'Installing stack dependencies Debians: %s'%stacks_to_debs(depends, options.rosdistro)
+    res, err = subprocess.Popen('sudo apt-get update'.split(' '),
+                                stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=ENV).communicate()
     res, err = subprocess.Popen(('sudo apt-get install %s %s --yes'%(stack_to_deb(options.stack, options.rosdistro), 
                                                                      stacks_to_debs(depends, options.rosdistro))).split(' '),
                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=ENV).communicate()
@@ -67,7 +69,7 @@ def main():
 
     # Start Hudson Helper
     print 'Running Hudson Helper'
-    res, err = subprocess.Popen(('./hudson_helper.py --dir-test %s build'%options.stack).split(' '),
+    res, err = subprocess.Popen(('./hudson_helper --dir-test %s build'%options.stack).split(' '),
                                  stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=ENV).communicate()
     print '????????????????: %s'%res
     print '!!!!!!!!!!!!!!!!: %s'%err
