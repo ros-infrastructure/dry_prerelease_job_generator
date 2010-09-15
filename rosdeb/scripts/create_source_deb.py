@@ -186,7 +186,7 @@ def source_deb_main():
             import rosdeb.targets
             targets = rosdeb.targets.os_platform[distro_name]
         except:
-            parser.error("unknown distro [%s]"%(distro_name)
+            parser.error("unknown distro [%s]"%(distro_name))
 
         errors = []
         success = []
