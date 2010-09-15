@@ -42,6 +42,31 @@ def get_Packages(packages_url):
     # Retrieve the package list from the shadow repo
     return urllib2.urlopen(packages_url).read()
     
+def parse_Packages(packagelist):
+    """
+    Parse debian Packages list into (package, version, depends) tuples
+    """
+    package_deps = []
+    package = deps = version = None
+    for l in packagelist.split('\n'):
+        if l.startswith('Package: '):
+            package = l[len('Package: '):]
+        elif l.startswith('Version: '):
+            version = l[len('Version: '):]
+        elif l.startswith('Depends: '):
+            deps = l[len('Depends: '):].split(',')
+            deps = [d.strip() for d in deps]
+        if package != None and version != None and deps != None:
+            package_deps.append((package, version, deps))
+            package = version = deps = None
+    return package_deps
+    
+def load_Packages(packages_url):
+    """
+    Download and parse debian Packages list into (package, version, depends) tuples
+    """
+    return parse_Packages(get_Packages(packages_url))
+
 def deb_in_repo(packages_url, deb_name, deb_version):
     packagelist = get_Packages(packages_url)
     str = 'Package: %s\nVersion: %s'%(deb_name, deb_version)
@@ -55,17 +80,7 @@ def get_depends(packages_url, deb_name):
     # There is probably something much simpler we could do, but this
     # more robust to any bad state we may have caused to the shadow
     # repo.
-    packagelist = get_Packages(packages_url)
-    package_deps = []
-    package = deps = None
-    for l in packagelist.split('\n'):
-        if l.startswith('Package: '):
-            package = l[len('Package: '):]
-        elif l.startswith('Depends: '):
-            deps = l[len('Depends: '):].split(',')
-            deps = [d.strip() for d in deps]
-            package_deps.append((package, deps))
-            package = deps = None
+    package_deps = load_Packages(packages_url)
 
     done = False
     queue = [deb_name]
@@ -77,7 +92,7 @@ def get_depends(packages_url, deb_name):
     while queue:
         next  = queue[0]
         queue = queue[1:]
-        for package, deps in package_deps:
+        for package, _, deps in package_deps:
             if package not in depends and next in deps:
                 queue.append(package)
                 depends.add(package)

@@ -56,6 +56,8 @@ from rosdeb.core import ubuntu_release, debianize_name, debianize_version, platf
 
 NAME = 'list_missing.py' 
 TARBALL_URL = "https://code.ros.org/svn/release/download/stacks/%(stack_name)s/%(base_name)s/%(f_name)s"
+SHADOW_PACKAGES_URL="http://code.ros.org/packages/ros-shadow/ubuntu/dists/%(os_platform)s/main/binary-%(arch)s/Packages"
+ROS_PACKAGES_URL="http://code.ros.org/packages/ros/ubuntu/dists/%(os_platform)s/main/binary-%(arch)s/Packages"
 SERVER='http://build.willowgarage.com/'
 
 import traceback
@@ -108,13 +110,17 @@ def compute_deps(distro, stack_name):
 
 _Packages_cache = {}
 
-def deb_in_repo(deb_name, deb_version, os_platform, arch):
-    # Retrieve the package list from the shadow repo
-    packageurl="http://code.ros.org/packages/ros-shadow/ubuntu/dists/%(os_platform)s/main/binary-%(arch)s/Packages"%locals()
+def get_Packages(packageurl):
     if packageurl in _Packages_cache:
         packagelist = _Packages_cache[packageurl]
     else:
         _Packages_cache[packageurl] = packagelist = urllib2.urlopen(packageurl).read()
+    return packagelist
+
+def deb_in_repo(deb_name, deb_version, os_platform, arch):
+    # Retrieve the package list from the shadow repo
+    packageurl=SHADOW_PACKAGES_URL%locals()
+    packagelist = get_Packages(packageurl)
     str = 'Package: %s\nVersion: %s'%(deb_name, deb_version)
     return str in packagelist
 
@@ -195,8 +201,29 @@ def load_distro(distro_name):
     distro_uri = "https://code.ros.org/svn/release/trunk/distros/%s.rosdistro"%distro_name
     return Distro(distro_uri)
 
+def get_depends(deb_name, os_platform, arch):
+    return rosdeb.get_depends(PACKAGES_URL%locals(), deb_name)
+
+MISSING_PRIMARY = '-'
+MISSING_DEP = '&lt;-'
+MISSING_EXCLUDED = 'X'
+MISSING_EXCLUDED_DEP = '&lt;X'
+COLORS = {
+    MISSING_PRIMARY: 'red',
+    MISSING_DEP: 'pink',
+    MISSING_EXCLUDED: 'grey',
+    MISSING_EXCLUDED_DEP: 'lightgrey',
+    }
+
 def generate_allhtml_report(output, distro_name, os_platforms):
     distro = load_distro(distro_name)
+
+    main_repo = {}
+    arches = ['amd64', 'i386']
+    for os_platform in os_platforms:
+        for arch in arches:
+            main_repo["%s-%s"%(os_platform, arch)] = rosdeb.parse_Packages(get_Packages(ROS_PACKAGES_URL%locals()))
+    
     missing_primary = None
     missing_dep = None
 
@@ -205,18 +232,6 @@ def generate_allhtml_report(output, distro_name, os_platforms):
     for stack in distro.stacks.keys():
         stacks[stack] = {}
 
-    MISSING_PRIMARY = '-'
-    MISSING_DEP = '&lt;-'
-    MISSING_EXCLUDED = 'X'
-    MISSING_EXCLUDED_DEP = '&lt;X'
-    colors = {
-        MISSING_PRIMARY: 'red',
-        MISSING_DEP: 'pink',
-        MISSING_EXCLUDED: 'grey',
-        MISSING_EXCLUDED_DEP: 'lightgrey',
-        }
-    
-    arches = ['amd64', 'i386']
     for os_platform in os_platforms:
         for arch in arches:
            missing_primary, missing_dep, missing_excluded, missing_excluded_dep = get_missing(distro, os_platform, arch)
@@ -269,10 +284,10 @@ td {
 <li>Depends Missing: <span style="background-color: %s;">&nbsp;%s&nbsp;</span></li>
 <li>Excluded: <span style="background-color: %s;">&nbsp;%s&nbsp;</span></li>
 <li>Depends Excluded: <span style="background-color: %s;">&nbsp;%s&nbsp;</span></li> 
-</ul>"""%(colors[MISSING_PRIMARY], MISSING_PRIMARY, 
-          colors[MISSING_DEP], MISSING_DEP, 
-          colors[MISSING_EXCLUDED], MISSING_EXCLUDED, 
-          colors[MISSING_EXCLUDED_DEP], MISSING_EXCLUDED_DEP
+</ul>"""%(COLORS[MISSING_PRIMARY], MISSING_PRIMARY, 
+          COLORS[MISSING_DEP], MISSING_DEP, 
+          COLORS[MISSING_EXCLUDED], MISSING_EXCLUDED, 
+          COLORS[MISSING_EXCLUDED_DEP], MISSING_EXCLUDED_DEP
           ))
         f.write("<strong>Click [+] to trigger a new build of the selected stack/platform</strong>")
         f.write("""<table cellspacing=0 border="1">
@@ -299,18 +314,34 @@ td {
         stack_names = sorted(stacks.keys())
         for stack in stack_names:
             d = stacks[stack]
-            f.write('<tr><td>%s</td>'%(stack))
+            shadow_version = distro.stacks[stack].version
+            f.write('<tr><td>%s %s</td>'%(stack, shadow_version))
             for os_platform in os_platforms:
                 for arch in arches:
                     key = "%s-%s"%(os_platform, arch)
+
+                    # compute version in actual repo
+                    version_str = ''
+                    try:
+                        deb_name = "ros-%s-%s"%(distro_name, debianize_name(stack))
+                        packageslist = main_repo[key]
+                        match = [vm for sm, vm, _ in packageslist if sm == deb_name]
+                        if match:
+                            match = match[0].split('-')[0]
+                            if match != shadow_version:
+                                version_str = '<em>'+match+'</em>'
+                    except Exception, e:
+                        print str(e)
+                        pass
+                    
                     if key in d:
                         val = d[key]
-                        color = colors[val]
+                        color = COLORS[val]
                         params = {'STACK_NAME': stack}
                         url = h.build_job_url('%s-%s-%s-%s'%(job, distro_name, os_platform, arch), parameters=params)
-                        f.write('<td bgcolor="%s">%s <span style="align: right;"><a href="%s">[+]</a></span></td>'%(color, val, url))
+                        f.write('<td bgcolor="%s">%s <a href="%s">[+]</a> %s</td>'%(color, val, url, version_str))
                     else:
-                        f.write('<td>&nbsp;</td>')
+                        f.write('<td>&nbsp;%s </td>'%version_str)
             f.write('</tr>\n')            
 
         f.write('\n</table></body></html>')

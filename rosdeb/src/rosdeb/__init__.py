@@ -43,5 +43,5 @@ import roslib.rosenv
 
 from rosdeb.core import ubuntu_release, debianize_name, debianize_version, debianize_Distro, platforms, platforms, get_ubuntu_map
 from rosdeb.source_deb import make_source_deb, control_data
-from rosdeb.repo import get_Packages, get_depends, deb_in_repo
+from rosdeb.repo import get_Packages, get_depends, deb_in_repo, parse_Packages, load_Packages
 
