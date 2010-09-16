@@ -13,7 +13,7 @@ def stacks_to_debs(stack_list, rosdistro):
     return ' '.join([stack_to_deb(s, rosdistro) for s in stack_list])
 
 def stack_to_rosinstall(stack, stack_map, svn='distro_svn'):
-    if stack == '':
+    if stack == '' or not stack in stack_map:
         return ''
     return "- svn: {uri: '%s', local-name: '%s'}"%(eval('stack_map[stack].%s'%svn), stack)
 
