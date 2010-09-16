@@ -63,7 +63,7 @@ def main():
     rosinstall_file = 'depends_on_overlay.rosinstall'
     with open(rosinstall_file, 'w') as f:
         f.write(rosinstall)
-        subprocess.Popen(('rosinstall depends_on_overlay /opt/ros/%s %s'%(options.rosdistro, rosinstall_file)).split(' ')).communicate()
+    subprocess.Popen(('rosinstall depends_on_overlay /opt/ros/%s %s'%(options.rosdistro, rosinstall_file)).split(' ')).communicate()
 
 
     # Install system dependencies
