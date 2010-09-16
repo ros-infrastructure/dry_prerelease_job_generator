@@ -337,23 +337,25 @@ def devel_job_name(rosdistro, stack_name, ubuntu, arch):
 
 def create_devel_configs(rosdistro, stack_name, stack_uri, email):
     # create gold distro
-    gold_distro = (ARCHES[0], UBUNTU_DISTRO_MAP[rosdistro][0])
-    gold_children = ', '.join([devel_job_name(rosdistro, stack_name, u, a)
-                               for a in ARCHES[1:len(ARCHES)] 
-                               for u in UBUNTU_DISTRO_MAP[rosdistro][1:len(UBUNTU_DISTRO_MAP[rosdistro])]])
+    gold_job = devel_job_name(rosdistro, stack_name, UBUNTU_DISTRO_MAP[rosdistro][0], ARCHES[0])
+    gold_children = [devel_job_name(rosdistro, stack_name, u, a)
+                     for a in ARCHES for u in UBUNTU_DISTRO_MAP[rosdistro]]
+    gold_children.remove(gold_job)
 
     # create hudson config files for each ubuntu distro
     configs = {}
     for ubuntudistro in UBUNTU_DISTRO_MAP[rosdistro]:
         for arch in ARCHES:
+            name = devel_job_name(rosdistro, stack_name, ubuntudistro, arch)
+
             # check if this is the 'gold' job
             time_trigger = ''
             job_children = ''
-            if (arch, ubuntudistro) == gold_distro:
+            if name == gold_job:
                 time_trigger = '*/5 * * * *'
-                job_children_list = gold_children
+                print gold_children
+                job_children = ', '.join(gold_children)
 
-            name = devel_job_name(rosdistro, stack_name, ubuntudistro, arch)
             hudson_config = HUDSON_DEVEL_CONFIG
             hudson_config = hudson_config.replace('UBUNTUDISTRO', ubuntudistro)
             hudson_config = hudson_config.replace('ARCH', arch)
