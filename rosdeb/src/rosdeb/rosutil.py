@@ -44,6 +44,7 @@ import roslib.manifest
 import roslib.stack_manifest
 import roslib.packages
 import roslib.stacks
+import roslib2.vcs.vcs_abstraction
 
 import rosdeb
 from rosdep.core import RosdepLookupPackage, YamlCache
@@ -69,31 +70,6 @@ def checkout_svn_to_tmp(name, uri):
     print 'Checking out a fresh copy of %s from %s to %s...'%(name, uri, dest)
     subprocess.check_call(['svn', 'co', uri, dest])
     return tmp_dir
-
-#TODO: this logic really belongs in roslib2.vcs
-def checkout_vcs(vcs, uri, dest_path, version = ''):
-    """
-    @param vcs: vcs name (e.g. 'svn')
-    @type  vcs: str
-    @param uri: resource URI
-    @type  uri: str
-    @param dest_path: file system directory to checkout into
-    @type  dest_path: str
-    """
-    if vcs == 'svn':
-        from roslib2.vcs.svn import SVNClient
-        client = SVNClient(dest_path)
-    elif vcs == 'git':
-        from roslib2.vcs.git import GITClient
-        client = GITClient(dest_path)
-    elif vcs == 'hg':
-        from roslib2.vcs.hg import HGClient
-        client = HGClient(dest_path)
-    elif vcs == 'bzr':
-        from roslib2.vcs.bzr import BZRClient
-        client = BZRClient(dest_path)
-    client.checkout(uri, version)
-    return client
 
 def checkout_tag_to_tmp(name, distro_stack):
     """
@@ -129,7 +105,8 @@ def checkout_tag_to_tmp(name, distro_stack):
     tmp_dir = tempfile.mkdtemp()
     dest = os.path.join(tmp_dir, name)
     print 'Checking out a fresh copy of %s from %s to %s...'%(name, uri, dest)
-    checkout_vcs('svn', uri, dest, version)
+    vcs_client = roslib2.vcs.vcs_abstraction.VCSClient(key, dest)
+    vcs_client.checkout(uri, version)
     return tmp_dir
 
 def checkout_dev_to_tmp(name, distro_stack):
@@ -165,7 +142,8 @@ def checkout_dev_to_tmp(name, distro_stack):
     tmp_dir = tempfile.mkdtemp()
     dest = os.path.join(tmp_dir, name)
     print 'Checking out a fresh copy of %s from %s to %s...'%(name, uri, dest)
-    checkout_vcs(key, uri, dest, version)
+    vcs_client = roslib2.vcs.vcs_abstraction.VCSClient(key, dest)
+    vcs_client.checkout(uri, version)
     return tmp_dir
 
 def convert_html_to_text(d):
