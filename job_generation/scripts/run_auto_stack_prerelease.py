@@ -29,10 +29,10 @@ def main():
     ENV['PYTHONPATH'] = '/opt/ros/%s/ros/core/roslib/src'%options.rosdistro
     ENV['WORKSPACE'] = os.environ['WORKSPACE']
     ENV['HOME'] = os.environ['WORKSPACE']
-#     ENV['JOB_NAME'] = os.environ['JOB_NAME']
-#     ENV['BUILD_NUMBER'] = os.environ['BUILD_NUMBER']
-#     ENV['ROS_TEST_RESULTS_DIR'] = os.environ['ROS_TEST_RESULTS_DIR']
-#     ENV['PWD'] = os.environ['WORKSPACE']
+    ENV['JOB_NAME'] = os.environ['JOB_NAME']
+    ENV['BUILD_NUMBER'] = os.environ['BUILD_NUMBER']
+    ENV['ROS_TEST_RESULTS_DIR'] = os.environ['ROS_TEST_RESULTS_DIR']
+    ENV['PWD'] = os.environ['WORKSPACE']
     ENV['ROS_PACKAGE_PATH'] = '%s:/opt/ros/%s/stacks'%(os.environ['WORKSPACE'], options.rosdistro)
     ENV['ROS_ROOT'] = '/opt/ros/%s/ros'%options.rosdistro
     ENV['PATH'] = '/opt/ros/%s/ros/bin:%s'%(options.rosdistro, os.environ['PATH'])

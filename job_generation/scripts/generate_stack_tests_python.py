@@ -47,17 +47,21 @@ HUDSON_DEVEL_CONFIG = """<?xml version='1.0' encoding='UTF-8'?>
 #!/usr/bin/env bash
 set -o errexit
 echo "_________________________________BEGIN SCRIPT______________________________________"
-cd /tmp/ros
-wget http://code.ros.org/svn/ros/installers/trunk/hudson/hudson_helper 
-wget http://code.ros.org/svn/ros/stacks/ros_release/trunk/job_generation/scripts/run_auto_stack_common.py
-wget http://code.ros.org/svn/ros/stacks/ros_release/trunk/job_generation/scripts/run_auto_stack_devel.py
-sudo apt-get install ros-ROSDISTRO-ros --yes
-source /opt/ros/ROSDISTRO/setup.sh
-export ROS_TEST_RESULTS_DIR=/tmp/ros/test_results
+export INSTALL_DIR=/tmp/install_dir
 export WORKSPACE=/tmp/ros
+export ROS_TEST_RESULTS_DIR=/tmp/ros/test_results
 export JOB_NAME=$JOB_NAME
 export BUILD_NUMBER=$BUILD_NUMBER
 export HUDSON_URL=$HUDSON_URL
+
+mkdir -p $INSTALL_DIR
+cd $INSTALL_DIR
+wget -m -nd http://code.ros.org/svn/ros/installers/trunk/hudson/hudson_helper
+wget -m -nd http://code.ros.org/svn/ros/stacks/ros_release/trunk/job_generation/scripts/run_auto_stack_common.py 
+wget -m -nd http://code.ros.org/svn/ros/stacks/ros_release/trunk/job_generation/scripts/run_auto_stack_devel.py 
+
+sudo apt-get install ros-ROSDISTRO-ros --yes
+source /opt/ros/ROSDISTRO/setup.sh
 python run_auto_stack_devel.py --stack STACKNAME --rosdistro ROSDISTRO
 echo "_________________________________END SCRIPT_______________________________________"
 DELIM
@@ -192,17 +196,22 @@ HUDSON_PRERELEASE_CONFIG = """<?xml version='1.0' encoding='UTF-8'?>
 #!/usr/bin/env bash
 set -o errexit
 echo "_________________________________BEGIN SCRIPT______________________________________"
-cd /tmp/ros
-wget http://code.ros.org/svn/ros/installers/trunk/hudson/hudson_helper 
-wget http://code.ros.org/svn/ros/stacks/ros_release/trunk/job_generation/scripts/run_auto_stack_common.py
-wget http://code.ros.org/svn/ros/stacks/ros_release/trunk/job_generation/scripts/run_auto_stack_prerelease.py
-sudo apt-get install ros-ROSDISTRO-ros --yes
-source /opt/ros/ROSDISTRO/setup.sh
-export ROS_TEST_RESULTS_DIR=/tmp/ros/test_results
+export INSTALL_DIR=/tmp/install_dir
 export WORKSPACE=/tmp/ros
+export ROS_TEST_RESULTS_DIR=/tmp/ros/test_results
 export JOB_NAME=$JOB_NAME
 export BUILD_NUMBER=$BUILD_NUMBER
 export HUDSON_URL=$HUDSON_URL
+
+mkdir -p $INSTALL_DIR
+cd $INSTALL_DIR
+wget -m -nd http://code.ros.org/svn/ros/installers/trunk/hudson/hudson_helper 
+wget -m -nd http://code.ros.org/svn/ros/stacks/ros_release/trunk/job_generation/scripts/run_auto_stack_common.py 
+wget -m -nd http://code.ros.org/svn/ros/stacks/ros_release/trunk/job_generation/scripts/run_auto_stack_prerelease.py 
+
+sudo apt-get install ros-ROSDISTRO-ros --yes
+source /opt/ros/ROSDISTRO/setup.sh
+
 python run_auto_stack_prerelease.py --stack STACKNAME --rosdistro ROSDISTRO
 echo "_________________________________END SCRIPT_______________________________________"
 DELIM

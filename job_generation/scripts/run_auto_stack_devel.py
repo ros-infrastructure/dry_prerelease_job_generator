@@ -28,7 +28,8 @@ def main():
     ENV = {}
     ENV['PYTHONPATH'] = '/opt/ros/%s/ros/core/roslib/src'%options.rosdistro
     ENV['WORKSPACE'] = os.environ['WORKSPACE']
-    ENV['HOME'] = os.environ['WORKSPACE']
+    ENV['INSTALL_DIR'] = os.environ['INSTALL_DIR']
+    ENV['HOME'] = os.environ['INSTALL_DIR']
     ENV['JOB_NAME'] = os.environ['JOB_NAME']
     ENV['BUILD_NUMBER'] = os.environ['BUILD_NUMBER']
     ENV['ROS_TEST_RESULTS_DIR'] = os.environ['ROS_TEST_RESULTS_DIR']
@@ -57,11 +58,13 @@ def main():
                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=ENV).communicate()
     print res
     
+
     # Install system dependencies
     print 'Installing system dependencies'
     res, err = subprocess.Popen(('rosdep install %s -y'%options.stack).split(' '),
                                  stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=ENV).communicate()
     print res
+
 
     # Start Hudson Helper
     print 'Running Hudson Helper'
