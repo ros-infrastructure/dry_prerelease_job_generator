@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#pr2_!/usr/bin/python
 
 from roslib import distro, stack_manifest
 from run_auto_stack_common import *
@@ -50,13 +50,14 @@ def main():
     
 
     # Install all stacks that depend on this stack
-    print env['ROS_PACKAGE_PATH']
     print 'Installing all stacks that depend on these stacks from source'
+    print options.stacklist
     rosinstall = ''
     for stack in options.stacklist:
         rosinstall += stack_to_rosinstall(stack, rosdistro_obj.stacks, 'dev_svn')
     for stack in options.stacklist:
         res, err = subprocess.Popen(('rosstack depends-on %s'%stack).split(' '), stdout=subprocess.PIPE, env=env).communicate()
+        print res
         rosinstall += stacks_to_rosinstall(res.split('\n'), rosdistro_obj.stacks)
     print rosinstall
     rosinstall_file = 'depends_on_overlay.rosinstall'
