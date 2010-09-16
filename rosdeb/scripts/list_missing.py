@@ -53,13 +53,15 @@ import rosdeb
 from rosdeb.rosutil import checkout_svn_to_tmp
 
 from roslib2.distro import Distro
-from rosdeb import ubuntu_release, debianize_name, debianize_version, platforms, ubuntu_release_name, deb_in_repo, load_Packages
+from rosdeb import ubuntu_release, debianize_name, debianize_version, platforms, ubuntu_release_name, \
+    deb_in_repo, load_Packages, guess_repo_version
 
 NAME = 'list_missing.py' 
 TARBALL_URL = "https://code.ros.org/svn/release/download/stacks/%(stack_name)s/%(base_name)s/%(f_name)s"
 
 REPO_URL="http://code.ros.org/packages/%(repo)s/"
 SHADOW_REPO=REPO_URL%{'repo': 'ros-shadow'}
+SHADOW_FIXED_REPO=REPO_URL%{'repo': 'ros-shadow-fixed'}
 ROS_REPO=REPO_URL%{'repo': 'ros'}
 
 HUDSON='http://build.willowgarage.com/'
@@ -259,7 +261,15 @@ td {
 <body>
 <h1><span class="title">%(distro_name)s: debbuild report</span></h1>"""%locals())
 
-        f.write("""Legend:
+        f.write("<h2>Shadow vs. Shadow Fixed Status</h2>\n<ul>\n")
+        for os_platform in os_platforms:
+            for arch in arches:
+                old_version = guess_repo_version(SHADOW_FIXED_REPO, distro, os_platform, arch)
+                f.write("<li>%s-%s: %s vs. %s</li>\n"%(os_platform, arch, distro.version, old_version))
+        f.write("</ul>")
+
+        f.write("""<h2>Stack Debbuild Status</h2>
+<h3>Legend</h3>
 <ul>
 <li>Missing: <span style="background-color: %s;">&nbsp;%s&nbsp;</span></li>
 <li>Depends Missing: <span style="background-color: %s;">&nbsp;%s&nbsp;</span></li>

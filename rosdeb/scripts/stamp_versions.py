@@ -385,11 +385,6 @@ def stamp_debs(distro, os_platform, arch, staging_dir):
         print >> sys.stderr, "Missing debs expected from distro file.  Aborting"
         return 1
 
-def sv_guess_repo_version(distro, os_platform, arch):
-    repo = 'ros-shadow-fixed'
-    packageurl=list_missing.REPO_URL%locals()
-    return guess_repo_version(packageurl, distro)
-    
 def build_debs_main():
 
     from optparse import OptionParser
@@ -448,7 +443,7 @@ def build_debs_main():
 
         distro = load_distro(distro_name)
         if options.check:
-            old_version = sv_guess_repo_version(distro, os_platform, arch)
+            old_version = guess_repo_version(list_missing.SHADOW_FIXED_REPO, distro, os_platform, arch)
             if old_version != distro.version:
                 print "%s-%s: %s vs. %s"%(os_platform, arch, old_version, distro.version)
         else:
