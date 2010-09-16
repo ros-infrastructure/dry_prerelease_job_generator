@@ -426,6 +426,7 @@ def build_debs_main():
     else:
         staging_dir = tempfile.mkdtemp()
 
+    failed = 0
 
     for distro_name, os_platform, arch in to_stamp:
 
@@ -437,12 +438,12 @@ def build_debs_main():
             print "creating staging dir: %s"%(staging_dir)
             os.makedirs(staging_dir)
 
-        ret = stamp_debs(distro_name, os_platform, arch, staging_dir)
+        failed += stamp_debs(distro_name, os_platform, arch, staging_dir)
 
-        if options.staging_dir is None:
-            shutil.rmtree(staging_dir)
+    if options.staging_dir is None:
+        shutil.rmtree(staging_dir)
 
-        sys.exit(ret)
+    sys.exit(failed)
         
 if __name__ == '__main__':
     build_debs_main()
