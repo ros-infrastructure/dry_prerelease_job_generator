@@ -261,12 +261,18 @@ td {
 <body>
 <h1><span class="title">%(distro_name)s: debbuild report</span></h1>"""%locals())
 
-        f.write("<h2>Shadow vs. Shadow Fixed Status</h2>\n<ul>\n")
+        f.write("""<h2>Repository Status</h2>
+<table border="0" cellspacing="0">
+<tr>
+<th>Platform</th><th>Shadow</th><th>Shadow-Fixed</th><th>Public</th>
+</tr>
+""")
         for os_platform in os_platforms:
             for arch in arches:
-                old_version = guess_repo_version(SHADOW_FIXED_REPO, distro, os_platform, arch)
-                f.write("<li>%s-%s: %s vs. %s</li>\n"%(os_platform, arch, distro.version, old_version))
-        f.write("</ul>")
+                main_version = guess_repo_version(ROS_REPO, distro, os_platform, arch)
+                fixed_version = guess_repo_version(SHADOW_FIXED_REPO, distro, os_platform, arch)
+                f.write("<tr><td>%s-%s</td><td>%s</td><td>%s</td><td>%s</td></tr>\n"%(os_platform, arch, distro.version, fixed_version, main_version))
+        f.write("</table>")
 
         f.write("""<h2>Stack Debbuild Status</h2>
 <h3>Legend</h3>
