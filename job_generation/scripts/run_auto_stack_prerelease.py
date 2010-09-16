@@ -57,7 +57,9 @@ def main():
         rosinstall += stack_to_rosinstall(stack, rosdistro_obj.stacks, 'dev_svn')
     for stack in options.stacklist:
         res = subprocess.Popen(('rosstack depends-on %s'%stack).split(' '), stdout=subprocess.PIPE, env=env).communicate()
-        rosinstall += stacks_to_rosinstall(res.split('\n'), rosdistro_obj.stacks)
+        print res
+        if res:
+            rosinstall += stacks_to_rosinstall(res.split('\n'), rosdistro_obj.stacks)
     print rosinstall
     rosinstall_file = 'depends_on_overlay.rosinstall'
     with open(rosinstall_file, 'w') as f:
