@@ -8,7 +8,7 @@ import os
 import urllib2
 import optparse 
 import subprocess
-    
+
 
 def main():
     # parse command line options
@@ -29,10 +29,10 @@ def main():
     ENV['PYTHONPATH'] = '/opt/ros/%s/ros/core/roslib/src'%options.rosdistro
     ENV['WORKSPACE'] = os.environ['WORKSPACE']
     ENV['HOME'] = os.environ['WORKSPACE']
-    ENV['JOB_NAME'] = os.environ['JOB_NAME']
-    ENV['BUILD_NUMBER'] = os.environ['BUILD_NUMBER']
-    ENV['ROS_TEST_RESULTS_DIR'] = os.environ['ROS_TEST_RESULTS_DIR']
-    ENV['PWD'] = os.environ['WORKSPACE']
+#     ENV['JOB_NAME'] = os.environ['JOB_NAME']
+#     ENV['BUILD_NUMBER'] = os.environ['BUILD_NUMBER']
+#     ENV['ROS_TEST_RESULTS_DIR'] = os.environ['ROS_TEST_RESULTS_DIR']
+#     ENV['PWD'] = os.environ['WORKSPACE']
     ENV['ROS_PACKAGE_PATH'] = '%s:/opt/ros/%s/stacks'%(os.environ['WORKSPACE'], options.rosdistro)
     ENV['ROS_ROOT'] = '/opt/ros/%s/ros'%options.rosdistro
     ENV['PATH'] = '/opt/ros/%s/ros/bin:%s'%(options.rosdistro, os.environ['PATH'])
@@ -43,35 +43,44 @@ def main():
     print 'Operating on ROS distro %s'%rosdistro_obj.release_name
 
 
-    # Install Debian packages of stack dependencies
-    stack_xml = rosdistro_obj.stacks[options.stack].dev_svn + '/stack.xml'
-    stack_file = urllib2.urlopen(stack_xml)
-    depends = stack_manifest.parse(stack_file.read()).depends
-    stack_file.close()
-    print 'Installing stack dependencies Debians: %s'%stacks_to_debs(depends, options.rosdistro)
+    # Install Debian packages of ALL stacks in distro
+    print 'Installing stacks of ros distro: %s'%options.rosdistro
     res, err = subprocess.Popen('sudo apt-get update'.split(' '),
                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=ENV).communicate()
-    print res
-    res, err = subprocess.Popen(('sudo apt-get install %s %s --yes'%(stack_to_deb(options.stack, options.rosdistro), 
-                                                                     stacks_to_debs(depends, options.rosdistro))).split(' '),
+    res, err = subprocess.Popen(('sudo apt-get install %s --yes'%(stack_to_deb(rosdistro_obj.stacks.keys(), options.rosdistro))).split(' '),
                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=ENV).communicate()
     print res
     
+
+    # Install all stacks that depend on this stack
+    print 'Installing all stack that depend on this stack from source'
+    res, err = subprocess.Popen(('rosstack depends-on %s'%options.stack).split(' '),
+                                stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=ENV).communicate()
+    rosinstall_file = 'depends_on_overlay.rosinstall'
+    with open(rosinstall_file, 'w') as f:
+        f.write(stacks_to_rosinstall(res.split('\n'), rosdistro_obj.stacks) + '\n' + stack_to_rosinstall(options.stack, rosdistro_obj.stacks, 'dev_svn'))
+    res, err = subprocess.Popen(('rosinstall depends_on_overlay /opt/ros/%s %s'%(options.rosdistro, rosinstall_file)).split(' '),
+                                stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=ENV).communicate()
+    print res
+
+
     # Install system dependencies
     print 'Installing system dependencies'
     res, err = subprocess.Popen(('rosdep install %s -y'%options.stack).split(' '),
                                  stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=ENV).communicate()
     print res
+    
 
     # Start Hudson Helper
     print 'Running Hudson Helper'
-    res, err = subprocess.Popen(('python hudson_helper --dir-test %s build'%options.stack).split(' '),
-                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=ENV).communicate()
+    res, err = subprocess.Popen('python hudson_helper --dir-test depends_on_overlay build'.split(' '),
+                                stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=ENV).communicate()
     print res
 
 
 if __name__ == '__main__':
     main()
+
 
 
 
