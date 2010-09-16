@@ -25,18 +25,18 @@ def main():
 
 
     # set environment
-    ENV = {}
-    ENV['PYTHONPATH'] = '/opt/ros/%s/ros/core/roslib/src'%options.rosdistro
-    ENV['WORKSPACE'] = os.environ['WORKSPACE']
-    ENV['INSTALL_DIR'] = os.environ['INSTALL_DIR']
-    ENV['HOME'] = os.environ['INSTALL_DIR']
-    ENV['JOB_NAME'] = os.environ['JOB_NAME']
-    ENV['BUILD_NUMBER'] = os.environ['BUILD_NUMBER']
-    ENV['ROS_TEST_RESULTS_DIR'] = os.environ['ROS_TEST_RESULTS_DIR']
-    ENV['PWD'] = os.environ['WORKSPACE']
-    ENV['ROS_PACKAGE_PATH'] = '%s:/opt/ros/%s/stacks'%(os.environ['WORKSPACE'], options.rosdistro)
-    ENV['ROS_ROOT'] = '/opt/ros/%s/ros'%options.rosdistro
-    ENV['PATH'] = '/opt/ros/%s/ros/bin:%s'%(options.rosdistro, os.environ['PATH'])
+    env = {}
+    env['PYTHONPATH'] = '/opt/ros/%s/ros/core/roslib/src'%options.rosdistro
+    env['WORKSPACE'] = os.environ['WORKSPACE']
+    env['INSTALL_DIR'] = os.environ['INSTALL_DIR']
+    env['HOME'] = os.environ['INSTALL_DIR']
+    env['JOB_NAME'] = os.environ['JOB_NAME']
+    env['BUILD_NUMBER'] = os.environ['BUILD_NUMBER']
+    env['ROS_TEST_RESULTS_DIR'] = os.environ['ROS_TEST_RESULTS_DIR']
+    env['PWD'] = os.environ['WORKSPACE']
+    env['ROS_PACKAGE_PATH'] = '%s:/opt/ros/%s/stacks'%(os.environ['WORKSPACE'], options.rosdistro)
+    env['ROS_ROOT'] = '/opt/ros/%s/ros'%options.rosdistro
+    env['PATH'] = '/opt/ros/%s/ros/bin:%s'%(options.rosdistro, os.environ['PATH'])
 
 
     # Parse distro file
@@ -51,27 +51,28 @@ def main():
     stack_file.close()
     print 'Installing stack dependencies Debians: %s'%stacks_to_debs(depends, options.rosdistro)
     res, err = subprocess.Popen('sudo apt-get update'.split(' '),
-                                stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=ENV).communicate()
+                                stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env).communicate()
     print res
     res, err = subprocess.Popen(('sudo apt-get install %s %s --yes'%(stack_to_deb(options.stack, options.rosdistro), 
-                                                                     stacks_to_debs(depends, options.rosdistro))).split(' '),
-                                stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=ENV).communicate()
+                                                                     stacks_to_debs(depends, 
+                                                                                    options.rosdistro))).split(' '),
+                                stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env).communicate()
     print res
     
 
     # Install system dependencies
     print 'Installing system dependencies'
     res, err = subprocess.Popen(('rosdep install %s -y'%options.stack).split(' '),
-                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=ENV).communicate()
+                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env).communicate()
     print res
 
 
     # Start Hudson Helper
     print 'Running Hudson Helper'
-    res, err = subprocess.Popen(('python hudson_helper --dir-test %s build'%options.stack).split(' '),
-                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=ENV).communicate()
+    res, err = subprocess.Popen(('python hudson_helper --dir-test %s build'%(ENV['WORKSPACE']+'/'+options.stack).split(' '),
+                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env).communicate()
     print res
-
+    print err
 
 if __name__ == '__main__':
     main()

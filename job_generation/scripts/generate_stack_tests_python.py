@@ -54,8 +54,8 @@ export JOB_NAME=$JOB_NAME
 export BUILD_NUMBER=$BUILD_NUMBER
 export HUDSON_URL=$HUDSON_URL
 
-mkdir -p $INSTALL_DIR
-cd $INSTALL_DIR
+mkdir -p \$INSTALL_DIR
+cd \$INSTALL_DIR
 wget -m -nd http://code.ros.org/svn/ros/installers/trunk/hudson/hudson_helper
 wget -m -nd http://code.ros.org/svn/ros/stacks/ros_release/trunk/job_generation/scripts/run_auto_stack_common.py 
 wget -m -nd http://code.ros.org/svn/ros/stacks/ros_release/trunk/job_generation/scripts/run_auto_stack_devel.py 
@@ -203,8 +203,8 @@ export JOB_NAME=$JOB_NAME
 export BUILD_NUMBER=$BUILD_NUMBER
 export HUDSON_URL=$HUDSON_URL
 
-mkdir -p $INSTALL_DIR
-cd $INSTALL_DIR
+mkdir -p \$INSTALL_DIR
+cd \$INSTALL_DIR
 wget -m -nd http://code.ros.org/svn/ros/installers/trunk/hudson/hudson_helper 
 wget -m -nd http://code.ros.org/svn/ros/stacks/ros_release/trunk/job_generation/scripts/run_auto_stack_common.py 
 wget -m -nd http://code.ros.org/svn/ros/stacks/ros_release/trunk/job_generation/scripts/run_auto_stack_prerelease.py 
