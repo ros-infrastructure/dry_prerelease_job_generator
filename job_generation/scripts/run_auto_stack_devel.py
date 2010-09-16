@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 from roslib import distro, stack_manifest
-from run_auto_stack_common import *
+from jobs_common import *
 import sys
 import re
 import os

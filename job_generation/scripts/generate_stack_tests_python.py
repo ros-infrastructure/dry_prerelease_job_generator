@@ -57,7 +57,7 @@ export HUDSON_URL=$HUDSON_URL
 mkdir -p \$INSTALL_DIR
 cd \$INSTALL_DIR
 wget -m -nd http://code.ros.org/svn/ros/installers/trunk/hudson/hudson_helper
-wget -m -nd http://code.ros.org/svn/ros/stacks/ros_release/trunk/job_generation/scripts/run_auto_stack_common.py 
+wget -m -nd http://code.ros.org/svn/ros/stacks/ros_release/trunk/job_generation/scripts/jobs_common.py 
 wget -m -nd http://code.ros.org/svn/ros/stacks/ros_release/trunk/job_generation/scripts/run_auto_stack_devel.py 
 
 sudo apt-get install ros-ROSDISTRO-ros --yes
@@ -206,7 +206,7 @@ export HUDSON_URL=$HUDSON_URL
 mkdir -p \$INSTALL_DIR
 cd \$INSTALL_DIR
 wget -m -nd http://code.ros.org/svn/ros/installers/trunk/hudson/hudson_helper 
-wget -m -nd http://code.ros.org/svn/ros/stacks/ros_release/trunk/job_generation/scripts/run_auto_stack_common.py 
+wget -m -nd http://code.ros.org/svn/ros/stacks/ros_release/trunk/job_generation/scripts/jobs_common.py 
 wget -m -nd http://code.ros.org/svn/ros/stacks/ros_release/trunk/job_generation/scripts/run_auto_stack_prerelease.py 
 
 sudo apt-get install ros-ROSDISTRO-ros --yes
@@ -311,54 +311,55 @@ println &quot;${build_failures_context}&quot;&#xd;
 
 
 # the supported Ubuntu distro's for each ros distro
-DEFAULT_ARCHS = ['amd64', 'i386']
+ARCHES = ['amd64', 'i386']
+
+# ubuntu distro mapping to ros distro
+UBUNTU_DISTRO_MAP = {'unstable': ['lucid','karmic'],
+                     'cturtle':  ['lucid', 'karmic', 'jaunty'],
+                     'boxturtle':['hardy','karmic', 'jaunty']}
 
 # path to hudson server
 SERVER = 'http://build.willowgarage.com/'
 
 import roslib; roslib.load_manifest("hudson")
 from roslib import distro, rospack, stack_manifest
-from job_generation_defines import *
+from jobs_common import *
 import hudson
 import sys
 import re
 import urllib2
 import optparse 
 
-def stack_to_deb(distro_name, stack_name):
-    return 'ros-'+distro_name+'-'+(str(stack_name).replace('_','-'))
+
+def devel_job_name(rosdistro, stack_name, ubuntu, arch):
+    return "_".join(['auto_stack_devel', rosdistro, stack_name, ubuntu, arch])
 
 
-def devel_job_name(distro_name, stack_name, ubuntu, arch):
-    return "_".join(['auto_stack_devel', distro_name, stack_name, ubuntu, arch])
+def create_devel_configs(rosdistro, stack_name, stack_uri, email):
+    # create gold distro
+    gold_distro = (ARCHES[0], UBUNTU_DISTRO_MAP[rosdistro][0])
+    gold_children = ', '.join([devel_job_name(rosdistro, stack_name, u, a)
+                               for a in ARCHES[1:len(ARCHES)] 
+                               for u in UBUNTU_DISTRO_MAP[rosdistro][1:len(UBUNTU_DISTRO_MAP[rosdistro])]])
 
-def create_devel_configs(ubuntu_distros, arches, distro_name, stack_name, stack_map, email):
     # create hudson config files for each ubuntu distro
     configs = {}
-    for ubuntu in ubuntu_distros:
-        for arch in arches:
-            name = devel_job_name(distro_name, stack_name, ubuntu, arch)
-
+    for ubuntudistro in UBUNTU_DISTRO_MAP[rosdistro]:
+        for arch in ARCHES:
             # check if this is the 'gold' job
             time_trigger = ''
             job_children = ''
-            if arch == DEFAULT_ARCHS[0] and ubuntu == get_ubuntu_distro_map()[distro_name][0]:
+            if (arch, ubuntudistro) == gold_distro:
                 time_trigger = '*/5 * * * *'
-                job_children_list = []
-                for a in DEFAULT_ARCHS:
-                    for u in get_ubuntu_distro_map()[distro_name]:
-                        child_name = devel_job_name(distro_name, stack_name, u, a)
-                        if child_name != name:
-                            job_children_list.append(child_name)
-                job_children = ', '.join(job_children_list)
+                job_children_list = gold_children
 
+            name = devel_job_name(rosdistro, stack_name, ubuntudistro, arch)
             hudson_config = HUDSON_DEVEL_CONFIG
-            hudson_config = hudson_config.replace('UBUNTUDISTRO', ubuntu)
+            hudson_config = hudson_config.replace('UBUNTUDISTRO', ubuntudistro)
             hudson_config = hudson_config.replace('ARCH', arch)
-            hudson_config = hudson_config.replace('ROSDISTRO', distro_name)
+            hudson_config = hudson_config.replace('ROSDISTRO', rosdistro)
             hudson_config = hudson_config.replace('STACKNAME', stack_name)   
-            hudson_config = hudson_config.replace('STACKDEB', stack_to_deb(distro_name, stack_name))
-            hudson_config = hudson_config.replace('STACKURI', stack_map[stack_name].dev_svn)
+            hudson_config = hudson_config.replace('STACKURI', stack_uri)
             hudson_config = hudson_config.replace('TIME_TRIGGER', time_trigger)
             hudson_config = hudson_config.replace('JOB_CHILDREN', job_children)
             hudson_config = hudson_config.replace('EMAIL', email)
@@ -366,16 +367,17 @@ def create_devel_configs(ubuntu_distros, arches, distro_name, stack_name, stack_
     return configs
 
 
-def create_prerelease_configs(ubuntu_distros, arches, distro_name, stack_list, stack_map, email):
+
+def create_prerelease_configs(rosdistro, stack_list, stack_map, email):
     # create hudson config files for each ubuntu distro
     configs = {}
-    for ubuntu in ubuntu_distros:
-        for arch in arches:
-            name = "_".join(['auto_stack_prerelease', distro_name, '_'.join(stack_list), ubuntu, arch])
+    for ubuntudistro in UBUNTU_DISTRO_MAP[rosdistro]:
+        for arch in ARCHES:
+            name = "_".join(['auto_stack_prerelease', rosdistro, '_'.join(stack_list), ubuntudistro, arch])
             hudson_config = HUDSON_PRERELEASE_CONFIG
-            hudson_config = hudson_config.replace('UBUNTUDISTRO', ubuntu)
+            hudson_config = hudson_config.replace('UBUNTUDISTRO', ubuntudistro)
             hudson_config = hudson_config.replace('ARCH', arch)
-            hudson_config = hudson_config.replace('ROSDISTRO', distro_name)
+            hudson_config = hudson_config.replace('ROSDISTRO', rosdistro)
             hudson_config = hudson_config.replace('STACKNAME', '---'.join(stack_list))
             hudson_config = hudson_config.replace('STACKARGS', ' '.join(['--stack %s'%s for s in stack_list]))
             hudson_config = hudson_config.replace('EMAIL', email)
@@ -390,15 +392,11 @@ def main():
                       help='Delete jobs from Hudson')    
     parser.add_option('--recreate', dest = 'recreate', default=False, action='store_true',
                       help='Re-create jobs instead of updating them')    
-    parser.add_option( '--ubuntu', dest = 'ubuntudistro', action='append',
-                      help="Specify the Ubuntu distro to create a job for (defaults to all supported Ubuntu distro's")
-    parser.add_option('--arch', dest = 'arch', action='append',
-                      help="Specify the architectures to operate on (defaults is [i386, amd64]")
     parser.add_option('--stack', dest = 'stacks', action='append',
                       help="Specify the stacks to operate on (defaults to all stacks)")
     parser.add_option('--rosdistro', dest = 'rosdistro', action='store', default='cturtle',
                       help="Specify the ros distro to operate on (defaults to cturtle)")
-    parser.add_option('--pre', dest='prerelease', action='store_true', default=False,
+    parser.add_option('--prerelease', dest='prerelease', action='store_true', default=False,
                       help='Operate on pre-release scripts')
     parser.add_option('--devel', dest='devel', action='store_true', default=False,
                       help='Operate on devel scripts')
@@ -409,22 +407,8 @@ def main():
     (options, args) = parser.parse_args()
 
     # Parse distro file
-    distro_obj = distro.Distro(get_ros_distro_map()[options.rosdistro])
+    distro_obj = distro.Distro(ROSDISTRO_MAP[options.rosdistro])
     print 'Operating on ROS distro %s'%distro_obj.release_name
-
-    # set architctures
-    if options.arch:
-        archs=options.arch
-    else:
-        archs = DEFAULT_ARCHS
-    print 'Operating on archs %s'%archs
-    
-    # set ubuntu distro's
-    if options.ubuntudistro:
-        ubuntudistro=options.ubuntudistro
-    else:
-        ubuntudistro=get_ubuntu_distro_map()[distro_obj.release_name]
-    print 'Operating on Ubuntu distro %s'%ubuntudistro
 
     # parse username and password
     if len(args) != 2:
@@ -440,8 +424,8 @@ def main():
     else:
         stack_list = distro_obj.stacks
     for stack_name in stack_list:
-        devel_configs.update(create_devel_configs(ubuntudistro, archs, distro_obj.release_name, stack_name, distro_obj.stacks, options.email))
-    prerelease_configs.update(create_prerelease_configs(ubuntudistro, archs , distro_obj.release_name, stack_list, distro_obj.stacks, options.email))
+        devel_configs.update(create_devel_configs(distro_obj.release_name, stack_name, distro_obj.stacks[stack_name].dev_svn, options.email))
+    prerelease_configs.update(create_prerelease_configs(distro_obj.release_name, stack_list, distro_obj.stacks, options.email))
     hudson_instance = hudson.Hudson(SERVER, username, password)
 
 
