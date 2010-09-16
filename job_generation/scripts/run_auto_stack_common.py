@@ -16,7 +16,7 @@ def stack_to_rosinstall(stack, stack_map, svn='distro_svn'):
     print 'WIM'
     if stack == '' or not stack in stack_map:
         return ''
-    return "- svn: {uri: '%s', local-name: '%s'}"%(eval('stack_map[stack].%s'%svn), stack)
+    return "- svn: {uri: '%s', local-name: '%s'\n}"%(eval('stack_map[stack].%s'%svn), stack)
 
 def stacks_to_rosinstall(stack_list, stack_map, svn='distro_svn'):
     return '\n'.join([stack_to_rosinstall(s, stack_map, svn) for s in stack_list])

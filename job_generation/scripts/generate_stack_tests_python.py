@@ -212,7 +212,7 @@ wget -m -nd http://code.ros.org/svn/ros/stacks/ros_release/trunk/job_generation/
 sudo apt-get install ros-ROSDISTRO-ros --yes
 source /opt/ros/ROSDISTRO/setup.sh
 
-python run_auto_stack_prerelease.py --stack STACKNAME --rosdistro ROSDISTRO
+python run_auto_stack_prerelease.py STACKARGS --rosdistro ROSDISTRO
 echo "_________________________________END SCRIPT_______________________________________"
 DELIM
 
@@ -366,17 +366,18 @@ def create_devel_configs(ubuntu_distros, arches, distro_name, stack_name, stack_
     return configs
 
 
-def create_prerelease_configs(ubuntu_distros, arches, distro_name, stack_name, stack_map, email):
+def create_prerelease_configs(ubuntu_distros, arches, distro_name, stack_list, stack_map, email):
     # create hudson config files for each ubuntu distro
     configs = {}
     for ubuntu in ubuntu_distros:
         for arch in arches:
-            name = "_".join(['auto_stack_prerelease', distro_name, stack_name, ubuntu, arch])
+            name = "_".join(['auto_stack_prerelease', distro_name, '_'.join(stack_list), ubuntu, arch])
             hudson_config = HUDSON_PRERELEASE_CONFIG
             hudson_config = hudson_config.replace('UBUNTUDISTRO', ubuntu)
             hudson_config = hudson_config.replace('ARCH', arch)
             hudson_config = hudson_config.replace('ROSDISTRO', distro_name)
-            hudson_config = hudson_config.replace('STACKNAME', stack_name)      
+            hudson_config = hudson_config.replace('STACKNAME', '---'.joint(stack_list))
+            hudson_config = hudson_config.replace('STACKARGS', ' '.join(['--stack %s'%s for s in stack_list]))
             hudson_config = hudson_config.replace('EMAIL', email)
             configs[name] = hudson_config
     return configs
@@ -440,7 +441,7 @@ def main():
         stack_list = distro_obj.stacks
     for stack_name in stack_list:
         devel_configs.update(create_devel_configs(ubuntudistro, archs, distro_obj.release_name, stack_name, distro_obj.stacks, options.email))
-        prerelease_configs.update(create_prerelease_configs(ubuntudistro, archs , distro_obj.release_name, stack_name, distro_obj.stacks, options.email))
+    prerelease_configs.update(create_prerelease_configs(ubuntudistro, archs , distro_obj.release_name, stack_list, distro_obj.stacks, options.email))
     hudson_instance = hudson.Hudson(SERVER, username, password)
 
 

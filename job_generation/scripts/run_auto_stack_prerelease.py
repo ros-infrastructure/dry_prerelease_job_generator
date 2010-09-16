@@ -14,12 +14,12 @@ def main():
     # parse command line options
     parser = optparse.OptionParser()
     
-    parser.add_option('--stack', dest = 'stack', default=False, action='store',
+    parser.add_option('--stack', dest = 'stacklist', default=False, action='append',
                       help='Stack name')
     parser.add_option('--rosdistro', dest = 'rosdistro', default=False, action='store',
                       help='Ros distro name')
     (options, args) = parser.parse_args()
-    if not options.stack or not options.rosdistro:
+    if not options.stacklist or not options.rosdistro:
         print 'You did not specify all options to run this script.'
         return
 
@@ -55,13 +55,16 @@ def main():
 
     # Install all stacks that depend on this stack
     print env['ROS_PACKAGE_PATH']
-    print 'Installing all stack that depend on this stack from source'
-    res, err = subprocess.Popen(('rosstack depends-on %s'%options.stack).split(' '),
-                                stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env).communicate()
+    print 'Installing all stack that depend on these stacks from source'
+    rosinstall = stack_to_rosinstall(options.stack, rosdistro_obj.stacks, 'dev_svn')
+    for stack in options.stacklist:
+        res, err = subprocess.Popen(('rosstack depends-on %s'%stack).split(' '),
+                                    stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env).communicate()
+        rosinstall += stacks_to_rosinstall(res.split('\n'), rosdistro_obj.stacks)
+    print rosinstall
     rosinstall_file = 'depends_on_overlay.rosinstall'
     with open(rosinstall_file, 'w') as f:
-        f.write(stacks_to_rosinstall(res.split('\n'), rosdistro_obj.stacks) + '\n' + 
-                stack_to_rosinstall(options.stack, rosdistro_obj.stacks, 'dev_svn'))
+        f.write(rosinstall)
     res, err = subprocess.Popen(('rosinstall depends_on_overlay /opt/ros/%s %s'%(options.rosdistro, 
                                                                                  rosinstall_file)).split(' '),
                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env).communicate()
