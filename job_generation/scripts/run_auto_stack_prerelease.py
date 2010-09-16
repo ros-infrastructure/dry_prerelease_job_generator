@@ -54,6 +54,7 @@ def main():
     
 
     # Install all stacks that depend on this stack
+    print env['ROS_PACKAGE_PATH']
     print 'Installing all stack that depend on this stack from source'
     res, err = subprocess.Popen(('rosstack depends-on %s'%options.stack).split(' '),
                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env).communicate()
