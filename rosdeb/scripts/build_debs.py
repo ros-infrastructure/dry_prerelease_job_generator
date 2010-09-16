@@ -172,7 +172,7 @@ def create_chroot(distro, distro_name, os_platform, arch):
     subprocess.check_call(['sudo', 'pbuilder', '--create', '--distribution', os_platform, '--debootstrapopts', '--arch=%s'%arch, '--othermirror', 'deb http://code.ros.org/packages/ros-shadow/ubuntu %s main'%(os_platform), '--basetgz', distro_tgz, '--components', 'main restricted universe multiverse', '--extrapackages', deplist])
 
 
-def do_deb_build(distro_name, stack_name, stack_version, os_platform, arch, staging_dir, noupload, interactive, runtests):
+def do_deb_build(distro_name, stack_name, stack_version, os_platform, arch, staging_dir, noupload, interactive):
     print "Actually trying to build %s-%s..."%(stack_name, stack_version)
 
     distro_tgz = os.path.join('/var/cache/pbuilder', "%s-%s.tgz"%(os_platform, arch))
@@ -261,31 +261,19 @@ echo "Resuming pbuilder"
     subprocess.check_call(['bash', '-c', 'cd %(staging_dir)s && dpkg-scanpackages . > %(results_dir)s/Packages'%locals()])
 
 
+
+
     # Script to execute for deb verification
     # TODO: Add code to run all the unit-tests for the deb!
     verify_script = os.path.join(staging_dir, 'verify_script.sh')
-    verify_script_txt="""#!/bin/bash
+    with open(verify_script, 'w') as f:
+        f.write("""#!/bin/sh
 set -o errexit
 echo "deb file:%(staging_dir)s results/" > /etc/apt/sources.list.d/pbuild.list
 apt-get update
 apt-get install %(deb_name)s=%(deb_version)s -y --force-yes
 dpkg -l %(deb_name)s
-"""%locals()
-
-    if runtests:
-        verify_script_txt += """
-. /opt/ros/%(distro_name)s/setup.sh
-wget https://code.ros.org/trac/ros/raw-attachment/ticket/3008/test-nobuild.patch -O /tmp/test-nobuild.patch
-(cd ${ROS_ROOT} && patch -p0 < /tmp/test-nobuild.patch)
-for pkg in `rosstack contents %(stack_name)s`; do
-  rm -rf `rospack find ${pkg}`/build
-  rm -rf `rospack find ${pkg}`/ROS_NOBUILD
-done
-rosmake --threads=1 --target=test-nobuild %(stack_name)s
-"""%locals()
-
-    with open(verify_script, 'w') as f:
-        f.write(verify_script_txt)
+"""%locals())
         os.chmod(verify_script, stat.S_IRWXU)
 
             
@@ -333,7 +321,7 @@ reprepro -b /var/packages/ros-shadow/ubuntu -V processincoming %(os_platform)s
             sys.exit(1)
 
 
-def build_debs(distro_name, stack_name, os_platform, arch, staging_dir, force, noupload, interactive, runtests):
+def build_debs(distro_name, stack_name, os_platform, arch, staging_dir, force, noupload, interactive):
 
     # Load the distro from the URL
     # TODO: Should this be done from file in release repo instead (and maybe updated in case of failure)
@@ -362,7 +350,7 @@ def build_debs(distro_name, stack_name, os_platform, arch, staging_dir, force, n
             depends = set(si['depends'])
             if depends.isdisjoint(broken.union(skipped)):
                 try:
-                    do_deb_build(distro_name, sn, sv, os_platform, arch, staging_dir, noupload, interactive and sn == stack_name, runtests)
+                    do_deb_build(distro_name, sn, sv, os_platform, arch, staging_dir, noupload, interactive and sn == stack_name)
                 except:
                     broken.add(sn)
             else:
@@ -388,13 +376,11 @@ def build_debs_main():
     parser.add_option("--force",
                       dest="force", default=False, action="store_true")
     parser.add_option("--noupload",
-                     dest="noupload", default=False, action="store_true")
+                      dest="noupload", default=False, action="store_true")
     parser.add_option("--noramdisk",
                       dest="ramdisk", default=True, action="store_false")
     parser.add_option("--interactive",
                       dest="interactive", default=False, action="store_true")
-    parser.add_option("--runtests",
-                      dest="runtests", default=False, action="store_true")
 
     (options, args) = parser.parse_args()
 
@@ -419,14 +405,12 @@ def build_debs_main():
 
     if options.ramdisk:
         with TempRamFS(staging_dir, "25G"):
-            build_debs(distro_name, stack_name, os_platform, arch, staging_dir, options.force, options.noupload, options.interactive, options.runtests)
+            build_debs(distro_name, stack_name, os_platform, arch, staging_dir, options.force, options.noupload, options.interactive)
     else:
-        build_debs(distro_name, stack_name, os_platform, arch, staging_dir, options.force, options.noupload, options.interactive, options.runtests)
+        build_debs(distro_name, stack_name, os_platform, arch, staging_dir, options.force, options.noupload, options.interactive)
             
     if options.staging_dir is None:
         shutil.rmtree(staging_dir)
-
-    
         
 if __name__ == '__main__':
     build_debs_main()
