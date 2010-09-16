@@ -484,6 +484,9 @@ def run_chroot(options, path, workspace):
         cmd = "apt-get install -y --force-yes build-essential python-yaml cmake subversion wget python-setuptools".split()
         chrti.execute(cmd)
 
+        cmd = "sudo easy_install -U rosinstall".split()
+        chrti.execute(cmd)
+
         if options.arch in ['i386', 'i686']:
 
           setarch = 'setarch %s'%(options.arch)
