@@ -368,11 +368,6 @@ def create_prerelease_configs(ubuntu_distros, arches, distro_name, stack_name, s
             hudson_config = hudson_config.replace('ARCH', arch)
             hudson_config = hudson_config.replace('ROSDISTRO', distro_name)
             hudson_config = hudson_config.replace('STACKNAME', stack_name)      
-            hudson_config = hudson_config.replace('STACKDEB', stack_to_deb(distro_name, stack_name))
-            hudson_config = hudson_config.replace('STACKDEPENDSDEB', ' '.join([stack_to_deb(distro_name, s) for s in depends]))
-            hudson_config = hudson_config.replace('STACKURI', stack_map[stack_name].dev_svn)
-            hudson_config = hudson_config.replace('ROSINSTALL_STACK', rosinstall_stack)
-            hudson_config = hudson_config.replace('ROSINSTALL_DEPENDS_ON', rosinstall_depends_on)
             hudson_config = hudson_config.replace('EMAIL', email)
             configs[name] = hudson_config
     return configs
@@ -429,13 +424,32 @@ def main():
 
     # generate hudson config files
     devel_configs = {}
+    prerelease_configs = {}
     if options.stacks:
         stack_list = options.stacks
     else:
         stack_list = distro_obj.stacks
     for stack_name in stack_list:
         devel_configs.update(create_devel_configs(ubuntudistro, archs, distro_obj.release_name, stack_name, distro_obj.stacks, options.email))
+        prerelease_configs.update(create_prerelease_configs(ubuntudistro, archs , distro_obj.release_name, stack_name, distro_obj.stacks, options.email))
     hudson_instance = hudson.Hudson(SERVER, username, password)
+
+
+    # send prerelease tests to Hudson
+    if options.prerelease:
+        for job_name in prerelease_configs:
+            exists = hudson_instance.job_exists(job_name)
+            if exists:
+                if options.delete or options.recreate:
+                    hudson_instance.delete_job(job_name)
+                    exists = False
+                    print "Deleting job %s"%job_name
+                elif not options.recreate:
+                    hudson_instance.reconfig_job(job_name, prerelease_configs[job_name])
+                    print "Reconfigure job %s"%job_name
+            if not options.delete and not exists:
+                print "Creating new job %s"%job_name
+                hudson_instance.create_job(job_name, prerelease_configs[job_name])
 
 
     # send devel tests to Hudson
@@ -457,6 +471,7 @@ def main():
             if not options.delete and not options.disable and not exists:
                 print "Creating new job %s"%job_name
                 hudson_instance.create_job(job_name, devel_configs[job_name])
+
 
 
 if __name__ == '__main__':
