@@ -55,8 +55,8 @@ from rosdeb.core import ubuntu_release, debianize_name, debianize_version, platf
 
 NAME = 'build_debs.py' 
 TARBALL_URL = "https://code.ros.org/svn/release/download/stacks/%(stack_name)s/%(base_name)s/%(f_name)s"
-PACKAGES_URL="http://code.ros.org/packages/ros-shadow/ubuntu/dists/%(os_platform)s/main/binary-%(arch)s/Packages"
-    
+SHADOW_REPO="http://code.ros.org/packages/ros-shadow/"
+
 import traceback
 
 # Stolen from chroot build
@@ -85,10 +85,10 @@ class TempRamFS:
 
     
 def deb_in_repo(deb_name, deb_version, os_platform, arch):
-    return rosdeb.deb_in_repo(PACKAGES_URL%locals(), deb_name, deb_version)
+    return rosdeb.deb_in_repo(SHADOW_REPO, deb_name, deb_version, os_platform, arch)
 
 def get_depends(deb_name, os_platform, arch):
-    return rosdeb.get_depends(PACKAGES_URL%locals(), deb_name)
+    return rosdeb.get_depends(SHADOW_REPO, deb_name, os_platform, arch)
     
 def download_files(stack_name, stack_version, staging_dir, files):
     import urllib

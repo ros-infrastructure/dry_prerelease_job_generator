@@ -54,9 +54,8 @@ import rosdeb.targets
 from rosdeb.rosutil import checkout_svn_to_tmp
 
 from roslib2.distro import Distro
-from rosdeb.core import ubuntu_release, debianize_name, debianize_version, platforms, ubuntu_release_name
-
-from rosdeb.source_deb import control_file
+from rosdeb import ubuntu_release, debianize_name, debianize_version, \
+    platforms, ubuntu_release_name, control_file, load_Packages, guess_repo_version
 
 import atexit
 
@@ -332,13 +331,13 @@ rm %(new_files)s
         return 0
 
 
-
-def stamp_debs(distro_name, os_platform, arch, staging_dir):
-
+def load_distro(distro_name):
     # Load the distro from the URL
-    # TODO: Should this be done from file in release repo instead (and maybe updated in case of failure)
     distro_uri = "https://code.ros.org/svn/release/trunk/distros/%s.rosdistro"%distro_name
-    distro = Distro(distro_uri)
+    return Distro(distro_uri)
+    
+def stamp_debs(distro, os_platform, arch, staging_dir):
+    distro_name = distro.release_name
 
     # Retrieve the package list from the shadow repo
     packageurl="http://code.ros.org/packages/ros-shadow/ubuntu/dists/%(os_platform)s/main/binary-%(arch)s/Packages"%locals()
@@ -386,6 +385,11 @@ def stamp_debs(distro_name, os_platform, arch, staging_dir):
         print >> sys.stderr, "Missing debs expected from distro file.  Aborting"
         return 1
 
+def sv_guess_repo_version(distro, os_platform, arch):
+    repo = 'ros-shadow-fixed'
+    packageurl=list_missing.REPO_URL%locals()
+    return guess_repo_version(packageurl, distro)
+    
 def build_debs_main():
 
     from optparse import OptionParser
@@ -398,17 +402,19 @@ def build_debs_main():
                       dest="force", default=False, action="store_true")
     parser.add_option("--all", help="stamp all os/arch combinations",
                       dest="all", default=False, action="store_true")
+    parser.add_option("--check", help="compare version IDs all os/arch combinations",
+                      dest="check", default=False, action="store_true")
 
     (options, args) = parser.parse_args()
 
-    if not options.all:
+    if not options.all and not options.check:
         if len(args) != 3:
             parser.error('invalid args')
     elif len(args) != 1:
         parser.error('invalid args. please only specify a distro name')
     distro_name = args[0]
 
-    if not options.all:
+    if not options.all and not options.check:
         to_stamp = [args]
     else:
         try:
@@ -420,11 +426,12 @@ def build_debs_main():
             for arch in ['i386', 'amd64']:
                 to_stamp.append((distro_name, os_platform, arch))
 
-    if options.staging_dir is not None:
-        staging_dir    = options.staging_dir
-        staging_dir = os.path.abspath(staging_dir)
-    else:
-        staging_dir = tempfile.mkdtemp()
+    if not options.check:
+        if options.staging_dir is not None:
+            staging_dir    = options.staging_dir
+            staging_dir = os.path.abspath(staging_dir)
+        else:
+            staging_dir = tempfile.mkdtemp()
 
     failed = 0
 
@@ -434,14 +441,22 @@ def build_debs_main():
             print >> sys.stderr, "[%s] is not a known platform.\nSupported platforms are: %s"%(os_platform, ' '.join(rosdeb.platforms()))
             sys.exit(1)
 
-        if not os.path.exists(staging_dir):
-            print "creating staging dir: %s"%(staging_dir)
-            os.makedirs(staging_dir)
+        if not options.check:
+            if not os.path.exists(staging_dir):
+                print "creating staging dir: %s"%(staging_dir)
+                os.makedirs(staging_dir)
 
-        failed += stamp_debs(distro_name, os_platform, arch, staging_dir)
+        distro = load_distro(distro_name)
+        if options.check:
+            old_version = sv_guess_repo_version(distro, os_platform, arch)
+            if old_version != distro.version:
+                print "%s-%s: %s vs. %s"%(os_platform, arch, old_version, distro.version)
+        else:
+            failed += stamp_debs(distro, os_platform, arch, staging_dir)
 
-    if options.staging_dir is None:
-        shutil.rmtree(staging_dir)
+    if not options.check:
+        if options.staging_dir is None:
+            shutil.rmtree(staging_dir)
 
     sys.exit(failed)
         

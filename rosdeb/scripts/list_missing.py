@@ -53,13 +53,16 @@ import rosdeb
 from rosdeb.rosutil import checkout_svn_to_tmp
 
 from roslib2.distro import Distro
-from rosdeb.core import ubuntu_release, debianize_name, debianize_version, platforms, ubuntu_release_name
+from rosdeb import ubuntu_release, debianize_name, debianize_version, platforms, ubuntu_release_name, deb_in_repo, load_Packages
 
 NAME = 'list_missing.py' 
 TARBALL_URL = "https://code.ros.org/svn/release/download/stacks/%(stack_name)s/%(base_name)s/%(f_name)s"
-SHADOW_PACKAGES_URL="http://code.ros.org/packages/ros-shadow/ubuntu/dists/%(os_platform)s/main/binary-%(arch)s/Packages"
-ROS_PACKAGES_URL="http://code.ros.org/packages/ros/ubuntu/dists/%(os_platform)s/main/binary-%(arch)s/Packages"
-SERVER='http://build.willowgarage.com/'
+
+REPO_URL="http://code.ros.org/packages/%(repo)s/"
+SHADOW_REPO=REPO_URL%{'repo': 'ros-shadow'}
+ROS_REPO=REPO_URL%{'repo': 'ros'}
+
+HUDSON='http://build.willowgarage.com/'
 
 import traceback
 
@@ -109,22 +112,6 @@ def compute_deps(distro, stack_name):
     return ordered_deps
 
 
-_Packages_cache = {}
-
-def get_Packages(packageurl):
-    if packageurl in _Packages_cache:
-        packagelist = _Packages_cache[packageurl]
-    else:
-        _Packages_cache[packageurl] = packagelist = urllib2.urlopen(packageurl).read()
-    return packagelist
-
-def deb_in_repo(deb_name, deb_version, os_platform, arch):
-    # Retrieve the package list from the shadow repo
-    packageurl=SHADOW_PACKAGES_URL%locals()
-    packagelist = get_Packages(packageurl)
-    str = 'Package: %s\nVersion: %s'%(deb_name, deb_version)
-    return str in packagelist
-
 class ExclusionList(object):
     def __init__(self, uri, distro_name, os_platform, arch):
         try:
@@ -155,7 +142,7 @@ def get_missing(distro, os_platform, arch):
     for (sn, sv) in deps:
         deb_name = "ros-%s-%s"%(distro_name, debianize_name(sn))
         deb_version = debianize_version(sv, '0', os_platform)
-        if not deb_in_repo(deb_name, deb_version, os_platform, arch):
+        if not deb_in_repo(SHADOW_REPO, deb_name, deb_version, os_platform, arch):
             si = load_info(sn, sv)
             depends = set(si['depends'])
             if excludes.check(sn):
@@ -198,9 +185,6 @@ def load_distro(distro_name):
     distro_uri = "https://code.ros.org/svn/release/trunk/distros/%s.rosdistro"%distro_name
     return Distro(distro_uri)
 
-def get_depends(deb_name, os_platform, arch):
-    return rosdeb.get_depends(PACKAGES_URL%locals(), deb_name)
-
 MISSING_PRIMARY = '-'
 MISSING_DEP = '&lt;-'
 MISSING_EXCLUDED = 'X'
@@ -219,7 +203,7 @@ def generate_allhtml_report(output, distro_name, os_platforms):
     arches = ['amd64', 'i386']
     for os_platform in os_platforms:
         for arch in arches:
-            main_repo["%s-%s"%(os_platform, arch)] = rosdeb.parse_Packages(get_Packages(ROS_PACKAGES_URL%locals()))
+            main_repo["%s-%s"%(os_platform, arch)] = load_Packages(ROS_REPO, os_platform, arch)
     
     missing_primary = None
     missing_dep = None
@@ -293,7 +277,7 @@ td {
 
         job = 'debbuild-build-debs'
         import hudson
-        h = hudson.Hudson(SERVER)
+        h = hudson.Hudson(HUDSON)
 
         params = {'STACK_NAME': 'ALL'}
         for os_platform in os_platforms:

@@ -38,9 +38,19 @@ Utilities for reading state from a debian repo
 
 import urllib2
 
-def get_Packages(packages_url):
-    # Retrieve the package list from the shadow repo
-    return urllib2.urlopen(packages_url).read()
+_Packages_cache = {}
+def get_Packages(repo_url, os_platform, arch):
+    """
+    Retrieve the package list from the shadow repo. This routine
+    utilizes a cache and should not be invoked in long-running
+    processes.
+    """
+    packages_url = repo_url + '/ubuntu/dists/%(os_platform)s/main/binary-%(arch)s/Packages'%locals()
+    if packages_url in _Packages_cache:
+        return _Packages_cache[packages_url]
+    else:
+        _Packages_cache[packages_url] = retval = urllib2.urlopen(packages_url).read()
+    return retval
     
 def parse_Packages(packagelist):
     """
@@ -61,18 +71,27 @@ def parse_Packages(packagelist):
             package = version = deps = None
     return package_deps
     
-def load_Packages(packages_url):
+def load_Packages(repo_url, os_platform, arch):
     """
     Download and parse debian Packages list into (package, version, depends) tuples
     """
-    return parse_Packages(get_Packages(packages_url))
+    return parse_Packages(get_Packages(repo_url, os_platform, arch))
 
-def deb_in_repo(packages_url, deb_name, deb_version):
-    packagelist = get_Packages(packages_url)
+def guess_repo_version(repo_url, distro, os_platform, arch):
+    packagelist = load_Packages(repo_url, os_platform, arch)
+    deb_name = "ros-%s-ros"%(distro.release_name)
+    matches = [x for x in packagelist if x[0] == deb_name]
+    if not matches:
+        return None
+    version = matches[0][1]
+    return version[version.find('-')+1:version.find('~')]
+
+def deb_in_repo(repo_url, deb_name, deb_version, os_platform, arch):
+    packagelist = get_Packages(repo_url, os_platform, arch)
     str = 'Package: %s\nVersion: %s'%(deb_name, deb_version)
     return str in packagelist
 
-def get_depends(packages_url, deb_name):
+def get_depends(repo_url, deb_name, os_platform, arch):
     """
     Get all debian package dependencies by scraping the Packages
     list. We mainly use this for invalidation logic. 
@@ -80,7 +99,7 @@ def get_depends(packages_url, deb_name):
     # There is probably something much simpler we could do, but this
     # more robust to any bad state we may have caused to the shadow
     # repo.
-    package_deps = load_Packages(packages_url)
+    package_deps = load_Packages(repo_url, os_platform, arch)
 
     done = False
     queue = [deb_name]
