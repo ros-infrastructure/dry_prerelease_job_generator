@@ -376,7 +376,7 @@ def create_prerelease_configs(ubuntu_distros, arches, distro_name, stack_list, s
             hudson_config = hudson_config.replace('UBUNTUDISTRO', ubuntu)
             hudson_config = hudson_config.replace('ARCH', arch)
             hudson_config = hudson_config.replace('ROSDISTRO', distro_name)
-            hudson_config = hudson_config.replace('STACKNAME', '---'.joint(stack_list))
+            hudson_config = hudson_config.replace('STACKNAME', '---'.join(stack_list))
             hudson_config = hudson_config.replace('STACKARGS', ' '.join(['--stack %s'%s for s in stack_list]))
             hudson_config = hudson_config.replace('EMAIL', email)
             configs[name] = hudson_config

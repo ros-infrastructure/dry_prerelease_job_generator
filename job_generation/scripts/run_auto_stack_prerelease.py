@@ -14,7 +14,7 @@ def main():
     # parse command line options
     parser = optparse.OptionParser()
     
-    parser.add_option('--stack', dest = 'stacklist', default=False, action='append',
+    parser.add_option('--stack', dest = 'stacklist', action='append',
                       help='Stack name')
     parser.add_option('--rosdistro', dest = 'rosdistro', default=False, action='store',
                       help='Ros distro name')
