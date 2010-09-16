@@ -63,14 +63,15 @@ def main():
     # Install system dependencies
     print 'Installing system dependencies'
     res, err = subprocess.Popen(('rosdep install %s -y'%options.stack).split(' '),
-                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env).communicate()
+                                stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env).communicate()
     print res
 
 
     # Start Hudson Helper
     print 'Running Hudson Helper'
-    res, err = subprocess.Popen(('python hudson_helper --dir-test %s build'%(ENV['WORKSPACE']+'/'+options.stack).split(' '),
-                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env).communicate()
+    test_dir = ENV['WORKSPACE']+'/'+options.stack
+    res, err = subprocess.Popen(('python hudson_helper --dir-test %s build'%test_dir).split(' '),
+                                stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env).communicate()
     print res
     print err
 
