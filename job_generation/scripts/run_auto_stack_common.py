@@ -19,4 +19,7 @@ def stack_to_rosinstall(stack, stack_map, svn='distro_svn'):
 
 def stacks_to_rosinstall(stack_list, stack_map, svn='distro_svn'):
     print stack_list
-    return '\n'.join([stack_to_rosinstall(s, stack_map, svn) for s in stack_list])
+    if len(stack_list) == 0:
+        retrun ''
+    return ' '.join([stack_to_rosinstall(s, stack_map, svn) for s in stack_list])
+    
