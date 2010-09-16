@@ -47,15 +47,15 @@ def main():
     print 'Installing stacks of ros distro: %s'%options.rosdistro
     res, err = subprocess.Popen('sudo apt-get update'.split(' '),
                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env).communicate()
-    res, err = subprocess.Popen(('sudo apt-get install %s --yes'%(stack_to_deb(rosdistro_obj.stacks.keys(), 
-                                                                               options.rosdistro))).split(' '),
+    res, err = subprocess.Popen(('sudo apt-get install %s --yes'%(stacks_to_debs(rosdistro_obj.stacks.keys(), 
+                                                                                 options.rosdistro))).split(' '),
                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env).communicate()
     print res
     
 
     # Install all stacks that depend on this stack
     print env['ROS_PACKAGE_PATH']
-    print 'Installing all stack that depend on these stacks from source'
+    print 'Installing all stacks that depend on these stacks from source'
     rosinstall = ''
     for stack in options.stacklist:
         rosinstall += stack_to_rosinstall(stack, rosdistro_obj.stacks, 'dev_svn')
