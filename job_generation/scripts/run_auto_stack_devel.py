@@ -69,7 +69,7 @@ def main():
 
     # Start Hudson Helper
     print 'Running Hudson Helper'
-    test_dir = ENV['WORKSPACE']+'/'+options.stack
+    test_dir = env['WORKSPACE']+'/'+options.stack
     res, err = subprocess.Popen(('python hudson_helper --dir-test %s build'%test_dir).split(' '),
                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env).communicate()
     print res

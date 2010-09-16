@@ -65,7 +65,7 @@ def main():
                                                                                  rosinstall_file)).split(' '),
                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env).communicate()
     print res
-
+    print err
 
     # Install system dependencies
     print 'Installing system dependencies'
