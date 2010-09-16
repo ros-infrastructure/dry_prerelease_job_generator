@@ -72,13 +72,13 @@ def main():
                                                                                  rosinstall_file)).split(' '),
                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env).communicate()
     print res
-    print err
 
     # Install system dependencies
     print 'Installing system dependencies'
-    res, err = subprocess.Popen(('rosdep install %s -y'%options.stack).split(' '),
-                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env).communicate()
-    print res
+    for stack in options.stacklist:
+        res, err = subprocess.Popen(('rosdep install %s -y'%stack).split(' '),
+                                    stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env).communicate()
+        print res
     
 
     # Start Hudson Helper
