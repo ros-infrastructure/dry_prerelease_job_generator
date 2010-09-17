@@ -60,16 +60,18 @@ cd $WORKSPACE &amp;&amp; $WORKSPACE/run_chroot.py --distro=UBUNTUDISTRO --arch=A
   <publishers> 
     <hudson.tasks.junit.JUnitResultArchiver> 
       <testResults>test_results/_hudson/*.xml</testResults> 
+      <keepLongStdio>false</keepLongStdio> 
+      <testDataPublishers/> 
     </hudson.tasks.junit.JUnitResultArchiver> 
     <hudson.plugins.emailext.ExtendedEmailPublisher> 
-      <recipientList>EMAIL</recipientList> 
+      <recipientList>wim@willowgarage.com</recipientList> 
       <configuredTriggers> 
         <hudson.plugins.emailext.plugins.trigger.UnstableTrigger> 
           <email> 
             <recipientList></recipientList> 
             <subject>$PROJECT_DEFAULT_SUBJECT</subject> 
             <body>$PROJECT_DEFAULT_CONTENT</body> 
-            <sendToDevelopers>true</sendToDevelopers> 
+            <sendToDevelopers>false</sendToDevelopers> 
             <sendToRecipientList>true</sendToRecipientList> 
             <contentTypeHTML>false</contentTypeHTML> 
             <script>true</script> 
@@ -80,7 +82,7 @@ cd $WORKSPACE &amp;&amp; $WORKSPACE/run_chroot.py --distro=UBUNTUDISTRO --arch=A
             <recipientList></recipientList> 
             <subject>$PROJECT_DEFAULT_SUBJECT</subject> 
             <body>$PROJECT_DEFAULT_CONTENT</body> 
-            <sendToDevelopers>true</sendToDevelopers> 
+            <sendToDevelopers>false</sendToDevelopers> 
             <sendToRecipientList>true</sendToRecipientList> 
             <contentTypeHTML>false</contentTypeHTML> 
             <script>true</script> 
@@ -91,18 +93,29 @@ cd $WORKSPACE &amp;&amp; $WORKSPACE/run_chroot.py --distro=UBUNTUDISTRO --arch=A
             <recipientList></recipientList> 
             <subject>$PROJECT_DEFAULT_SUBJECT</subject> 
             <body>$PROJECT_DEFAULT_CONTENT</body> 
-            <sendToDevelopers>true</sendToDevelopers> 
+            <sendToDevelopers>false</sendToDevelopers> 
             <sendToRecipientList>true</sendToRecipientList> 
             <contentTypeHTML>false</contentTypeHTML> 
             <script>true</script> 
           </email> 
         </hudson.plugins.emailext.plugins.trigger.StillFailingTrigger> 
-        <hudson.plugins.emailext.plugins.trigger.FixedTrigger> 
+        <hudson.plugins.emailext.plugins.trigger.SuccessTrigger> 
           <email> 
             <recipientList></recipientList> 
             <subject>$PROJECT_DEFAULT_SUBJECT</subject> 
             <body>$PROJECT_DEFAULT_CONTENT</body> 
-            <sendToDevelopers>true</sendToDevelopers> 
+            <sendToDevelopers>false</sendToDevelopers> 
+            <sendToRecipientList>true</sendToRecipientList> 
+            <contentTypeHTML>false</contentTypeHTML> 
+            <script>true</script> 
+          </email> 
+        </hudson.plugins.emailext.plugins.trigger.SuccessTrigger> 
+       <hudson.plugins.emailext.plugins.trigger.FixedTrigger> 
+          <email> 
+            <recipientList></recipientList> 
+            <subject>$PROJECT_DEFAULT_SUBJECT</subject> 
+            <body>$PROJECT_DEFAULT_CONTENT</body> 
+            <sendToDevelopers>false</sendToDevelopers> 
             <sendToRecipientList>true</sendToRecipientList> 
             <contentTypeHTML>false</contentTypeHTML> 
             <script>true</script> 
@@ -113,7 +126,7 @@ cd $WORKSPACE &amp;&amp; $WORKSPACE/run_chroot.py --distro=UBUNTUDISTRO --arch=A
             <recipientList></recipientList> 
             <subject>$PROJECT_DEFAULT_SUBJECT</subject> 
             <body>$PROJECT_DEFAULT_CONTENT</body> 
-            <sendToDevelopers>true</sendToDevelopers> 
+            <sendToDevelopers>false</sendToDevelopers> 
             <sendToRecipientList>true</sendToRecipientList> 
             <contentTypeHTML>false</contentTypeHTML> 
             <script>true</script> 
