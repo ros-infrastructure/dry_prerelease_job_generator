@@ -4,6 +4,16 @@ ROSDISTRO_MAP = {'unstable': 'http://www.ros.org/distros/unstable.rosdistro',
                  'cturtle': 'http://www.ros.org/distros/cturtle.rosdistro',
                  'boxturtle': 'http://www.ros.org/distros/boxturtle.rosdistro'}
 
+# the supported Ubuntu distro's for each ros distro
+ARCHES = ['amd64', 'i386']
+
+# ubuntu distro mapping to ros distro
+UBUNTU_DISTRO_MAP = {'unstable': ['lucid','karmic'],
+                     'cturtle':  ['lucid', 'karmic', 'jaunty'],
+                     'boxturtle':['hardy','karmic', 'jaunty']}
+
+# path to hudson server
+SERVER = 'http://build.willowgarage.com/'
 
 
 def stack_to_deb(stack, rosdistro):
