@@ -7,6 +7,7 @@ ${ROS_DISTRO_DIR}/${ROS_STACK_NAME}: ${ROS_STACK_NAME}-${ROS_STACK_VERSION}.md5 
 	md5sum -c ${ROS_STACK_NAME}-${ROS_STACK_VERSION}.md5 && (mkdir -p ${ROS_STACK_DIR} && cd ${ROS_STACK_DIR} && bunzip2 $(CURDIR)/../${ROS_STACK_NAME}-${ROS_STACK_VERSION}.tar.bz2 -c | tar -xv && mv ${ROS_STACK_NAME}-${ROS_STACK_VERSION} ${ROS_STACK_NAME})
 
 install: ${ROS_DISTRO_DIR}/${ROS_STACK_NAME}
+	bash -c ". setup_deb.sh && rosmake ${ROS_STACK_NAME} -V --status-rate=0"
 ifeq (${ROS_DISTRO_NAME}, testing)
 	bash -c ". setup_deb.sh && rosmake ${ROS_STACK_NAME} --robust --target=tests -V --status-rate=0"
 endif
