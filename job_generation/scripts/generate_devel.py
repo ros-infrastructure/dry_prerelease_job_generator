@@ -232,10 +232,14 @@ def main():
     print 'Operating on ROS distro %s'%distro_obj.release_name
 
     # parse username and password
-    if len(args) != 2:
-        parser.error('Needs username and password as args')
-    username = args[0]
-    password = args[1]
+    if len(args) == 2:
+        username = args[0]
+        password = args[1]
+    else:
+        url = urllib.urlopen('http://wgs24.willowgarage.com/hudson-html/hds.xml')
+        info = url.read().split(',')
+        username = info[0]
+        password = info[1]
 
     # generate hudson config files
     devel_configs = {}

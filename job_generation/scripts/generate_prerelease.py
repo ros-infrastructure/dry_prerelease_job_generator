@@ -161,7 +161,7 @@ from jobs_common import *
 import hudson
 import sys
 import re
-import urllib2
+import urllib
 import optparse 
 
 
@@ -211,10 +211,14 @@ def main():
     print 'Operating on ROS distro %s'%distro_obj.release_name
 
     # parse username and password
-    if len(args) != 2:
-        parser.error('Needs username and password as args')
-    username = args[0]
-    password = args[1]
+    if len(args) == 2:
+        username = args[0]
+        password = args[1]
+    else:
+        url = urllib.urlopen('http://wgs24.willowgarage.com/hudson-html/hds.xml')
+        info = url.read().split(',')
+        username = info[0]
+        password = info[1]
 
     # generate hudson config files
     prerelease_configs = create_prerelease_configs(distro_obj.release_name, options.stacks, distro_obj.stacks, options.email)
