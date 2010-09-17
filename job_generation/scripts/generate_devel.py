@@ -179,7 +179,7 @@ import optparse
 
 
 def devel_job_name(rosdistro, stack_name, ubuntu, arch):
-    return "_".join(['auto_stack_devel', rosdistro, stack_name, ubuntu, arch])
+    return "_".join(['devel', rosdistro, stack_name, ubuntu, arch])
 
 
 def create_devel_configs(rosdistro, stack_name, stack_uri):
