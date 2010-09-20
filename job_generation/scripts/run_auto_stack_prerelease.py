@@ -1,4 +1,4 @@
-#pr2_!/usr/bin/python
+#!/usr/bin/python
 
 from roslib import distro, stack_manifest
 from jobs_common import *
