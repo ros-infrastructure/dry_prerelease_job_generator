@@ -62,9 +62,10 @@ def main():
     rosinstall_file = 'stack_overlay.rosinstall'
     with open(rosinstall_file, 'w') as f:
         f.write(rosinstall)
-    res = subprocess.Popen(('rosinstall stack_overlay /opt/ros/%s %s'%(options.rosdistro, rosinstall_file)).split(' ')).communicate()
-    if res != 0:
-        return res
+    helper = subprocess.Popen(('rosinstall stack_overlay /opt/ros/%s %s'%(options.rosdistro, rosinstall_file)).split(' '))
+    helper.communicate()
+    if helper.returncode != 0:
+        return helper.returncode
 
 
     # Install system dependencies
@@ -101,11 +102,13 @@ def main():
     # Run hudson helper for all stacks
     print 'Running Hudson Helper'
     env['ROS_TEST_RESULTS_DIR'] = os.environ['ROS_TEST_RESULTS_DIR'] + '/depends_on'
-    return subprocess.Popen('python hudson_helper --dir-test depends_on_overlay build'.split(' '), env=env).communicate()
+    helper = subprocess.Popen('python hudson_helper --dir-test depends_on_overlay build'.split(' '), env=env)
+    helper.communicate()
+    return helper.returncode
 
 
 if __name__ == '__main__':
-    main()
+    sys.exit( main() )
 
 
 
