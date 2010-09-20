@@ -64,7 +64,6 @@ def main():
     test_dir = env['WORKSPACE']+'/'+options.stack
     helper = subprocess.Popen(('./hudson_helper --dir-test %s build'%test_dir).split(' '), env=env)
     helper.communicate()
-    print "HUDSON HELPER EXITS WITH RETURN CODE %d"%helper.returncode
     return helper.returncode
 
 
