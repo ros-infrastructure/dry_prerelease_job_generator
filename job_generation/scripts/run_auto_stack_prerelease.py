@@ -77,7 +77,7 @@ def main():
     # Run hudson helper for stacks only
     print 'Running Hudson Helper'
     env['ROS_TEST_RESULTS_DIR'] = os.environ['ROS_TEST_RESULTS_DIR'] + '/stack'
-    subprocess.Popen('python hudson_helper --dir-test stack_overlay build'.split(' '), env=env).communicate()
+    subprocess.Popen('./hudson_helper --dir-test stack_overlay build'.split(' '), env=env).communicate()
 
 
     # Install Debian packages of ALL stacks in distro
@@ -102,7 +102,7 @@ def main():
     # Run hudson helper for all stacks
     print 'Running Hudson Helper'
     env['ROS_TEST_RESULTS_DIR'] = os.environ['ROS_TEST_RESULTS_DIR'] + '/depends_on'
-    helper = subprocess.Popen('python hudson_helper --dir-test depends_on_overlay build'.split(' '), env=env)
+    helper = subprocess.Popen('./hudson_helper --dir-test depends_on_overlay build'.split(' '), env=env)
     helper.communicate()
     return helper.returncode
 

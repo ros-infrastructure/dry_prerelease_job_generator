@@ -41,11 +41,13 @@ cd \$INSTALL_DIR
 wget -m -nd http://code.ros.org/svn/ros/installers/trunk/hudson/hudson_helper 
 wget -m -nd http://code.ros.org/svn/ros/stacks/ros_release/trunk/job_generation/scripts/jobs_common.py 
 wget -m -nd http://code.ros.org/svn/ros/stacks/ros_release/trunk/job_generation/scripts/run_auto_stack_prerelease.py 
+chmod +x hudson_helper  
+chmod +x run_auto_stack_devel.py
 
 sudo apt-get install ros-ROSDISTRO-ros --yes
 source /opt/ros/ROSDISTRO/setup.sh
 
-python run_auto_stack_prerelease.py STACKARGS --rosdistro ROSDISTRO
+./run_auto_stack_prerelease.py STACKARGS --rosdistro ROSDISTRO
 echo "_________________________________END SCRIPT_______________________________________"
 DELIM
 
