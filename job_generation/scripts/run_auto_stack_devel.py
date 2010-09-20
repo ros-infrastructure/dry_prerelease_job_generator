@@ -62,6 +62,7 @@ def main():
     # Start Hudson Helper
     print 'Running Hudson Helper'
     test_dir = env['WORKSPACE']+'/'+options.stack
+    subprocess.Popen(('chmod +x hudson_helper').split(' '), env=env).communicate()    
     return subprocess.Popen(('./hudson_helper --dir-test %s build'%test_dir).split(' '), env=env).communicate()
 
 
