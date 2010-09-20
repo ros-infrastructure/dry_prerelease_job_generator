@@ -62,10 +62,7 @@ def main():
     rosinstall_file = 'stack_overlay.rosinstall'
     with open(rosinstall_file, 'w') as f:
         f.write(rosinstall)
-    helper = subprocess.Popen(('rosinstall stack_overlay /opt/ros/%s %s'%(options.rosdistro, rosinstall_file)).split(' '))
-    helper.communicate()
-    if helper.returncode != 0:
-        return helper.returncode
+    subprocess.Popen(('rosinstall stack_overlay /opt/ros/%s %s'%(options.rosdistro, rosinstall_file)).split(' ')).communicate()
 
 
     # Install system dependencies
@@ -77,7 +74,10 @@ def main():
     # Run hudson helper for stacks only
     print 'Running Hudson Helper'
     env['ROS_TEST_RESULTS_DIR'] = os.environ['ROS_TEST_RESULTS_DIR'] + '/stack'
-    subprocess.Popen('./hudson_helper --dir-test stack_overlay build'.split(' '), env=env).communicate()
+    helper = subprocess.Popen('./hudson_helper --dir-test stack_overlay build'.split(' '), env=env)
+    helper.communicate()
+    if helper.returncode != 0:
+        return helper.returncode
 
 
     # Install Debian packages of ALL stacks in distro
