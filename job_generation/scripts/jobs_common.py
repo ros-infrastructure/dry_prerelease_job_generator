@@ -20,6 +20,8 @@ def stack_to_deb(stack, rosdistro):
     return '-'.join(['ros', rosdistro, str(stack).replace('_','-')])
 
 def stacks_to_debs(stack_list, rosdistro):
+    if not stack_list:
+        return ''
     return ' '.join([stack_to_deb(s, rosdistro) for s in stack_list])
 
 def stack_to_rosinstall(stack, stack_map, svn='distro_svn'):
