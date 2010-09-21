@@ -41,7 +41,7 @@ import yaml
 import roslib.packages
 import rostest
 
-def load_distros():
+def load_distros_legacy():
     """
     Load distro files as dicts
     """
@@ -129,8 +129,8 @@ class DistroTest(unittest.TestCase):
         self.assertEquals(['base', 'pr2'], sorted(boxturtle.variants.keys()))
         #TODO: much more to test
         
-    def test_get_rules(self):
-        distros = load_distros()
+    def test_get_rules_legacy(self):
+        distros = load_distros_legacy()
         # boxturtle tests
         for bt in ['boxturtle', 'boxturtle-v2']:
             boxturtle = distros['boxturtle']
@@ -143,11 +143,86 @@ class DistroTest(unittest.TestCase):
 
             for s in ['arm_navigation', 'motion_planners', 'pr2_calibration', 'pr2_ethercat_drivers']:
                 self.assertEquals(wg_unbranched_rules, get_rules(boxturtle, s))
+
+    def test_load_vcs_config(self):
+        from roslib2.distro import load_vcs_config
+        def rule_eval(x):
+            return x + "-evaled"
+
+        # new svn
+        rules = {'svn':
+                     {'dev': 'http://dev-rule',
+                      'distro-tag': 'http://distro-tag',
+                      'release-tag': 'http://release-tag'}}
+        
+        def base_test(vc):
+            self.assertEquals(vc, load_vcs_config(rules, rule_eval))
+            self.assertEquals(vc.dev, 'http://dev-rule-evaled')
+            self.assertEquals(vc.distro_tag, 'http://distro-tag-evaled')
+            self.assertEquals(vc.release_tag, 'http://release-tag-evaled')
+            
+        vc = load_vcs_config(rules, rule_eval)
+        base_test(vc)
+        self.assertEquals(vc.anon_dev, 'http://dev-rule-evaled')
+        self.assertEquals(vc.anon_distro_tag, 'http://distro-tag-evaled')
+        self.assertEquals(vc.anon_release_tag, 'http://release-tag-evaled')
+
+        # - test w/ anon
+        rules['svn']['anon-dev'] = 'http://anon-dev'
+        rules['svn']['anon-distro-tag'] = 'http://anon-distro-tag'
+        rules['svn']['anon-release-tag'] = 'http://anon-release-tag'
+        
+        vc = load_vcs_config(rules, rule_eval)
+        base_test(vc)
+        self.assertEquals(vc.anon_dev, 'http://anon-dev-evaled')
+        self.assertEquals(vc.anon_distro_tag, 'http://anon-distro-tag-evaled')
+        self.assertEquals(vc.anon_release_tag, 'http://anon-release-tag-evaled')
+
+        # legacy svn
+        rules = {'dev-svn':'http://dev-rule',
+                 'distro-svn': 'http://distro-tag',
+                 'release-svn': 'http://release-tag'}
+        vc = load_vcs_config(rules, rule_eval)
+        base_test(vc)
+        self.assertEquals(vc.anon_dev, 'http://dev-rule-evaled')
+        self.assertEquals(vc.anon_distro_tag, 'http://distro-tag-evaled')
+        self.assertEquals(vc.anon_release_tag, 'http://release-tag-evaled')
+
+        # hg
+        rules = {'hg':
+                     {'uri': 'http://uri',
+                      'dev-branch': 'http://dev-branch',
+                      'release-tag': 'http://release-tag',
+                      'distro-branch': 'http://distro-branch'}}
+        vc = load_vcs_config(rules, rule_eval)
+        self.assertEquals(vc.repo_uri, 'http://uri-evaled')
+        self.assertEquals(vc.dev_branch, 'http://dev-branch-evaled')    
+        self.assertEquals(vc.distro_branch, 'http://distro-branch-evaled')
+        self.assertEquals(vc.release_tag, 'http://release-tag-evaled')
+        
+        
+    def test_get_rules(self):
+        from roslib2.distro import get_rules
+        distros = load_distros_legacy()
+        # boxturtle tests
+        for t in ['cturtle']:
+            boxturtle = distros['boxturtle']
+            self.assertEquals(boxturtle_ros_rules, get_rules(boxturtle, 'ros'))
+            # test aliasing of ROS == ros. Not sure why that code is
+            # in there, but add a tripwire to investigate this if its
+            # ever removed.
+            self.assertEquals(get_rules(boxturtle, 'ros'), get_rules(boxturtle, 'ROS'))
+
+            for s in ['common', 'navigation', 'simulator_stage', 'visualization', 'visualization_common']:
+                self.assertEquals(boxturtle_rospkg_rules, get_rules(boxturtle, s))
+
+            for s in ['arm_navigation', 'motion_planners', 'pr2_calibration', 'pr2_ethercat_drivers']:
+                self.assertEquals(wg_unbranched_rules, get_rules(boxturtle, s))
         
     def test_load_distro_stacks(self):
         from roslib2.distro import load_distro_stacks, DistroStack
 
-        distros = load_distros()
+        distros = load_distros_legacy()
 
         v = '6'
         r = 'boxturtle'
@@ -159,7 +234,11 @@ class DistroTest(unittest.TestCase):
 
             # - test with overrides
             ros = DistroStack('ros', boxturtle_ros_rules, ros_version, 'foxturtle', '55')
-            self.assertEquals({'ros': ros}, load_distro_stacks(boxturtle, ['ros'], 'foxturtle', '55'))
+            other = load_distro_stacks(boxturtle, ['ros'], 'foxturtle', '55')['ros']
+            self.assertEquals(ros.name, other.name)
+            self.assertEquals(ros.version, other.version)
+            self.assertEquals(ros.vcs_config, other.vcs_config)
+            self.assertEquals(ros, other)
 
             # - test with actual distro values
             ros = DistroStack('ros', boxturtle_ros_rules, ros_version, r, v)
@@ -199,7 +278,7 @@ class DistroTest(unittest.TestCase):
         import roslib2.distro
         from roslib2.distro import get_variants
 
-        distros = load_distros()
+        distros = load_distros_legacy()
         # boxturtle tests
         for bt in ['boxturtle', 'boxturtle-v2']:
             boxturtle = distros[bt]

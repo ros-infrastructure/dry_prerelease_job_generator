@@ -85,3 +85,27 @@ class HGClient(vcs_base.VCSClientBase):
     def get_version(self):
         output = subprocess.Popen(['hg', 'identify', "-i", self._path], stdout=subprocess.PIPE).communicate()[0]
         return output.strip()
+
+class HGConfig(object):
+    """
+    Configuration information about an SVN repository for a component
+    of code. The configuration we maintain is specific to ROS
+    toolchain concepts and is not a general notion of SVN configuration.
+
+     * repo_uri: base URI of repo
+     * dev_branch: hg branch the code is developed
+     * distro_branch: branch of code for a specific ROS distribution
+     * release_tag: a tag of the code for a specific release
+     """
+
+    def __init__(self):
+        self.repo_uri      = None
+        self.dev_branch    = None
+        self.distro_branch = None
+        self.release_tag   = None
+
+    def __eq__(self, other):
+        return self.repo_uri == other.repo_uri and \
+            self.dev_branch == other.dev_branch and \
+            self.release_tag == other.release_tag and \
+            self.distro_branch == other.distro_branch

@@ -75,6 +75,53 @@ def expand_rule(rule, stack_name, stack_ver, release_name, revision=None):
         s = s.replace('$REVISION', revision)
     return s
 
+def load_vcs_config(rules, rule_eval):
+    vcs_config = None
+    if 'svn' in rules or 'dev-svn' in rules:
+        import roslib2.vcs.svn
+        vcs_config = roslib2.vcs.svn.SVNConfig()
+        
+        if 'svn' in rules:
+            r = rules['svn']
+
+            vcs_config.dev     = rule_eval(r['dev'])
+            vcs_config.distro_tag  = rule_eval(r['distro-tag'])
+            vcs_config.release_tag = rule_eval(r['release-tag'])
+
+            # specify urls that are safe to anonymously read
+            # from. Users must supply a complete set.
+            if 'anon-dev' in r:
+                vcs_config.anon_dev = rule_eval(r['anon-dev'])
+                vcs_config.anon_distro_tag = rule_eval(r['anon-distro-tag'])                
+                vcs_config.anon_release_tag = rule_eval(r['anon-release-tag'])
+            else:
+                # if no login credentials, assume that anonymous is
+                # same as normal keys.
+                vcs_config.anon_dev = vcs_config.dev
+                vcs_config.anon_distro_tag = vcs_config.distro_tag
+                vcs_config.anon_release_tag = vcs_config.release_tag
+
+        else:
+            #legacy support
+            vcs_config.dev         = rule_eval(rules['dev-svn'])
+            vcs_config.distro_tag  = rule_eval(rules['distro-svn'])
+            vcs_config.release_tag = rule_eval(rules['release-svn'])
+            vcs_config.anon_dev = vcs_config.dev
+            vcs_config.anon_distro_tag = vcs_config.distro_tag
+            vcs_config.anon_release_tag = vcs_config.release_tag
+            
+            
+    elif 'hg' in rules:
+        import roslib2.vcs.hg
+        vcs_config = roslib2.vcs.hg.HGConfig()
+
+        vcs_config.repo_uri      = rule_eval(rules['hg']['uri'])
+        vcs_config.dev_branch    = rule_eval(rules['hg']['dev-branch'])
+        vcs_config.distro_branch = rule_eval(rules['hg']['distro-branch'])
+        vcs_config.release_tag   = rule_eval(rules['hg']['release-tag'])
+
+    return vcs_config
+    
 def get_variants(distro, stack_name):
     """
     Retrieve names of variants that stack is present in. This operates
@@ -203,18 +250,6 @@ class DistroStack(object):
 
         self._rules = rules
         
-        self.user_svn = self.pass_svn = None
-        # for password-protected repos
-        # - for future SCM rules, we need to put them in a more
-        #   general representation. Leaving the SVN representation
-        #   as-is so as to not disturb existing scripts.
-        if 'svn' in rules:
-            self.user_svn = rules['svn'].get('username', None)
-            self.pass_svn = rules['svn'].get('password', None)
-        elif 'user-svn' in rules:
-            self.user_svn = rules.get('user-svn', None)
-            self.pass_svn = rules.get('pass-svn', None)
-    
         self.update_version(stack_version)
 
     def update_version(self, stack_version):
@@ -226,21 +261,14 @@ class DistroStack(object):
         #   general representation. Leaving the SVN representation
         #   as-is so as to not disturb existing scripts.
         self.dev_svn = self.distro_svn = self.release_svn = None
-        self.repo_uri = self.dev_branch = self.distro_branch = self.release_tag = None
-        if 'svn' in rules:
-            self.dev_svn     = self.expand_rule(rules['svn']['dev'])
-            self.distro_svn  = self.expand_rule(rules['svn']['distro-tag'])
-            self.release_svn = self.expand_rule(rules['svn']['release-tag'])
-        elif 'hg' in rules:
-            self.repo_uri = self.expand_rule(rules['hg']['uri'])
-            self.dev_branch     = self.expand_rule(rules['hg']['dev-branch'])
-            self.distro_branch  = self.expand_rule(rules['hg']['distro-branch'])
-            self.release_tag = self.expand_rule(rules['hg']['release-tag'])
-        elif 'dev-svn' in rules:
-            #legacy support
-            self.dev_svn     = self.expand_rule(rules['dev-svn'])
-            self.distro_svn  = self.expand_rule(rules['distro-svn'])
-            self.release_svn = self.expand_rule(rules['release-svn'])
+        self.vcs_config = load_vcs_config(rules, self.expand_rule)
+
+        # legacy support, remove once we stop building box turtle
+        if 'svn' in rules or 'dev-svn' in rules:
+            self.dev_svn     = self.vcs_config.dev
+            self.distro_svn  = self.vcs_config.distro_tag
+            self.release_svn = self.vcs_config.release_tag
+
         
     def expand_rule(self, rule):
         """
@@ -253,15 +281,7 @@ class DistroStack(object):
             return False
         return self.name == other.name and \
             self.version == other.version and \
-            self.dev_svn == other.dev_svn and \
-            self.distro_svn == other.distro_svn and \
-            self.release_svn == other.release_svn and \
-            self.repo_uri == other.repo_uri and \
-            self.dev_branch == other.dev_branch and \
-            self.distro_branch == other.distro_branch and \
-            self.release_tag == other.release_tag and \
-            self.user_svn == other.user_svn and \
-            self.pass_svn == other.pass_svn
+            self.vcs_config == other.vcs_config
 
 class Variant(object):
     """

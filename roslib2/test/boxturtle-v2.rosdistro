@@ -148,11 +148,6 @@ stacks:
   simulator_stage: {version: 1.0.0}
   slam_gmapping: {version: 1.0.0}
   sound_drivers: {version: 1.0.3}
-  test_rule_override:
-    _rules:
-      svn:
-        dev: 'https://madeup/stuff/$STACK_NAME/trunk'
-    version: 0.1.3
   trajectory_filters:
     _rules: wg-nobranch
     version: 0.2.2

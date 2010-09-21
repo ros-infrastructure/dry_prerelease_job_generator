@@ -140,9 +140,6 @@ stacks:
     version: 0.2.2
   vision_opencv: {version: 1.1.0}
   visualization:
-    _rules: 
-      svn:
-        dev: 'https://code.ros.org/svn/ros-pkg/stacks/$STACK_NAME/branches/visualization-1.0'
     version: 1.0.2
   visualization_common: {version: 1.0.1}
   web_interface:
