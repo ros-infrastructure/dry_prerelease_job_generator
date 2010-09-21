@@ -1,11 +1,12 @@
 #!/usr/bin/python
 
+STACK_DIR = 'stack_overlay'
+DEPENDS_ON_DIR = 'depends_on_overlay'
+
 from roslib import distro, stack_manifest
 from jobs_common import *
 import sys
-import re
 import os
-import urllib2
 import optparse 
 import subprocess
 
@@ -32,7 +33,11 @@ def main():
     env['JOB_NAME'] = os.environ['JOB_NAME']
     env['BUILD_NUMBER'] = os.environ['BUILD_NUMBER']
     env['PWD'] = os.environ['WORKSPACE']
-    env['ROS_PACKAGE_PATH'] = '%s:/opt/ros/%s/stacks'%(os.environ['INSTALL_DIR'], options.rosdistro)
+    env['ROS_PACKAGE_PATH'] = '%s/%s:%s/%s:/opt/ros/%s/stacks'%(os.environ['INSTALL_DIR'], 
+                                                                STACK_DIR,
+                                                                os.environ['INSTALL_DIR'],
+                                                                DEPENDS_ON_DIR,
+                                                                options.rosdistro)
     env['ROS_ROOT'] = '/opt/ros/%s/ros'%options.rosdistro
     env['PATH'] = '/opt/ros/%s/ros/bin:%s'%(options.rosdistro, os.environ['PATH'])
 
@@ -40,17 +45,6 @@ def main():
     # Parse distro file
     rosdistro_obj = distro.Distro(ROSDISTRO_MAP[options.rosdistro])
     print 'Operating on ROS distro %s'%rosdistro_obj.release_name
-
-
-    # Install Debian packages of stack dependencies
-    print 'Installing debian packages of stack dependencies'
-    subprocess.Popen('sudo apt-get update'.split(' ')).communicate()
-    for stack in options.stacklist:
-        stack_xml = rosdistro_obj.stacks[stack].dev_svn + '/stack.xml'
-        stack_file = urllib2.urlopen(stack_xml)
-        depends = stack_manifest.parse(stack_file.read()).depends
-        stack_file.close()
-        subprocess.Popen(('sudo apt-get install %s %s --yes'%(stack_to_deb(stack, options.rosdistro), stacks_to_debs(depends, options.rosdistro))).split(' ')).communicate()
 
 
     # Install the stacks to test from source
@@ -62,7 +56,16 @@ def main():
     rosinstall_file = 'stack_overlay.rosinstall'
     with open(rosinstall_file, 'w') as f:
         f.write(rosinstall)
-    subprocess.Popen(('rosinstall stack_overlay /opt/ros/%s %s'%(options.rosdistro, rosinstall_file)).split(' ')).communicate()
+    subprocess.Popen(('rosinstall %s /opt/ros/%s %s'%(STACK_DIR, options.rosdistro, rosinstall_file)).split(' ')).communicate()
+
+
+    # Install Debian packages of stack dependencies
+    print 'Installing debian packages of stack dependencies'
+    subprocess.Popen('sudo apt-get update'.split(' ')).communicate()
+    for stack in options.stacklist:
+        with open('%s/%s/stack.xml'%(STACK_DIR, stack)) as stack_file:
+            depends = stack_manifest.parse(stack_file.read()).depends
+        subprocess.Popen(('sudo apt-get install %s %s --yes'%(stack_to_deb(stack, options.rosdistro), stacks_to_debs(depends, options.rosdistro))).split(' ')).communicate()
 
 
     # Install system dependencies
@@ -74,7 +77,7 @@ def main():
     # Run hudson helper for stacks only
     print 'Running Hudson Helper'
     env['ROS_TEST_RESULTS_DIR'] = os.environ['ROS_TEST_RESULTS_DIR'] + '/stack'
-    helper = subprocess.Popen('./hudson_helper --dir-test stack_overlay build'.split(' '), env=env)
+    helper = subprocess.Popen(('./hudson_helper --dir-test %s build'%STACK_DIR).split(' '), env=env)
     helper.communicate()
     if helper.returncode != 0:
         return helper.returncode
@@ -96,13 +99,13 @@ def main():
     rosinstall_file = 'depends_on_overlay.rosinstall'
     with open(rosinstall_file, 'w') as f:
         f.write(rosinstall)
-    subprocess.Popen(('rosinstall depends_on_overlay /opt/ros/%s %s'%(options.rosdistro, rosinstall_file)).split(' ')).communicate()
+    subprocess.Popen(('rosinstall %s /opt/ros/%s %s'%(DEPENDS_ON_DIR, options.rosdistro, rosinstall_file)).split(' ')).communicate()
 
 
     # Run hudson helper for all stacks
     print 'Running Hudson Helper'
     env['ROS_TEST_RESULTS_DIR'] = os.environ['ROS_TEST_RESULTS_DIR'] + '/depends_on'
-    helper = subprocess.Popen('./hudson_helper --dir-test depends_on_overlay build'.split(' '), env=env)
+    helper = subprocess.Popen(('./hudson_helper --dir-test %s build'%DEPENDS_ON_DIR).split(' '), env=env)
     helper.communicate()
     return helper.returncode
 

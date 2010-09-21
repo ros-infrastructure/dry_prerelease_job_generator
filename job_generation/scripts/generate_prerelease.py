@@ -161,15 +161,13 @@ import roslib; roslib.load_manifest("hudson")
 from roslib import distro
 from jobs_common import *
 import hudson
-import sys
-import re
 import urllib
 import optparse 
 
 
 
 
-def create_prerelease_configs(rosdistro, stack_list, stack_map, email):
+def create_prerelease_configs(rosdistro, stack_list, email):
     # create hudson config files for each ubuntu distro
     configs = {}
     for ubuntudistro in UBUNTU_DISTRO_MAP[rosdistro]:
@@ -223,7 +221,7 @@ def main():
         password = info[1]
 
     # generate hudson config files
-    prerelease_configs = create_prerelease_configs(distro_obj.release_name, options.stacks, distro_obj.stacks, options.email)
+    prerelease_configs = create_prerelease_configs(distro_obj.release_name, options.stacks, options.email)
     hudson_instance = hudson.Hudson(SERVER, username, password)
 
     # send prerelease tests to Hudson
