@@ -61,7 +61,7 @@ cd $WORKSPACE &amp;&amp; $WORKSPACE/run_chroot.py --distro=UBUNTUDISTRO --arch=A
   </builders> 
   <publishers> 
     <hudson.tasks.junit.JUnitResultArchiver> 
-      <testResults>test_results/_hudson/**/*.xml</testResults> 
+      <testResults>test_results/**/_hudson/*.xml</testResults> 
       <keepLongStdio>false</keepLongStdio> 
       <testDataPublishers/> 
     </hudson.tasks.junit.JUnitResultArchiver> 
