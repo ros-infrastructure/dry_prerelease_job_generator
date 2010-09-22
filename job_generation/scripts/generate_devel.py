@@ -170,8 +170,8 @@ println &quot;${build_failures_context}&quot;&#xd;
 """
 
 
-import roslib; roslib.load_manifest("hudson")
-from roslib import distro
+import roslib; roslib.load_manifest("job_generation")
+from roslib2 import distro
 from jobs_common import *
 import hudson
 import sys
@@ -250,7 +250,7 @@ def main():
     else:
         stack_list = distro_obj.stacks
     for stack_name in stack_list:
-        devel_configs.update(create_devel_configs(distro_obj.release_name, stack_name, distro_obj.stacks[stack_name].dev_svn))
+        devel_configs.update(create_devel_configs(distro_obj.release_name, stack_name, distro_obj.stacks[stack_name].vcs_config.anon_dev))
     hudson_instance = hudson.Hudson(SERVER, username, password)
 
 

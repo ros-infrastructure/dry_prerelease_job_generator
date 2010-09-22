@@ -157,7 +157,7 @@ println &quot;${build_failures_context}&quot;&#xd;
 """
 
 
-import roslib; roslib.load_manifest("hudson")
+import roslib; roslib.load_manifest("job_generation")
 from roslib import distro
 from jobs_common import *
 import hudson

@@ -51,7 +51,7 @@ def main():
     print 'Installing the stacks to test from source'
     rosinstall = ''
     for stack in options.stacklist:
-        rosinstall += stack_to_rosinstall(stack, rosdistro_obj.stacks, 'dev_svn')
+        rosinstall += stack_to_rosinstall(stack, rosdistro_obj.stacks, 'anon_dev')
     print rosinstall
     rosinstall_file = 'stack_overlay.rosinstall'
     with open(rosinstall_file, 'w') as f:
@@ -65,7 +65,7 @@ def main():
     for stack in options.stacklist:
         with open('%s/%s/stack.xml'%(STACK_DIR, stack)) as stack_file:
             depends = stack_manifest.parse(stack_file.read()).depends
-        subprocess.Popen(('sudo apt-get install %s %s --yes'%(stack_to_deb(stack, options.rosdistro), stacks_to_debs(depends, options.rosdistro))).split(' ')).communicate()
+        subprocess.Popen(('sudo apt-get install %s --yes'%(stacks_to_debs(depends, options.rosdistro))).split(' ')).communicate()
 
 
     # Install system dependencies

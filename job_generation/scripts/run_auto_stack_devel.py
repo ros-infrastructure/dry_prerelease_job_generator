@@ -3,9 +3,7 @@
 from roslib import distro, stack_manifest
 from jobs_common import *
 import sys
-import re
 import os
-import urllib2
 import optparse 
 import subprocess
     
@@ -37,6 +35,7 @@ def main():
     env['ROS_PACKAGE_PATH'] = '%s:/opt/ros/%s/stacks'%(os.environ['WORKSPACE'], options.rosdistro)
     env['ROS_ROOT'] = '/opt/ros/%s/ros'%options.rosdistro
     env['PATH'] = '/opt/ros/%s/ros/bin:%s'%(options.rosdistro, os.environ['PATH'])
+    stack_dir = env['WORKSPACE']+'/'+options.stack
 
 
     # Parse distro file
@@ -45,14 +44,12 @@ def main():
 
 
     # Install Debian packages of stack dependencies
-    stack_xml = rosdistro_obj.stacks[options.stack].dev_svn + '/stack.xml'
-    stack_file = urllib2.urlopen(stack_xml)
-    depends = stack_manifest.parse(stack_file.read()).depends
-    stack_file.close()
-    print 'Installing stack dependencies Debians: %s'%stacks_to_debs(depends, options.rosdistro)
+    print 'Installing debian packages of stack dependencies'
     subprocess.Popen('sudo apt-get update'.split(' ')).communicate()
-    subprocess.Popen(('sudo apt-get install %s %s --yes'%(stack_to_deb(options.stack, options.rosdistro), stacks_to_debs(depends, options.rosdistro))).split(' ')).communicate()
-    
+    with open('%s/%s/stack.xml'%(stack_dir, options.stack)) as stack_file:
+        depends = stack_manifest.parse(stack_file.read()).depends
+    subprocess.Popen(('sudo apt-get install %s --yes'%(stacks_to_debs(depends, options.rosdistro))).split(' ')).communicate()
+
 
     # Install system dependencies
     print 'Installing system dependencies'
@@ -61,8 +58,7 @@ def main():
 
     # Start Hudson Helper
     print 'Running Hudson Helper'
-    test_dir = env['WORKSPACE']+'/'+options.stack
-    helper = subprocess.Popen(('./hudson_helper --dir-test %s build'%test_dir).split(' '), env=env)
+    helper = subprocess.Popen(('./hudson_helper --dir-test %s build'%stack_dir).split(' '), env=env)
     helper.communicate()
     return helper.returncode
 
