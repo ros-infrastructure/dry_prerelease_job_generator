@@ -24,10 +24,11 @@ def stacks_to_debs(stack_list, rosdistro):
         return ''
     return ' '.join([stack_to_deb(s, rosdistro) for s in stack_list])
 
-def stack_to_rosinstall(stack, stack_map, branch='anon_distro_tag'):
+def stack_to_rosinstall(stack, stack_map, branch):
     if stack == '' or not stack in stack_map:
         return ''
-    return "- svn: {uri: '%s', local-name: '%s'}\n"%(eval('stack_map[stack].vcs_config.%s'%branch), stack)
+    vcs = stack_map[stack].cvs_config
+    return "- %s: {uri: '%s', local-name: '%s'}\n"%(vcs.type, eval('vcs.%s'%branch), stack)
 
 def stacks_to_rosinstall(stack_list, stack_map, svn='distro_svn'):
     print stack_list

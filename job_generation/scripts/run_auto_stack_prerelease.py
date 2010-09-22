@@ -3,7 +3,8 @@
 STACK_DIR = 'stack_overlay'
 DEPENDS_ON_DIR = 'depends_on_overlay'
 
-from roslib import distro, stack_manifest
+
+from roslib2 import distro, stack_manifest
 from jobs_common import *
 import sys
 import os
@@ -33,11 +34,10 @@ def main():
     env['JOB_NAME'] = os.environ['JOB_NAME']
     env['BUILD_NUMBER'] = os.environ['BUILD_NUMBER']
     env['PWD'] = os.environ['WORKSPACE']
-    env['ROS_PACKAGE_PATH'] = '%s/%s:%s/%s:/opt/ros/%s/stacks'%(os.environ['INSTALL_DIR'], 
-                                                                STACK_DIR,
-                                                                os.environ['INSTALL_DIR'],
-                                                                DEPENDS_ON_DIR,
-                                                                options.rosdistro)
+    env['ROS_PACKAGE_PATH'] = '%s:%s:%s:/opt/ros/%s/stacks'%(os.environ['INSTALL_DIR']+'/ros_release',
+                                                             os.environ['INSTALL_DIR']+STACK_DIR,
+                                                             os.environ['INSTALL_DIR']+DEPENDS_ON_DIR,
+                                                             options.rosdistro)
     env['ROS_ROOT'] = '/opt/ros/%s/ros'%options.rosdistro
     env['PATH'] = '/opt/ros/%s/ros/bin:%s'%(options.rosdistro, os.environ['PATH'])
 
@@ -94,7 +94,7 @@ def main():
     for stack in options.stacklist:
         res, err = subprocess.Popen(('rosstack depends-on %s'%stack).split(' '), stdout=subprocess.PIPE, env=env).communicate()
         print res
-        rosinstall += stacks_to_rosinstall(res.split('\n'), rosdistro_obj.stacks)
+        rosinstall += stacks_to_rosinstall(res.split('\n'), rosdistro_obj.stacks, 'anon_distro_tag')
     print rosinstall
     rosinstall_file = 'depends_on_overlay.rosinstall'
     with open(rosinstall_file, 'w') as f:
