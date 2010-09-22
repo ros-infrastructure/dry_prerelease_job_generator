@@ -4,7 +4,9 @@ STACK_DIR = 'stack_overlay'
 DEPENDS_ON_DIR = 'depends_on_overlay'
 
 
-from roslib2 import distro, stack_manifest
+import roslib; roslib.load_manifest("job_generation")
+from roslib import stack_manifest
+from roslib2 import distro
 from jobs_common import *
 import sys
 import os

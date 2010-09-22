@@ -29,15 +29,17 @@ HUDSON_PRERELEASE_CONFIG = """<?xml version='1.0' encoding='UTF-8'?>
 #!/usr/bin/env bash
 set -o errexit
 echo "_________________________________BEGIN SCRIPT______________________________________"
+sudo apt-get install ros-ROSDISTRO-ros --yes
+source /opt/ros/ROSDISTRO/setup.sh
+
 export INSTALL_DIR=/tmp/install_dir
 export WORKSPACE=/tmp/ros
 export ROS_TEST_RESULTS_DIR=/tmp/ros/test_results
 export JOB_NAME=$JOB_NAME
 export BUILD_NUMBER=$BUILD_NUMBER
 export HUDSON_URL=$HUDSON_URL
-
-sudo apt-get install ros-ROSDISTRO-ros --yes
-source /opt/ros/ROSDISTRO/setup.sh
+export ROS_PACKAGE_PATH=\$INSTALL_DIR/ros_release:/opt/ros/ROSDISTRO/stacks
+echo \$ROS_PACKAGE_PATH
 
 mkdir -p \$INSTALL_DIR
 cd \$INSTALL_DIR

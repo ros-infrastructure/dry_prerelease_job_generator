@@ -10,6 +10,7 @@
   <url>http://ros.org/wiki/job_generation</url>
   <depend package="hudson"/>
   <depend package="roslib2"/>
+  <depend package="roslib"/>
 
 </package>
 
