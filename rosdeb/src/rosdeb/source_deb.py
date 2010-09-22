@@ -171,6 +171,15 @@ def deb_depends(metadata, distro_name, platform_name):
     stackdeps = ['ros-%s-%s'%(distro_name, debianize_name(s)) for s in stackdeps]
     return rosdeps + stackdeps
         
+def download_control(stack_name, stack_version):
+    url = 'https://code.ros.org/svn/release/download/stacks/%(stack_name)s/%(stack_name)s-%(stack_version)s/%(stack_name)-%(stack_version)s.yaml'
+    url = url%locals()
+    import urllib2
+    try:
+        return yaml.load(urllib2.urlopen(url))
+    except:
+        raise BuildFailure("Problem fetching yaml info for %s %s (%s).\nThis yaml info is usually created when a release is uploaded. If it is missing, either the stack version is wrong, or the release did not occur correctly."%(stack_name, stack_version, url))
+
 def control_file(metadata, distro_name, platform_name):
     data = metadata.copy()
     data['description-full'] = metadata['description-full'].rstrip()

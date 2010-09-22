@@ -269,6 +269,21 @@ def stack_rosdeps(stack_name, stack_dir, platform):
 
     return deb_deps
         
+def send_email(smtp_server, from_addr, to_addrs, subject, text):
+    import smtplib
+    from email.mime.text import MIMEText
+
+    msg = MIMEText(text)
+
+    msg['From'] = from_addr
+    msg['To'] = to_addrs
+    msg['Subject'] = subject
+
+    s = smtplib.SMTP(smtp_server)
+    print 'Sending mail to %s'%(to_addrs)
+    s.sendmail(msg['From'], [msg['To']], msg.as_string())
+    s.quit()
+
 if __name__ == '__main__':
     import roslib.stacks
     from rosdeb.rosutil import convert_html_to_text
@@ -280,3 +295,4 @@ if __name__ == '__main__':
             print '='*80
             print stack_name
             print convert_html_to_text(m.description)
+
