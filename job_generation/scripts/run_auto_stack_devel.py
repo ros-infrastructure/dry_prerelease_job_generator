@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-from roslib import distro, stack_manifest
+from roslib import stack_manifest
 from jobs_common import *
 import sys
 import os
@@ -36,11 +36,6 @@ def main():
     env['ROS_ROOT'] = '/opt/ros/%s/ros'%options.rosdistro
     env['PATH'] = '/opt/ros/%s/ros/bin:%s'%(options.rosdistro, os.environ['PATH'])
     stack_dir = env['WORKSPACE']+'/'+options.stack
-
-
-    # Parse distro file
-    rosdistro_obj = distro.Distro(ROSDISTRO_MAP[options.rosdistro])
-    print 'Operating on ROS distro %s'%rosdistro_obj.release_name
 
 
     # Install Debian packages of stack dependencies
