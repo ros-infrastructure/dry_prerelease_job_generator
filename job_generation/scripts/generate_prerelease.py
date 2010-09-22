@@ -158,7 +158,6 @@ println &quot;${build_failures_context}&quot;&#xd;
 
 
 import roslib; roslib.load_manifest("job_generation")
-from roslib import distro
 from jobs_common import *
 import hudson
 import urllib
@@ -206,10 +205,6 @@ def main():
         print 'Please provide the ros distro you want to test: --rosdistro cturtle'
         return
 
-    # Parse distro file
-    distro_obj = distro.Distro(ROSDISTRO_MAP[options.rosdistro])
-    print 'Operating on ROS distro %s'%distro_obj.release_name
-
     # parse username and password
     if len(args) == 2:
         username = args[0]
@@ -221,7 +216,7 @@ def main():
         password = info[1]
 
     # generate hudson config files
-    prerelease_configs = create_prerelease_configs(distro_obj.release_name, options.stacks, options.email)
+    prerelease_configs = create_prerelease_configs(options.rosdistro, options.stacks, options.email)
     hudson_instance = hudson.Hudson(SERVER, username, password)
 
     # send prerelease tests to Hudson
