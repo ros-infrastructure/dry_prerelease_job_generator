@@ -152,13 +152,14 @@ def _checkout_command(argv):
     stack_uri = stack.distro_svn
     print 'checking out %s from %s' % (stack_name, stack_uri)
     stack_root = os.path.join(stacks_root, stack_name)
-    
-    if stack.user_svn is not None:
-      if stack.pass_svn is None:
-        raise DistroException("stack '%s' has 'user-svn' key but no 'pass-svn' key"%stack_name)
-      subprocess.check_call(['/usr/bin/svn', 'co', '--no-auth-cache', '--username', stack.user_svn, '--password', stack.pass_svn, stack_uri, stack_root])
-    else:
-      subprocess.check_call(['/usr/bin/svn', 'co', stack_uri, stack_root])
+
+    if 0:
+      # user/pass code have been removed from rosdistro for now, awaiting re-implementation (and use case)
+      if stack.user_svn is not None:
+        if stack.pass_svn is None:
+          raise DistroException("stack '%s' has 'user-svn' key but no 'pass-svn' key"%stack_name)
+        subprocess.check_call(['/usr/bin/svn', 'co', '--no-auth-cache', '--username', stack.user_svn, '--password', stack.pass_svn, stack_uri, stack_root])
+    subprocess.check_call(['/usr/bin/svn', 'co', stack_uri, stack_root])
   # ensure that ros is built, for rospack
   call_ros(workspace, 'rosmake', ['--rosdep-install','--bootstrap','--rosdep-yes'])
 
