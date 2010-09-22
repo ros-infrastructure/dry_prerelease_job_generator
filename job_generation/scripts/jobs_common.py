@@ -27,7 +27,7 @@ def stacks_to_debs(stack_list, rosdistro):
 def stack_to_rosinstall(stack, stack_map, branch):
     if stack == '' or not stack in stack_map:
         return ''
-    vcs = stack_map[stack].cvs_config
+    vcs = stack_map[stack].vcs_config
     return "- %s: {uri: '%s', local-name: '%s'}\n"%(vcs.type, eval('vcs.%s'%branch), stack)
 
 def stacks_to_rosinstall(stack_list, stack_map, svn='distro_svn'):
