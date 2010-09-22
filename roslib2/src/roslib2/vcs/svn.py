@@ -106,8 +106,9 @@ class SVNConfig(object):
     """
     
     def __init__(self):
-        self.dev     = None
-        self.distro_tag  = None
+        self.type = 'svn'
+        self.dev = None
+        self.distro_tag = None
         self.release_tag = None
 
         # anonymously readable version of URLs above. Some repos have

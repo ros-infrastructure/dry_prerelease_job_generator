@@ -99,6 +99,7 @@ class HGConfig(object):
      """
 
     def __init__(self):
+        self.type = 'hg'
         self.repo_uri      = None
         self.dev_branch    = None
         self.distro_branch = None
