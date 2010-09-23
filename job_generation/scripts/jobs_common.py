@@ -1,12 +1,12 @@
 #!/usr/bin/python
 
-# ROSDISTRO_MAP = {'unstable': 'http://www.ros.org/distros/unstable.rosdistro',
-#                  'cturtle': 'http://www.ros.org/distros/cturtle.rosdistro',
-#                  'boxturtle': 'http://www.ros.org/distros/boxturtle.rosdistro'}
-
-ROSDISTRO_MAP = {'unstable': 'https://code.ros.org/svn/release/trunk/distros/unstable.rosdistro',
-                 'cturtle': 'https://code.ros.org/svn/release/trunk/distros//cturtle.rosdistro',
+ROSDISTRO_MAP = {'unstable': 'http://www.ros.org/distros/unstable.rosdistro',
+                 'cturtle': 'http://www.ros.org/distros/cturtle.rosdistro',
                  'boxturtle': 'http://www.ros.org/distros/boxturtle.rosdistro'}
+
+# ROSDISTRO_MAP = {'unstable': 'https://code.ros.org/svn/release/trunk/distros/unstable.rosdistro',
+#                  'cturtle': 'https://code.ros.org/svn/release/trunk/distros//cturtle.rosdistro',
+#                  'boxturtle': 'http://www.ros.org/distros/boxturtle.rosdistro'}
 
 # the supported Ubuntu distro's for each ros distro
 ARCHES = ['amd64', 'i386']
