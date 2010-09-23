@@ -159,6 +159,7 @@ println &quot;${build_failures_context}&quot;&#xd;
 
 
 import roslib; roslib.load_manifest("job_generation")
+from roslib2 import distro
 from jobs_common import *
 import hudson
 import urllib
@@ -216,6 +217,13 @@ def main():
         username = info[0]
         password = info[1]
 
+    # Parse distro file
+    distro_obj = distro.Distro(ROSDISTRO_MAP[options.rosdistro])
+    for s in options.stacks:
+        if not s in distro_obj.stacks.keys():
+            print "Stack %s is not specified in distro file"%s
+            return False
+        
     # generate hudson config files
     prerelease_configs = create_prerelease_configs(options.rosdistro, options.stacks, options.email)
     hudson_instance = hudson.Hudson(SERVER, username, password)
