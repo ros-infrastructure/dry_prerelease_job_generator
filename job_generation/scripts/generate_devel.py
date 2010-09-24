@@ -1,21 +1,6 @@
 #!/usr/bin/python
 
-
-
-# template to create develop hudscon configuration file
-HUDSON_DEVEL_CONFIG = """<?xml version='1.0' encoding='UTF-8'?>
-<project> 
-  <description>Build of STACKNAME development branch for ROSDISTRO on UBUNTUDISTRO, ARCH</description> 
- <logRotator> 
-    <daysToKeep>21</daysToKeep> 
-    <numToKeep>-1</numToKeep> 
-  </logRotator> 
-  <keepDependencies>false</keepDependencies> 
-  <properties> 
-    <hudson.plugins.trac.TracProjectProperty> 
-      <tracWebsite>http://code.ros.org/trac/ros/</tracWebsite> 
-    </hudson.plugins.trac.TracProjectProperty> 
-  </properties> 
+HUDSON_SVN = """
   <scm class="hudson.scm.SubversionSCM"> 
     <locations> 
       <hudson.scm.SubversionSCM_-ModuleLocation> 
@@ -31,6 +16,37 @@ HUDSON_DEVEL_CONFIG = """<?xml version='1.0' encoding='UTF-8'?>
     <excludedRevprop></excludedRevprop> 
     <excludedCommitMessages></excludedCommitMessages> 
   </scm> 
+"""
+
+HUDSON_HG = """
+  <scm class="hudson.plugins.mercurial.MercurialSCM">
+    <source>STACKURI</source>
+    <modules></modules>
+    <subdir>STACKNAME</subdir>
+    <clean>false</clean>
+    <forest>false</forest>
+    <branch>STACKBRANCH</branch>
+    <browser class="hudson.plugins.mercurial.browser.HgWeb">
+      <url>https://stack-nxt.foote-ros-pkg.googlecode.com/hg/</url>
+    </browser>
+  </scm>
+"""
+
+# template to create develop hudscon configuration file
+HUDSON_DEVEL_CONFIG = """<?xml version='1.0' encoding='UTF-8'?>
+<project> 
+  <description>Build of STACKNAME development branch for ROSDISTRO on UBUNTUDISTRO, ARCH</description> 
+ <logRotator> 
+    <daysToKeep>21</daysToKeep> 
+    <numToKeep>-1</numToKeep> 
+  </logRotator> 
+  <keepDependencies>false</keepDependencies> 
+  <properties> 
+    <hudson.plugins.trac.TracProjectProperty> 
+      <tracWebsite>http://code.ros.org/trac/ros/</tracWebsite> 
+    </hudson.plugins.trac.TracProjectProperty> 
+  </properties> 
+  HUDSON_VCS
   <assignedNode>hudson-devel</assignedNode>
   <canRoam>false</canRoam> 
   <disabled>false</disabled> 
@@ -184,10 +200,10 @@ def devel_job_name(rosdistro, stack_name, ubuntu, arch):
     return "_".join(['devel', rosdistro, stack_name, ubuntu, arch])
 
 
-def create_devel_configs(rosdistro, stack_name, stack_uri):
+def create_devel_configs(rosdistro, stack):
     # create gold distro
-    gold_job = devel_job_name(rosdistro, stack_name, UBUNTU_DISTRO_MAP[rosdistro][0], ARCHES[0])
-    gold_children = [devel_job_name(rosdistro, stack_name, u, a)
+    gold_job = devel_job_name(rosdistro, stack.name, UBUNTU_DISTRO_MAP[rosdistro][0], ARCHES[0])
+    gold_children = [devel_job_name(rosdistro, stack.name, u, a)
                      for a in ARCHES for u in UBUNTU_DISTRO_MAP[rosdistro]]
     gold_children.remove(gold_job)
 
@@ -195,8 +211,19 @@ def create_devel_configs(rosdistro, stack_name, stack_uri):
     configs = {}
     for ubuntudistro in UBUNTU_DISTRO_MAP[rosdistro]:
         for arch in ARCHES:
-            name = devel_job_name(rosdistro, stack_name, ubuntudistro, arch)
+            name = devel_job_name(rosdistro, stack.name, ubuntudistro, arch)
 
+            # create VCS block
+            if stack.vcs_config.type == 'svn':
+                hudson_vcs = HUDSON_SVN
+                hudson_vcs = hudson_vcs.replace('STACKNAME', stack.name)
+                hudson_vcs = hudson_vcs.replace('STACKURI', stack.vcs_config.anon_dev)
+            elif stack.vcs_config.type == 'hg':
+                hudson_vcs = HUDSON_HG
+                hudson_vcs = hudson_vcs.replace('STACKBRANCH', stack.vcs_config.dev_branch)
+                hudson_vcs = hudson_vcs.replace('STACKURI', stack.vcs_config.repo_uri)
+                hudson_vcs = hudson_vcs.replace('STACKNAME', stack.name)
+                
             # check if this is the 'gold' job
             time_trigger = ''
             job_children = ''
@@ -208,8 +235,8 @@ def create_devel_configs(rosdistro, stack_name, stack_uri):
             hudson_config = hudson_config.replace('UBUNTUDISTRO', ubuntudistro)
             hudson_config = hudson_config.replace('ARCH', arch)
             hudson_config = hudson_config.replace('ROSDISTRO', rosdistro)
-            hudson_config = hudson_config.replace('STACKNAME', stack_name)   
-            hudson_config = hudson_config.replace('STACKURI', stack_uri)
+            hudson_config = hudson_config.replace('STACKNAME', stack.name)   
+            hudson_config = hudson_config.replace('HUDSON_VCS', hudson_vcs)
             hudson_config = hudson_config.replace('TIME_TRIGGER', time_trigger)
             hudson_config = hudson_config.replace('JOB_CHILDREN', job_children)
             hudson_config = hudson_config.replace('EMAIL', 'wim+hudson_auto_stack@willowgarage.com')
@@ -250,7 +277,7 @@ def main():
     else:
         stack_list = distro_obj.stacks
     for stack_name in stack_list:
-        devel_configs.update(create_devel_configs(distro_obj.release_name, stack_name, distro_obj.stacks[stack_name].vcs_config.anon_dev))
+        devel_configs.update(create_devel_configs(distro_obj.release_name, distro_obj.stacks[stack_name]))
     hudson_instance = hudson.Hudson(SERVER, username, password)
 
 
