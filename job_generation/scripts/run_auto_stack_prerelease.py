@@ -53,7 +53,7 @@ def main():
     print 'Installing the stacks to test from source'
     rosinstall = ''
     for stack in options.stacklist:
-        rosinstall += stack_to_rosinstall(stack, rosdistro_obj.stacks, 'anon_dev')
+        rosinstall += stack_to_rosinstall(rosdistro_obj[stack], 'devel')
     print rosinstall
     rosinstall_file = 'stack_overlay.rosinstall'
     with open(rosinstall_file, 'w') as f:
@@ -96,7 +96,7 @@ def main():
     for stack in options.stacklist:
         res, err = subprocess.Popen(('rosstack depends-on %s'%stack).split(' '), stdout=subprocess.PIPE, env=env).communicate()
         print res
-        rosinstall += stacks_to_rosinstall(res.split('\n'), rosdistro_obj.stacks, 'anon_distro_tag')
+        rosinstall += stacks_to_rosinstall(res.split('\n'), rosdistro_obj.stacks, 'distro')
     print rosinstall
     rosinstall_file = 'depends_on_overlay.rosinstall'
     with open(rosinstall_file, 'w') as f:
