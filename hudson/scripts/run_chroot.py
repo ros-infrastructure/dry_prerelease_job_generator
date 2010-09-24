@@ -10,7 +10,8 @@ import traceback
 import urllib
 
 #ROSBUILD_SSH_URI = 'https://home.willowgarage.com/wgwiki/Servers/hudson?action=AttachFile&do=get&target=rosbuild-ssh.tar'
-ROSBUILD_SSH_URI = 'http://wgs24.willowgarage.com/hudson_slave_configuration_files/rosbuild-ssh.tar'
+ROSBUILD_SSH_URI = 'http://wgs
+24.willowgarage.com/hudson_slave_configuration_files/rosbuild-ssh.tar'
 
 # Valid options
 valid_archs = ['i386', 'i686', 'amd64']
@@ -481,7 +482,7 @@ def run_chroot(options, path, workspace):
         cmd = "apt-get update".split()
         chrti.execute(cmd)
 
-        cmd = "apt-get install -y --force-yes build-essential python-yaml cmake subversion wget python-setuptools".split()
+        cmd = "apt-get install -y --force-yes build-essential python-yaml cmake subversion mercurial wget python-setuptools".split()
         chrti.execute(cmd)
 
         cmd = "sudo easy_install -U rosinstall".split()
