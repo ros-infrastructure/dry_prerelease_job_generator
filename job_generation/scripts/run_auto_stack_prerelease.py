@@ -58,6 +58,7 @@ def main():
     rosinstall_file = 'stack_overlay.rosinstall'
     with open(rosinstall_file, 'w') as f:
         f.write(rosinstall)
+    print rosinstall
     subprocess.Popen(('rosinstall %s /opt/ros/%s %s'%(STACK_DIR, options.rosdistro, rosinstall_file)).split(' ')).communicate()
 
 
@@ -101,6 +102,7 @@ def main():
     rosinstall_file = 'depends_on_overlay.rosinstall'
     with open(rosinstall_file, 'w') as f:
         f.write(rosinstall)
+    print rosinstall
     subprocess.Popen(('rosinstall %s /opt/ros/%s %s'%(DEPENDS_ON_DIR, options.rosdistro, rosinstall_file)).split(' ')).communicate()
 
 
