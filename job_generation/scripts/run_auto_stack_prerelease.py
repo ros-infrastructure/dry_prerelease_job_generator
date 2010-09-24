@@ -53,7 +53,7 @@ def main():
     print 'Installing the stacks to test from source'
     rosinstall = ''
     for stack in options.stacklist:
-        rosinstall += stack_to_rosinstall(rosdistro_obj[stack], 'devel')
+        rosinstall += stack_to_rosinstall(rosdistro_obj.stacks[stack], 'devel')
     print rosinstall
     rosinstall_file = 'stack_overlay.rosinstall'
     with open(rosinstall_file, 'w') as f:
