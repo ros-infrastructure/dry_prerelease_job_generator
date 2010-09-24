@@ -10,8 +10,7 @@ import traceback
 import urllib
 
 #ROSBUILD_SSH_URI = 'https://home.willowgarage.com/wgwiki/Servers/hudson?action=AttachFile&do=get&target=rosbuild-ssh.tar'
-ROSBUILD_SSH_URI = 'http://wgs
-24.willowgarage.com/hudson_slave_configuration_files/rosbuild-ssh.tar'
+ROSBUILD_SSH_URI = 'http://wgs24.willowgarage.com/hudson_slave_configuration_files/rosbuild-ssh.tar'
 
 # Valid options
 valid_archs = ['i386', 'i686', 'amd64']
