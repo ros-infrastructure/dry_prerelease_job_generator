@@ -1,1 +1,19 @@
-include $(shell rospack find mk)/cmake.mk
+all:
+	mkdir -p export/ros-prerelease
+	svn export --force $(shell rospack find job_generation)/src/job_generation/jobs_common.py export/ros-prerelease/jobs_common.py
+	svn export --force $(shell rospack find job_generation)/src/job_generation/generate_prerelease.py export/ros-prerelease/ros-prerelease.py
+	svn export --force $(shell rospack find hudson)/src/hudson.py export/ros-prerelease/hudson.py
+
+
+clean_dist:
+	-rm -f MANIFEST
+	-rm -rf dist
+
+distro: all clean_dist
+	python setup.py sdist
+
+clean: clean_dist
+	rm -rf export/ros-prerelease
+
+install: distro
+	sudo checkinstall python setup.py install

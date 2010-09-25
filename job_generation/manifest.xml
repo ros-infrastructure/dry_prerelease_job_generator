@@ -1,16 +1,14 @@
 <package>
-  <description brief="job_generation">
+  <description brief="rosinstall">
 
-     job_generation
+     rosinstall
 
   </description>
-  <author>Wim Meeussen</author>
+  <author>Tully Foote</author>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
-  <url>http://ros.org/wiki/job_generation</url>
-  <depend package="hudson"/>
+  <url>http://ros.org/wiki/rosinstall</url>
   <depend package="roslib2"/>
-  <depend package="roslib"/>
 
 </package>
 

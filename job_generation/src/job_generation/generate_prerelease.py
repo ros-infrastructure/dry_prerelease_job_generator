@@ -157,9 +157,6 @@ println &quot;${build_failures_context}&quot;&#xd;
 </project>
 """
 
-
-import roslib; roslib.load_manifest("job_generation")
-from roslib2 import distro
 from jobs_common import *
 import hudson
 import urllib
@@ -209,11 +206,6 @@ def main():
     if not options.stacks:
         print 'Please provide at least one stack to test: --stack pr2_doors'
         return
-    distro_obj = distro.Distro(ROSDISTRO_MAP[options.rosdistro])
-    for stack in options.stacks:
-        if not stack in distro_obj.stacks.keys():
-            print 'You provided an invalid "--stack %s", which is not specified in distro file'%stack
-            return 
         
     # generate hudson config files
     info = urllib.urlopen(CONFIG_PATH).read().split(',')
