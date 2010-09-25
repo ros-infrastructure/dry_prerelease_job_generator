@@ -166,7 +166,7 @@ class ChrootInstance:
         #shutil.rmtree(self.chroot_path, True)
         cmd = ["sudo", "rm", "-rf", self.chroot_path]
         print "executing", cmd
-        subprocess.check_call(cmd)
+        subprocess.call(cmd)
 
     def unmount_proc_sys(self):
         cmd = ['sudo', 'umount', '-f',  "%s/proc"%self.chroot_path]
