@@ -117,7 +117,7 @@ def load_vcs_config(rules, rule_eval):
 
         vcs_config.repo_uri      = rule_eval(rules['hg']['uri'])
         vcs_config.dev_branch    = rule_eval(rules['hg']['dev-branch'])
-        vcs_config.distro_branch = rule_eval(rules['hg']['distro-branch'])
+        vcs_config.distro_tag    = rule_eval(rules['hg']['distro-tag'])
         vcs_config.release_tag   = rule_eval(rules['hg']['release-tag'])
 
     return vcs_config

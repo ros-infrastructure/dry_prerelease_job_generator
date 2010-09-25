@@ -94,7 +94,7 @@ class HGConfig(object):
 
      * repo_uri: base URI of repo
      * dev_branch: hg branch the code is developed
-     * distro_branch: branch of code for a specific ROS distribution
+     * distro_tag: a tag of the latest released code for a specific ROS distribution
      * release_tag: a tag of the code for a specific release
      """
 
@@ -102,11 +102,11 @@ class HGConfig(object):
         self.type = 'hg'
         self.repo_uri      = None
         self.dev_branch    = None
-        self.distro_branch = None
+        self.distro_tag    = None
         self.release_tag   = None
 
     def __eq__(self, other):
         return self.repo_uri == other.repo_uri and \
             self.dev_branch == other.dev_branch and \
             self.release_tag == other.release_tag and \
-            self.distro_branch == other.distro_branch
+            self.distro_tag == other.distro_tag
