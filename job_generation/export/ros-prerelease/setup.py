@@ -7,7 +7,7 @@ setup(name='ros-prerelease',
       author = "Wim Meeussen", 
       author_email = "wim@willowgarage.com",
       url = "http://www.ros.org/wiki/ros-prerelease",
-      download_url = "http://pypi.python.org/packages/source/r/ros-prerelease-0.1.0.tar.gz", 
+      download_url = "http://pypi.python.org/packages/source/r/ros-prerelease/ros-prerelease-0.1.0.tar.gz", 
       keywords = ["ROS"],
       classifiers = [
         "Programming Language :: Python", 
