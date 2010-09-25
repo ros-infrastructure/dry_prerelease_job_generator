@@ -210,7 +210,7 @@ def main():
     # generate hudson config files
     info = urllib.urlopen(CONFIG_PATH).read().split(',')
     prerelease_configs = create_prerelease_configs(options.rosdistro, options.stacks, options.email)
-    hudson_instance = hudson.Hudson(SERVER, info[0], info[1])
+    hudson_instance = ros_prerelease_hudson.Hudson(SERVER, info[0], info[1])
 
     print 'Creating pre-release Hudson jobs:'
     # send prerelease tests to Hudson
