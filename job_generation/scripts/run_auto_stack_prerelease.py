@@ -88,7 +88,7 @@ def main():
 
 
     # Install Debian packages of ALL stacks in distro
-    print 'Installing all stacks of ros distro: %s'%options.rosdistro
+    print 'Installing all stacks of ros distro %s: %s'%(options.rosdistro, str(rosdistro_obj.stacks.keys()))
     subprocess.Popen(('sudo apt-get install %s --yes'%(stacks_to_debs(rosdistro_obj.stacks.keys(), options.rosdistro))).split(' ')).communicate()
     
 
@@ -99,6 +99,7 @@ def main():
     print "ENV end"
     rosinstall = ''
     for stack in options.stacklist:
+        print 'Installing dependencies of stack %s'%stack
         res, err = subprocess.Popen(('rosstack depends-on %s'%stack).split(' '), stdout=subprocess.PIPE, env=env).communicate()
         print res
         rosinstall += stacks_to_rosinstall(res.split('\n'), rosdistro_obj.stacks, 'distro')
