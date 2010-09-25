@@ -3,8 +3,6 @@ from distutils.core import setup
 
 setup(name='ros-prerelease',
       version='0.1.0',
-      packages=['ros-prerelease'],
-      package_dir = {'':'src'},
       scripts = ["ros-prerelease.py", "jobs_common.py", "hudson.py"],
       author = "Wim Meeussen", 
       author_email = "wim@willowgarage.com",

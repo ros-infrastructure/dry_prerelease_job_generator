@@ -157,8 +157,8 @@ println &quot;${build_failures_context}&quot;&#xd;
 </project>
 """
 
-from jobs_common import *
-import hudson
+from ros_prerelease_jobs_common import *
+import ros_prerelease_hudson
 import urllib
 import optparse 
 
