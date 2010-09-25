@@ -89,7 +89,7 @@ def main():
 
     # Install Debian packages of ALL stacks in distro
     print 'Installing all stacks of ros distro %s: %s'%(options.rosdistro, str(rosdistro_obj.stacks.keys()))
-    for s in rosdistro_obj.stacks():
+    for s in rosdistro_obj.stacks:
         subprocess.Popen(('sudo apt-get install %s --yes'%(stack_to_debs(stack, options.rosdistro))).split(' ')).communicate()
     
 
