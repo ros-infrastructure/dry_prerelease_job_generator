@@ -606,8 +606,7 @@ print "Checking for abandoned chroots"
 if not clean_up_chroots():
     print "Failed to clean up abandoned chroots, continuing."
 
-cmd = ['sudo', 'mkdir', '-p', path]
-subprocess.check_call(cmd)
+subprocess.check_call(['sudo', 'mkdir', '-p', path])
 
 
 if options.ramdisk:
