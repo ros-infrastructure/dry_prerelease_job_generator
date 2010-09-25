@@ -191,7 +191,7 @@ def main():
     parser.add_option('--delete', dest = 'delete', default=False, action='store_true',
                       help='Delete jobs from Hudson')    
     parser.add_option('--stack', dest = 'stacks', action='append',
-                      help="Specify the stacks to operate on (defaults to all stacks)")
+                      help="Specify the stacks to operate on. You can use this argument multiple times to build multiple stacks at onece")
     parser.add_option('--rosdistro', dest = 'rosdistro', action='store',
                       help="Specify the ros distro to operate on (defaults to cturtle)")
     parser.add_option('--email', dest='email', action='store',
@@ -200,34 +200,27 @@ def main():
     if not options.email:
         print 'Please provide your email address: --email you@willowgarage.com'
         return
-    if not options.stacks:
-        print 'Please provide at least one stack to test: --stack pr2_doors'
-        return
     if not options.rosdistro:
         print 'Please provide the ros distro you want to test: --rosdistro cturtle'
         return
-
-    # parse username and password
-    if len(args) == 2:
-        username = args[0]
-        password = args[1]
-    else:
-        url = urllib.urlopen('http://wgs24.willowgarage.com/hudson-html/hds.xml')
-        info = url.read().split(',')
-        username = info[0]
-        password = info[1]
-
-    # Parse distro file
+    if not options.rosdistro in UBUNTU_DISTRO_MAP.keys():
+        print 'You profided an invalid "--rosdistro %s" argument. Options are %s'%(options.rosdistro, UBUNTU_DISTRO_MAP.keys())
+        return
+    if not options.stacks:
+        print 'Please provide at least one stack to test: --stack pr2_doors'
+        return
     distro_obj = distro.Distro(ROSDISTRO_MAP[options.rosdistro])
-    for s in options.stacks:
-        if not s in distro_obj.stacks.keys():
-            print "Stack %s is not specified in distro file"%s
-            return False
+    for stack in options.stacks:
+        if not stack in distro_obj.stacks.keys():
+            print 'You provided an invalid "--stack %s", which is not specified in distro file'%stack
+            return 
         
     # generate hudson config files
+    info = urllib.urlopen(CONFIG_PATH).read().split(',')
     prerelease_configs = create_prerelease_configs(options.rosdistro, options.stacks, options.email)
-    hudson_instance = hudson.Hudson(SERVER, username, password)
+    hudson_instance = hudson.Hudson(SERVER, info[0], info[1])
 
+    print 'Creating pre-release Hudson jobs:'
     # send prerelease tests to Hudson
     for job_name in prerelease_configs:
         exists = hudson_instance.job_exists(job_name)
@@ -241,15 +234,16 @@ def main():
         elif exists:
             hudson_instance.reconfig_job(job_name, prerelease_configs[job_name])
             hudson_instance.build_job(job_name)
-            print "Reconfigure job %s"%job_name
+            print "  - %s"%job_name
 
         # create job
         elif not exists:
             hudson_instance.create_job(job_name, prerelease_configs[job_name])
             hudson_instance.build_job(job_name)
-            print "Creating new job %s"%job_name
+            print "  - %s"%job_name
 
-
+    print 'You will receive %d emails on %s, one for each job'%(len(prerelease_configs), options.email)
+    print 'You can follow the progress of these jobs on <%s/view/Pre-Release>'%(SERVER)
 
 if __name__ == '__main__':
     main()

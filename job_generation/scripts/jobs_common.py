@@ -1,9 +1,5 @@
 #!/usr/bin/python
 
-# ROSDISTRO_MAP = {'unstable': 'http://www.ros.org/distros/unstable.rosdistro',
-#                  'cturtle': 'http://www.ros.org/distros/cturtle.rosdistro',
-#                  'boxturtle': 'http://www.ros.org/distros/boxturtle.rosdistro'}
-
 ROSDISTRO_MAP = {'unstable': 'https://code.ros.org/svn/release/trunk/distros/unstable.rosdistro',
                  'cturtle': 'https://code.ros.org/svn/release/trunk/distros//cturtle.rosdistro',
                  'boxturtle': 'http://www.ros.org/distros/boxturtle.rosdistro'}
@@ -17,7 +13,10 @@ UBUNTU_DISTRO_MAP = {'unstable': ['lucid','karmic'],
                      'boxturtle':['hardy','karmic', 'jaunty']}
 
 # path to hudson server
-SERVER = 'http://build.willowgarage.com/'
+SERVER = 'http://build.willowgarage.com'
+
+# config path
+CONFIG_PATH = 'http://wgs24.willowgarage.com/hudson-html/hds.xml'
 
 def stack_to_deb(stack, rosdistro):
     return '-'.join(['ros', rosdistro, str(stack).replace('_','-')])
