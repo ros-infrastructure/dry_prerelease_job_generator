@@ -47,7 +47,7 @@ cd \$INSTALL_DIR
 wget -m -nd http://code.ros.org/svn/ros/installers/trunk/hudson/hudson_helper 
 chmod +x hudson_helper
 svn co https://code.ros.org/svn/ros/stacks/ros_release/trunk ros_release
-./ros_release/job_generation/scripts/run_auto_stack_prerelease.py STACKARGS --rosdistro ROSDISTRO
+./ros_release/job_generation/src/job_generation/run_auto_stack_prerelease.py STACKARGS --rosdistro ROSDISTRO
 
 echo "_________________________________END SCRIPT_______________________________________"
 DELIM
