@@ -54,6 +54,7 @@ def main():
     rosinstall = ''
     for stack in options.stacklist:
         rosinstall += stack_to_rosinstall(rosdistro_obj.stacks[stack], 'devel')
+    print "ROSINSTALL STACK"
     print rosinstall
     rosinstall_file = 'stack_overlay.rosinstall'
     with open(rosinstall_file, 'w') as f:
@@ -102,6 +103,7 @@ def main():
     rosinstall_file = 'depends_on_overlay.rosinstall'
     with open(rosinstall_file, 'w') as f:
         f.write(rosinstall)
+    print "ROSINSTALL ALL"
     print rosinstall
     subprocess.Popen(('rosinstall %s /opt/ros/%s %s'%(DEPENDS_ON_DIR, options.rosdistro, rosinstall_file)).split(' ')).communicate()
 
