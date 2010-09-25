@@ -3,7 +3,7 @@ from distutils.core import setup
 
 setup(name='ros-prerelease',
       version='0.1.0',
-      scripts = ["ros-prerelease.py", "jobs_common.py", "hudson.py"],
+      scripts = ["ros-prerelease.py", "ros_prerelease_jobs_common.py", "ros_prerelease_hudson.py"],
       author = "Wim Meeussen", 
       author_email = "wim@willowgarage.com",
       url = "http://www.ros.org/wiki/ros-prerelease",
