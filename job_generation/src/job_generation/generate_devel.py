@@ -86,6 +86,9 @@ DELIM
 
 set -o errexit
 
+rm -rf $WORKSPACE/test_results
+rm -rf $WORKSPACE/test_output
+
 wget https://code.ros.org/svn/ros/stacks/ros_release/trunk/hudson/scripts/run_chroot.py --no-check-certificate -O $WORKSPACE/run_chroot.py
 chmod +x $WORKSPACE/run_chroot.py
 cd $WORKSPACE &amp;&amp; $WORKSPACE/run_chroot.py --distro=UBUNTUDISTRO --arch=ARCH  --ramdisk --script=$WORKSPACE/script.sh
