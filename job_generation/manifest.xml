@@ -9,6 +9,7 @@
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/rosinstall</url>
   <depend package="roslib2"/>
+  <depend package="hudson"/>
 
 </package>
 
