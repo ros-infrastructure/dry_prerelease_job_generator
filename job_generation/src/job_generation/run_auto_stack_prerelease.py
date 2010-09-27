@@ -40,11 +40,7 @@ def main():
                                                              os.environ['INSTALL_DIR']+'/'+STACK_DIR,
                                                              os.environ['INSTALL_DIR']+'/'+DEPENDS_ON_DIR,
                                                              options.rosdistro)
-    if 'ros' in options.stacklist:
-        env['ROS_ROOT'] = os.environ['INSTALL_DIR']+'/'+STACK_DIR
-        print "We're building ROS, so setting the ROS_ROOT to %s"%(env['ROS_ROOT'])
-    else:
-        env['ROS_ROOT'] = '/opt/ros/%s/ros'%options.rosdistro
+    env['ROS_ROOT'] = '/opt/ros/%s/ros'%options.rosdistro
     env['PATH'] = '/opt/ros/%s/ros/bin:%s'%(options.rosdistro, os.environ['PATH'])
 
 
@@ -61,9 +57,7 @@ def main():
     rosinstall_file = 'stack_overlay.rosinstall'
     with open(rosinstall_file, 'w') as f:
         f.write(rosinstall)
-    print "ROSINSTALL STACK begin"
     print rosinstall
-    print "ROSINSTALL STACK end"
     subprocess.Popen(('rosinstall %s /opt/ros/%s %s'%(STACK_DIR, options.rosdistro, rosinstall_file)).split(' ')).communicate()
 
 
@@ -83,6 +77,9 @@ def main():
 
     
     # Run hudson helper for stacks only
+    if 'ros' in options.stacklist:
+        env['ROS_ROOT'] = os.environ['INSTALL_DIR']+'/'+STACK_DIR
+        print "We're building ROS, so setting the ROS_ROOT to %s"%(env['ROS_ROOT'])
     print 'Running Hudson Helper'
     env['ROS_TEST_RESULTS_DIR'] = os.environ['ROS_TEST_RESULTS_DIR'] + '/stack'
     helper = subprocess.Popen(('./hudson_helper --dir-test %s build'%STACK_DIR).split(' '), env=env)
