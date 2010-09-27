@@ -40,7 +40,10 @@ def main():
                                                              os.environ['INSTALL_DIR']+'/'+STACK_DIR,
                                                              os.environ['INSTALL_DIR']+'/'+DEPENDS_ON_DIR,
                                                              options.rosdistro)
-    env['ROS_ROOT'] = '/opt/ros/%s/ros'%options.rosdistro
+    if 'ros' in options.stacklist:
+        env['ROS_ROOT'] = os.environ['INSTALL_DIR']+'/'+STACK_DIR
+    else:
+        env['ROS_ROOT'] = '/opt/ros/%s/ros'%options.rosdistro
     env['PATH'] = '/opt/ros/%s/ros/bin:%s'%(options.rosdistro, os.environ['PATH'])
 
 
