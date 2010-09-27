@@ -223,7 +223,7 @@ rosrun rostest cleanunit
     subprocess.check_call(archcmd + ['sudo', 'pbuilder', '--execute', '--basetgz', distro_tgz, '--configfile', conf_file, '--bindmounts', results_dir, '--buildplace', build_dir, verify_script])
 
     if testresults:
-        shutil.copytree(os.path.join(results_dir, '_hudson', os.path.joint(testresults, '_hudson'))
+        shutil.copytree(os.path.join(results_dir, '_hudson', os.path.joint(testresults, '_hudson')))
 
 
 
