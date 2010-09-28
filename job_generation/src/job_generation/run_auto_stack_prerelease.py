@@ -54,7 +54,7 @@ def main():
     rosinstall = ''
     for stack in options.stacklist:
         rosinstall += stack_to_rosinstall(rosdistro_obj.stacks[stack], 'devel')
-    rosinstall_file = 'stack_overlay.rosinstall'
+    rosinstall_file = '%s.rosinstall'%STACK_DIR
     with open(rosinstall_file, 'w') as f:
         f.write(rosinstall)
     print rosinstall
@@ -78,10 +78,10 @@ def main():
     
     # Run hudson helper for stacks only
     if 'ros' in options.stacklist:
-        env['ROS_ROOT'] = os.environ['INSTALL_DIR']+'/'+STACK_DIR
+        env['ROS_ROOT'] = os.environ['INSTALL_DIR']+'/'+STACK_DIR+'/ros'
         print "We're building ROS, so setting the ROS_ROOT to %s"%(env['ROS_ROOT'])
     print 'Running Hudson Helper'
-    env['ROS_TEST_RESULTS_DIR'] = os.environ['ROS_TEST_RESULTS_DIR'] + '/stack'
+    env['ROS_TEST_RESULTS_DIR'] = os.environ['ROS_TEST_RESULTS_DIR'] + '/' + STACK_DIR
     helper = subprocess.Popen(('./hudson_helper --dir-test %s build'%STACK_DIR).split(' '), env=env)
     helper.communicate()
     if helper.returncode != 0:
@@ -105,7 +105,7 @@ def main():
         res, err = subprocess.Popen(('rosstack depends-on %s'%stack).split(' '), stdout=subprocess.PIPE, env=env).communicate()
         print res
         rosinstall += stacks_to_rosinstall(res.split('\n'), rosdistro_obj.stacks, 'distro')
-    rosinstall_file = 'depends_on_overlay.rosinstall'
+    rosinstall_file = '%s.rosinstall'%DEPENDS_ON_DIR
     with open(rosinstall_file, 'w') as f:
         f.write(rosinstall)
     print "ROSINSTALL ALL begin"
@@ -116,7 +116,7 @@ def main():
 
     # Run hudson helper for all stacks
     print 'Running Hudson Helper'
-    env['ROS_TEST_RESULTS_DIR'] = os.environ['ROS_TEST_RESULTS_DIR'] + '/depends_on'
+    env['ROS_TEST_RESULTS_DIR'] = os.environ['ROS_TEST_RESULTS_DIR'] + '/' + DEPENDS_ON_DIR
     helper = subprocess.Popen(('./hudson_helper --dir-test %s build'%DEPENDS_ON_DIR).split(' '), env=env)
     helper.communicate()
     return helper.returncode
