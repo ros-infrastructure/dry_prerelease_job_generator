@@ -39,7 +39,11 @@ def main():
                                                              os.environ['INSTALL_DIR']+'/'+STACK_DIR,
                                                              os.environ['INSTALL_DIR']+'/'+DEPENDS_ON_DIR,
                                                              options.rosdistro)
-    env['ROS_ROOT'] = '/opt/ros/%s/ros'%options.rosdistro
+    if 'ros' in options.stacklist:
+        env['ROS_ROOT'] = os.environ['INSTALL_DIR']+'/'+STACK_DIR+'/ros'
+        print "We're building ROS, so setting the ROS_ROOT to %s"%(env['ROS_ROOT'])
+    else:
+        env['ROS_ROOT'] = '/opt/ros/%s/ros'%options.rosdistro
     env['PYTHONPATH'] = env['ROS_ROOT']+'/core/roslib/src'
     env['PATH'] = '/opt/ros/%s/ros/bin:%s'%(options.rosdistro, os.environ['PATH'])
 
@@ -73,14 +77,10 @@ def main():
     # Install system dependencies
     print 'Installing system dependencies'
     for stack in options.stacklist:
-        subprocess.Popen(('rosdep install %s -y'%stack).split(' '), env=env).communicate()
+        subprocess.Popen(('rosmake --rosdep-install --rosdep-yes %s'%stack).split(' '), env=env).communicate()
 
     
     # Run hudson helper for stacks only
-    if 'ros' in options.stacklist:
-        env['ROS_ROOT'] = os.environ['INSTALL_DIR']+'/'+STACK_DIR+'/ros'
-        env['PYTHONPATH'] = env['ROS_ROOT']+'/core/roslib/src'
-        print "We're building ROS, so setting the ROS_ROOT to %s"%(env['ROS_ROOT'])
     print 'Running Hudson Helper'
     env['ROS_TEST_RESULTS_DIR'] = os.environ['ROS_TEST_RESULTS_DIR'] + '/' + STACK_DIR
     helper = subprocess.Popen(('./hudson_helper --dir-test %s build'%STACK_DIR).split(' '), env=env)
