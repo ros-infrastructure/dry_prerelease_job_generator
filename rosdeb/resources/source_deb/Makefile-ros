@@ -17,8 +17,6 @@ endif
 	cp setup.sh ${ROS_DISTRO_DIR}/
 	./fixrpath.py ${ROS_DISTRO_DIR}/ros ${ROS_DISTRO_DIR} ${ROS_DISTRO_DIR_FINAL}
 	./fixpc.py ${ROS_DISTRO_DIR}/ros ${ROS_DISTRO_DIR} ${ROS_DISTRO_DIR_FINAL}
-	-mv ${ROS_DISTRO_DIR}/ros/3rdparty/wxswig/bin/swig ${ROS_DISTRO_DIR}/ros/3rdparty/wxswig/bin/swig-real
-	-cp ./swig ${ROS_DISTRO_DIR}/ros/3rdparty/wxswig/bin/swig
 
 clean:
 
