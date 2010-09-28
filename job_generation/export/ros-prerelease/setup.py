@@ -2,12 +2,12 @@
 from distutils.core import setup
 
 setup(name='ros-prerelease',
-      version='0.1.1',
+      version='0.1.3',
       scripts = ["ros-prerelease.py", "ros_prerelease_jobs_common.py", "ros_prerelease_hudson.py"],
       author = "Wim Meeussen", 
       author_email = "wim@willowgarage.com",
       url = "http://www.ros.org/wiki/ros-prerelease",
-      download_url = "http://pypi.python.org/packages/source/r/ros-prerelease/ros-prerelease-0.1.1.tar.gz", 
+      download_url = "http://pypi.python.org/packages/source/r/ros-prerelease/ros-prerelease-0.1.3.tar.gz", 
       keywords = ["ROS"],
       classifiers = [
         "Programming Language :: Python", 
