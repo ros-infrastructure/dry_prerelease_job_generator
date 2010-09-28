@@ -200,8 +200,10 @@ apt-get install %(deb_name)s -y --force-yes
 mkdir -p /opt/ros/%(distro_name)s/stacks
 roscd ros
 patch -p0 < /tmp/test-nobuild.patch
+mkdir -p /tmp/home
+export HOME=/tmp/home
+export ROS_HOME=${HOEM}/.ros"
 %(interactive_txt)s
-export ROS_HOME="/tmp/.ros"
 for p in `rosstack contents %(stack_name)s`;
   do rm -rf `rospack find $p`/build;
 done
