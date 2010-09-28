@@ -202,7 +202,7 @@ def create_released_configs(rosdistro, stack_map):
                 time_trigger = '*/5 * * * *'
                 job_children = ', '.join(gold_children)
 
-            hudson_config = HUDSON_DEVEL_CONFIG
+            hudson_config = HUDSON_RELEASED_CONFIG
             hudson_config = hudson_config.replace('UBUNTUDISTRO', ubuntudistro)
             hudson_config = hudson_config.replace('ARCH', arch)
             hudson_config = hudson_config.replace('ROSDISTROURI', ROSDISTRO_MAP[rosdistro])
