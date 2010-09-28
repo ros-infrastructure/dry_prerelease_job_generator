@@ -33,7 +33,7 @@ def main():
     env['PWD'] = os.environ['WORKSPACE']
     env['ROS_PACKAGE_PATH'] = '%s:/opt/ros/%s/stacks'%(os.environ['WORKSPACE'], options.rosdistro)
     if options.stack == 'ros':
-        env['ROS_ROOT'] = env['WORKSPACE']+'/'+options.stack+'/ros'
+        env['ROS_ROOT'] = env['WORKSPACE']+'/ros'
         print "Changing ROS_ROOT and PYTHONPATH because we are building ROS"
     else:
         env['ROS_ROOT'] = '/opt/ros/%s/ros'%options.rosdistro
