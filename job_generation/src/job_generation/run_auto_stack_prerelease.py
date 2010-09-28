@@ -30,7 +30,6 @@ def main():
 
     # set environment
     env = {}
-    env['PYTHONPATH'] = '/opt/ros/%s/ros/core/roslib/src'%options.rosdistro
     env['WORKSPACE'] = os.environ['WORKSPACE']
     env['HOME'] = os.environ['WORKSPACE']
     env['JOB_NAME'] = os.environ['JOB_NAME']
@@ -41,6 +40,7 @@ def main():
                                                              os.environ['INSTALL_DIR']+'/'+DEPENDS_ON_DIR,
                                                              options.rosdistro)
     env['ROS_ROOT'] = '/opt/ros/%s/ros'%options.rosdistro
+    env['PYTHONPATH'] = env['ROS_ROOT']+'/core/roslib/src'
     env['PATH'] = '/opt/ros/%s/ros/bin:%s'%(options.rosdistro, os.environ['PATH'])
 
 
@@ -79,6 +79,7 @@ def main():
     # Run hudson helper for stacks only
     if 'ros' in options.stacklist:
         env['ROS_ROOT'] = os.environ['INSTALL_DIR']+'/'+STACK_DIR+'/ros'
+        env['PYTHONPATH'] = env['ROS_ROOT']+'/core/roslib/src'
         print "We're building ROS, so setting the ROS_ROOT to %s"%(env['ROS_ROOT'])
     print 'Running Hudson Helper'
     env['ROS_TEST_RESULTS_DIR'] = os.environ['ROS_TEST_RESULTS_DIR'] + '/' + STACK_DIR
