@@ -20,10 +20,13 @@ def main():
     parser.add_option('--rosdistro', dest = 'rosdistro', default=False, action='store',
                       help='Ros distro name')
     (options, args) = parser.parse_args()
-    if not options.stacklist or not options.rosdistro:
-        print 'You did not specify all options to run this script.'
+    if not options.rosdistro:
+        print 'You did not specify the ros distro.'
         return
 
+    # Parse distro file
+    rosdistro_obj = distro.Distro(ROSDISTRO_MAP[options.rosdistro])
+    print 'Operating on ROS distro %s'%rosdistro_obj.release_name
 
     # set environment
     env = {}
@@ -41,10 +44,6 @@ def main():
     env['PYTHONPATH'] = env['ROS_ROOT']+'/core/roslib/src'
     env['ROS_PACKAGE_PATH'] = os.environ['INSTALL_DIR']+'/'+STACK_DIR
 
-
-    # Parse distro file
-    rosdistro_obj = distro.Distro(ROSDISTRO_MAP[options.rosdistro])
-    print 'Operating on ROS distro %s'%rosdistro_obj.release_name
 
 
     # Install all stacks in distro file from source
