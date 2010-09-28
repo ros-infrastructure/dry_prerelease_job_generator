@@ -40,7 +40,7 @@ def main():
                                                              os.environ['INSTALL_DIR']+'/'+DEPENDS_ON_DIR,
                                                              options.rosdistro)
     if 'ros' in options.stacklist:
-        env['ROS_ROOT'] = os.environ['INSTALL_DIR']+'/'+STACK_DIR+'/ros'
+        env['ROS_ROOT'] = os.environ['INSTALL_DIR']+'/ros'
         print "We're building ROS, so setting the ROS_ROOT to %s"%(env['ROS_ROOT'])
     else:
         env['ROS_ROOT'] = '/opt/ros/%s/ros'%options.rosdistro
