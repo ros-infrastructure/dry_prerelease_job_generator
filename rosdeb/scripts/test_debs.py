@@ -202,7 +202,7 @@ roscd ros
 patch -p0 < /tmp/test-nobuild.patch
 mkdir -p /tmp/home
 export HOME=/tmp/home
-export ROS_HOME=${HOEM}/.ros"
+export ROS_HOME=${HOME}/.ros"
 %(interactive_txt)s
 for p in `rosstack contents %(stack_name)s`;
   do rm -rf `rospack find $p`/build;
