@@ -34,9 +34,11 @@ def main():
     env['ROS_PACKAGE_PATH'] = '%s:/opt/ros/%s/stacks'%(os.environ['WORKSPACE'], options.rosdistro)
     if options.stack == 'ros':
         env['ROS_ROOT'] = env['WORKSPACE']+'/'+options.stack+'/ros'
+        print "Changing ROS_ROOT and PYTHONPATH because we are building ROS"
     else:
         env['ROS_ROOT'] = '/opt/ros/%s/ros'%options.rosdistro
     env['PYTHONPATH'] = env['ROS_ROOT']+'/core/roslib/src'
+
     env['PATH'] = '/opt/ros/%s/ros/bin:%s'%(options.rosdistro, os.environ['PATH'])
     stack_dir = env['WORKSPACE']+'/'+options.stack
 
@@ -51,7 +53,7 @@ def main():
 
     # Install system dependencies
     print 'Installing system dependencies'
-    subprocess.Popen(('rosdep install %s -y'%options.stack).split(' '), env=env).communicate()
+    subprocess.Popen(('rosmake --rosdep-install --rosdep-yes %s'%options.stack).split(' '), env=env).communicate()
 
 
     # Start Hudson Helper
