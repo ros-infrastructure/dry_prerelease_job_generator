@@ -45,12 +45,16 @@ HUDSON_RELEASED_CONFIG = """<?xml version='1.0' encoding='UTF-8'?>
 #!/usr/bin/env bash
 set -o errexit
 echo "_________________________________BEGIN SCRIPT______________________________________"
+sudo apt-get install ros-ROSDISTRO-ros --yes
+source /opt/ros/ROSDISTRO/setup.sh
+
 export INSTALL_DIR=/tmp/install_dir
 export WORKSPACE=/tmp/ros
 export ROS_TEST_RESULTS_DIR=/tmp/ros/test_results
 export JOB_NAME=$JOB_NAME
 export BUILD_NUMBER=$BUILD_NUMBER
 export HUDSON_URL=$HUDSON_URL
+export ROS_PACKAGE_PATH=\$INSTALL_DIR/ros_release:/opt/ros/ROSDISTRO/stacks
 
 mkdir -p \$INSTALL_DIR
 cd \$INSTALL_DIR
@@ -205,7 +209,7 @@ def create_released_configs(rosdistro, stack_map):
             hudson_config = HUDSON_RELEASED_CONFIG
             hudson_config = hudson_config.replace('UBUNTUDISTRO', ubuntudistro)
             hudson_config = hudson_config.replace('ARCH', arch)
-            hudson_config = hudson_config.replace('ROSDISTROURI', ROSDISTRO_MAP[rosdistro])
+            hudson_config = hudson_config.replace('ROSDISTROURI', ROSDISTRO_FOLDER_MAP[rosdistro])
             hudson_config = hudson_config.replace('ROSDISTRO', rosdistro)
             hudson_config = hudson_config.replace('TIME_TRIGGER', time_trigger)
             hudson_config = hudson_config.replace('JOB_CHILDREN', job_children)

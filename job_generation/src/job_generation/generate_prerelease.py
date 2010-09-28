@@ -39,7 +39,6 @@ export JOB_NAME=$JOB_NAME
 export BUILD_NUMBER=$BUILD_NUMBER
 export HUDSON_URL=$HUDSON_URL
 export ROS_PACKAGE_PATH=\$INSTALL_DIR/ros_release:/opt/ros/ROSDISTRO/stacks
-echo \$ROS_PACKAGE_PATH
 
 mkdir -p \$INSTALL_DIR
 cd \$INSTALL_DIR

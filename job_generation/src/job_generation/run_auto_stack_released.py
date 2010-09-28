@@ -33,6 +33,13 @@ def main():
     env['BUILD_NUMBER'] = os.environ['BUILD_NUMBER']
     env['PWD'] = os.environ['WORKSPACE']
     env['PATH'] = '/opt/ros/%s/ros/bin:%s'%(options.rosdistro, os.environ['PATH'])
+    if 'ros' in rosdistro_obj.stacks.keys():
+        env['ROS_ROOT'] = env['INSTALL_DIR']+'/'+STACK_DIR+'/ros'
+        print "We're building ROS, so setting the ROS_ROOT to %s"%(env['ROS_ROOT'])
+    else:
+        env['ROS_ROOT'] = '/opt/ros/%s/ros'%options.rosdistro
+    env['PYTHONPATH'] = env['ROS_ROOT']+'/core/roslib/src'
+    env['ROS_PACKAGE_PATH'] = os.environ['INSTALL_DIR']+'/'+STACK_DIR
 
 
     # Parse distro file
@@ -52,20 +59,10 @@ def main():
     subprocess.Popen(('rosinstall %s %s'%(STACK_DIR, rosinstall_file)).split(' ')).communicate()
 
 
-    # set package path, python path and ros root
-    if 'ros' in rosdistro_obj.stacks.keys():
-        env['ROS_ROOT'] = env['INSTALL_DIR']+'/'+STACK_DIR+'/ros'
-        print "We're building ROS, so setting the ROS_ROOT to %s"%(env['ROS_ROOT'])
-    else:
-        env['ROS_ROOT'] = '/opt/ros/%s/ros'%options.rosdistro
-    env['PYTHONPATH'] = env['ROS_ROOT']+'/core/roslib/src'%options.rosdistro
-    env['ROS_PACKAGE_PATH'] = os.environ['INSTALL_DIR']+'/'+STACK_DIR
-
-
     # Install system dependencies
     print 'Installing system dependencies'
     for stack in rosdistro_obj.stacks:
-        subprocess.Popen(('rosdep install %s -y'%stack).split(' '), env=env).communicate()
+        subprocess.Popen(('rosmake --rosdep-install --rosdep-yes %s'%stack).split(' '), env=env).communicate()
 
     
     # Run hudson helper 
