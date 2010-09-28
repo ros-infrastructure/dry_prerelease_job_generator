@@ -22,7 +22,7 @@ def stack_to_deb(stack, rosdistro):
     return '-'.join(['ros', rosdistro, str(stack).replace('_','-')])
 
 def stacks_to_debs(stack_list, rosdistro):
-    if not stack_list:
+    if not stack_list or len(stack_list) == 0:
         return ''
     return ' '.join([stack_to_deb(s, rosdistro) for s in stack_list])
 
@@ -40,6 +40,7 @@ def stack_to_rosinstall(stack, branch):
             return "- svn: {uri: '%s', local-name: '%s'}\n"%(vcs.anon_dev, stack.name)
         elif branch == 'distro':
             return "- svn: {uri: '%s', local-name: '%s'}\n"%(vcs.anon_distro_tag, stack.name)            
+
         elif branch == 'release':
             return "- svn: {uri: '%s', local-name: '%s'}\n"%(vcs.anon_release_tag, stack.name)  
 
