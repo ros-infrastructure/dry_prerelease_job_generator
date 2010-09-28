@@ -68,3 +68,5 @@ class VCSClient:
     return self.vcs.get_vcs_type_name()
   def get_url(self):
     return self.vcs.get_url()
+  def get_branch_parent(self):
+    return self.vcs.get_branch_parent()

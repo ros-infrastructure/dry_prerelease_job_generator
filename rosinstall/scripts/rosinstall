@@ -109,7 +109,7 @@ class VCSConfigElement(ConfigElement):
             or self.vcsc.get_url() != self.uri \
             or (self.vcsc.get_vcs_type_name() == 'git' \
                   and (self.vcsc.get_version() != self.version \
-                         or self.vcsc.get_branch_parent() != self.version)):
+                         and self.vcsc.get_branch_parent() != self.version)):
         if mode == 'prompt':
             valid_modes = ['(d)elete', '(a)bort', '(b)ackup']
             mode = prompt_del_abort_retry("%s does not have the same url as requested %s. %s: "%(self.path, self.uri, ", ".join(valid_modes)))
