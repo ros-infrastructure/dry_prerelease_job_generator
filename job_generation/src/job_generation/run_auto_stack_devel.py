@@ -24,7 +24,6 @@ def main():
 
     # set environment
     env = {}
-    env['PYTHONPATH'] = '/opt/ros/%s/ros/core/roslib/src'%options.rosdistro
     env['WORKSPACE'] = os.environ['WORKSPACE']
     env['INSTALL_DIR'] = os.environ['INSTALL_DIR']
     env['HOME'] = os.environ['INSTALL_DIR']
@@ -33,7 +32,11 @@ def main():
     env['ROS_TEST_RESULTS_DIR'] = os.environ['ROS_TEST_RESULTS_DIR']
     env['PWD'] = os.environ['WORKSPACE']
     env['ROS_PACKAGE_PATH'] = '%s:/opt/ros/%s/stacks'%(os.environ['WORKSPACE'], options.rosdistro)
-    env['ROS_ROOT'] = '/opt/ros/%s/ros'%options.rosdistro
+    if options.stack == 'ros':
+        env['ROS_ROOT'] = env['WORKSPACE']+'/'+options.stack+'/ros'
+    else:
+        env['ROS_ROOT'] = '/opt/ros/%s/ros'%options.rosdistro
+    env['PYTHONPATH'] = env['ROS_ROOT']+'/core/roslib/src'
     env['PATH'] = '/opt/ros/%s/ros/bin:%s'%(options.rosdistro, os.environ['PATH'])
     stack_dir = env['WORKSPACE']+'/'+options.stack
 
