@@ -1,5 +1,9 @@
 #!/usr/bin/python
 
+ROSDISTRO_FOLDER_MAP = {'unstable': 'https://code.ros.org/svn/release/trunk/distros',
+                        'cturtle': 'https://code.ros.org/svn/release/trunk/distros',
+                        'boxturtle': 'http://www.ros.org/distros'}
+
 ROSDISTRO_MAP = {'unstable': 'https://code.ros.org/svn/release/trunk/distros/unstable.rosdistro',
                  'cturtle': 'https://code.ros.org/svn/release/trunk/distros//cturtle.rosdistro',
                  'boxturtle': 'http://www.ros.org/distros/boxturtle.rosdistro'}
