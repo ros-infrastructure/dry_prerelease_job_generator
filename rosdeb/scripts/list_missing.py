@@ -187,12 +187,25 @@ def load_distro(distro_name):
     distro_uri = "https://code.ros.org/svn/release/trunk/distros/%s.rosdistro"%distro_name
     return Distro(distro_uri)
 
+def svn_url_exists(url):
+    try:
+        p = subprocess.Popen(['svn', 'info', url], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        p.wait()
+        return p.returncode == 0
+    except:
+        return False
+
+SOURCEDEB_DIR_URI = 'https://code.ros.org/svn/release/download/stacks/%(stack_name)s/%(stack_name)s-%(stack_version)s/'
+SOURCEDEB_URI = SOURCEDEB_DIR_URI+'%(deb_name)s_%(stack_version)s-0~%(os_platform)s.dsc'
+    
+MISSING_SOURCEDEB = '!'
 MISSING_PRIMARY = '-'
 MISSING_DEP = '&lt;-'
 MISSING_EXCLUDED = 'X'
 MISSING_EXCLUDED_DEP = '&lt;X'
 COLORS = {
     MISSING_PRIMARY: 'red',
+    MISSING_SOURCEDEB: 'yellow',
     MISSING_DEP: 'pink',
     MISSING_EXCLUDED: 'grey',
     MISSING_EXCLUDED_DEP: 'lightgrey',
@@ -223,7 +236,16 @@ def generate_allhtml_report(output, distro_name, os_platforms):
            counts[key] = ','.join([str(len(x)) for x in args])
            missing_primary, missing_dep, missing_excluded, missing_excluded_dep = args
            for s in missing_primary:
-               stacks[s][key] = MISSING_PRIMARY
+               # check to see if we actually have a source deb for this stack
+               stack_name = s # for SOURCEDEB_URI
+               stack_version = distro.stacks[s].version
+               deb_name = "ros-%s-%s"%(distro_name, debianize_name(s))
+               url = SOURCEDEB_URI%locals()
+               
+               if svn_url_exists(url):
+                   stacks[s][key] = MISSING_PRIMARY
+               else:
+                   stacks[s][key] = MISSING_SOURCEDEB
            for s in missing_dep:
                stacks[s][key] = MISSING_DEP
            for s in missing_excluded:
@@ -277,11 +299,13 @@ td {
         f.write("""<h2>Stack Debbuild Status</h2>
 <h3>Legend</h3>
 <ul>
-<li>Missing: <span style="background-color: %s;">&nbsp;%s&nbsp;</span></li>
+<li>Missing (deb): <span style="background-color: %s;">&nbsp;%s&nbsp;</span></li>
+<li>Missing (sourcedeb): <span style="background-color: %s;">&nbsp;%s&nbsp;</span></li>
 <li>Depends Missing: <span style="background-color: %s;">&nbsp;%s&nbsp;</span></li>
 <li>Excluded: <span style="background-color: %s;">&nbsp;%s&nbsp;</span></li>
 <li>Depends Excluded: <span style="background-color: %s;">&nbsp;%s&nbsp;</span></li> 
 </ul>"""%(COLORS[MISSING_PRIMARY], MISSING_PRIMARY, 
+          COLORS[MISSING_SOURCEDEB], MISSING_SOURCEDEB, 
           COLORS[MISSING_DEP], MISSING_DEP, 
           COLORS[MISSING_EXCLUDED], MISSING_EXCLUDED, 
           COLORS[MISSING_EXCLUDED_DEP], MISSING_EXCLUDED_DEP
@@ -292,6 +316,7 @@ td {
 <th>Stack</th>""")
 
         job = 'debbuild-build-debs'
+        source_job = 'debbuild-build-debs'
         import hudson
         h = hudson.Hudson(HUDSON)
 
@@ -312,7 +337,22 @@ td {
         for stack in stack_names:
             d = stacks[stack]
             shadow_version = distro.stacks[stack].version
-            f.write('<tr><td>%s %s</td>'%(stack, shadow_version))
+
+            # generate URL
+            stack_name = stack
+            stack_version = shadow_version
+            url = SOURCEDEB_DIR_URI%locals()
+            
+            # MISSING_SOURCEDEB is os/arch independent, so treat row as a whole
+            sample_key = "%s-%s"%(os_platforms[0], arches[0])
+            if sample_key in d and d[key] == MISSING_SOURCEDEB:
+                color = COLORS[d[key]]
+                params = {'STACK_NAME': stack, 'DISTRO_NAME': distro_name,'STACK_VERSION': shadow_version}
+                job_url = h.build_job_url(source_job, parameters=params)                            
+                f.write('<tr><td bgcolor="%s"><a href="%s">%s %s</a> <a href="%s">[+]</a></td>'%(url, color, stack, shadow_version, job_url))
+            else:
+                f.write('<tr><td><a href="%s">%s %s</a></td>'%(url, stack, shadow_version))
+                
             for os_platform in os_platforms:
                 for arch in arches:
                     key = "%s-%s"%(os_platform, arch)
@@ -335,8 +375,13 @@ td {
                         val = d[key]
                         color = COLORS[val]
                         params = {'STACK_NAME': stack}
-                        url = h.build_job_url('%s-%s-%s-%s'%(job, distro_name, os_platform, arch), parameters=params)
-                        f.write('<td bgcolor="%s">%s <a href="%s">[+]</a> %s</td>'%(color, val, url, version_str))
+                        if val == MISSING_SOURCEDEB:
+                            f.write('<td bgcolor="%s">%s %s</td>'%(color, val, version_str))
+                        else:
+                            url = h.build_job_url('%s-%s-%s-%s'%(job, distro_name, os_platform, arch),
+                                                  parameters=params)
+                            f.write('<td bgcolor="%s">%s <a href="%s">[+]</a> %s</td>'%
+                                    (color, val, url, version_str))
                     else:
                         f.write('<td>&nbsp;%s </td>'%version_str)
             f.write('</tr>\n')            
