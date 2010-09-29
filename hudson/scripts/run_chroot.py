@@ -59,10 +59,25 @@ def kill_processes(processes, level=''):
         cmd = "sudo kill %s %s"%(level, p)
         subprocess.call(cmd.split())
 
+def add_binfmg_misc_mounts(mounts):
+    """
+    binfmg_misc gets mounted inside the chroot and prevents cleanup
+    add this for all proc mounts at the top.  
+    """
+
+    additions = [os.path.join(m, 'sys', 'fs', 'binfmt_misc') for m in mounts if m.endswith('proc')]
+    print "adding", additions
+    return additions + mounts
+
 def clean_up_chroots():
     ### Try 1
     mounts = get_mount_points()
     mounts.reverse()
+    if len(mounts) > 0:
+        print "Cleaning up mount points", mounts
+    else:
+        print "No mounts need cleaning" 
+        return True
 
     mounted_processes = get_chroot_processes(mounts)
     for p in mounted_processes:
@@ -71,6 +86,8 @@ def clean_up_chroots():
 
     remaining_processes = get_chroot_processes(mounts)
     print "Remaining processes %s"%remaining_processes
+
+    mounts = add_binfmg_misc_mounts(mounts)
     unmount_directories(mounts)
 
 
@@ -86,6 +103,8 @@ def clean_up_chroots():
 
 
     kill_processes(remaining_processes, '-9')
+
+    mounts = add_binfmg_misc_mounts(mounts)
     unmount_directories(mounts)
 
 
@@ -404,9 +423,9 @@ class ChrootInstance:
     def manual_init(self):
         
 
-        print "Starting"
+        print "Starting init"
         if self.clear_chroot and os.path.isdir(self.chroot_path):
-            print"Cleaning first" 
+            print"Clean build requested and directory exists cleaning up old path first." 
             self.clean()
             self.bootstrap()
         elif not os.path.isdir(self.chroot_path):
