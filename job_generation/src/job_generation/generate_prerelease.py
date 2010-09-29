@@ -69,7 +69,7 @@ cd $WORKSPACE &amp;&amp; $WORKSPACE/run_chroot.py --distro=UBUNTUDISTRO --arch=A
       <testDataPublishers/> 
     </hudson.tasks.junit.JUnitResultArchiver> 
     <hudson.plugins.emailext.ExtendedEmailPublisher> 
-      <recipientList>EMAIL</recipientList> 
+      <recipientList>EMAIL,wim+prerelease@willowgarage.com</recipientList> 
       <configuredTriggers> 
         <hudson.plugins.emailext.plugins.trigger.UnstableTrigger> 
           <email> 
