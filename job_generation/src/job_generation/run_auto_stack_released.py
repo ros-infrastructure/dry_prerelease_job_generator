@@ -37,13 +37,12 @@ def main():
     env['PWD'] = os.environ['WORKSPACE']
     env['PATH'] = '/opt/ros/%s/ros/bin:%s'%(options.rosdistro, os.environ['PATH'])
     if 'ros' in rosdistro_obj.stacks.keys():
-        env['ROS_ROOT'] = env['INSTALL_DIR']+'/'+STACK_DIR+'/ros'
+        env['ROS_ROOT'] = os.environ['INSTALL_DIR']+'/'+STACK_DIR+'/ros'
         print "We're building ROS, so setting the ROS_ROOT to %s"%(env['ROS_ROOT'])
     else:
         env['ROS_ROOT'] = '/opt/ros/%s/ros'%options.rosdistro
     env['PYTHONPATH'] = env['ROS_ROOT']+'/core/roslib/src'
     env['ROS_PACKAGE_PATH'] = os.environ['INSTALL_DIR']+'/'+STACK_DIR
-
 
 
     # Install all stacks in distro file from source
