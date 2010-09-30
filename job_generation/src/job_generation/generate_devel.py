@@ -258,20 +258,23 @@ def main():
     parser.add_option('--rosdistro', dest = 'rosdistro', action='store', default='cturtle',
                       help="Specify the ros distro to operate on (defaults to cturtle)")
     (options, args) = parser.parse_args()
+    if not options.rosdistro in UBUNTU_DISTRO_MAP.keys():
+        print 'You profided an invalid "--rosdistro %s" argument. Options are %s'%(options.rosdistro, UBUNTU_DISTRO_MAP.keys())
+        return
+
 
     # Parse distro file
     distro_obj = distro.Distro(ROSDISTRO_MAP[options.rosdistro])
     print 'Operating on ROS distro %s'%distro_obj.release_name
 
-    # parse username and password
+
+    # create hudson instance
     if len(args) == 2:
-        username = args[0]
-        password = args[1]
+        hudson_instance = hudson.Hudson(SERVER, args[0], args[1])        
     else:
-        url = urllib.urlopen('http://wgs24.willowgarage.com/hudson-html/hds.xml')
-        info = url.read().split(',')
-        username = info[0]
-        password = info[1]
+        info = urllib.urlopen(CONFIG_PATH).read().split(',')
+        hudson_instance = hudson.Hudson(SERVER, info[0], info[1])
+
 
     # generate hudson config files
     devel_configs = {}
@@ -281,8 +284,6 @@ def main():
         stack_list = distro_obj.stacks
     for stack_name in stack_list:
         devel_configs.update(create_devel_configs(distro_obj.release_name, distro_obj.stacks[stack_name]))
-    hudson_instance = hudson.Hudson(SERVER, username, password)
-
 
 
     # send devel tests to Hudson
