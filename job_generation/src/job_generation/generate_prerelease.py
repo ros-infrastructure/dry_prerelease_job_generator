@@ -20,7 +20,6 @@ HUDSON_PRERELEASE_CONFIG = """<?xml version='1.0' encoding='UTF-8'?>
   <canRoam>false</canRoam> 
   <disabled>false</disabled> 
   <blockBuildWhenUpstreamBuilding>false</blockBuildWhenUpstreamBuilding> 
-  <authToken>willow</authToken> 
   <triggers class="vector"/> 
   <concurrentBuild>false</concurrentBuild> 
   <builders> 
@@ -209,13 +208,17 @@ def main():
         print 'Please provide at least one stack to test: --stack pr2_doors'
         return
         
-    # generate hudson config files
-    info = urllib.urlopen(CONFIG_PATH).read().split(',')
-    prerelease_configs = create_prerelease_configs(options.rosdistro, options.stacks, options.email)
-    hudson_instance = ros_prerelease_hudson.Hudson(SERVER, info[0], info[1])
+    # create hudson instance
+    if len(args) == 2:
+        hudson_instance = ros_prerelease_hudson.Hudson(SERVER, args[0], args[1])        
+    else:
+        info = urllib.urlopen(CONFIG_PATH).read().split(',')
+        hudson_instance = ros_prerelease_hudson.Hudson(SERVER, info[0], info[1])
 
-    print 'Creating pre-release Hudson jobs:'
+
     # send prerelease tests to Hudson
+    print 'Creating pre-release Hudson jobs:'
+    prerelease_configs = create_prerelease_configs(options.rosdistro, options.stacks, options.email)
     for job_name in prerelease_configs:
         exists = hudson_instance.job_exists(job_name)
 
