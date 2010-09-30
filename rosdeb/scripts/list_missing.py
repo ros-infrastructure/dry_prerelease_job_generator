@@ -345,7 +345,7 @@ td {
             
             # MISSING_SOURCEDEB is os/arch independent, so treat row as a whole
             sample_key = "%s-%s"%(os_platforms[0], arches[0])
-            if sample_key in d and d[key] == MISSING_SOURCEDEB:
+            if sample_key in d and d[sample_key] == MISSING_SOURCEDEB:
                 color = COLORS[d[key]]
                 params = {'STACK_NAME': stack, 'DISTRO_NAME': distro_name,'STACK_VERSION': shadow_version}
                 job_url = h.build_job_url(source_job, parameters=params)                            
