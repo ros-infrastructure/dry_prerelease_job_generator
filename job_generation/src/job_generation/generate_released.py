@@ -73,7 +73,7 @@ rm -rf $WORKSPACE/test_output
 
 wget https://code.ros.org/svn/ros/stacks/ros_release/trunk/hudson/scripts/run_chroot.py --no-check-certificate -O $WORKSPACE/run_chroot.py
 chmod +x $WORKSPACE/run_chroot.py
-cd $WORKSPACE &amp;&amp; $WORKSPACE/run_chroot.py --distro=UBUNTUDISTRO --arch=ARCH  --ramdisk --script=$WORKSPACE/script.sh
+cd $WORKSPACE &amp;&amp; $WORKSPACE/run_chroot.py --distro=UBUNTUDISTRO --arch=ARCH --script=$WORKSPACE/script.sh
      </command> 
     </hudson.tasks.Shell> 
   </builders> 
@@ -232,22 +232,17 @@ def main():
     distro_obj = distro.Distro(ROSDISTRO_MAP[options.rosdistro])
     print 'Operating on ROS distro %s'%distro_obj.release_name
 
-    # parse username and password
+
+    # create hudson instance
     if len(args) == 2:
-        username = args[0]
-        password = args[1]
+        hudson_instance = hudson.Hudson(SERVER, args[0], args[1])        
     else:
-        url = urllib.urlopen('http://wgs24.willowgarage.com/hudson-html/hds.xml')
-        info = url.read().split(',')
-        username = info[0]
-        password = info[1]
+        info = urllib.urlopen(CONFIG_PATH).read().split(',')
+        hudson_instance = hudson.Hudson(SERVER, info[0], info[1])
 
-    # generate hudson config files
+
+    # send released tests to Hudson
     released_configs = create_released_configs(distro_obj.release_name, distro_obj.stacks)
-    hudson_instance = hudson.Hudson(SERVER, username, password)
-
-
-    # send devel tests to Hudson
     for job_name in released_configs:
         print job_name
         exists = hudson_instance.job_exists(job_name)
