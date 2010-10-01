@@ -323,12 +323,8 @@ reprepro -b /var/packages/ros-shadow/ubuntu -V processincoming %(os_platform)s
         if res != 0:
             raise InternalBuildFailure("Could not run upload script:\n%s\n%s"%(o, e))
 
-def build_debs(distro_name, stack_name, os_platform, arch, staging_dir, force, noupload, interactive):
-
-    # Load the distro from the URL
-    # TODO: Should this be done from file in release repo instead (and maybe updated in case of failure)
-    distro_uri = "https://code.ros.org/svn/release/trunk/distros/%s.rosdistro"%distro_name
-    distro = Distro(distro_uri)
+def build_debs(distro, stack_name, os_platform, arch, staging_dir, force, noupload, interactive):
+    distro_name = distro.release_name
 
     if stack_name != 'ALL' and stack_name not in distro.stacks:
         raise BuildFailure("stack [%s] not found in distro [%s]."%(stack_name, distro_name))
@@ -390,6 +386,7 @@ def build_debs_main():
         parser.error('invalid args')
         
     (distro_name, stack_name, os_platform, arch) = args
+    distro = failure_message = None
 
     if options.staging_dir is not None:
         staging_dir    = options.staging_dir
@@ -404,6 +401,10 @@ def build_debs_main():
         if not os.path.exists(staging_dir):
             print "creating staging dir: %s"%(staging_dir)
             os.makedirs(staging_dir)
+
+        # Load the distro from the URL
+        distro_uri = "https://code.ros.org/svn/release/trunk/distros/%s.rosdistro"%distro_name
+        distro = Distro(distro_uri)
 
         if options.ramdisk:
             with TempRamFS(staging_dir, "20G"):
@@ -423,8 +424,9 @@ def build_debs_main():
 
     if failure_message:
         print >> sys.stderr, failure_message
-        if options.smtp and stack_name != 'ALL':
-            control = {}
+        if options.smtp and stack_name != 'ALL' and distro is not None:
+            stack_version = distro.stacks[stack_name].version
+            control = download_control(stack_name, stack_version)
             if  'contact' in control:
                 to_addr = control['contact']
                 subject = 'debian build [%s-%s-%s-%s] failed'%(distro_name, stack_name, os_platform, arch)
