@@ -48,16 +48,31 @@ import stat
 import tempfile
 
 import rosdeb
-from rosdeb.rosutil import checkout_svn_to_tmp
+from rosdeb.rosutil import checkout_svn_to_tmp, send_email
 
 from roslib2.distro import Distro
 from rosdeb.core import ubuntu_release, debianize_name, debianize_version, platforms, ubuntu_release_name
+from rosdeb.source_deb import download_control
 
 NAME = 'build_debs.py' 
 TARBALL_URL = "https://code.ros.org/svn/release/download/stacks/%(stack_name)s/%(base_name)s/%(f_name)s"
 SHADOW_REPO="http://code.ros.org/packages/ros-shadow/"
 
 import traceback
+
+class BuildFailure(Exception):
+
+    def __init__(self, message):
+        self._message = message
+    def __str__(self):
+        return self._message
+
+class InternalBuildFailure(Exception):
+
+    def __init__(self, message):
+        self._message = message
+    def __str__(self):
+        return self._message
 
 # Stolen from chroot build
 class TempRamFS:
@@ -109,19 +124,10 @@ def download_files(stack_name, stack_version, staging_dir, files):
     return dl_files
 
 def load_info(stack_name, stack_version):
-    import urllib
-    
-    base_name = "%s-%s"%(stack_name, stack_version)
-    f_name = base_name + '.yaml'
-
-    url = TARBALL_URL%locals()
-
     try:
-        return yaml.load(urllib2.urlopen(url))
+        download_control(stack_name, stack_version)
     except:
-        print >> sys.stderr, "Problem fetching yaml info for %s %s (%s)"%(stack_name, stack_version, url)
-        sys.exit(1)
-
+        raise BuildFailure("Problem fetching yaml info for %s %s.\nThis yaml info is usually created when a release is uploaded. If it is missing, either the stack version is wrong, or the release did not occur correctly."%(stack_name, stack_version))
 
 def compute_deps(distro, stack_name):
 
@@ -132,8 +138,7 @@ def compute_deps(distro, stack_name):
         if s in seen:
             return
         if s not in distro.stacks:
-            print >> sys.stderr, "[%s] not found in distro."%(s)
-            sys.exit(1)
+            raise BuildFailure("[%s] not found in distro."%(s))
         seen.add(s)
         v = distro.stacks[s].version
         si = load_info(s, v)
@@ -185,8 +190,7 @@ def do_deb_build(distro_name, stack_name, stack_version, os_platform, arch, stag
 
     # Make sure the distro chroot exists
     if not os.path.exists(distro_tgz):
-        print >> sys.stderr, "%s does not exist."%(distro_tgz)
-        sys.exit(1)
+        raise InternalBuildFailure("%s does not exist."%(distro_tgz))
 
     # Download deb and tar.gz files:
     dsc_name = '%s.dsc'%(deb_file)
@@ -316,10 +320,7 @@ reprepro -b /var/packages/ros-shadow/ubuntu -V processincoming %(os_platform)s
         res = run_script.wait()
         print o
         if res != 0:
-            print >> sys.stderr, "Could not run upload script"
-            print >> sys.stderr, o
-            sys.exit(1)
-
+            raise InternalBuildFailure("Could not run upload script:\n%s\n%s"%(o, e))
 
 def build_debs(distro_name, stack_name, os_platform, arch, staging_dir, force, noupload, interactive):
 
@@ -329,8 +330,7 @@ def build_debs(distro_name, stack_name, os_platform, arch, staging_dir, force, n
     distro = Distro(distro_uri)
 
     if stack_name != 'ALL' and stack_name not in distro.stacks:
-        print >> sys.stderr, "[%s] not found in distro."%(stack_name)
-        sys.exit(1)
+        raise BuildFailure("stack [%s] not found in distro [%s]."%(stack_name, distro_name))
 
     # Create the environment where we build the debs, if necessary
     create_chroot(distro, distro_name, os_platform, arch)
@@ -361,9 +361,9 @@ def build_debs(distro_name, stack_name, os_platform, arch, staging_dir, force, n
 
 
     if broken.union(skipped):
-        print >> sys.stderr, "Broken stacks: %s.  Skipped stacks: %s"%(broken, skipped)
-        sys.exit(1)
+        raise BuildFailure("debbuild did not complete successfully. A list of broken and skipped stacks are below. Broken means the stack itself did not build. Skipped stacks means that the stack's dependencies could not be built.\n\nBroken stacks: %s.  Skipped stacks: %s"%(broken, skipped))
 
+EMAIL_FROM_ADDR = 'ROS debian build system <noreply@willowgarage.com>'
 
 def build_debs_main():
 
@@ -381,6 +381,7 @@ def build_debs_main():
                       dest="ramdisk", default=True, action="store_false")
     parser.add_option("--interactive",
                       dest="interactive", default=False, action="store_true")
+    parser.add_option('--smtp', dest="smtp", default='pub1.willowgarage.com', metavar="SMTP_SERVER")
 
     (options, args) = parser.parse_args()
 
@@ -395,23 +396,39 @@ def build_debs_main():
     else:
         staging_dir = tempfile.mkdtemp()
 
-    if os_platform not in rosdeb.platforms():
-        print >> sys.stderr, "[%s] is not a known platform.\nSupported platforms are: %s"%(os_platform, ' '.join(rosdeb.platforms()))
-        sys.exit(1)
-    
-    if not os.path.exists(staging_dir):
-        print "creating staging dir: %s"%(staging_dir)
-        os.makedirs(staging_dir)
+    try:
+        if os_platform not in rosdeb.platforms():
+            raise BuildFailure("[%s] is not a known platform.\nSupported platforms are: %s"%(os_platform, ' '.join(rosdeb.platforms())))
 
-    if options.ramdisk:
-        with TempRamFS(staging_dir, "25G"):
+        if not os.path.exists(staging_dir):
+            print "creating staging dir: %s"%(staging_dir)
+            os.makedirs(staging_dir)
+
+        if options.ramdisk:
+            with TempRamFS(staging_dir, "20G"):
+                build_debs(distro_name, stack_name, os_platform, arch, staging_dir, options.force, options.noupload, options.interactive)
+        else:
             build_debs(distro_name, stack_name, os_platform, arch, staging_dir, options.force, options.noupload, options.interactive)
-    else:
-        build_debs(distro_name, stack_name, os_platform, arch, staging_dir, options.force, options.noupload, options.interactive)
-            
-    if options.staging_dir is None:
-        shutil.rmtree(staging_dir)
-        
+
+    except BuildFailure, e:
+        failure_message = "Failure Message:\n"+"="*80+'\n'+str(e)
+    except Exception, e:
+        failure_message = "Internal failure release system. Please notify leibs and kwc @willowgarage.com:\n%s\n\n%s"%(e, traceback.format_exc(e))
+    finally:
+        # if we created our own staging dir, we are responsible for cleaning it up
+        if options.staging_dir is None:
+            shutil.rmtree(staging_dir)
+
+
+    if failure_message:
+        print >> sys.stderr, failure_message
+        if options.smtp and stack_name != 'ALL':
+            control = {}
+            if  'contact' in control:
+                to_addr = control['contact']
+                subject = 'debian build [%s-%s-%s-%s] failed'%(distro_name, stack_name, os_platform, arch)
+                send_email(options.smtp, EMAIL_FROM_ADDR, to_addr, subject, failure_msg)  
+    
 if __name__ == '__main__':
     build_debs_main()
 

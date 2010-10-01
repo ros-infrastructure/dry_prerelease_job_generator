@@ -316,7 +316,7 @@ td {
 <th>Stack</th>""")
 
         job = 'debbuild-build-debs'
-        source_job = 'debbuild-build-debs'
+        source_job = 'debbuild-sourcedeb'
         import hudson
         h = hudson.Hudson(HUDSON)
 
