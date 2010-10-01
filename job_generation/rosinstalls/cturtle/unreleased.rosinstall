@@ -1,0 +1,6 @@
+- svn: 
+    local-path: ros_pkg_trunk_cturtle
+    uri: https://code.ros.org/svn/ros-pkg/branches/trunk_cturtle
+- svn: 
+    local-path: wg_ros_pkg_trunk_cturtle
+    uri: https://code.ros.org/svn/wg-ros-pkg/branches/trunk_cturtle
