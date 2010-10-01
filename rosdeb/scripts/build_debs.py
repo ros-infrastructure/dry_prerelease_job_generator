@@ -127,6 +127,7 @@ def load_info(stack_name, stack_version):
     try:
         return download_control(stack_name, stack_version)
     except:
+        traceback.print_exc()
         raise BuildFailure("Problem fetching yaml info for %s %s.\nThis yaml info is usually created when a release is uploaded. If it is missing, either the stack version is wrong, or the release did not occur correctly."%(stack_name, stack_version))
 
 def compute_deps(distro, stack_name):
