@@ -125,7 +125,7 @@ def download_files(stack_name, stack_version, staging_dir, files):
 
 def load_info(stack_name, stack_version):
     try:
-        download_control(stack_name, stack_version)
+        return download_control(stack_name, stack_version)
     except:
         raise BuildFailure("Problem fetching yaml info for %s %s.\nThis yaml info is usually created when a release is uploaded. If it is missing, either the stack version is wrong, or the release did not occur correctly."%(stack_name, stack_version))
 
