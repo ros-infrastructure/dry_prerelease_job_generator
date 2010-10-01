@@ -172,7 +172,7 @@ def deb_depends(metadata, distro_name, platform_name):
     return rosdeps + stackdeps
         
 def download_control(stack_name, stack_version):
-    url = 'https://code.ros.org/svn/release/download/stacks/%(stack_name)s/%(stack_name)s-%(stack_version)s/%(stack_name)-%(stack_version)s.yaml'
+    url = 'https://code.ros.org/svn/release/download/stacks/%(stack_name)s/%(stack_name)s-%(stack_version)s/%(stack_name)s-%(stack_version)s.yaml'
     url = url%locals()
     import urllib2
     try:
