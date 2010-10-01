@@ -408,9 +408,9 @@ def build_debs_main():
 
         if options.ramdisk:
             with TempRamFS(staging_dir, "20G"):
-                build_debs(distro_name, stack_name, os_platform, arch, staging_dir, options.force, options.noupload, options.interactive)
+                build_debs(distro, stack_name, os_platform, arch, staging_dir, options.force, options.noupload, options.interactive)
         else:
-            build_debs(distro_name, stack_name, os_platform, arch, staging_dir, options.force, options.noupload, options.interactive)
+            build_debs(distro, stack_name, os_platform, arch, staging_dir, options.force, options.noupload, options.interactive)
 
     except BuildFailure, e:
         failure_message = "Failure Message:\n"+"="*80+'\n'+str(e)
