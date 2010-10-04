@@ -69,18 +69,17 @@ export ROS_TEST_RESULTS_DIR=/tmp/ros/test_results
 export JOB_NAME=$JOB_NAME
 export BUILD_NUMBER=$BUILD_NUMBER
 export HUDSON_URL=$HUDSON_URL
+export ROS_PACKAGE_PATH=\$INSTALL_DIR/ros_release:/opt/ros/ROSDISTRO/stacks
+
+sudo apt-get install ros-ROSDISTRO-ros --yes
 
 mkdir -p \$INSTALL_DIR
 cd \$INSTALL_DIR
-wget -m -nd http://code.ros.org/svn/ros/installers/trunk/hudson/hudson_helper
-wget -m -nd http://code.ros.org/svn/ros/stacks/ros_release/trunk/job_generation/src/job_generation/jobs_common.py 
-wget -m -nd http://code.ros.org/svn/ros/stacks/ros_release/trunk/job_generation/src/job_generation/run_auto_stack_post_release.py 
-chmod +x hudson_helper  
-chmod +x run_auto_stack_post_release.py
 
-sudo apt-get install ros-ROSDISTRO-ros --yes
-source /opt/ros/ROSDISTRO/setup.sh
-./run_auto_stack_post_release.py --stack STACKNAME --rosdistro ROSDISTRO
+wget -m -nd http://code.ros.org/svn/ros/installers/trunk/hudson/hudson_helper 
+chmod +x hudson_helper
+svn co https://code.ros.org/svn/ros/stacks/ros_release/trunk ros_release
+./ros_release/job_generation/src/job_generation/run_auto_stack_postrelease.py --stack STACKNAME --rosdistro ROSDISTRO
 echo "_________________________________END SCRIPT_______________________________________"
 DELIM
 

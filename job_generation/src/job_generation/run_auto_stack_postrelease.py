@@ -34,10 +34,9 @@ def main():
     env['JOB_NAME'] = os.environ['JOB_NAME']
     env['BUILD_NUMBER'] = os.environ['BUILD_NUMBER']
     env['PWD'] = os.environ['WORKSPACE']
-    env['ROS_PACKAGE_PATH'] = '%s:%s:%s:/opt/ros/%s/stacks'%(os.environ['INSTALL_DIR']+'/'+'ros_release',
-                                                             os.environ['WORKSPACE']+'/'+options.stack,
-                                                             os.environ['INSTALL_DIR']+'/'+DEPENDS_ON_DIR,
-                                                             options.rosdistro)
+    env['ROS_PACKAGE_PATH'] = '%s:%s:/opt/ros/%s/stacks'%(os.environ['WORKSPACE']+'/'+options.stack,
+                                                          os.environ['INSTALL_DIR']+'/'+DEPENDS_ON_DIR,
+                                                          options.rosdistro)
     if options.stack == 'ros':
         env['ROS_ROOT'] = os.environ['WORKSPACE']+'/'+stack
         print "We're building ROS, so setting the ROS_ROOT to %s"%(env['ROS_ROOT'])
