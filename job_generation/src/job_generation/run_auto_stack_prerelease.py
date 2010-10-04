@@ -61,7 +61,6 @@ def main():
     rosinstall_file = '%s.rosinstall'%STACK_DIR
     with open(rosinstall_file, 'w') as f:
         f.write(rosinstall)
-    print rosinstall
     subprocess.Popen(('rosinstall %s /opt/ros/%s %s'%(STACK_DIR, options.rosdistro, rosinstall_file)).split(' ')).communicate()
 
 
@@ -97,9 +96,6 @@ def main():
 
     # Install all stacks that depend on this stack
     print 'Installing all stacks that depend on these stacks from source'
-    print "ENV begin"
-    print str(env)
-    print "ENV end"
     rosinstall = ''
     for stack in options.stacklist:
         print 'Installing dependencies of stack %s'%stack
@@ -109,9 +105,6 @@ def main():
     rosinstall_file = '%s.rosinstall'%DEPENDS_ON_DIR
     with open(rosinstall_file, 'w') as f:
         f.write(rosinstall)
-    print "ROSINSTALL ALL begin"
-    print rosinstall
-    print "ROSINSTALL ALL end"
     subprocess.Popen(('rosinstall %s /opt/ros/%s %s'%(DEPENDS_ON_DIR, options.rosdistro, rosinstall_file)).split(' ')).communicate()
 
 
