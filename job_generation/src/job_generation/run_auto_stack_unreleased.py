@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-UNRELEASED_DIR = 'stack_overlay'
+UNRELEASED_DIR = 'unreleased_overlay'
 ROSINSTALL_FILE = 'unreleased.rosinstall'
 
 
@@ -35,6 +35,7 @@ def main():
     env['JOB_NAME'] = os.environ['JOB_NAME']
     env['BUILD_NUMBER'] = os.environ['BUILD_NUMBER']
     env['PWD'] = os.environ['WORKSPACE']
+    env['ROS_TEST_RESULTS_DIR'] = os.environ['ROS_TEST_RESULTS_DIR']
     env['PATH'] = '/opt/ros/%s/ros/bin:%s'%(options.rosdistro, os.environ['PATH'])
     env['ROS_PACKAGE_PATH'] = '%s:/opt/ros/%s/stacks'%(os.environ['INSTALL_DIR']+'/'+UNRELEASED_DIR,
                                                        options.rosdistro)
