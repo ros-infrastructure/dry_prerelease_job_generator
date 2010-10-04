@@ -241,13 +241,11 @@ def main():
         # reconfigure job
         elif exists:
             hudson_instance.reconfig_job(job_name, unreleased_configs[job_name])
-            hudson_instance.build_job(job_name)
             print "  - %s"%job_name
 
         # create job
         elif not exists:
             hudson_instance.create_job(job_name, unreleased_configs[job_name])
-            hudson_instance.build_job(job_name)
             print "  - %s"%job_name
 
 

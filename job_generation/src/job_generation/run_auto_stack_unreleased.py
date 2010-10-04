@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-STACK_DIR = 'stack_overlay'
+UNRELEASED_DIR = 'stack_overlay'
 ROSINSTALL_FILE = 'unreleased.rosinstall'
 
 
@@ -36,7 +36,7 @@ def main():
     env['BUILD_NUMBER'] = os.environ['BUILD_NUMBER']
     env['PWD'] = os.environ['WORKSPACE']
     env['PATH'] = '/opt/ros/%s/ros/bin:%s'%(options.rosdistro, os.environ['PATH'])
-    env['ROS_PACKAGE_PATH'] = '%s:/opt/ros/%s/stacks'%(os.environ['INSTALL_DIR']+'/'+STACK_DIR,
+    env['ROS_PACKAGE_PATH'] = '%s:/opt/ros/%s/stacks'%(os.environ['INSTALL_DIR']+'/'+UNRELEASED_DIR,
                                                        options.rosdistro)
     env['ROS_ROOT'] = '/opt/ros/%s/ros'%options.rosdistro
     env['PYTHONPATH'] = env['ROS_ROOT']+'/core/roslib/src'
@@ -55,12 +55,16 @@ def main():
     # Install unreleased code to test
     with open(ROSINSTALL_FILE, 'w') as f:
         f.write(urllib.urlopen(options.rosinstall).read())
-    subprocess.Popen(('rosinstall %s /opt/ros/%s %s'%(STACK_DIR, options.rosdistro, ROSINSTALL_FILE)).split(' ')).communicate()
+    command = 'rosinstall %s /opt/ros/%s %s'%(UNRELEASED_DIR, options.rosdistro, ROSINSTALL_FILE)
+    print '!!!!!!!!!!!!!!!!!!!'
+    print command
+    print '!!!!!!!!!!!!!!!!!!!'
+    subprocess.Popen(command.split(' ')).communicate()
 
 
     # Run hudson helper 
     print 'Running Hudson Helper'
-    helper = subprocess.Popen(('./hudson_helper --dir-test %s build'%STACK_DIR).split(' '), env=env)
+    helper = subprocess.Popen(('./hudson_helper --dir-test %s build'%UNRELEASED_DIR).split(' '), env=env)
     helper.communicate()
     return helper.returncode
 
