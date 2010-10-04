@@ -38,7 +38,7 @@ def main():
                                                           os.environ['INSTALL_DIR']+'/'+DEPENDS_ON_DIR,
                                                           options.rosdistro)
     if options.stack == 'ros':
-        env['ROS_ROOT'] = os.environ['WORKSPACE']+'/'+stack
+        env['ROS_ROOT'] = os.environ['WORKSPACE']+'/'+options.stack
         print "We're building ROS, so setting the ROS_ROOT to %s"%(env['ROS_ROOT'])
     else:
         env['ROS_ROOT'] = '/opt/ros/%s/ros'%options.rosdistro
@@ -54,7 +54,7 @@ def main():
     # Install Debian packages of stack dependencies
     print 'Installing debian packages of stack dependencies'
     subprocess.Popen('sudo apt-get update'.split(' ')).communicate()
-    with open('%s/stack.xml'%(stack)) as stack_file:
+    with open('%s/stack.xml'%(options.stack)) as stack_file:
         depends = stack_manifest.parse(stack_file.read()).depends
     subprocess.Popen(('sudo apt-get install %s --yes'%(stacks_to_debs(depends, options.rosdistro))).split(' ')).communicate()
 
@@ -67,8 +67,7 @@ def main():
     
     # Run hudson helper for stacks only
     print 'Running Hudson Helper'
-    env['ROS_TEST_RESULTS_DIR'] = os.environ['ROS_TEST_RESULTS_DIR'] + '/' + STACK_DIR
-    helper = subprocess.Popen(('./hudson_helper --dir-test %s build'%STACK_DIR).split(' '), env=env)
+    helper = subprocess.Popen(('./hudson_helper --dir-test %s build'%options.stack).split(' '), env=env)
     helper.communicate()
     if helper.returncode != 0:
         return helper.returncode
