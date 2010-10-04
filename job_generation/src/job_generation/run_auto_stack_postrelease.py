@@ -17,12 +17,12 @@ def main():
     # parse command line options
     parser = optparse.OptionParser()
     
-    parser.add_option('--stack', dest = 'stacklist', action='store',
+    parser.add_option('--stack', dest = 'stack', action='store',
                       help='Stack name')
     parser.add_option('--rosdistro', dest = 'rosdistro', default=False, action='store',
                       help='Ros distro name')
     (options, args) = parser.parse_args()
-    if not options.stacklist or not options.rosdistro:
+    if not options.stack or not options.rosdistro:
         print 'You did not specify all options to run this script.'
         return
 
