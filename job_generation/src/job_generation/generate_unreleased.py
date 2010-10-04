@@ -21,9 +21,9 @@ HUDSON_UNRELEASED_CONFIG = """<?xml version='1.0' encoding='UTF-8'?>
   <disabled>false</disabled> 
   <blockBuildWhenUpstreamBuilding>false</blockBuildWhenUpstreamBuilding> 
   <triggers class="vector"> 
-    <hudson.triggers.SCMTrigger> 
+    <hudson.triggers.TimerTrigger> 
       <spec>TIME_TRIGGER</spec> 
-    </hudson.triggers.SCMTrigger> 
+    </hudson.triggers.TimerTrigger> 
   </triggers> 
   <concurrentBuild>false</concurrentBuild> 
   <builders> 
@@ -63,7 +63,7 @@ wget https://code.ros.org/svn/ros/stacks/ros_release/trunk/hudson/scripts/run_ch
 chmod +x $WORKSPACE/run_chroot.py
 cd $WORKSPACE &amp;&amp; $WORKSPACE/run_chroot.py --distro=UBUNTUDISTRO --arch=ARCH  --ramdisk --script=$WORKSPACE/script.sh
      </command> 
-    </hudson.tasks.Shell> 
+h    </hudson.tasks.Shell> 
   </builders> 
   <publishers> 
     <hudson.tasks.BuildTrigger> 
@@ -187,7 +187,7 @@ def create_unreleased_configs(rosdistro, rosinstall):
             time_trigger = ''
             job_children = ''
             if name == gold_job:
-                time_trigger = '*/5 * * * *'
+                time_trigger = '30 * * * *'
                 job_children = ', '.join(gold_children)
 
             hudson_config = HUDSON_UNRELEASED_CONFIG
