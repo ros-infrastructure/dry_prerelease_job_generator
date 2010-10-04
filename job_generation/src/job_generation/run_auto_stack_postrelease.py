@@ -61,8 +61,7 @@ def main():
 
     # Install system dependencies
     print 'Installing system dependencies'
-    for stack in options.stacklist:
-        subprocess.Popen(('rosmake --rosdep-install --rosdep-yes %s'%stack).split(' '), env=env).communicate()
+    subprocess.Popen(('rosmake --rosdep-install --rosdep-yes %s'%options.stack).split(' '), env=env).communicate()
 
     
     # Run hudson helper for stacks only
@@ -82,12 +81,9 @@ def main():
 
     # Install all stacks that depend on this stack
     print 'Installing all stacks that depend on these stacks from source'
-    rosinstall = ''
-    for stack in options.stacklist:
-        print 'Installing dependencies of stack %s'%stack
-        res, err = subprocess.Popen(('rosstack depends-on %s'%stack).split(' '), stdout=subprocess.PIPE, env=env).communicate()
-        print res
-        rosinstall += stacks_to_rosinstall(res.split('\n'), rosdistro_obj.stacks, 'distro')
+    res, err = subprocess.Popen(('rosstack depends-on %s'%options.stack).split(' '), stdout=subprocess.PIPE, env=env).communicate()
+    print res
+    rosinstall = stacks_to_rosinstall(res.split('\n'), rosdistro_obj.stacks, 'distro')
     rosinstall_file = '%s.rosinstall'%DEPENDS_ON_DIR
     with open(rosinstall_file, 'w') as f:
         f.write(rosinstall)
