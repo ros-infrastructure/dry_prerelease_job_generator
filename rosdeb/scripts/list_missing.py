@@ -349,7 +349,7 @@ td {
                 color = COLORS[d[key]]
                 params = {'STACK_NAME': stack, 'DISTRO_NAME': distro_name,'STACK_VERSION': shadow_version}
                 job_url = h.build_job_url(source_job, parameters=params)                            
-                f.write('<tr><td bgcolor="%s"><a href="%s">%s %s</a> <a href="%s">[+]</a></td>'%(url, color, stack, shadow_version, job_url))
+                f.write('<tr><td bgcolor="%s"><a href="%s">%s %s</a> <a href="%s">[+]</a></td>'%(color, url, stack, shadow_version, job_url))
             else:
                 f.write('<tr><td><a href="%s">%s %s</a></td>'%(url, stack, shadow_version))
                 
