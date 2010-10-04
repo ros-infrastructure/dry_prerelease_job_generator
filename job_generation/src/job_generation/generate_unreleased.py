@@ -20,7 +20,11 @@ HUDSON_UNRELEASED_CONFIG = """<?xml version='1.0' encoding='UTF-8'?>
   <canRoam>false</canRoam> 
   <disabled>false</disabled> 
   <blockBuildWhenUpstreamBuilding>false</blockBuildWhenUpstreamBuilding> 
-  <triggers class="vector"/> 
+  <triggers class="vector"> 
+    <hudson.triggers.SCMTrigger> 
+      <spec>TIME_TRIGGER</spec> 
+    </hudson.triggers.SCMTrigger> 
+  </triggers> 
   <concurrentBuild>false</concurrentBuild> 
   <builders> 
     <hudson.tasks.Shell> 
@@ -154,25 +158,45 @@ println &quot;${build_failures_context}&quot;&#xd;
 </project>
 """
 
-from ros_prerelease_jobs_common import *
-import ros_unreleased_hudson
+import roslib; roslib.load_manifest("job_generation")
+from roslib2 import distro
+from jobs_common import *
+import hudson
 import urllib
 import optparse 
 
 
+def unreleased_job_name(rosdistro, rosinstall, ubuntudistro, arch):
+    return "_".join(['unreleased', rosdistro, rosinstall.split('/')[-1].split('.')[0], ubuntudistro, arch])
 
 
-def create_unreleased_configs(rosdistro, rosinstall, email):
+def create_unreleased_configs(rosdistro, rosinstall):
+    # create gold distro
+    gold_job = unreleased_job_name(rosdistro, rosinstall, UBUNTU_DISTRO_MAP[rosdistro][0], ARCHES[0])
+    gold_children = [unreleased_job_name(rosdistro, rosinstall, u, a)
+                     for a in ARCHES for u in UBUNTU_DISTRO_MAP[rosdistro]]
+    gold_children.remove(gold_job)
+
     # create hudson config files for each ubuntu distro
     configs = {}
     for ubuntudistro in UBUNTU_DISTRO_MAP[rosdistro]:
         for arch in ARCHES:
-            name = "_".join(['unreleased', rosdistro, '_'.join(stack_list), ubuntudistro, arch])
+            name = unreleased_job_name(rosdistro, rosinstall, ubuntudistro, arch)
+
+            # check if this is the 'gold' job
+            time_trigger = ''
+            job_children = ''
+            if name == gold_job:
+                time_trigger = '*/5 * * * *'
+                job_children = ', '.join(gold_children)
+
             hudson_config = HUDSON_UNRELEASED_CONFIG
             hudson_config = hudson_config.replace('UBUNTUDISTRO', ubuntudistro)
             hudson_config = hudson_config.replace('ARCH', arch)
             hudson_config = hudson_config.replace('ROSDISTRO', rosdistro)
             hudson_config = hudson_config.replace('ROSINSTALL', rosinstall)
+            hudson_config = hudson_config.replace('TIME_TRIGGER', time_trigger)
+            hudson_config = hudson_config.replace('JOB_CHILDREN', job_children)
             hudson_config = hudson_config.replace('EMAIL', 'wim+hudson_auto_stack@willowgarage.com')
             configs[name] = hudson_config
     return configs
@@ -184,7 +208,7 @@ def main():
     parser.add_option('--delete', dest = 'delete', default=False, action='store_true',
                       help='Delete jobs from Hudson')    
     parser.add_option('--rosinstall', dest = 'rosinstall', action='store',
-                      help="Specify the rosinstall file that refers to the unreleased code.")
+                      help="Specify the rosinstall file that refers to unreleased code.")
     parser.add_option('--rosdistro', dest = 'rosdistro', action='store',
                       help="Specify the ros distro to operate on (defaults to cturtle)")
     (options, args) = parser.parse_args()
@@ -201,11 +225,11 @@ def main():
 
     # hudson instance
     info = urllib.urlopen(CONFIG_PATH).read().split(',')
-    hudson_instance = ros_unreleased_hudson.Hudson(SERVER, info[0], info[1])
+    hudson_instance = hudson.Hudson(SERVER, info[0], info[1])
 
     # send unreleased tests to Hudson
     print 'Creating unreleased Hudson jobs:'
-    unreleased_configs = create_unreleased_configs(options.rosdistro, options.stacks, options.email)
+    unreleased_configs = create_unreleased_configs(options.rosdistro, options.rosinstall)
     for job_name in unreleased_configs:
         exists = hudson_instance.job_exists(job_name)
 

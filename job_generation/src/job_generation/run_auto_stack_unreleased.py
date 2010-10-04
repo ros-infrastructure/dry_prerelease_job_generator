@@ -12,7 +12,7 @@ import sys
 import os
 import optparse 
 import subprocess
-
+import urllib
 
 def main():
     # parse command line options
@@ -54,7 +54,7 @@ def main():
 
     # Install unreleased code to test
     with open(ROSINSTALL_FILE, 'w') as f:
-        f.write(urllib2.urlopen(options.rosinstall).read())
+        f.write(urllib.urlopen(options.rosinstall).read())
     subprocess.Popen(('rosinstall %s /opt/ros/%s %s'%(STACK_DIR, options.rosdistro, ROSINSTALL_FILE)).split(' ')).communicate()
 
 
