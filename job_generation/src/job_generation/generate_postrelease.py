@@ -104,7 +104,7 @@ cd $WORKSPACE &amp;&amp; $WORKSPACE/run_chroot.py --distro=UBUNTUDISTRO --arch=A
       </threshold> 
     </hudson.tasks.BuildTrigger> 
     <hudson.tasks.junit.JUnitResultArchiver> 
-      <testResults>test_results/_hudson/*.xml</testResults> 
+      <testResults>test_results/**/_hudson/*.xml</testResults> 
     </hudson.tasks.junit.JUnitResultArchiver> 
     <hudson.plugins.emailext.ExtendedEmailPublisher> 
       <recipientList>EMAIL</recipientList> 

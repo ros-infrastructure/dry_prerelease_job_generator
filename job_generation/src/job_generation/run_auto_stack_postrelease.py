@@ -67,6 +67,7 @@ def main():
     
     # Run hudson helper for stacks only
     print 'Running Hudson Helper'
+    env['ROS_TEST_RESULTS_DIR'] = os.environ['ROS_TEST_RESULTS_DIR'] + '/' + options.stack
     helper = subprocess.Popen(('./hudson_helper --dir-test %s build'%options.stack).split(' '), env=env)
     helper.communicate()
     if helper.returncode != 0:
