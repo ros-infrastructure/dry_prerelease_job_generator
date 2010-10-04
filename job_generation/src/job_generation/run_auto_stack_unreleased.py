@@ -53,8 +53,12 @@ def main():
     
 
     # Install unreleased code to test
+    r = urllib.urlopen(options.rosinstall).read()
+    print '??????????????????'
+    print r
+    print '??????????????????'
     with open(ROSINSTALL_FILE, 'w') as f:
-        f.write(urllib.urlopen(options.rosinstall).read())
+        f.write(r)
     command = 'rosinstall %s /opt/ros/%s %s'%(UNRELEASED_DIR, options.rosdistro, ROSINSTALL_FILE)
     print '!!!!!!!!!!!!!!!!!!!'
     print command
