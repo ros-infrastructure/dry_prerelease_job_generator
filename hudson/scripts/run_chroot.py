@@ -160,7 +160,7 @@ def execute_chroot(cmd, path, user='root'):
 
 
 class ChrootInstance:
-    def __init__(self, distro, arch, path, host_workspace, clear_chroot = True):
+    def __init__(self, distro, arch, path, host_workspace, clear_chroot = True, ssh_key_path = None):
         #logging
         self.profile = []
         self.chroot_path = path
@@ -175,6 +175,7 @@ class ChrootInstance:
         self.distro = distro
         self.clear_chroot = clear_chroot
         self.workspace_successfully_copied = False
+        self.ssh_key_path = ssh_key_path
 
 
     def clean(self):
@@ -384,8 +385,12 @@ class ChrootInstance:
         #if not os.path.exists(tardestname):
         local_tmp_dir = tempfile.mkdtemp()
         local_tmp = os.path.join(local_tmp_dir, "rosbuild_ssh.tar.gz")
-        print "retrieving %s to %s"%(ROSBUILD_SSH_URI, local_tmp)
-        urllib.urlretrieve(ROSBUILD_SSH_URI, local_tmp)
+        if self.ssh_key_path:
+            print "retrieving %s to %s"%(self.ssh_key_path, local_tmp)
+            shutil.copy(self.ssh_key_path, local_tmp)
+        else:
+            print "retrieving %s to %s"%(ROSBUILD_SSH_URI, local_tmp)
+            urllib.urlretrieve(ROSBUILD_SSH_URI, local_tmp)
             
         if not os.path.exists(tardestdir):
             os.makedirs(tardestdir)
@@ -493,7 +498,7 @@ class ChrootInstance:
         self.profile.append((net_time, "executed: %s"%cmd))
 
 def run_chroot(options, path, workspace):
-    with ChrootInstance(options.distro, options.arch, path, workspace, clear_chroot = not options.persist) as chrti:
+    with ChrootInstance(options.distro, options.arch, path, workspace, clear_chroot = not options.persist, ssh_key_path=options.ssh_key_path) as chrti:
 
         chrti.manual_init()
 
@@ -602,6 +607,8 @@ parser.add_option("--ramdisk", action="store_true", dest="ramdisk", default=Fals
                   help="Run chroot in a ramdisk")
 parser.add_option("--script", action="store", dest="script",
                   type="string", help="Script filename to execute on the remote machine")
+parser.add_option("--ssh-key-file", action="store", dest="ssh_key_path", default=None,
+                  type="string", help="filename to use for ssh key tarball, instead of URI")
 
 (options, args) = parser.parse_args()
 
