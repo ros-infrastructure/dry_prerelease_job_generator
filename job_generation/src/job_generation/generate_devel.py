@@ -72,9 +72,9 @@ export HUDSON_URL=$HUDSON_URL
 
 mkdir -p \$INSTALL_DIR
 cd \$INSTALL_DIR
-wget -m -nd http://code.ros.org/svn/ros/installers/trunk/hudson/hudson_helper
-wget -m -nd http://code.ros.org/svn/ros/stacks/ros_release/trunk/job_generation/src/job_generation/jobs_common.py 
-wget -m -nd http://code.ros.org/svn/ros/stacks/ros_release/trunk/job_generation/src/job_generation/run_auto_stack_devel.py 
+wget  --no-check-certificate http://code.ros.org/svn/ros/installers/trunk/hudson/hudson_helper
+wget  --no-check-certificate http://code.ros.org/svn/ros/stacks/ros_release/trunk/job_generation/src/job_generation/jobs_common.py 
+wget  --no-check-certificate http://code.ros.org/svn/ros/stacks/ros_release/trunk/job_generation/src/job_generation/run_auto_stack_devel.py 
 chmod +x hudson_helper  
 chmod +x run_auto_stack_devel.py
 
