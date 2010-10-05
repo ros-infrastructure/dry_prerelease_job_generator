@@ -77,7 +77,7 @@ export ROS_PACKAGE_PATH=\$INSTALL_DIR/ros_release:/opt/ros/ROSDISTRO/stacks
 mkdir -p \$INSTALL_DIR
 cd \$INSTALL_DIR
 
-wget -m -nd http://code.ros.org/svn/ros/installers/trunk/hudson/hudson_helper 
+wget  --no-check-certificate http://code.ros.org/svn/ros/installers/trunk/hudson/hudson_helper 
 chmod +x hudson_helper
 svn co https://code.ros.org/svn/ros/stacks/ros_release/trunk ros_release
 ./ros_release/job_generation/src/job_generation/run_auto_stack_postrelease.py --stack STACKNAME --rosdistro ROSDISTRO
@@ -89,7 +89,7 @@ set -o errexit
 rm -rf $WORKSPACE/test_results
 rm -rf $WORKSPACE/test_output
 
-wget https://code.ros.org/svn/ros/stacks/ros_release/trunk/hudson/scripts/run_chroot.py --no-check-certificate -O $WORKSPACE/run_chroot.py
+wget  --no-check-certificate https://code.ros.org/svn/ros/stacks/ros_release/trunk/hudson/scripts/run_chroot.py -O $WORKSPACE/run_chroot.py
 chmod +x $WORKSPACE/run_chroot.py
 cd $WORKSPACE &amp;&amp; $WORKSPACE/run_chroot.py --distro=UBUNTUDISTRO --arch=ARCH  --ramdisk --script=$WORKSPACE/script.sh
      </command> 
@@ -220,10 +220,10 @@ def create_post_release_configs(rosdistro, stack):
             if stack.vcs_config.type == 'svn':
                 hudson_vcs = HUDSON_SVN
                 hudson_vcs = hudson_vcs.replace('STACKNAME', stack.name)
-                hudson_vcs = hudson_vcs.replace('STACKURI', stack.vcs_config.anon_dev)
+                hudson_vcs = hudson_vcs.replace('STACKURI', stack.vcs_config.anon_release_tag)
             elif stack.vcs_config.type == 'hg':
                 hudson_vcs = HUDSON_HG
-                hudson_vcs = hudson_vcs.replace('STACKBRANCH', stack.vcs_config.dev_branch)
+                hudson_vcs = hudson_vcs.replace('STACKBRANCH', stack.vcs_config.release_tag)
                 hudson_vcs = hudson_vcs.replace('STACKURI', stack.vcs_config.repo_uri)
                 hudson_vcs = hudson_vcs.replace('STACKNAME', stack.name)
                 
