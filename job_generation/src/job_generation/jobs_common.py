@@ -12,7 +12,7 @@ ROSDISTRO_MAP = {'unstable': 'https://code.ros.org/svn/release/trunk/distros/uns
 ARCHES = ['amd64', 'i386']
 
 # ubuntu distro mapping to ros distro
-UBUNTU_DISTRO_MAP = {'unstable': ['lucid','karmic', 'jaunty'],
+UBUNTU_DISTRO_MAP = {'unstable': ['lucid'],
                      'cturtle':  ['lucid', 'karmic', 'jaunty'],
                      'boxturtle':['hardy','karmic', 'jaunty']}
 
