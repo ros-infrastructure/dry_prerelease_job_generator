@@ -11,7 +11,7 @@ def read(fname):
 setup(
     name = "hudson_remote_interface",
     version = "0.0.1",
-    author = "Ken Conely Maintained by Tully Foote",
+    author = "Ken Conley Maintained by Tully Foote",
     author_email = "tfoote@willowgarage.com",
     description = ("A remote interface for using Hudson Continuous Integration"),
     license = "BSD",
