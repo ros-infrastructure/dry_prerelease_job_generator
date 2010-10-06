@@ -43,7 +43,7 @@ install: build
 	dh_clean -k 
 	dh_installdirs
 
-	$(MAKE) LDFLAGS="" ROS_DEBBUILD=1 ROS_DESTDIR=$(CURDIR)/debian/${ROS_STACK_DEBIAN_NAME} SUBSTFILE=$(CURDIR)/debian/${ROS_STACK_DEBIAN_NAME}.substvars install
+	LDFLAGS="" $(MAKE) ROS_DEBBUILD=1 ROS_DESTDIR=$(CURDIR)/debian/${ROS_STACK_DEBIAN_NAME} SUBSTFILE=$(CURDIR)/debian/${ROS_STACK_DEBIAN_NAME}.substvars install
 
 
 # Build architecture-independent files here.
