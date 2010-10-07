@@ -47,7 +47,7 @@ HUDSON_POST_RELEASE_CONFIG = """<?xml version='1.0' encoding='UTF-8'?>
     </hudson.plugins.trac.TracProjectProperty> 
   </properties> 
   HUDSON_VCS
-  <assignedNode>hudson-devel</assignedNode>
+  <assignedNode>released</assignedNode>
   <canRoam>false</canRoam> 
   <disabled>false</disabled> 
   <blockBuildWhenUpstreamBuilding>false</blockBuildWhenUpstreamBuilding> 
