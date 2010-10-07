@@ -16,7 +16,7 @@ HUDSON_PRERELEASE_CONFIG = """<?xml version='1.0' encoding='UTF-8'?>
     </hudson.plugins.trac.TracProjectProperty> 
   </properties> 
   <scm/>
-  <assignedNode>hudson-devel</assignedNode>
+  <assignedNode>prerelease</assignedNode>
   <canRoam>false</canRoam> 
   <disabled>false</disabled> 
   <blockBuildWhenUpstreamBuilding>false</blockBuildWhenUpstreamBuilding> 
