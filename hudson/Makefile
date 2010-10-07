@@ -7,8 +7,8 @@ clean_dist:
 	-rm -rf dist
 
 distro: 
-	mkdir -p pypi/src/hudson
-	cp src/hudson.py pypi/src/hudson/__init__.py
+	mkdir -p pypi/hudson
+	cp src/hudson.py pypi/hudson/__init__.py
 	cd pypi && python setup.py sdist
 
 install: distro
