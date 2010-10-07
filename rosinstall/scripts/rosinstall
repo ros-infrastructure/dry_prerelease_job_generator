@@ -306,7 +306,7 @@ class Config:
     # simplest case first
     ros_root = self.ros_path()
     if not ros_root:
-      raise ROSInstallException("No ROS_ROOT defined.  The 'ros' stack is required in all rosinstall directories. Please add a definition of the 'ros' stack either manually in .rosinstall and then call 'rosinstall .' in the directory. Or add one on the command line 'rosinstall . http://www.ros.org/rosinstalls/boxturtle_ros.rosinstall'. Or reference an existing install like in /opt/ros/boxturtle with 'rosinstall . /opt/ros/boxturtle'.  Note: the above suggestions assume you are using boxturtle, if you are using latest or another distro please change the urls." )
+      raise ROSInstallException("No 'ros' stack detected.  The 'ros' stack is required in all rosinstall directories. Please add a definition of the 'ros' stack either manually in .rosinstall and then call 'rosinstall .' in the directory. Or add one on the command line 'rosinstall . http://www.ros.org/rosinstalls/boxturtle_ros.rosinstall'. Or reference an existing install like in /opt/ros/boxturtle with 'rosinstall . /opt/ros/boxturtle'.  Note: the above suggestions assume you are using boxturtle, if you are using latest or another distro please change the urls." )
     rpp = self.get_ros_package_path()
 
     text = self.generate_full_setup_text(ros_root, rpp)
