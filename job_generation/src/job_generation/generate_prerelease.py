@@ -198,6 +198,8 @@ def main():
     if not options.email:
         print 'Please provide your email address: --email you@willowgarage.com'
         return
+    if not '@' in options.email: 
+        options.email = options.email + '@willowgarage.com'
     if not options.rosdistro:
         print 'Please provide the ros distro you want to test: --rosdistro cturtle'
         return
