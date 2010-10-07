@@ -372,6 +372,9 @@ class ChrootInstance:
         key_file = 'tmp/wg.key'
         abs_key_file =os.path.join(self.chroot_path, key_file)
         urllib.urlretrieve('http://wgs1.willowgarage.com/wg-packages/wg.key', abs_key_file)
+        
+        with open(key_file) as f:
+            print "key file:", f.read()
         cmd = ['apt-key', 'add', os.path.join('/', key_file)]
         self.execute(cmd) 
 
