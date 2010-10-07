@@ -96,12 +96,17 @@ def main():
 
     # Install all stacks that depend on this stack
     print 'Installing all stacks that depend on these stacks from source'
-    rosinstall = ''
+    depends_on = {}
     for stack in options.stacklist:
-        print 'Installing dependencies of stack %s'%stack
         res, err = subprocess.Popen(('rosstack depends-on %s'%stack).split(' '), stdout=subprocess.PIPE, env=env).communicate()
-        print res
-        rosinstall += stacks_to_rosinstall(res.split('\n'), rosdistro_obj.stacks, 'distro')
+        if res != '':
+            for r in res.split('\n'):
+                depends_on[r] = ''
+    if len(depends_on.keys()) == 0:
+        print 'No stacks depends on %s, finishing test.'%options.stacklist        
+        return 0
+    print 'These stacks depend on the stacks we are testing: "%s"'%str(depends_on.keys())
+    rosinstall = stacks_to_rosinstall(depends_on.keys(), rosdistro_obj.stacks, 'distro')
     rosinstall_file = '%s.rosinstall'%DEPENDS_ON_DIR
     with open(rosinstall_file, 'w') as f:
         f.write(rosinstall)
