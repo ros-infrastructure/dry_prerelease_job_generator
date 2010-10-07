@@ -47,7 +47,7 @@ HUDSON_DEVEL_CONFIG = """<?xml version='1.0' encoding='UTF-8'?>
     </hudson.plugins.trac.TracProjectProperty> 
   </properties> 
   HUDSON_VCS
-  <assignedNode>hudson-devel</assignedNode>
+  <assignedNode>devel</assignedNode>
   <canRoam>false</canRoam> 
   <disabled>false</disabled> 
   <blockBuildWhenUpstreamBuilding>false</blockBuildWhenUpstreamBuilding> 
@@ -91,7 +91,7 @@ rm -rf $WORKSPACE/test_output
 
 wget https://code.ros.org/svn/ros/stacks/ros_release/trunk/hudson/scripts/run_chroot.py --no-check-certificate -O $WORKSPACE/run_chroot.py
 chmod +x $WORKSPACE/run_chroot.py
-cd $WORKSPACE &amp;&amp; $WORKSPACE/run_chroot.py --distro=UBUNTUDISTRO --arch=ARCH  --ramdisk --script=$WORKSPACE/script.sh
+cd $WORKSPACE &amp;&amp; $WORKSPACE/run_chroot.py --distro=UBUNTUDISTRO --arch=ARCH  --ramdisk --ssh-key-file=/tmp/rosbuild-ssh.tar --script=$WORKSPACE/script.sh
      </command> 
     </hudson.tasks.Shell> 
   </builders> 
