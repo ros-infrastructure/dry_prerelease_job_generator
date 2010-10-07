@@ -349,8 +349,11 @@ class ChrootInstance:
             subprocess.check_call(cmd)
 
             
+        print "adding code.ros.org gpg key"
         key_file = 'tmp/ros.key'
         abs_key_file =os.path.join(self.chroot_path, key_file)
+        with open(abs_key_file) as f:
+            print "key file:", f.read()
         urllib.urlretrieve('http://code.ros.org/packages/ros.key', abs_key_file)
         cmd = ['apt-key', 'add', os.path.join('/', key_file)]
         self.execute(cmd) 
@@ -369,11 +372,12 @@ class ChrootInstance:
             subprocess.check_call(cmd)
 
             
+        print "adding wg gpg key"
         key_file = 'tmp/wg.key'
         abs_key_file =os.path.join(self.chroot_path, key_file)
         urllib.urlretrieve('http://wgs1.willowgarage.com/wg-packages/wg.key', abs_key_file)
         
-        with open(key_file) as f:
+        with open(abs_key_file) as f:
             print "key file:", f.read()
         cmd = ['apt-key', 'add', os.path.join('/', key_file)]
         self.execute(cmd) 
