@@ -160,7 +160,7 @@ def execute_chroot(cmd, path, user='root'):
 
 
 class ChrootInstance:
-    def __init__(self, distro, arch, path, host_workspace, clear_chroot = True, ssh_key_path = None):
+    def __init__(self, distro, arch, path, host_workspace, clear_chroot = True, ssh_key_path = None, use_wg_sources = False):
         #logging
         self.profile = []
         self.chroot_path = path
@@ -176,6 +176,7 @@ class ChrootInstance:
         self.clear_chroot = clear_chroot
         self.workspace_successfully_copied = False
         self.ssh_key_path = ssh_key_path
+        self.use_wg_sources = use_wg_sources
 
 
     def clean(self):
@@ -257,7 +258,7 @@ class ChrootInstance:
         # This extra source is to pull in the very latest
         # nvidia-current package from our mirror.  It's only guaranteed
         # to be available for Lucid, but we only need it for Lucid.
-        if self.distro == 'lucid':
+        if self.distro == 'lucid' or self.use_wg_sources:
             self.add_wg_sources()
 
         #disable start-stop-daemon and invokerc
@@ -508,7 +509,7 @@ class ChrootInstance:
         self.profile.append((net_time, "executed: %s"%cmd))
 
 def run_chroot(options, path, workspace):
-    with ChrootInstance(options.distro, options.arch, path, workspace, clear_chroot = not options.persist, ssh_key_path=options.ssh_key_path) as chrti:
+    with ChrootInstance(options.distro, options.arch, path, workspace, clear_chroot = not options.persist, ssh_key_path=options.ssh_key_path, use_wg_sources = options.use_wg_sources) as chrti:
 
         chrti.manual_init()
 
@@ -615,6 +616,8 @@ parser.add_option("--ramdisk-size", action="store", dest="ramdisk_size", default
                   type="string", help="Ramdisk size string, default '15000M'")
 parser.add_option("--ramdisk", action="store_true", dest="ramdisk", default=False,
                   help="Run chroot in a ramdisk")
+parser.add_option("--use-wg-sources", action="store_true", dest="use_wg_sources", default=False,
+                  help="Use internal wg sources.")
 parser.add_option("--script", action="store", dest="script",
                   type="string", help="Script filename to execute on the remote machine")
 parser.add_option("--ssh-key-file", action="store", dest="ssh_key_path", default=None,
