@@ -202,6 +202,7 @@ class ChrootInstance:
 
     def mount_proc_sys(self):
         #hack since we mount it in 2 places and umount is safe
+        print "unmounting before mounting to prevent double mounting"
         self.unmount_proc_sys()
 
         cmd = ['sudo', 'mount', '--bind', "/proc", "%s/proc"%self.chroot_path]
@@ -435,7 +436,9 @@ class ChrootInstance:
             self.bootstrap()
         elif not os.path.isdir(self.chroot_path):
             self.bootstrap() # bootstrap if cleaned or uninitialized
+            print "finished bootstrap"
         else:
+            print "configuring"
             self.execute(['dpkg', '--configure', '-a']) # clean up in case dpkg was previously interrupted
 
         # Even if we're reusing the chroot, we re-mount /proc and /sys.
