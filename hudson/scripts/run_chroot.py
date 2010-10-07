@@ -258,7 +258,7 @@ class ChrootInstance:
         # This extra source is to pull in the very latest
         # nvidia-current package from our mirror.  It's only guaranteed
         # to be available for Lucid, but we only need it for Lucid.
-        if self.distro == 'lucid' or self.use_wg_sources:
+        if self.use_wg_sources:
             self.add_wg_sources()
 
         #disable start-stop-daemon and invokerc
