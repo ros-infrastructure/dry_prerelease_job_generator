@@ -424,6 +424,8 @@ def build_debs_main():
 
     if failure_message:
         print >> sys.stderr, failure_message
+
+        failure_message = "%s\n\n%s"%(failure_message, os.environ['BUILD_URL'])
         if options.smtp and stack_name != 'ALL' and distro is not None:
             stack_version = distro.stacks[stack_name].version
             control = download_control(stack_name, stack_version)
