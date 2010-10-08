@@ -391,6 +391,10 @@ td {
 
 def list_missing_main():
 
+    # TODO: remove, I just need to figure out the hudson environment
+    import os
+    print os.environ
+    
     from optparse import OptionParser
     parser = OptionParser(usage="usage: %prog <distro> <os-platform> <arch>", prog=NAME)
     parser.add_option("--all", help="run on all os/arch combos for known distro",
