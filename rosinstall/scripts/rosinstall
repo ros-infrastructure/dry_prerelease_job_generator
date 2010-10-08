@@ -100,7 +100,7 @@ class VCSConfigElement(ConfigElement):
 
   def install(self,  backup_path = None,arg_mode = 'abort'):
     mode = arg_mode
-    print "Installing %s to %s %s"%(self.path, self.uri, self.version)
+    print "Installing %s %s to %s %s"%(self.uri, self.version, self.path)
     if not self.vcsc.path_exists():
         if not self.vcsc.checkout(self.uri, self.version):
             return False
