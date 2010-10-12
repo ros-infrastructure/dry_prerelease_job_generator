@@ -1,10 +1,10 @@
 <package>
   <description brief="hudson">
 
-     hudson
+     Python library for calling Hudson's REST-like API.
 
   </description>
-  <author>Tully Foote</author>
+  <author>Ken Conley</author>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/hudson</url>
