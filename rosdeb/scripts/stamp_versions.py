@@ -421,16 +421,19 @@ def build_debs_main():
             for arch in ['i386', 'amd64']:
                 to_stamp.append((distro_name, os_platform, arch))
 
-    if not options.check:
-        if options.staging_dir is not None:
-            staging_dir    = options.staging_dir
-            staging_dir = os.path.abspath(staging_dir)
-        else:
-            staging_dir = tempfile.mkdtemp()
-
     failed = 0
 
     for distro_name, os_platform, arch in to_stamp:
+
+        # create and delete staging_dir per distro so as to not flood
+        # the tmp dir
+        if not options.check:
+            if options.staging_dir is not None:
+                staging_dir    = options.staging_dir
+                staging_dir = os.path.abspath(staging_dir)
+            else:
+                staging_dir = tempfile.mkdtemp()
+
 
         if os_platform not in rosdeb.platforms():
             print >> sys.stderr, "[%s] is not a known platform.\nSupported platforms are: %s"%(os_platform, ' '.join(rosdeb.platforms()))
@@ -442,16 +445,24 @@ def build_debs_main():
                 os.makedirs(staging_dir)
 
         distro = load_distro(distro_name)
+
+        # compare versions
+        old_version = guess_repo_version(list_missing.SHADOW_FIXED_REPO, distro, os_platform, arch)
+        ok = True
         if options.check:
-            old_version = guess_repo_version(list_missing.SHADOW_FIXED_REPO, distro, os_platform, arch)
-            if old_version != distro.version:
-                print "%s-%s: %s vs. %s"%(os_platform, arch, old_version, distro.version)
-        else:
+            print "%s-%s: %s vs. %s"%(os_platform, arch, old_version, distro.version)
+        elif old_version == distro.version and not options.force:
+            # versions match
+            print "repo already up-to-date: %s-%s (%s)"%(os_platform, arch, old_version)
+            print "use --force to override"
+            ok = False
+                
+        if ok and not options.check:
             failed += stamp_debs(distro, os_platform, arch, staging_dir)
 
-    if not options.check:
-        if options.staging_dir is None:
-            shutil.rmtree(staging_dir)
+        if not options.check:
+            if options.staging_dir is None:
+                shutil.rmtree(staging_dir)
 
     sys.exit(failed)
         
