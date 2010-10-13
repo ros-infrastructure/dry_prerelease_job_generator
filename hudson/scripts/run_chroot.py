@@ -613,8 +613,8 @@ parser.add_option("--persist-chroot", action="store_true", dest="persist", defau
                   help="do not clear the chroot before running")
 parser.add_option("--chroot-dir", action="store", dest="chroot_dir", default="/home/rosbuild/chroot",
                   type="string", help="prefix for ros_release")
-parser.add_option("--ramdisk-size", action="store", dest="ramdisk_size", default="18000M",
-                  type="string", help="Ramdisk size string, default '18000M'")
+parser.add_option("--ramdisk-size", action="store", dest="ramdisk_size", default="20000M",
+                  type="string", help="Ramdisk size string, default '20GB'")
 parser.add_option("--ramdisk", action="store_true", dest="ramdisk", default=False,
                   help="Run chroot in a ramdisk")
 parser.add_option("--use-wg-sources", action="store_true", dest="use_wg_sources", default=False,
