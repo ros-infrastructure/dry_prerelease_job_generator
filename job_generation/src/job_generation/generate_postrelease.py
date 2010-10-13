@@ -91,7 +91,7 @@ rm -rf $WORKSPACE/test_output
 
 wget  --no-check-certificate https://code.ros.org/svn/ros/stacks/ros_release/trunk/hudson/scripts/run_chroot.py -O $WORKSPACE/run_chroot.py
 chmod +x $WORKSPACE/run_chroot.py
-cd $WORKSPACE &amp;&amp; $WORKSPACE/run_chroot.py --distro=UBUNTUDISTRO --arch=ARCH  --ramdisk --script=$WORKSPACE/script.sh
+cd $WORKSPACE &amp;&amp; $WORKSPACE/run_chroot.py --distro=UBUNTUDISTRO --arch=ARCH  --ramdisk --ssh-key-file=/home/rosbuild/rosbuild-ssh.tar --script=$WORKSPACE/script.sh
      </command> 
     </hudson.tasks.Shell> 
   </builders> 
@@ -220,10 +220,10 @@ def create_post_release_configs(rosdistro, stack):
             if stack.vcs_config.type == 'svn':
                 hudson_vcs = HUDSON_SVN
                 hudson_vcs = hudson_vcs.replace('STACKNAME', stack.name)
-                hudson_vcs = hudson_vcs.replace('STACKURI', stack.vcs_config.anon_release_tag)
+                hudson_vcs = hudson_vcs.replace('STACKURI', stack.vcs_config.anon_distro_tag)
             elif stack.vcs_config.type == 'hg':
                 hudson_vcs = HUDSON_HG
-                hudson_vcs = hudson_vcs.replace('STACKBRANCH', stack.vcs_config.release_tag)
+                hudson_vcs = hudson_vcs.replace('STACKBRANCH', stack.vcs_config.distro_tag)
                 hudson_vcs = hudson_vcs.replace('STACKURI', stack.vcs_config.repo_uri)
                 hudson_vcs = hudson_vcs.replace('STACKNAME', stack.name)
                 
