@@ -76,7 +76,7 @@ def main():
     # Install system dependencies
     print 'Installing system dependencies'
     for stack in options.stacklist:
-        subprocess.Popen(('rosmake --rosdep-install --rosdep-yes %s'%stack).split(' '), env=env).communicate()
+        subprocess.Popen(('rosmake -V --status-rate=0 --rosdep-install --rosdep-yes %s'%stack).split(' '), env=env).communicate()
 
     
     # Run hudson helper for stacks only

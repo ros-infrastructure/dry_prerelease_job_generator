@@ -53,7 +53,7 @@ def main():
 
     # Install system dependencies
     print 'Installing system dependencies'
-    subprocess.Popen(('rosmake --rosdep-install --rosdep-yes %s'%options.stack).split(' '), env=env).communicate()
+    subprocess.Popen(('rosmake -V --status-rate=0 --rosdep-install --rosdep-yes %s'%options.stack).split(' '), env=env).communicate()
 
 
     # Start Hudson Helper
