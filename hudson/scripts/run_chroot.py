@@ -116,46 +116,20 @@ def clean_up_chroots():
 
 
 def execute_chroot(cmd, path, user='root'):
-    if 0:
-        with tempfile.NamedTemporaryFile() as tempfh:
-            envs = []
-            tempfh.write("#!/usr/bin/env bash\n")
-            for k,v in os.environ.copy().iteritems():
-                tempfh.write("export %s='%s'\n"%(k, v))
-
-            tempfh.write(" ".join(cmd))
-            tempfh.flush()
-            os.fsync(tempfh.fileno())
-            contents = file(tempfh.name).read()
-            remote_name = os.path.join(path, tempfh.name.lstrip(os.sep))
-            print "Script %s reads {{{%s}}}"%(tempfh.name, contents)
-            print "copying script into chroot", tempfh.name, remote_name
-            subprocess.check_call(("sudo cp %s %s"%(tempfh.name, remote_name)).split())
-            subprocess.check_call(("sudo chmod +x %s"%(remote_name)).split())
-
-            if user == 'root':
-                full_cmd = ['sudo', 'chroot', path, tempfh.name]
-            else:
-                full_cmd = ['sudo', 'chroot', path, 'su', user, '-c', tempfh.name]
-            print "Executing", full_cmd
-            subprocess.check_call(full_cmd)
-            return
-
+    if user == 'root':
+        full_cmd = ["sudo", "chroot", path]
+        full_cmd.extend(cmd)
     else:
-        if user == 'root':
-            full_cmd = ["sudo", "chroot", path]
-            full_cmd.extend(cmd)
-        else:
-            envs = []
-            #hudson_envs = ["BUILD_NUMBER", 'BUILD_ID', 'JOB_NAME', 'BUILD_TAG', 'EXECUTOR_NUMBER', 'WORKSPACE', 'HUDSON_URL', 'BUILD_URL', 'JOB_URL', 'SVN_REVISION', 'CVS_BRANCH']
-            hudson_envs = ["BUILD_NUMBER", 'BUILD_ID', 'JOB_NAME', 'BUILD_TAG', 'EXECUTOR_NUMBER', 'HUDSON_URL', 'BUILD_URL', 'JOB_URL', 'SVN_REVISION']
-            for k,v in os.environ.copy().iteritems():
-                if k in hudson_envs:
-                    envs.append("%s='%s'"%(k, v))
-            full_cmd = ['sudo', 'chroot', path, 'su', user, '-s', '/bin/bash',  '-c', '%s %s'%(" ".join(envs), " ".join(cmd))]
-        print "Executing", full_cmd
-        subprocess.check_call(full_cmd)
-    
+        envs = []
+        #hudson_envs = ["BUILD_NUMBER", 'BUILD_ID', 'JOB_NAME', 'BUILD_TAG', 'EXECUTOR_NUMBER', 'WORKSPACE', 'HUDSON_URL', 'BUILD_URL', 'JOB_URL', 'SVN_REVISION', 'CVS_BRANCH']
+        hudson_envs = ["BUILD_NUMBER", 'BUILD_ID', 'JOB_NAME', 'BUILD_TAG', 'EXECUTOR_NUMBER', 'HUDSON_URL', 'BUILD_URL', 'JOB_URL', 'SVN_REVISION']
+        for k,v in os.environ.copy().iteritems():
+            if k in hudson_envs:
+                envs.append("%s='%s'"%(k, v))
+        full_cmd = ['sudo', 'chroot', path, 'su', user, '-s', '/bin/bash',  '-c', '%s %s'%(" ".join(envs), " ".join(cmd))]
+    print "Executing", full_cmd
+    subprocess.check_call(full_cmd)
+
 
 
 
@@ -197,10 +171,6 @@ class ChrootInstance:
         print cmd
         subprocess.call(cmd)
 
-        
-        #self.execute(['umount', '-f', '/proc'], True)
-        #self.execute(['umount', '-f', '/sys'], True)
-
     def mount_proc_sys(self):
         #hack since we mount it in 2 places and umount is safe
         print "unmounting before mounting to prevent double mounting"
@@ -212,8 +182,6 @@ class ChrootInstance:
         cmd = ['sudo', 'mount', '--bind', "/sys", "%s/sys"%self.chroot_path]
         print cmd
         subprocess.call(cmd)
-        #self.execute(['mount', '-t', 'proc', 'proc', '/proc'])
-        #self.execute(['mount', '-t', 'sysfs', 'sysfs', '/sys'])
 
     def bootstrap(self):
         cmd = ['sudo', 'apt-get', 'install', 'debootstrap']
@@ -283,8 +251,6 @@ class ChrootInstance:
             self.execute(['locale-gen', 'en_US.UTF-8'])
 
         self.execute(['apt-get', 'update'])
-
-          #subprocess.check_call(chrootcmd + ['apt-get', '-y', '--force-yes', 'install', 'build-essential', 'python-yaml', 'cmake', 'subversion', 'wget', 'lsb-release', 'fakeroot', 'sudo', 'debhelper', 'cdbs', 'ca-certificates', 'debconf-utils'])
 
 
           # Fix the sudoers file
@@ -413,18 +379,6 @@ class ChrootInstance:
         self.execute(['chown', '-R', 'rosbuild:rosbuild', '/home/rosbuild'])
 
     def replecate_workspace(self):
-        print "replecating host workspace"
-        # setup workspace
-        print "clearing destination"
-
-        #subprocess.check_call(["sudo", "rm", "-rf", self.ws_remote_path]);
-
-        #print "Copying ", self.host_workspace, self.ws_remote_path
-        #subprocess.check_call(["sudo", "cp", "-a", self.host_workspace, self.ws_remote_path]);
-        #self.execute(['chown', '-R', 'rosbuild:rosbuild', self.mount_path])
-        #self.workspace_successfully_copied = True
-        #print "Done replecating workspace"
-
         print "Linking in workspace"
         subprocess.check_call(["sudo", "mkdir", "-p", self.ws_remote_path]);
         # backwards compatability /tmp/ros
@@ -436,20 +390,12 @@ class ChrootInstance:
 
 
     def write_back_workspace(self):
-        #print "Writing back resultant workspace"
-        #if not self.workspace_successfully_copied:
-        #    print "skipping copy back due to no successful initial copy"
-        #    return
-        #subprocess.check_call(['sudo', 'chown', '-R', '%d'%os.getuid(), self.ws_remote_path])
-        #subprocess.check_call(["sudo", 'rm', "-rf", self.host_workspace]);
-        #subprocess.check_call(["cp", "-a", self.ws_remote_path, self.host_workspace]);
-        #print "done writing back"
         
         print "unlinking workspace"
         subprocess.check_call(['sudo', 'umount', '-f', self.ws_remote_path])
         #backwards compatability /tmp/ros
         subprocess.check_call(['sudo', 'umount', '-f', os.path.join(self.ws_remote_path, "../ros")])       
-
+        subprocess.check_call(['sudo', 'chown', '-R', '%d:%d'%(os.geteuid(), os.geteuid()), self.host_workspace])
 
     def manual_init(self):
         
@@ -479,12 +425,6 @@ class ChrootInstance:
         self.replecate_workspace()
 
         
-#        if not os.path.isdir(self.host_ccache_dir):
-#            os.makedirs(self.host_ccache_dir)
-#        if not os.path.isdir(self.ccache_remote_dir):
-#            os.makedirs(self.ccache_remote_dir)
-#        print "Mounting", self.host_ccache_dir, self.ccache_remote_dir
-#        subprocess.check_call(['sudo', 'mount', '--bind', self.host_ccache_dir, self.ccache_remote_dir])
 
 
     
@@ -572,8 +512,6 @@ def run_chroot(options, path, workspace):
 
             cmd = ("chown rosbuild:rosbuild %s"%chrti.mount_path).split() # if 
             print chrti.execute(cmd)
-
-            #cmd = ["su", "rosbuild", "-c", "export JOB_NAME=ros-boxturtle-amazon && export BUILD_NUMBER=1 && export HUDSON_URL=http://build.willowgarage.com && export WORKSPACE=/tmp/ros && cd %s && %s/hudson_helper --dir-test ros build"%(chrti.mount_path, chrti.mount_path)]
 
             cmd = ["bash", "-c", "export PATH=/usr/lib/ccache:$PATH && export CCACHE_DIR=%s &&export JOB_NAME=%s && export BUILD_NUMBER=%s && export HUDSON_URL=%s && export WORKSPACE=/tmp/ros && cd %s && %s %s/hudson_helper %s"%(chrti.ccache_dir, os.getenv('JOB_NAME'), os.getenv('BUILD_NUMBER'), os.getenv('HUDSON_URL'), chrti.mount_path, setarch, chrti.mount_path, options.hudson_args)]
             chrti.execute(cmd, user='rosbuild')
