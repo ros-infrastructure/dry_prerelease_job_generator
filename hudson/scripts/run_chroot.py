@@ -165,7 +165,7 @@ class ChrootInstance:
         self.profile = []
         self.chroot_path = path
         self.host_workspace = host_workspace
-        self.mount_path = "/tmp/ros"
+        self.mount_path = "/tmp/workspace"
         self.ccache_dir = "/tmp/ccache"
         self.host_ccache_dir = "~/.ccache"
         self.ccache_remote_dir = os.path.join(self.chroot_path, self.ccache_dir[1:])
@@ -416,23 +416,39 @@ class ChrootInstance:
         print "replecating host workspace"
         # setup workspace
         print "clearing destination"
-        subprocess.check_call(["sudo", "rm", "-rf", self.ws_remote_path]);
 
-        print "Copying ", self.host_workspace, self.ws_remote_path
-        subprocess.check_call(["sudo", "cp", "-a", self.host_workspace, self.ws_remote_path]);
+        #subprocess.check_call(["sudo", "rm", "-rf", self.ws_remote_path]);
+
+        #print "Copying ", self.host_workspace, self.ws_remote_path
+        #subprocess.check_call(["sudo", "cp", "-a", self.host_workspace, self.ws_remote_path]);
+        #self.execute(['chown', '-R', 'rosbuild:rosbuild', self.mount_path])
+        #self.workspace_successfully_copied = True
+        #print "Done replecating workspace"
+
+        print "Linking in workspace"
+        subprocess.check_call(["sudo", "mkdir", "-p", self.ws_remote_path]);
+        # backwards compatability /tmp/ros
+        subprocess.check_call(["sudo", "mkdir", "-p", os.path.join(self.ws_remote_path, "../ros")]);
+        subprocess.check_call(['sudo', 'mount', '--bind', self.host_workspace, self.ws_remote_path])
+        #backwards compatability /tmp/ros
+        subprocess.check_call(['sudo', 'mount', '--bind', self.host_workspace, os.path.join(self.ws_remote_path, "../ros")])        
         self.execute(['chown', '-R', 'rosbuild:rosbuild', self.mount_path])
-        self.workspace_successfully_copied = True
-        print "Done replecating workspace"
+
 
     def write_back_workspace(self):
-        print "Writing back resultant workspace"
-        if not self.workspace_successfully_copied:
-            print "skipping copy back due to no successful initial copy"
-            return
-        subprocess.check_call(['sudo', 'chown', '-R', '%d'%os.getuid(), self.ws_remote_path])
-        subprocess.check_call(["sudo", 'rm', "-rf", self.host_workspace]);
-        subprocess.check_call(["cp", "-a", self.ws_remote_path, self.host_workspace]);
-        print "done writing back"
+        #print "Writing back resultant workspace"
+        #if not self.workspace_successfully_copied:
+        #    print "skipping copy back due to no successful initial copy"
+        #    return
+        #subprocess.check_call(['sudo', 'chown', '-R', '%d'%os.getuid(), self.ws_remote_path])
+        #subprocess.check_call(["sudo", 'rm', "-rf", self.host_workspace]);
+        #subprocess.check_call(["cp", "-a", self.ws_remote_path, self.host_workspace]);
+        #print "done writing back"
+        
+        print "unlinking workspace"
+        subprocess.check_call(['sudo', 'umount', '-f', self.ws_remote_path])
+        #backwards compatability /tmp/ros
+        subprocess.check_call(['sudo', 'umount', '-f', os.path.join(self.ws_remote_path, "../ros")])       
 
 
     def manual_init(self):
@@ -531,8 +547,8 @@ def run_chroot(options, path, workspace):
 
 
         if options.script:
-            remote_script_name = os.path.join(chrti.mount_path, os.path.basename(options.script))
-            cmd = ["sudo", "cp", options.script, chrti.ws_remote_path]
+            remote_script_name = os.path.join("/tmp", os.path.basename(options.script))
+            cmd = ["sudo", "cp", options.script, os.path.join(chrti.chroot_path, "tmp")]
             print "Executing", cmd
             subprocess.check_call(cmd);
             cmd = ("chown rosbuild:rosbuild %s"%remote_script_name).split()
