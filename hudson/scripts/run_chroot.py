@@ -392,7 +392,7 @@ class ChrootInstance:
         self.execute(cmd)
 
         if self.scratch_dir:
-            self.temp_hdd_dir = tempfile.mkdtemp(self.hdd_tmp_dir)
+            self.temp_hdd_dir = tempfile.mkdtemp(dir=self.hdd_tmp_dir)
             subprocess.check_call(['sudo', 'mount', '--bind', self.temp_hdd_dir, os.path.join(self.chroot_path, self.scratch_dir)])
 
 
@@ -483,7 +483,7 @@ def run_chroot(options, path, workspace, hdd_tmp_dir):
     with ChrootInstance(options.distro, options.arch, path, workspace, clear_chroot = not options.persist, ssh_key_path=options.ssh_key_path, use_wg_sources = options.use_wg_sources, hdd_tmp_dir=hdd_tmp_dir) as chrti:
 
         #initialization here so that if it throws the cleanup is called.  
-        self.manual_init()
+        chrti.manual_init()
 
         cmd = "apt-get update".split()
         chrti.execute(cmd)
@@ -567,7 +567,7 @@ if not workspace:
     print "you must export WORKSPACE"
     sys.exit(1)
 
-hdd_tmp_dir = os.getenv("HDD_TMP_DIR")
+hdd_tmp_dir = os.getenv("HDD_TMP_DIR", "/tmp")
 
 
 
