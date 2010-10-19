@@ -415,7 +415,7 @@ class ChrootInstance:
             print "Cleaning up scratch mount %s"%self.hdd_remote_mount
             subprocess.call(['sudo', 'umount', '-f', self.hdd_remote_mount])
             print "deleting tempdir", self.hdd_tmp_dir
-            os.removedirs(self.hdd_tmp_dir)
+            os.removedirs(self.temp_hdd_dir)
 
     def manual_init(self):
         
