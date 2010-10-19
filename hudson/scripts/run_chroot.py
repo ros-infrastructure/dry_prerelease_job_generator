@@ -394,7 +394,7 @@ class ChrootInstance:
         if self.scratch_dir:
             self.temp_hdd_dir = tempfile.mkdtemp(dir=self.hdd_tmp_dir)
             self.hdd_remote_mount = os.path.join(self.chroot_path, self.scratch_dir.lstrip('/'))
-            print "created tempdir", self.temp_hdd_tmp_dir
+            print "created tempdir", self.temp_hdd_dir
             subprocess.check_call(['sudo', 'mount', '--bind', self.temp_hdd_dir, self.hdd_remote_mount])
             print "mounting tempdir to %s"%os.path.join(self.chroot_path, self.scratch_dir)
 
