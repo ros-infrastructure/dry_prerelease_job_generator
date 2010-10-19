@@ -152,6 +152,7 @@ class ChrootInstance:
         self.ssh_key_path = ssh_key_path
         self.use_wg_sources = use_wg_sources
         self.hdd_path = hdd_path
+        self.tmp_prefix = 'tmp'
 
 
     def clean(self):
@@ -387,7 +388,12 @@ class ChrootInstance:
         subprocess.check_call(['sudo', 'mount', '--bind', self.host_workspace, self.ws_remote_path])
         #backwards compatability /tmp/ros
         subprocess.check_call(['sudo', 'mount', '--bind', self.host_workspace, os.path.join(self.ws_remote_path, "../ros")])        
-        self.execute(['chown', '-R', 'rosbuild:rosbuild', self.mount_path])
+        cmd = ['chown', '-R', 'rosbuild:rosbuild', self.mount_path]
+        self.execute(cmd)
+
+        if self.hdd_path:
+            self.temp_hdd_dir = tempfile.mkdtemp(self.tmp_prefix)
+            subprocess.check_call(['sudo', 'mount', '--bind', self.temp_hdd_dir, self.hdd_path])
 
 
     def write_back_workspace(self):
@@ -397,6 +403,9 @@ class ChrootInstance:
         #backwards compatability /tmp/ros
         subprocess.check_call(['sudo', 'umount', '-f', os.path.join(self.ws_remote_path, "../ros")])       
         subprocess.check_call(['sudo', 'chown', '-R', '%d:%d'%(os.geteuid(), os.geteuid()), self.host_workspace])
+
+        if self.hdd_path:
+            os.removedirs(self.temp_hdd_dir)
 
     def manual_init(self):
         
@@ -426,12 +435,12 @@ class ChrootInstance:
 
 
         
+        self.replecate_workspace()
 
 
     
 
     def __enter__(self):
-        self.replecate_workspace()
         return self
     def __exit__(self, mtype, value, tb):
         if tb:
