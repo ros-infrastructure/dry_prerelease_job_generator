@@ -1,0 +1,4 @@
+- other:
+    local-name: /opt/ros/${ROS_DISTRO_NAME}/ros
+- other:
+    local-name: /opt/ros/${ROS_DISTRO_NAME}/stacks

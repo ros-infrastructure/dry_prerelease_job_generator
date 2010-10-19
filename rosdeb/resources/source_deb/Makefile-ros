@@ -15,6 +15,7 @@ endif
 	bash -c ". setup_deb.sh && rosmake ros -i"
 	rm -rf ${ROS_DISTRO_DIR}/ros/*/build/CMakeFiles
 	cp setup.sh ${ROS_DISTRO_DIR}/
+	cp .rosinstall ${ROS_DISTRO_DIR}/
 	./fixrpath.py ${ROS_DISTRO_DIR}/ros ${ROS_DISTRO_DIR} ${ROS_DISTRO_DIR_FINAL}
 	./fixpc.py ${ROS_DISTRO_DIR}/ros ${ROS_DISTRO_DIR} ${ROS_DISTRO_DIR_FINAL}
 
