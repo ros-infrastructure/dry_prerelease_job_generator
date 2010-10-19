@@ -393,7 +393,9 @@ class ChrootInstance:
 
         if self.scratch_dir:
             self.temp_hdd_dir = tempfile.mkdtemp(dir=self.hdd_tmp_dir)
+            print "created tempdir", self.hdd_tmp_dir
             subprocess.check_call(['sudo', 'mount', '--bind', self.temp_hdd_dir, os.path.join(self.chroot_path, self.scratch_dir)])
+            print "mounting tempdir to %s"%os.path.join(self.chroot_path, self.scratch_dir)
 
 
     def write_back_workspace(self):
@@ -406,8 +408,11 @@ class ChrootInstance:
         print "Cleaning up permissions on workspace."
         subprocess.call(['sudo', 'chown', '-R', '%d:%d'%(os.geteuid(), os.geteuid()), self.host_workspace])
 
+        
         if self.scratch_dir:
+            print "Cleaning up scratch mount %s"%os.path.join(self.chroot_path, self.scratch_dir)
             subprocess.call(['sudo', 'umount', '-f', os.path.join(self.chroot_path, self.scratch_dir)])
+            print "deleting tempdir", self.hdd_tmp_dir
             os.removedirs(self.hdd_tmp_dir)
 
     def manual_init(self):
