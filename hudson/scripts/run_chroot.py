@@ -134,7 +134,7 @@ def execute_chroot(cmd, path, user='root'):
 
 
 class ChrootInstance:
-    def __init__(self, distro, arch, path, host_workspace, clear_chroot = True, ssh_key_path = None, use_wg_sources = False):
+    def __init__(self, distro, arch, path, host_workspace, clear_chroot = True, ssh_key_path = None, use_wg_sources = False, hdd_path=None):
         #logging
         self.profile = []
         self.chroot_path = path
@@ -151,6 +151,7 @@ class ChrootInstance:
         self.workspace_successfully_copied = False
         self.ssh_key_path = ssh_key_path
         self.use_wg_sources = use_wg_sources
+        self.hdd_path = hdd_path
 
 
     def clean(self):
@@ -422,7 +423,7 @@ class ChrootInstance:
         # contents of ~rosbuild/.ssh need to be updated.
         self.setup_ssh_client()
 
-        self.replecate_workspace()
+
 
         
 
@@ -430,6 +431,7 @@ class ChrootInstance:
     
 
     def __enter__(self):
+        self.replecate_workspace()
         return self
     def __exit__(self, mtype, value, tb):
         if tb:
