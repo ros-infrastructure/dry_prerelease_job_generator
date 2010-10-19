@@ -393,8 +393,9 @@ class ChrootInstance:
 
         if self.scratch_dir:
             self.temp_hdd_dir = tempfile.mkdtemp(dir=self.hdd_tmp_dir)
-            print "created tempdir", self.hdd_tmp_dir
-            subprocess.check_call(['sudo', 'mount', '--bind', self.temp_hdd_dir, os.path.join(self.chroot_path, self.scratch_dir)])
+            self.hdd_remote_mount = os.path.join(self.chroot_path, self.scratch_dir.lstrip('/'))
+            print "created tempdir", self.temp_hdd_tmp_dir
+            subprocess.check_call(['sudo', 'mount', '--bind', self.temp_hdd_dir, self.hdd_remote_mount])
             print "mounting tempdir to %s"%os.path.join(self.chroot_path, self.scratch_dir)
 
 
@@ -410,8 +411,8 @@ class ChrootInstance:
 
         
         if self.scratch_dir:
-            print "Cleaning up scratch mount %s"%os.path.join(self.chroot_path, self.scratch_dir)
-            subprocess.call(['sudo', 'umount', '-f', os.path.join(self.chroot_path, self.scratch_dir)])
+            print "Cleaning up scratch mount %s"%self.hdd_remote_mount
+            subprocess.call(['sudo', 'umount', '-f', self.hdd_remote_mount])
             print "deleting tempdir", self.hdd_tmp_dir
             os.removedirs(self.hdd_tmp_dir)
 
