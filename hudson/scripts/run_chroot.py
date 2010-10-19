@@ -134,7 +134,7 @@ def execute_chroot(cmd, path, user='root'):
 
 
 class ChrootInstance:
-    def __init__(self, distro, arch, path, host_workspace, clear_chroot = True, ssh_key_path = None, use_wg_sources = False, hdd_path=None):
+    def __init__(self, distro, arch, path, host_workspace, clear_chroot = True, ssh_key_path = None, use_wg_sources = False, scratch_dir=None, hdd_tmp_dir=None):
         #logging
         self.profile = []
         self.chroot_path = path
@@ -151,8 +151,8 @@ class ChrootInstance:
         self.workspace_successfully_copied = False
         self.ssh_key_path = ssh_key_path
         self.use_wg_sources = use_wg_sources
-        self.hdd_path = hdd_path
-        self.tmp_prefix = 'tmp'
+        self.hdd_tmp_dir = hdd_tmp_dir
+        self.scratch_dir = scratch_dir
 
 
     def clean(self):
@@ -391,21 +391,24 @@ class ChrootInstance:
         cmd = ['chown', '-R', 'rosbuild:rosbuild', self.mount_path]
         self.execute(cmd)
 
-        if self.hdd_path:
-            self.temp_hdd_dir = tempfile.mkdtemp(self.tmp_prefix)
-            subprocess.check_call(['sudo', 'mount', '--bind', self.temp_hdd_dir, self.hdd_path])
+        if self.scratch_dir:
+            self.temp_hdd_dir = tempfile.mkdtemp(self.hdd_tmp_dir)
+            subprocess.check_call(['sudo', 'mount', '--bind', self.temp_hdd_dir, os.path.join(self.chroot_path, self.scratch_dir)])
 
 
     def write_back_workspace(self):
         
-        print "unlinking workspace"
-        subprocess.check_call(['sudo', 'umount', '-f', self.ws_remote_path])
+        print "unmounting workspace"
+        subprocess.call(['sudo', 'umount', '-f', self.ws_remote_path])
         #backwards compatability /tmp/ros
-        subprocess.check_call(['sudo', 'umount', '-f', os.path.join(self.ws_remote_path, "../ros")])       
-        subprocess.check_call(['sudo', 'chown', '-R', '%d:%d'%(os.geteuid(), os.geteuid()), self.host_workspace])
+        subprocess.call(['sudo', 'umount', '-f', os.path.join(self.ws_remote_path, "../ros")])       
 
-        if self.hdd_path:
-            os.removedirs(self.temp_hdd_dir)
+        print "Cleaning up permissions on workspace."
+        subprocess.call(['sudo', 'chown', '-R', '%d:%d'%(os.geteuid(), os.geteuid()), self.host_workspace])
+
+        if self.scratch_dir:
+            subprocess.call(['sudo', 'umount', '-f', os.path.join(self.chroot_path, self.scratch_dir)])
+            os.removedirs(self.hdd_tmp_dir)
 
     def manual_init(self):
         
@@ -476,10 +479,11 @@ class ChrootInstance:
         net_time = time.time() - start_time
         self.profile.append((net_time, "executed: %s"%cmd))
 
-def run_chroot(options, path, workspace):
-    with ChrootInstance(options.distro, options.arch, path, workspace, clear_chroot = not options.persist, ssh_key_path=options.ssh_key_path, use_wg_sources = options.use_wg_sources) as chrti:
+def run_chroot(options, path, workspace, hdd_tmp_dir):
+    with ChrootInstance(options.distro, options.arch, path, workspace, clear_chroot = not options.persist, ssh_key_path=options.ssh_key_path, use_wg_sources = options.use_wg_sources, hdd_tmp_dir=hdd_tmp_dir) as chrti:
 
-        chrti.manual_init()
+        #initialization here so that if it throws the cleanup is called.  
+        self.manual_init()
 
         cmd = "apt-get update".split()
         chrti.execute(cmd)
@@ -563,6 +567,7 @@ if not workspace:
     print "you must export WORKSPACE"
     sys.exit(1)
 
+hdd_tmp_dir = os.getenv("HDD_TMP_DIR")
 
 
 
@@ -582,6 +587,8 @@ parser.add_option("--ramdisk-size", action="store", dest="ramdisk_size", default
                   type="string", help="Ramdisk size string, default '20GB'")
 parser.add_option("--ramdisk", action="store_true", dest="ramdisk", default=False,
                   help="Run chroot in a ramdisk")
+parser.add_option("--hdd-scratch", action="store", dest="hdd_scratch", default=False,
+                  help="Mount a tempdir on the hdd in this location in the chroot.")
 parser.add_option("--use-wg-sources", action="store_true", dest="use_wg_sources", default=False,
                   help="Use internal wg sources.")
 parser.add_option("--script", action="store", dest="script",
@@ -618,13 +625,13 @@ if options.ramdisk:
     with TempRamFS(path, options.ramdisk_size):
         cmd = ['mount']
         subprocess.check_call(cmd)
-        run_chroot(options, path, workspace)
+        run_chroot(options, path, workspace, hdd_tmp_dir)
 
     cmd = ['mount']
     subprocess.check_call(cmd)
 
 else:
-    run_chroot(options, path, workspace)
+    run_chroot(options, path, workspace, hdd_tmp_dir)
 
 
 sys.exit(0)
