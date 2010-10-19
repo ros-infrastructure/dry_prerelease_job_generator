@@ -485,7 +485,7 @@ class ChrootInstance:
         self.profile.append((net_time, "executed: %s"%cmd))
 
 def run_chroot(options, path, workspace, hdd_tmp_dir):
-    with ChrootInstance(options.distro, options.arch, path, workspace, clear_chroot = not options.persist, ssh_key_path=options.ssh_key_path, use_wg_sources = options.use_wg_sources, hdd_tmp_dir=hdd_tmp_dir) as chrti:
+    with ChrootInstance(options.distro, options.arch, path, workspace, clear_chroot = not options.persist, ssh_key_path=options.ssh_key_path, use_wg_sources = options.use_wg_sources, scratch_dir = options.hdd_scratch, hdd_tmp_dir=hdd_tmp_dir) as chrti:
 
         #initialization here so that if it throws the cleanup is called.  
         chrti.manual_init()
