@@ -5,7 +5,7 @@ DEPENDS_ON_DIR = 'depends_on_overlay'
 
 import roslib; roslib.load_manifest("job_generation")
 from roslib import stack_manifest
-from roslib2 import distro
+import rosdistro
 from jobs_common import *
 import sys
 import os
@@ -47,7 +47,7 @@ def main():
 
 
     # Parse distro file
-    rosdistro_obj = distro.Distro(ROSDISTRO_MAP[options.rosdistro])
+    rosdistro_obj = rosdistro.Distro(ROSDISTRO_MAP[options.rosdistro])
     print 'Operating on ROS distro %s'%rosdistro_obj.release_name
 
 

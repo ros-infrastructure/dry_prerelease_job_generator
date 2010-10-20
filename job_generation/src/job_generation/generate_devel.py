@@ -190,7 +190,7 @@ println &quot;${build_failures_context}&quot;&#xd;
 
 
 import roslib; roslib.load_manifest("job_generation")
-from roslib2 import distro
+import rosdistro
 from jobs_common import *
 import hudson
 import sys
@@ -264,7 +264,7 @@ def main():
 
 
     # Parse distro file
-    distro_obj = distro.Distro(ROSDISTRO_MAP[options.rosdistro])
+    distro_obj = rosdistro.Distro(ROSDISTRO_MAP[options.rosdistro])
     print 'Operating on ROS distro %s'%distro_obj.release_name
 
 

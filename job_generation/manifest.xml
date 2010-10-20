@@ -8,7 +8,7 @@
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/rosinstall</url>
-  <depend package="roslib2"/>
+  <depend package="rosdistro"/>
   <depend package="hudson"/>
 
 </package>
