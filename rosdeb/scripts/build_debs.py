@@ -54,7 +54,10 @@ from rosdistro import Distro
 from rosdeb.core import ubuntu_release, debianize_name, debianize_version, platforms, ubuntu_release_name
 from rosdeb.source_deb import download_control
 
+from rosdeb import get_repo_version
+
 import list_missing
+import stamp_versions
 
 NAME = 'build_debs.py' 
 TARBALL_URL = "https://code.ros.org/svn/release/download/stacks/%(stack_name)s/%(base_name)s/%(f_name)s"
@@ -429,9 +432,37 @@ def build_debs_main():
         # if we created our own staging dir, we are responsible for cleaning it up
         if options.staging_dir is None:
             shutil.rmtree(staging_dir)
+            
+    # If there was no failure and we did a build of ALL, so we go ahead and stamp the debs now
+    if not failure_message and stack_name == 'ALL':
+        try:
+            if options.staging_dir is not None:
+                staging_dir    = options.staging_dir
+                staging_dir = os.path.abspath(staging_dir)
+            else:
+                staging_dir = tempfile.mkdtemp()
 
-    
 
+            if os_platform not in rosdeb.platforms():
+                print >> sys.stderr, "[%s] is not a known platform.\nSupported platforms are: %s"%(os_platform, ' '.join(rosdeb.platforms()))
+                sys.exit(1)
+
+            if not os.path.exists(staging_dir):
+                print "creating staging dir: %s"%(staging_dir)
+                os.makedirs(staging_dir)
+
+            # compare versions
+            old_version = get_repo_version(list_missing.SHADOW_FIXED_REPO, distro, os_platform, arch)
+
+            if old_version != distro.version:
+                if stamp_versions.stamp_debs(distro, os_platform, arch, staging_dir) != 0:
+                    failure_message = "Could not upload debs"
+
+        except Exception, e:
+            failure_message = "Internal failure release system. Please notify leibs and kwc @willowgarage.com:\n%s\n\n%s"%(e, traceback.format_exc(e))
+        finally:
+            if options.staging_dir is None:
+                shutil.rmtree(staging_dir)
 
     if failure_message:
         print >> sys.stderr, failure_message
@@ -445,6 +476,8 @@ def build_debs_main():
                 subject = 'debian build [%s-%s-%s-%s] failed'%(distro_name, stack_name, os_platform, arch)
                 send_email(options.smtp, EMAIL_FROM_ADDR, to_addr, subject, failure_message)
         sys.exit(1)
+            
+
     
 if __name__ == '__main__':
     build_debs_main()
