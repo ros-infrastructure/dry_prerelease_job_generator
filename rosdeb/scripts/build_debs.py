@@ -54,6 +54,8 @@ from rosdistro import Distro
 from rosdeb.core import ubuntu_release, debianize_name, debianize_version, platforms, ubuntu_release_name
 from rosdeb.source_deb import download_control
 
+import list_missing
+
 NAME = 'build_debs.py' 
 TARBALL_URL = "https://code.ros.org/svn/release/download/stacks/%(stack_name)s/%(base_name)s/%(f_name)s"
 SHADOW_REPO="http://code.ros.org/packages/ros-shadow/"
@@ -332,6 +334,11 @@ def build_debs(distro, stack_name, os_platform, arch, staging_dir, force, nouplo
     # Create the environment where we build the debs, if necessary
     create_chroot(distro, distro_name, os_platform, arch)
 
+
+    # Load blacklisted information
+    missing_primary, missing_dep, missing_excluded, missing_excluded_dep = list_missing.get_missing(distro, os_platform, arch)
+    missing_ok = missing_excluded.union(missing_excluded_dep)
+
     # Find all the deps in the distro for this stack
     deps = compute_deps(distro, stack_name)
 
@@ -340,21 +347,23 @@ def build_debs(distro, stack_name, os_platform, arch, staging_dir, force, nouplo
 
     # Build the deps in order
     for (sn, sv) in deps:
-        deb_name = "ros-%s-%s"%(distro_name, debianize_name(sn))
-        deb_version = debianize_version(sv, '0', os_platform)
-        if not deb_in_repo(deb_name, deb_version, os_platform, arch) or (force and sn == stack_name):
-            si = load_info(sn, sv)
-            depends = set(si['depends'])
-            if depends.isdisjoint(broken.union(skipped)):
-                try:
-                    do_deb_build(distro_name, sn, sv, os_platform, arch, staging_dir, noupload, interactive and sn == stack_name)
-                except:
-                    broken.add(sn)
+        # Only build debs we expect to be there
+        if sn not in missing_ok:
+            deb_name = "ros-%s-%s"%(distro_name, debianize_name(sn))
+            deb_version = debianize_version(sv, '0', os_platform)
+            if not deb_in_repo(deb_name, deb_version, os_platform, arch) or (force and sn == stack_name):
+                si = load_info(sn, sv)
+                depends = set(si['depends'])
+                if depends.isdisjoint(broken.union(skipped)):
+                    try:
+                        do_deb_build(distro_name, sn, sv, os_platform, arch, staging_dir, noupload, interactive and sn == stack_name)
+                    except:
+                        broken.add(sn)
+                else:
+                    print "Skipping %s (%s) since dependencies not built: %s"%(sn, sv, broken.union(skipped)&depends)
+                    skipped.add(sn)
             else:
-                print "Skipping %s (%s) since dependencies not built: %s"%(sn, sv, broken.union(skipped)&depends)
-                skipped.add(sn)
-        else:
-            print "Skipping %s (%s) since already built."%(sn,sv)
+                print "Skipping %s (%s) since already built."%(sn,sv)
 
 
     if broken.union(skipped):
@@ -420,6 +429,8 @@ def build_debs_main():
         # if we created our own staging dir, we are responsible for cleaning it up
         if options.staging_dir is None:
             shutil.rmtree(staging_dir)
+
+    
 
 
     if failure_message:
