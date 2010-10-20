@@ -1,3 +1,5 @@
+noop:
+
 all:
 	mkdir -p export/ros-prerelease
 	svn export --force $(shell rospack find job_generation)/src/job_generation/jobs_common.py export/ros-prerelease/ros_prerelease_jobs_common.py
