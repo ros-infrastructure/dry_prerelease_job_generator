@@ -36,8 +36,6 @@ import os
 import sys
 import unittest
 
-import rostest
-
 # yaml control file from pr2_arm_navigation to simplify test data setup
 yaml_control = """depends: [arm_navigation, collision_environment, common_msgs, image_pipeline, kinematics,
   laser_pipeline, motion_planners, motion_planning_common, motion_planning_environment,
@@ -153,5 +151,6 @@ Description: pr2_arm_navigation
             
 
 if __name__ == '__main__':
+    from ros import rostest
     rostest.unitrun('rosdeb', 'test_rosdeb_source_deb', SourceDebTest, coverage_packages=['rosdeb.source_deb'])
 
