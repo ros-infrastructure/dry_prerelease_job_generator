@@ -44,7 +44,7 @@ import roslib.manifest
 import roslib.stack_manifest
 import roslib.packages
 import roslib.stacks
-import roslib2.vcs.vcs_abstraction
+import vcstools.vcs_abstraction
 
 import rosdeb
 from rosdep.core import RosdepLookupPackage, YamlCache
@@ -105,7 +105,7 @@ def checkout_tag_to_tmp(name, distro_stack):
     tmp_dir = tempfile.mkdtemp()
     dest = os.path.join(tmp_dir, name)
     print 'Checking out a fresh copy of %s from %s to %s...'%(name, uri, dest)
-    vcs_client = roslib2.vcs.vcs_abstraction.VCSClient(key, dest)
+    vcs_client = vcstools.vcs_abstraction.VCSClient(key, dest)
     vcs_client.checkout(uri, version)
     return tmp_dir
 
@@ -142,7 +142,7 @@ def checkout_dev_to_tmp(name, distro_stack):
     tmp_dir = tempfile.mkdtemp()
     dest = os.path.join(tmp_dir, name)
     print 'Checking out a fresh copy of %s from %s to %s...'%(name, uri, dest)
-    vcs_client = roslib2.vcs.vcs_abstraction.VCSClient(key, dest)
+    vcs_client = vcstools.vcs_abstraction.VCSClient(key, dest)
     vcs_client.checkout(uri, version)
     return tmp_dir
 

@@ -46,7 +46,7 @@ from optparse import OptionParser
 import email
 import stat
 
-from roslib2.distro import DistroException, Distro
+from rosdistro import DistroException, Distro
 from rosdeb import debianize_name, debianize_version, ubuntu_release, debianize_Distro
 
 NAME='build_release'
@@ -139,7 +139,7 @@ def _checkout_command(argv):
     if not options.reuse:
       raise DistroException("could not create workspace directory. ahhhhhhhhhh\nTo re-use an existing workspace, use the -r option")
 
-  # TODO: convert to roslib2.vcs as that supports git/bzr
+  # TODO: convert to vcstools as that supports git/bzr
     
   # check out all stacks in the distribution. 
   #  - special rule for ros, which goes into a different location

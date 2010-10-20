@@ -84,7 +84,7 @@ class RosutilTest(unittest.TestCase):
                     self.assert_(reqd in deps)
 
         tests = [
-            ('ros', ['python-yaml', 'python-paramiko', 'python-epydoc', 'graphviz']),
+            ('ros', ['python-yaml', 'python-paramiko']),
             ('navigation', ['python-yaml', 'libnetpbm10-dev']),
             ('geometry', ['libglut3-dev', 'graphviz', 'python-sip4-dev', 'sip4']),
             ]
@@ -96,7 +96,7 @@ class RosutilTest(unittest.TestCase):
         for stack, reqd in tests:
             for r in reqd:
                 for p in ['lucid', 'karmic', 'jaunty']:
-                    self.assert_(r in rosdeps[p][stack])
+                    self.assert_(r in rosdeps[p][stack], r)
 
 if __name__ == '__main__':
     rostest.unitrun('rosdeb', 'test_rosdeb_rosutil', RosutilTest, coverage_packages=['rosdeb.rosutil'])

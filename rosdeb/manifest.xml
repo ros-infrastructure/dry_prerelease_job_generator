@@ -13,11 +13,12 @@
   <license>BSD, Python License</license>
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/rosdeb</url>
-  <depend package="roslib2"/>
   <depend package="roslib"/>
   <depend package="rosdep"/>
   <depend package="hudson"/>
-
+  <depend package="rosdistro"/>
+  <depend package="vcstools"/>
+  
   <rosdep name="python-yaml" />
 
   <export>

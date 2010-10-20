@@ -35,6 +35,8 @@
 import os
 import sys
 
+import rosdistro
+
 ubuntu_map = { '10.10': 'mighty', '10.04': 'lucid', '9.10': 'karmic', '9.04': 'jaunty', '8.10': 'intrepid', '8.04': 'hardy'}
 def get_ubuntu_map():
     return ubuntu_map
@@ -76,7 +78,6 @@ def platforms():
     # calling this 'platforms' instead of ubuntu_platforms to allow easier conversion to any debian-based release
     return ubuntu_map.values()
 
-import roslib2.distro
 def debianize_Distro(distro):
     """
     Add debian-specific attributes to distro objects (DistroStack)
@@ -89,7 +90,7 @@ def debianize_Distro(distro):
         try:
             stack.debian_version = debianize_version(stack.version, stack.release_version)
             stack.debian_name    = debianize_name("ros-%s-%s"%(stack.release_name,stack.name))
-        except roslib2.distro.DistroException:
+        except rosdistro.DistroException:
             # ignore on non debian systems. This really belongs in an extension
             stack.debian_version = stack.debian_name = None
     return distro

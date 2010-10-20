@@ -53,7 +53,7 @@ import rosdeb.targets
 
 from rosdeb.rosutil import checkout_svn_to_tmp
 
-from roslib2.distro import Distro
+from rosdistro import Distro
 from rosdeb import ubuntu_release, debianize_name, debianize_version, \
     platforms, ubuntu_release_name, control_file, load_Packages, guess_repo_version
 
