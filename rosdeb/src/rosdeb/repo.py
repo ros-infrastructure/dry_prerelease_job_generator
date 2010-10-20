@@ -38,6 +38,8 @@ Utilities for reading state from a debian repo
 
 import urllib2
 
+from .core import debianize_name
+
 _Packages_cache = {}
 def get_Packages(repo_url, os_platform, arch):
     """
@@ -77,7 +79,7 @@ def load_Packages(repo_url, os_platform, arch):
     """
     return parse_Packages(get_Packages(repo_url, os_platform, arch))
 
-def guess_repo_version(repo_url, distro, os_platform, arch):
+def get_repo_version(repo_url, distro, os_platform, arch):
     packagelist = load_Packages(repo_url, os_platform, arch)
     deb_name = "ros-%s-ros"%(distro.release_name)
     matches = [x for x in packagelist if x[0] == deb_name]
@@ -116,4 +118,15 @@ def get_depends(repo_url, deb_name, os_platform, arch):
                 queue.append(package)
                 depends.add(package)
     return list(depends)
+
+def get_stack_version(packageslist, distro_name, stack_name):
+    """
+    Get the ROS version number of the stack in the repository
+    """
+    deb_name = "ros-%s-%s"%(distro_name, debianize_name(stack_name))
+    match = [vm for sm, vm, _ in packageslist if sm == deb_name]
+    if match:
+        return match[0].split('-')[0]
+    else:
+        return None
 

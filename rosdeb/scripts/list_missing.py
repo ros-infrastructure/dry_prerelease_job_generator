@@ -52,9 +52,11 @@ import tempfile
 import rosdeb
 from rosdeb.rosutil import checkout_svn_to_tmp
 
+from vcstools import svn_url_exists
+
 from rosdistro import Distro
 from rosdeb import ubuntu_release, debianize_name, debianize_version, platforms, ubuntu_release_name, \
-    deb_in_repo, load_Packages, guess_repo_version
+    deb_in_repo, load_Packages, get_repo_version, get_stack_version
 
 NAME = 'list_missing.py' 
 TARBALL_URL = "https://code.ros.org/svn/release/download/stacks/%(stack_name)s/%(base_name)s/%(f_name)s"
@@ -167,10 +169,13 @@ def list_missing(distro, os_platform, arch):
     missing_primary, missing_dep, missing_excluded, missing_excluded_dep = get_missing(distro, os_platform, arch)
 
     print "[%s %s %s]"%(distro_name, os_platform, arch)
-    print "\nThe following stacks are missing but have deps satisfied: (%s)"%(len(missing_primary))
-    print '\n'.join([" %s"%x for x in missing_primary])
-    print "\nThe following stacks are missing deps: (%s)"%(len(missing_dep))
-    print '\n'.join([" %s"%x for x in missing_dep])
+    if not missing_primary and not missing_dep:
+        print "[ok]"
+    else:
+        print "\nThe following stacks are missing but have deps satisfied: (%s)"%(len(missing_primary))
+        print '\n'.join([" %s"%x for x in missing_primary])
+        print "\nThe following stacks are missing deps: (%s)"%(len(missing_dep))
+        print '\n'.join([" %s"%x for x in missing_dep])
     if missing_excluded:
         print "\nThe following stacks are excluded: (%s)"%(len(missing_excluded))
         print '\n'.join([" %s"%x for x in missing_excluded])
@@ -182,18 +187,9 @@ def list_missing(distro, os_platform, arch):
     return missing_primary, missing_dep
 
 def load_distro(distro_name):
-    # Load the distro from the URL
-    # TODO: Should this be done from file in release repo instead (and maybe updated in case of failure)
-    distro_uri = "https://code.ros.org/svn/release/trunk/distros/%s.rosdistro"%distro_name
+    "Load the distro from the URL"
+    distro_uri = "https://code.ros.org/svn/release/trunk/distros/%s.rosdistro"%(distro_name)
     return Distro(distro_uri)
-
-def svn_url_exists(url):
-    try:
-        p = subprocess.Popen(['svn', 'info', url], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        p.wait()
-        return p.returncode == 0
-    except:
-        return False
 
 SOURCEDEB_DIR_URI = 'https://code.ros.org/svn/release/download/stacks/%(stack_name)s/%(stack_name)s-%(stack_version)s/'
 SOURCEDEB_URI = SOURCEDEB_DIR_URI+'%(deb_name)s_%(stack_version)s-0~%(os_platform)s.dsc'
@@ -291,8 +287,8 @@ td {
 """)
         for os_platform in os_platforms:
             for arch in arches:
-                main_version = guess_repo_version(ROS_REPO, distro, os_platform, arch)
-                fixed_version = guess_repo_version(SHADOW_FIXED_REPO, distro, os_platform, arch)
+                main_version = get_repo_version(ROS_REPO, distro, os_platform, arch)
+                fixed_version = get_repo_version(SHADOW_FIXED_REPO, distro, os_platform, arch)
                 f.write("<tr><td>%s-%s</td><td>%s</td><td>%s</td><td>%s</td></tr>\n"%(os_platform, arch, distro.version, fixed_version, main_version))
         f.write("</table>")
 
@@ -360,13 +356,9 @@ td {
                     # compute version in actual repo
                     version_str = ''
                     try:
-                        deb_name = "ros-%s-%s"%(distro_name, debianize_name(stack))
-                        packageslist = main_repo[key]
-                        match = [vm for sm, vm, _ in packageslist if sm == deb_name]
-                        if match:
-                            match = match[0].split('-')[0]
-                            if match != shadow_version:
-                                version_str = '<em>'+match+'</em>'
+                        match = get_stack_version(main_repo[key], distro_name, stack)
+                        if match != shadow_version:
+                            version_str = '<em>'+match+'</em>'
                     except Exception, e:
                         print str(e)
                         pass

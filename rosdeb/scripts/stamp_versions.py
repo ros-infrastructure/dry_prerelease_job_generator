@@ -42,7 +42,6 @@ import sys
 import subprocess
 import shutil
 import tempfile
-import yaml
 import urllib
 import urllib2
 import stat
@@ -55,9 +54,7 @@ from rosdeb.rosutil import checkout_svn_to_tmp
 
 from rosdistro import Distro
 from rosdeb import ubuntu_release, debianize_name, debianize_version, \
-    platforms, ubuntu_release_name, control_file, load_Packages, guess_repo_version
-
-import atexit
+    platforms, ubuntu_release_name, load_Packages, get_repo_version
 
 import list_missing
 
@@ -66,16 +63,6 @@ TARBALL_URL = "https://code.ros.org/svn/release/download/stacks/%(stack_name)s/%
 SOURCE_REPO='ros-shadow'
 DEST_REPO='ros-shadow-fixed'
     
-def load_info(stack_name, stack_version):
-    base_name = "%s-%s"%(stack_name, stack_version)
-    f_name = base_name + '.yaml'
-
-    url = TARBALL_URL%locals()
-
-    return yaml.load(urllib2.urlopen(url))
-
-
-import yaml
 def parse_deb_packages(text):
     parsed = {}
     (key,val,pkg) = (None,'',{})
@@ -383,6 +370,7 @@ def stamp_debs(distro, os_platform, arch, staging_dir):
         return upload_debs(debs, distro_name, os_platform, arch)
     else:
         print >> sys.stderr, "Missing debs expected from distro file.  Aborting"
+        print >> sys.stderr, "MISSING: %s"%(missing)
         return 1
 
 def build_debs_main():
@@ -447,7 +435,7 @@ def build_debs_main():
         distro = load_distro(distro_name)
 
         # compare versions
-        old_version = guess_repo_version(list_missing.SHADOW_FIXED_REPO, distro, os_platform, arch)
+        old_version = get_repo_version(list_missing.SHADOW_FIXED_REPO, distro, os_platform, arch)
         ok = True
         if options.check:
             print "%s-%s: %s vs. %s"%(os_platform, arch, old_version, distro.version)
