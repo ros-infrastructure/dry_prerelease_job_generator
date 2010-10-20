@@ -37,7 +37,6 @@ import sys
 import unittest
 
 import roslib.stack_manifest
-import rostest
 
 class RosutilTest(unittest.TestCase):
   
@@ -99,5 +98,6 @@ class RosutilTest(unittest.TestCase):
                     self.assert_(r in rosdeps[p][stack], r)
 
 if __name__ == '__main__':
+    from ros import rostest
     rostest.unitrun('rosdeb', 'test_rosdeb_rosutil', RosutilTest, coverage_packages=['rosdeb.rosutil'])
 

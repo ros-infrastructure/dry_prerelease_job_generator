@@ -1,4 +1,7 @@
 all:
+	echo "noop for debbuild"
+
+build:
 	mkdir -p src/rosinstall
 	svn export --force $(shell rospack find roslib2)/src/roslib2 src/rosinstall
 
