@@ -33,14 +33,9 @@
 import roslib; roslib.load_manifest('vcstools')
 
 import os
-import stat
-import struct
 import sys
 import unittest
 import subprocess
-import tempfile
-import urllib
-import shutil
 
 class LegacyVcsTest(unittest.TestCase):
 
