@@ -536,7 +536,7 @@ def run_chroot(options, path, workspace, hdd_tmp_dir):
             cmd = "apt-get install -y xterm".split()
             print chrti.execute(cmd)
 
-            cmd = ["xterm"]
+            cmd = ["xterm", "bash"]
             print chrti.execute(cmd)
             
 
@@ -604,7 +604,7 @@ parser.add_option("--script", action="store", dest="script",
                   type="string", help="Script filename to execute on the remote machine")
 parser.add_option("--ssh-key-file", action="store", dest="ssh_key_path", default=None,
                   type="string", help="filename to use for ssh key tarball, instead of URI")
-parser.add_option("--interactive", action="store_true", dest="ramdisk", default=False,
+parser.add_option("--interactive", action="store_true", dest="interactive", default=False,
                   help="Pop up an xterm to interact in.")
 
 
