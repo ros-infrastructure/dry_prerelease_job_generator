@@ -582,8 +582,6 @@ hdd_tmp_dir = os.getenv("HDD_TMP_DIR", "/tmp")
 
 
 parser = optparse.OptionParser()
-parser.add_option("--hudson", type="string", dest="hudson_args", 
-                  help="args to pass through to hudson_helper") 
 parser.add_option("--arch", type="string", dest="arch",
                   help="What architecture %s"%valid_archs)
 parser.add_option("--distro", type="string", dest="distro",
@@ -610,8 +608,6 @@ parser.add_option("--interactive", action="store_true", dest="interactive", defa
 
 (options, args) = parser.parse_args()
 
-if not options.script and not options.hudson_args:
-    parser.error("hudson_helper needs args")
 if options.distro not in (valid_ubuntu_distros + valid_debian_distros):
     parser.error("%s is not a valid distro: %s"%(options.distro, valid_ubuntu_distros+ valid_debian_distros))
 if options.arch not in valid_archs:
@@ -621,7 +617,6 @@ if options.arch not in valid_archs:
 path = os.path.join(options.chroot_dir, os.getenv("JOB_NAME"))
 print "chroot path", path    
 print "parameters"
-print "hudson_args", options.hudson_args
 print "distro", options.distro
 print "arch", options.arch
 print "workspace", workspace
