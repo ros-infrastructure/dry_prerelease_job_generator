@@ -91,7 +91,7 @@ rm -rf $WORKSPACE/test_output
 
 wget  --no-check-certificate https://code.ros.org/svn/ros/stacks/ros_release/trunk/hudson/scripts/run_chroot.py -O $WORKSPACE/run_chroot.py
 chmod +x $WORKSPACE/run_chroot.py
-cd $WORKSPACE &amp;&amp; $WORKSPACE/run_chroot.py --distro=UBUNTUDISTRO --arch=ARCH  --ramdisk --ssh-key-file=/home/rosbuild/rosbuild-ssh.tar --script=$WORKSPACE/script.sh
+cd $WORKSPACE &amp;&amp; $WORKSPACE/run_chroot.py --distro=UBUNTUDISTRO --arch=ARCH  --ramdisk --ssh-key-file=/home/rosbuild/rosbuild-ssh.tar --script=$WORKSPACE/script.sh --hdd-scratch=/tmp/install_dir
      </command> 
     </hudson.tasks.Shell> 
   </builders> 
