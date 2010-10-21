@@ -121,6 +121,15 @@ def load_vcs_config(rules, rule_eval):
         vcs_config.distro_tag    = rule_eval(rules['hg']['distro-tag'])
         vcs_config.release_tag   = rule_eval(rules['hg']['release-tag'])
 
+    elif 'git' in rules:
+        import vcstools.git
+        vcs_config = vcstools.git.GITConfig()
+
+        vcs_config.repo_uri      = rule_eval(rules['git']['uri'])
+        vcs_config.dev_branch    = rule_eval(rules['git']['dev-branch'])
+        vcs_config.distro_tag    = rule_eval(rules['git']['distro-tag'])
+        vcs_config.release_tag   = rule_eval(rules['git']['release-tag'])
+
     return vcs_config
     
 def get_variants(distro, stack_name):
