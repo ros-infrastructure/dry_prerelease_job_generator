@@ -231,7 +231,7 @@ def create_post_release_configs(rosdistro, stack):
             time_trigger = ''
             job_children = ''
             if name == gold_job:
-                time_trigger = '*/5 * * * *'
+                time_trigger = '0 3 * * *'
                 job_children = ', '.join(gold_children)
 
             hudson_config = HUDSON_POST_RELEASE_CONFIG
