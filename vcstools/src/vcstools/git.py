@@ -123,12 +123,12 @@ class GITClient(vcs_base.VCSClientBase):
 
 
     def is_remote_branch(self, branch_name):
-        output = subprocess.Popen(['git', "branch", '-a'], cwd= self._path, stdout=subprocess.PIPE).communicate()[0]
+        output = subprocess.Popen(['git', "branch", '-r'], cwd= self._path, stdout=subprocess.PIPE).communicate()[0]
         for l in output.split('\n'):
             elems = l.split()
             if len(elems) == 1:
                 br_names = elems[0].split('/')
-                if len(br_names) == 3 and br_names[0] == 'remotes' and br_names[1] == 'origin' and br_names[2] == branch_name:
+                if len(br_names) == 2 and br_names[0] == 'origin' and br_names[1] == branch_name:
                     return True
         return False
 
