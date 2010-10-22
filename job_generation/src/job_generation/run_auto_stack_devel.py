@@ -16,11 +16,16 @@ def main():
                       help='Stack name')
     parser.add_option('--rosdistro', dest = 'rosdistro', default=False, action='store',
                       help='Ros distro name')
+    parser.add_option('--repeat', dest = 'repeat', default=1, action='store',
+                      help='How many times to repeat the test')
     (options, args) = parser.parse_args()
     if not options.stack or not options.rosdistro:
         print 'You did not specify all options to run this script.'
         return
-
+    options.repeat = int(options.repeat)
+    if options.repeat < 0:
+        options.repeat = 0
+        print 'Setting repeat from %d to 0'%options.repeat 
 
     # set environment
     env = {}
@@ -58,9 +63,14 @@ def main():
 
     # Start Hudson Helper
     print 'Running Hudson Helper'
-    helper = subprocess.Popen(('./hudson_helper --dir-test %s build'%stack_dir).split(' '), env=env)
-    helper.communicate()
-    return helper.returncode
+    res = True
+    for r in range(0, options.repeat+1):
+        env['ROS_TEST_RESULTS_DIR'] = os.environ['ROS_TEST_RESULTS_DIR']+'/run_'+str(r)
+        helper = subprocess.Popen(('./hudson_helper --dir-test %s build'%stack_dir).split(' '), env=env)
+        helper.communicate()
+        if not helper.returncode:
+            res = False
+    return res
 
 
 if __name__ == '__main__':
