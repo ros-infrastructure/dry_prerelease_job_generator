@@ -370,7 +370,7 @@ def stamp_debs(distro, os_platform, arch, staging_dir):
         return upload_debs(debs, distro_name, os_platform, arch)
     else:
         print >> sys.stderr, "Missing debs expected from distro file.  Aborting"
-        print >> sys.stderr, "MISSING: %s"%(missing)
+        print >> sys.stderr, "Missing: %s"%(missing)
         return 1
 
 def build_debs_main():
