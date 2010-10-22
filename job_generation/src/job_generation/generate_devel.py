@@ -80,7 +80,7 @@ chmod +x run_auto_stack_devel.py
 
 sudo apt-get install ros-ROSDISTRO-ros --yes
 source /opt/ros/ROSDISTRO/setup.sh
-./run_auto_stack_devel.py --stack STACKNAME --rosdistro ROSDISTRO
+./run_auto_stack_devel.py --stack STACKNAME --rosdistro ROSDISTRO --repeat 0
 echo "_________________________________END SCRIPT_______________________________________"
 DELIM
 
@@ -105,7 +105,7 @@ cd $WORKSPACE &amp;&amp; $WORKSPACE/run_chroot.py --distro=UBUNTUDISTRO --arch=A
       </threshold> 
     </hudson.tasks.BuildTrigger> 
     <hudson.tasks.junit.JUnitResultArchiver> 
-      <testResults>test_results/_hudson/*.xml</testResults> 
+      <testResults>test_results/**/_hudson/*.xml</testResults> 
     </hudson.tasks.junit.JUnitResultArchiver> 
     <hudson.plugins.emailext.ExtendedEmailPublisher> 
       <recipientList>EMAIL</recipientList> 
