@@ -34,37 +34,7 @@
 # Revision $Id$
 
 """
-http://code.ros.org/packages/ros/ubuntu/dists/hardy/main/binary-amd64/Packages
-http://code.ros.org/packages/ros/ubuntu/dists/hardy/main/binary-i386/Packages
-http://code.ros.org/packages/ros/ubuntu/dists/jaunty/main/binary-amd64/Packages
-http://code.ros.org/packages/ros/ubuntu/dists/jaunty/main/binary-i386/Packages
-http://code.ros.org/packages/ros/ubuntu/dists/karmic/main/binary-amd64/Packages
-http://code.ros.org/packages/ros/ubuntu/dists/karmic/main/binary-i386/Packages
-http://code.ros.org/packages/ros/ubuntu/dists/lucid/main/binary-amd64/Packages
-http://code.ros.org/packages/ros/ubuntu/dists/lucid/main/binary-i386/Packages
-
-Contain the current versions of the debs in the repo.  They should be
-fairly easily parseable for versions of the lates/rosdistro file.
-
-Ken, you were talking about making a meta-build that just looks at
-these files and determines whether or not the .distro file matches
-what's in the repo and then kicks off the other builds.  Instead, does
-it maybe make sense to do this from the chroot_build.py /
-build_release.py scripts?
-
-Do you think you could set up build_relase so that it supported the command:
-
- build_release checkrepo   ros_distro_uri   repo_uri
-
-And only returned a 0 status code if the repo contains all of the
-packages that are supposed to get built?
-
-
-Then I could make build.py run that check first, and just return
-successfully if there's nothing to do.
-
-Then we could just trigger all the builds periodically and they'll
-simply no-op if the packages are already built.
+THIS SCRIPT IS NO LONGER USED FOR ANYTHING OTHER THAN BOXTURTLE
 """
 
 from __future__ import with_statement
