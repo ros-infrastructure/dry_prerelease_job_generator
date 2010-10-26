@@ -11,6 +11,9 @@ install: ${ROS_DISTRO_DIR}/${ROS_STACK_NAME}
 ifeq (${ROS_DISTRO_NAME}, testing)
 	bash -c ". setup_deb.sh && rosmake ${ROS_STACK_NAME} --robust --target=tests -V --status-rate=0"
 endif
+ifeq (${ROS_DISTRO_NAME}, unstable)
+	bash -c ". setup_deb.sh && ./purge_build.py ${ROS_DISTRO_DIR}"
+endif
 	bash -c ". setup_deb.sh && rosmake ${ROS_STACK_NAME} -i -V --status-rate=0"
 	rm -rf ${ROS_STACK_DIR}/${ROS_STACK_NAME}/*/build/CMakeFiles
 	./fixrpath.py ${ROS_STACK_DIR}/${ROS_STACK_NAME} ${ROS_DISTRO_DIR} ${ROS_DISTRO_DIR_FINAL}

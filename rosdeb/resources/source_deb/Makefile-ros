@@ -12,6 +12,9 @@ install: ${ROS_DISTRO_DIR}/ros
 ifeq (${ROS_DISTRO_NAME}, testing)
 	bash -c ". setup_deb.sh && rosmake ros --target=tests"
 endif
+ifeq (${ROS_DISTRO_NAME}, unstable)
+	bash -c ". setup_deb.sh && ./purge_build.py ${ROS_DISTRO_DIR}"
+endif
 	bash -c ". setup_deb.sh && rosmake ros -i"
 	rm -rf ${ROS_DISTRO_DIR}/ros/*/build/CMakeFiles
 	cp setup.sh ${ROS_DISTRO_DIR}/
