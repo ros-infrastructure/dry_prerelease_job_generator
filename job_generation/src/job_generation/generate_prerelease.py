@@ -158,8 +158,10 @@ println &quot;${build_failures_context}&quot;&#xd;
 </project>
 """
 
-from ros_prerelease_jobs_common import *
-import ros_prerelease_hudson
+import roslib; roslib.load_manifest("job_generation")
+import rosdistro
+from jobs_common import *
+import hudson
 import urllib
 import optparse 
 
@@ -212,10 +214,10 @@ def main():
         
     # create hudson instance
     if len(args) == 2:
-        hudson_instance = ros_prerelease_hudson.Hudson(SERVER, args[0], args[1])        
+        hudson_instance = hudson.Hudson(SERVER, args[0], args[1])        
     else:
         info = urllib.urlopen(CONFIG_PATH).read().split(',')
-        hudson_instance = ros_prerelease_hudson.Hudson(SERVER, info[0], info[1])
+        hudson_instance = hudson.Hudson(SERVER, info[0], info[1])
 
 
     # send prerelease tests to Hudson
