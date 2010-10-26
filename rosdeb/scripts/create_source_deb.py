@@ -92,10 +92,14 @@ def upload_files(files, stack_name, stack_version):
             to_path = os.path.join(subdir, base)
             print "copying %s to %s"%(f, to_path)
             assert os.path.exists(f)
+            update = os.path.exists(to_path)
+            if update:
+                os.remove(to_path)
             shutil.copyfile(f, to_path)
 
-            # svn add file
-            subprocess.check_call(['svn', 'add', base], cwd=subdir)
+            if not update:
+                # svn add file
+                subprocess.check_call(['svn', 'add', base], cwd=subdir)
         # commit the new files
         subprocess.check_call(['svn', 'ci', '-m', "source deb assets for %s-%s"%(stack_name, stack_version)]+names, cwd=subdir)
 
