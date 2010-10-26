@@ -25,9 +25,9 @@ def main(argv, stdout, environ):
   stacks = roslib.stacks.list_stacks_by_path(path)
   packages = roslib.stacks.expand_to_packages(stacks)[0]
   for p in packages:
-      build_path = os.path.join(roslib.packages.get_pkg_dir(pkg), 'build')
-      if os.path.exists(build_path):
-          shutil.rmtree(build_path)
+    build_path = os.path.join(roslib.packages.get_pkg_dir(p), 'build')
+    if os.path.exists(build_path):
+      shutil.rmtree(build_path)
 
 if __name__ == "__main__":
   main(sys.argv, sys.stdout, os.environ)
