@@ -158,6 +158,11 @@ def compute_deps(distro, stack_name):
     else:
         add_stack(stack_name)
 
+    # #3100: REMOVE THIS AROUND PHASE 3
+    if distro.release_name == 'unstable':
+        if stack_name not in ['ros', 'ros_comm', 'documentation'] and 'ros_comm' not in ordered_deps:
+            ordered_deps.append(('ros_comm', distro.stacks['ros_comm'].version))
+    # END #3100
     return ordered_deps
 
 def create_chroot(distro, distro_name, os_platform, arch):
