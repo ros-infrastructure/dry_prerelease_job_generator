@@ -83,9 +83,10 @@ class RosutilTest(unittest.TestCase):
                     self.assert_(reqd in deps)
 
         tests = [
-            ('ros', ['python-yaml', 'python-paramiko']),
-            ('navigation', ['python-yaml', 'libnetpbm10-dev']),
-            ('geometry', ['libglut3-dev', 'graphviz', 'python-sip4-dev', 'sip4']),
+            ('ros', ['python-yaml']),
+            ('ros_release', []),
+            #('navigation', ['python-yaml', 'libnetpbm10-dev']),
+            #('geometry', ['libglut3-dev', 'graphviz', 'python-sip4-dev', 'sip4']),
             ]
 
         # make sure common_msgs has no additional rosdeps
