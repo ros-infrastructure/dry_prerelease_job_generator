@@ -214,8 +214,10 @@ def generate_allhtml_report(output, distro_name, os_platforms):
     arches = ['amd64', 'i386']
     for os_platform in os_platforms:
         for arch in arches:
-            main_repo["%s-%s"%(os_platform, arch)] = load_Packages(ROS_REPO, os_platform, arch)
-    
+            try:
+                main_repo["%s-%s"%(os_platform, arch)] = load_Packages(ROS_REPO, os_platform, arch)
+            except:
+                main_repo["%s-%s"%(os_platform, arch)] = []    
     missing_primary = None
     missing_dep = None
 
