@@ -9,6 +9,10 @@
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/hudson</url>
 
+  <export>
+    <rosdoc config="rosdoc.yaml"/>    
+  </export>
+
 </package>
 
 

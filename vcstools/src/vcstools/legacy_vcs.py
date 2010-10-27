@@ -128,3 +128,15 @@ def guess_vcs_uri(dir_path):
     return repo
     
 
+def svn_url_exists(url):
+    """
+    @return: True if SVN url points to an existing resource
+    """
+    import subprocess
+    try:
+        p = subprocess.Popen(['svn', 'info', url], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        p.wait()
+        return p.returncode == 0
+    except:
+        return False
+

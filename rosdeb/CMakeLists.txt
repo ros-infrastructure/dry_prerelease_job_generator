@@ -17,4 +17,6 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
 rosbuild_add_pyunit(test/test_rosdeb_rosutil.py)
-rosbuild_add_pyunit(test/test_rosdeb_source_deb.py)
+rosbuild_add_pyunit(test/test_rosdeb_repo.py)
+# source deb tests needs real stacks to verify against, so mark as future
+rosbuild_add_pyunit_future(test/test_rosdeb_source_deb.py)

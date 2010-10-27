@@ -57,7 +57,7 @@ rm -rf $WORKSPACE/test_output
 
 wget  --no-check-certificate https://code.ros.org/svn/ros/stacks/ros_release/trunk/hudson/scripts/run_chroot.py -O $WORKSPACE/run_chroot.py
 chmod +x $WORKSPACE/run_chroot.py
-cd $WORKSPACE &amp;&amp; $WORKSPACE/run_chroot.py --distro=UBUNTUDISTRO --arch=ARCH --ramdisk --script=$WORKSPACE/script.sh
+cd $WORKSPACE &amp;&amp; $WORKSPACE/run_chroot.py --distro=UBUNTUDISTRO --arch=ARCH --ramdisk --script=$WORKSPACE/script.sh --hdd-scratch=/tmp/install_dir --ssh-key-file=/home/rosbuild/rosbuild-ssh.tar
      </command> 
     </hudson.tasks.Shell> 
   </builders> 
@@ -158,8 +158,10 @@ println &quot;${build_failures_context}&quot;&#xd;
 </project>
 """
 
-from ros_prerelease_jobs_common import *
-import ros_prerelease_hudson
+import roslib; roslib.load_manifest("job_generation")
+import rosdistro
+from jobs_common import *
+import hudson
 import urllib
 import optparse 
 
@@ -209,13 +211,19 @@ def main():
     if not options.stacks:
         print 'Please provide at least one stack to test: --stack pr2_doors'
         return
+    distro_obj = rosdistro.Distro(ROSDISTRO_MAP[options.rosdistro])
+    for s in options.stacks:
+        if not s in distro_obj.stacks:
+            print 'Stack %s does not exist in the %s disro file. Before you can run the prerelease scripts you need to add this stack to the rosdistro file'%(s, options.rosdistro)
+            return
+
         
     # create hudson instance
     if len(args) == 2:
-        hudson_instance = ros_prerelease_hudson.Hudson(SERVER, args[0], args[1])        
+        hudson_instance = hudson.Hudson(SERVER, args[0], args[1])        
     else:
         info = urllib.urlopen(CONFIG_PATH).read().split(',')
-        hudson_instance = ros_prerelease_hudson.Hudson(SERVER, info[0], info[1])
+        hudson_instance = hudson.Hudson(SERVER, info[0], info[1])
 
 
     # send prerelease tests to Hudson

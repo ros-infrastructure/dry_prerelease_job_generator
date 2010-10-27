@@ -14,9 +14,12 @@ ifeq (${ROS_DISTRO_NAME}, testing)
 endif
 	bash -c ". setup_deb.sh && rosmake ros -i"
 	rm -rf ${ROS_DISTRO_DIR}/ros/*/build/CMakeFiles
+ifeq (${ROS_DISTRO_NAME}, unstable)
+	bash -c ". setup_deb.sh && ./purge_build.py ${ROS_DISTRO_DIR}"
+endif
 	cp setup.sh ${ROS_DISTRO_DIR}/
 	cp .rosinstall ${ROS_DISTRO_DIR}/
-        mkdir -p ${ROS_DISTRO_DIR}/stacks
+	mkdir -p ${ROS_DISTRO_DIR}/stacks
 	./fixrpath.py ${ROS_DISTRO_DIR}/ros ${ROS_DISTRO_DIR} ${ROS_DISTRO_DIR_FINAL}
 	./fixpc.py ${ROS_DISTRO_DIR}/ros ${ROS_DISTRO_DIR} ${ROS_DISTRO_DIR_FINAL}
 

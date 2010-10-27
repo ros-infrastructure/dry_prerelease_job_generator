@@ -1,6 +1,7 @@
+#!/usr/bin/env python
 # Software License Agreement (BSD License)
 #
-# Copyright (c) 2010, Willow Garage, Inc.
+# Copyright (c) 2009, Willow Garage, Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -29,19 +30,21 @@
 # LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
-#
-# Revision $Id$
+import roslib; roslib.load_manifest('vcstools')
 
 import os
 import sys
+import unittest
 import subprocess
-import shutil
 
-import yaml
+class LegacyVcsTest(unittest.TestCase):
 
-import roslib.rosenv
+    def test_svn_url_exists(self):
+        from vcstools import svn_url_exists
+        self.assert_(svn_url_exists('https://code.ros.org/svn/ros/'))
+        self.assert_(svn_url_exists('https://code.ros.org/svn/ros/stacks/ros/trunk/CMakeLists.txt'))
+        self.failIf(svn_url_exists('https://code.ros.org/svn/ros/stacks/ros/trunk/FAKEFILE.txt'))
 
-from rosdeb.core import ubuntu_release, debianize_name, debianize_version, debianize_Distro, platforms, platforms, get_ubuntu_map, ubuntu_release_name
-from rosdeb.source_deb import make_source_deb, control_data, control_file
-from rosdeb.repo import get_Packages, get_depends, deb_in_repo, parse_Packages, load_Packages, get_repo_version, get_stack_version, BadRepo
-
+if __name__ == '__main__':
+    from ros import rostest
+    rostest.unitrun('vcstools', 'test_vcs_legacy', LegacyVcsTest, coverage_packages=['vcstools.legacy_vcs'])  

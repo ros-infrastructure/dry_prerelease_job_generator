@@ -54,6 +54,11 @@ from rosdistro import Distro
 from rosdeb.core import ubuntu_release, debianize_name, debianize_version, platforms, ubuntu_release_name
 from rosdeb.source_deb import download_control
 
+from rosdeb import get_repo_version
+
+import list_missing
+import stamp_versions
+
 NAME = 'build_debs.py' 
 TARBALL_URL = "https://code.ros.org/svn/release/download/stacks/%(stack_name)s/%(base_name)s/%(f_name)s"
 SHADOW_REPO="http://code.ros.org/packages/ros-shadow/"
@@ -153,6 +158,11 @@ def compute_deps(distro, stack_name):
     else:
         add_stack(stack_name)
 
+    # #3100: REMOVE THIS AROUND PHASE 3
+    if distro.release_name == 'unstable':
+        if stack_name not in ['ros', 'ros_comm', 'documentation'] and 'ros_comm' not in ordered_deps:
+            ordered_deps.append(('ros_comm', distro.stacks['ros_comm'].version))
+    # END #3100
     return ordered_deps
 
 def create_chroot(distro, distro_name, os_platform, arch):
@@ -332,6 +342,11 @@ def build_debs(distro, stack_name, os_platform, arch, staging_dir, force, nouplo
     # Create the environment where we build the debs, if necessary
     create_chroot(distro, distro_name, os_platform, arch)
 
+
+    # Load blacklisted information
+    missing_primary, missing_dep, missing_excluded, missing_excluded_dep = list_missing.get_missing(distro, os_platform, arch)
+    missing_ok = missing_excluded.union(missing_excluded_dep)
+
     # Find all the deps in the distro for this stack
     deps = compute_deps(distro, stack_name)
 
@@ -340,21 +355,23 @@ def build_debs(distro, stack_name, os_platform, arch, staging_dir, force, nouplo
 
     # Build the deps in order
     for (sn, sv) in deps:
-        deb_name = "ros-%s-%s"%(distro_name, debianize_name(sn))
-        deb_version = debianize_version(sv, '0', os_platform)
-        if not deb_in_repo(deb_name, deb_version, os_platform, arch) or (force and sn == stack_name):
-            si = load_info(sn, sv)
-            depends = set(si['depends'])
-            if depends.isdisjoint(broken.union(skipped)):
-                try:
-                    do_deb_build(distro_name, sn, sv, os_platform, arch, staging_dir, noupload, interactive and sn == stack_name)
-                except:
-                    broken.add(sn)
+        # Only build debs we expect to be there
+        if sn not in missing_ok:
+            deb_name = "ros-%s-%s"%(distro_name, debianize_name(sn))
+            deb_version = debianize_version(sv, '0', os_platform)
+            if not deb_in_repo(deb_name, deb_version, os_platform, arch) or (force and sn == stack_name):
+                si = load_info(sn, sv)
+                depends = set(si['depends'])
+                if depends.isdisjoint(broken.union(skipped)):
+                    try:
+                        do_deb_build(distro_name, sn, sv, os_platform, arch, staging_dir, noupload, interactive and sn == stack_name)
+                    except:
+                        broken.add(sn)
+                else:
+                    print "Skipping %s (%s) since dependencies not built: %s"%(sn, sv, broken.union(skipped)&depends)
+                    skipped.add(sn)
             else:
-                print "Skipping %s (%s) since dependencies not built: %s"%(sn, sv, broken.union(skipped)&depends)
-                skipped.add(sn)
-        else:
-            print "Skipping %s (%s) since already built."%(sn,sv)
+                print "Skipping %s (%s) since already built."%(sn,sv)
 
 
     if broken.union(skipped):
@@ -420,7 +437,37 @@ def build_debs_main():
         # if we created our own staging dir, we are responsible for cleaning it up
         if options.staging_dir is None:
             shutil.rmtree(staging_dir)
+            
+    # If there was no failure and we did a build of ALL, so we go ahead and stamp the debs now
+    if not failure_message and stack_name == 'ALL':
+        try:
+            if options.staging_dir is not None:
+                staging_dir    = options.staging_dir
+                staging_dir = os.path.abspath(staging_dir)
+            else:
+                staging_dir = tempfile.mkdtemp()
 
+
+            if os_platform not in rosdeb.platforms():
+                print >> sys.stderr, "[%s] is not a known platform.\nSupported platforms are: %s"%(os_platform, ' '.join(rosdeb.platforms()))
+                sys.exit(1)
+
+            if not os.path.exists(staging_dir):
+                print "creating staging dir: %s"%(staging_dir)
+                os.makedirs(staging_dir)
+
+            # compare versions
+            old_version = get_repo_version(list_missing.SHADOW_FIXED_REPO, distro, os_platform, arch)
+
+            if old_version != distro.version:
+                if stamp_versions.stamp_debs(distro, os_platform, arch, staging_dir) != 0:
+                    failure_message = "Could not upload debs"
+
+        except Exception, e:
+            failure_message = "Internal failure release system. Please notify leibs and kwc @willowgarage.com:\n%s\n\n%s"%(e, traceback.format_exc(e))
+        finally:
+            if options.staging_dir is None:
+                shutil.rmtree(staging_dir)
 
     if failure_message:
         print >> sys.stderr, failure_message
@@ -434,6 +481,8 @@ def build_debs_main():
                 subject = 'debian build [%s-%s-%s-%s] failed'%(distro_name, stack_name, os_platform, arch)
                 send_email(options.smtp, EMAIL_FROM_ADDR, to_addr, subject, failure_message)
         sys.exit(1)
+            
+
     
 if __name__ == '__main__':
     build_debs_main()

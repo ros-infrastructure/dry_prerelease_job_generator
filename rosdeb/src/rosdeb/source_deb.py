@@ -75,7 +75,7 @@ def make_source_deb(distro_name, stack_name, stack_version, os_platform_name, st
         files.append( (os.path.join(tmpl_d, f), os.path.join(debian_d, f)) )
 
     # Files which go into stack dir
-    for f in ['fixpc.py', 'fixbinpath.py', 'fixrpath.py', 'Makefile', 'setup_deb.sh']:
+    for f in ['fixpc.py', 'fixbinpath.py', 'fixrpath.py', 'Makefile', 'setup_deb.sh', 'purge_build.py']:
         files.append( (os.path.join(tmpl_d, f), os.path.join(stack_d, f)) )
         
     # Files which go into stack dir and are different for ros stack

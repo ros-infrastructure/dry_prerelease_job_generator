@@ -93,7 +93,7 @@ def checkout_tag_to_tmp(name, distro_stack):
         if key == 'svn':
             uri = distro_stack.expand_rule(distro_stack._rules[key]['release-tag'])
             version = ''
-        elif key == 'hg':
+        elif key == 'hg' or key == 'git':
             uri = distro_stack.expand_rule(distro_stack._rules[key]['uri'])
             version = distro_stack.expand_rule(distro_stack._rules[key]['release-tag'])
         else:
@@ -130,7 +130,7 @@ def checkout_dev_to_tmp(name, distro_stack):
         if key == 'svn':
             uri = distro_stack.expand_rule(distro_stack._rules[key]['dev'])
             version = ''
-        elif key == 'hg':
+        elif key == 'hg' or key == 'git':
             uri = distro_stack.expand_rule(distro_stack._rules[key]['uri'])
             version = distro_stack.expand_rule(distro_stack._rules[key]['dev-branch'])
         else:

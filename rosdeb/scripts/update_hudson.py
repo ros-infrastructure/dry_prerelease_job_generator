@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # Software License Agreement (BSD License)
 #
 # Copyright (c) 2010, Willow Garage, Inc.
@@ -32,16 +33,51 @@
 #
 # Revision $Id$
 
-import os
+"""
+Update Hudson jobs based on current target configuration
+"""
+
+import roslib; roslib.load_manifest('rosdeb')
 import sys
-import subprocess
-import shutil
+import os
+from rosdeb.targets import os_platform
+import hudson
 
-import yaml
+SERVER = 'http://build.willowgarage.com'
 
-import roslib.rosenv
+def usage():
+    print "Usage: update_hudson.py <release> <hudson-user> <hudson-pass>"
+    sys.exit(os.EX_USAGE)
+    
+BUILD_DEBS_STUB_JOB = 'debbuild-build-debs'
+BUILD_DEBS_PATTERN  = 'debbuild-build-debs-%(release_name)s-%(platform)s-%(arch)s'
 
-from rosdeb.core import ubuntu_release, debianize_name, debianize_version, debianize_Distro, platforms, platforms, get_ubuntu_map, ubuntu_release_name
-from rosdeb.source_deb import make_source_deb, control_data, control_file
-from rosdeb.repo import get_Packages, get_depends, deb_in_repo, parse_Packages, load_Packages, get_repo_version, get_stack_version, BadRepo
+def update_jobs(h, release_name):
+    targets = os_platform[release_name]
+    for platform in targets:
+        for arch in ['amd64', 'i386']:
+            job_name = BUILD_DEBS_PATTERN%locals()
+            if h.job_exists(job_name):
+                print "Job [%s-%s] exists"%(platform, arch)
+            else:
+                print "Creating [%s-%s] %s"%(platform, arch, job_name)
+                h.copy_job(BUILD_DEBS_STUB_JOB, job_name)
+                
+    
+def update_main():
+    if len(sys.argv) != 4:
+        usage()
+    release_name = sys.argv[1]
+    if release_name not in os_platform:
+        print >> sys.stderr, "Unknown release: %s"%(release_name)
+        sys.exit(1)
 
+    username, password = sys.argv[2:]
+    
+    h = hudson.Hudson(SERVER, username, password)
+
+    update_jobs(h, release_name)
+    
+
+if __name__ == "__main__":
+    update_main()

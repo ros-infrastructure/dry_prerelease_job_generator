@@ -91,7 +91,7 @@ rm -rf $WORKSPACE/test_output
 
 wget  --no-check-certificate https://code.ros.org/svn/ros/stacks/ros_release/trunk/hudson/scripts/run_chroot.py -O $WORKSPACE/run_chroot.py
 chmod +x $WORKSPACE/run_chroot.py
-cd $WORKSPACE &amp;&amp; $WORKSPACE/run_chroot.py --distro=UBUNTUDISTRO --arch=ARCH  --ramdisk --ssh-key-file=/home/rosbuild/rosbuild-ssh.tar --script=$WORKSPACE/script.sh
+cd $WORKSPACE &amp;&amp; $WORKSPACE/run_chroot.py --distro=UBUNTUDISTRO --arch=ARCH  --ramdisk --ssh-key-file=/home/rosbuild/rosbuild-ssh.tar --script=$WORKSPACE/script.sh --hdd-scratch=/tmp/install_dir
      </command> 
     </hudson.tasks.Shell> 
   </builders> 
@@ -231,7 +231,7 @@ def create_post_release_configs(rosdistro, stack):
             time_trigger = ''
             job_children = ''
             if name == gold_job:
-                time_trigger = '*/5 * * * *'
+                time_trigger = '0 3 * * *'
                 job_children = ', '.join(gold_children)
 
             hudson_config = HUDSON_POST_RELEASE_CONFIG

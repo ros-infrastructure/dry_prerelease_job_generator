@@ -1,5 +1,4 @@
 <stack>
-
   <description brief="ros_release">
     <p>
       This stack contains tools for releasing and installing ROS-packaged software through various channels including:
@@ -12,9 +11,10 @@
 
   </description>
   <author>Maintained by Kenneth Conley</author>
-  <license>BSD</license>  
+  <license>BSD,BSD, Python License</license>  
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/ros_release</url>
-  <depend stack="ros" /> <!-- rostest, roslib -->
+  <depend stack="ros" /> <!-- roslib, rosdep -->
+  <depend stack="ros_comm" /> <!-- rostest -->
 
 </stack>
