@@ -211,6 +211,12 @@ def main():
     if not options.stacks:
         print 'Please provide at least one stack to test: --stack pr2_doors'
         return
+    distro_obj = rosdistro.Distro(ROSDISTRO_MAP[options.rosdistro])
+    for s in options.stacks:
+        if not s in distro_obj.stacks:
+            print 'Stack %s does not exist in the %s disro file. Before you can run the prerelease scripts you need to add this stack to the rosdistro file'%(s, options.rosdistro)
+            return
+
         
     # create hudson instance
     if len(args) == 2:
