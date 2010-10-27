@@ -194,12 +194,14 @@ def load_distro(distro_name):
 SOURCEDEB_DIR_URI = 'https://code.ros.org/svn/release/download/stacks/%(stack_name)s/%(stack_name)s-%(stack_version)s/'
 SOURCEDEB_URI = SOURCEDEB_DIR_URI+'%(deb_name)s_%(stack_version)s-0~%(os_platform)s.dsc'
     
+MISSING_REPO = '*'
 MISSING_SOURCEDEB = '!'
 MISSING_PRIMARY = '-'
 MISSING_DEP = '&lt;-'
 MISSING_EXCLUDED = 'X'
 MISSING_EXCLUDED_DEP = '&lt;X'
 COLORS = {
+    MISSING_REPO: 'black',
     MISSING_PRIMARY: 'red',
     MISSING_SOURCEDEB: 'yellow',
     MISSING_DEP: 'pink',
@@ -228,28 +230,34 @@ def generate_allhtml_report(output, distro_name, os_platforms):
 
     for os_platform in os_platforms:
         for arch in arches:
-           missing_primary, missing_dep, missing_excluded, missing_excluded_dep = get_missing(distro, os_platform, arch)
-           args = get_missing(distro, os_platform, arch)
-           key = "%s-%s"%(os_platform, arch)
-           counts[key] = ','.join([str(len(x)) for x in args])
-           missing_primary, missing_dep, missing_excluded, missing_excluded_dep = args
-           for s in missing_primary:
-               # check to see if we actually have a source deb for this stack
-               stack_name = s # for SOURCEDEB_URI
-               stack_version = distro.stacks[s].version
-               deb_name = "ros-%s-%s"%(distro_name, debianize_name(s))
-               url = SOURCEDEB_URI%locals()
-               
-               if svn_url_exists(url):
-                   stacks[s][key] = MISSING_PRIMARY
-               else:
-                   stacks[s][key] = MISSING_SOURCEDEB
-           for s in missing_dep:
-               stacks[s][key] = MISSING_DEP
-           for s in missing_excluded:
-               stacks[s][key] = MISSING_EXCLUDED
-           for s in missing_excluded_dep:
-               stacks[s][key] = MISSING_EXCLUDED_DEP
+            key = "%s-%s"%(os_platform, arch)
+            try:
+                missing_primary, missing_dep, missing_excluded, missing_excluded_dep = get_missing(distro, os_platform, arch)
+            except:
+                for s in distro.stacks.iterkeys():
+                    stacks[s][key] = MISSING_REPO
+                continue
+            
+            args = get_missing(distro, os_platform, arch)
+            counts[key] = ','.join([str(len(x)) for x in args])
+            missing_primary, missing_dep, missing_excluded, missing_excluded_dep = args
+            for s in missing_primary:
+                # check to see if we actually have a source deb for this stack
+                stack_name = s # for SOURCEDEB_URI
+                stack_version = distro.stacks[s].version
+                deb_name = "ros-%s-%s"%(distro_name, debianize_name(s))
+                url = SOURCEDEB_URI%locals()
+
+                if svn_url_exists(url):
+                    stacks[s][key] = MISSING_PRIMARY
+                else:
+                    stacks[s][key] = MISSING_SOURCEDEB
+            for s in missing_dep:
+                stacks[s][key] = MISSING_DEP
+            for s in missing_excluded:
+                stacks[s][key] = MISSING_EXCLUDED
+            for s in missing_excluded_dep:
+                stacks[s][key] = MISSING_EXCLUDED_DEP
            
     with open(output, 'w') as f:
         f.write("""<html>
