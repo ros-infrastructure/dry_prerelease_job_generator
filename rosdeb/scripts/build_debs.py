@@ -183,7 +183,14 @@ def create_chroot(distro, distro_name, os_platform, arch):
     # For debugging
     basedeps += ['strace']
 
-    deplist = ' '.join(basedeps+ros_info['rosdeps'][os_platform])
+    rosdeps = ros_info['rosdeps']
+    # hack due to bug in ubuntu_platform map
+    if os_platform == 'maverick' and 'mighty' in rosdeps:
+        rosdeps = rosdeps['mighty']
+    else:
+        rosdeps = rosdeps[os_platform]
+
+    deplist = ' '.join(basedeps+rosdeps)
 
     subprocess.check_call(['sudo', 'pbuilder', '--create', '--distribution', os_platform, '--debootstrapopts', '--arch=%s'%arch, '--othermirror', 'deb http://code.ros.org/packages/ros-shadow/ubuntu %s main'%(os_platform), '--basetgz', distro_tgz, '--components', 'main restricted universe multiverse', '--extrapackages', deplist])
 
