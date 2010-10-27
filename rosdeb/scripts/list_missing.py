@@ -250,10 +250,8 @@ def generate_allhtml_report(output, distro_name, os_platforms):
                 url = SOURCEDEB_URI%locals()
 
                 if svn_url_exists(url):
-                    print "missing primary", url
                     stacks[s][key] = MISSING_PRIMARY
                 else:
-                    print "missing sourcedeb", url                    
                     stacks[s][key] = MISSING_SOURCEDEB
             for s in missing_dep:
                 stacks[s][key] = MISSING_DEP
@@ -350,6 +348,7 @@ td {
         
         stack_names = sorted(stacks.keys())
         for stack in stack_names:
+
             d = stacks[stack]
             shadow_version = distro.stacks[stack].version
 
@@ -382,7 +381,7 @@ td {
                     try:
                         match = get_stack_version(main_repo[key], distro_name, stack)
                         if match != shadow_version:
-                            version_str = '<em>'+match+'</em>'
+                            version_str = '<em>'+str(match)+'</em>'
                     except Exception, e:
                         print str(e)
                         pass
