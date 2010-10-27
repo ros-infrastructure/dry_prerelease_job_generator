@@ -369,6 +369,7 @@ td {
                 if 0:
                     f.write('<tr><td><a href="%s">%s %s</a></td>'%(url, stack, shadow_version))
                 else:
+                    job_url = h.build_job_url(source_job, parameters=params)
                     # temporarily including [+] for all right now to help bringup maverick
                     f.write('<tr><td><a href="%s">%s %s</a> <a href="%s">[+]</a></td>'%(url, stack, shadow_version, job_url)) 
                 
