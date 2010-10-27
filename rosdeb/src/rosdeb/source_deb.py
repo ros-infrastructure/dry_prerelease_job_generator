@@ -165,7 +165,11 @@ def deb_depends(metadata, distro_name, platform_name):
     if 'rosdeps' not in metadata:
         return None
     if platform_name not in metadata['rosdeps']:
-        return None      
+        # hack to get around bug in ubuntu_map that polluted control files with bad maverick keys
+        if platform_name == 'maverick' and 'mighty' in metadata['rosdeps']:
+            platform_name = 'mighty'
+        else:
+            return None      
     rosdeps = metadata['rosdeps'][platform_name]
     stackdeps = metadata.get('depends', [])
     stackdeps = ['ros-%s-%s'%(distro_name, debianize_name(s)) for s in stackdeps]
