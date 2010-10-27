@@ -236,6 +236,7 @@ def generate_allhtml_report(output, distro_name, os_platforms):
             except BadRepo:
                 for s in distro.stacks.iterkeys():
                     stacks[s][key] = MISSING_REPO
+                counts[key] = "!"
                 continue
             
             args = get_missing(distro, os_platform, arch)
@@ -300,11 +301,11 @@ td {
                 try:
                     main_version = get_repo_version(ROS_REPO, distro, os_platform, arch)
                 except BadRepo:
-                    main_version = "<no repo>"
+                    main_version = "[no repo]"
                 try:
                     fixed_version = get_repo_version(SHADOW_FIXED_REPO, distro, os_platform, arch)
                 except BadRepo:
-                    fixed_version = "<no repo>"
+                    fixed_version = "[no repo]"
                 f.write("<tr><td>%s-%s</td><td>%s</td><td>%s</td><td>%s</td></tr>\n"%(os_platform, arch, distro.version, fixed_version, main_version))
         f.write("</table>")
 
