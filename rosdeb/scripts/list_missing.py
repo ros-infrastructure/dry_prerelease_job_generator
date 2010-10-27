@@ -364,7 +364,11 @@ td {
                 job_url = h.build_job_url(source_job, parameters=params)                            
                 f.write('<tr><td bgcolor="%s"><a href="%s">%s %s</a> <a href="%s">[+]</a></td>'%(color, url, stack, shadow_version, job_url))
             else:
-                f.write('<tr><td><a href="%s">%s %s</a></td>'%(url, stack, shadow_version))
+                if 0:
+                    f.write('<tr><td><a href="%s">%s %s</a></td>'%(url, stack, shadow_version))
+                else:
+                    # temporarily including [+] for all right now to help bringup maverick
+                    f.write('<tr><td bgcolor="%s"><a href="%s">%s %s</a> <a href="%s">[+]</a></td>'%(color, url, stack, shadow_version, job_url))                    
                 
             for os_platform in os_platforms:
                 for arch in arches:
