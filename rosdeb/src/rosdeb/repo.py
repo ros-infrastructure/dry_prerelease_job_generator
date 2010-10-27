@@ -40,23 +40,30 @@ import urllib2
 
 from .core import debianize_name
 
+class BadRepo(Exception): pass
+
 _Packages_cache = {}
 def get_Packages(repo_url, os_platform, arch):
     """
     Retrieve the package list from the shadow repo. This routine
     utilizes a cache and should not be invoked in long-running
     processes.
+    @raise BadRepo: if repo does not exist
     """
     packages_url = repo_url + '/ubuntu/dists/%(os_platform)s/main/binary-%(arch)s/Packages'%locals()
     if packages_url in _Packages_cache:
         return _Packages_cache[packages_url]
     else:
-        _Packages_cache[packages_url] = retval = urllib2.urlopen(packages_url).read()
+        try:
+            _Packages_cache[packages_url] = retval = urllib2.urlopen(packages_url).read()
+        except urllib2.HTTPError:
+            raise BadRepo(repo_url)            
     return retval
     
 def parse_Packages(packagelist):
     """
     Parse debian Packages list into (package, version, depends) tuples
+    @return: parsed tuples or None if packagelist is None
     """
     package_deps = []
     package = deps = version = None
@@ -90,8 +97,8 @@ def get_repo_version(repo_url, distro, os_platform, arch):
 
 def deb_in_repo(repo_url, deb_name, deb_version, os_platform, arch):
     packagelist = get_Packages(repo_url, os_platform, arch)
-    str = 'Package: %s\nVersion: %s'%(deb_name, deb_version)
-    return str in packagelist
+    s = 'Package: %s\nVersion: %s'%(deb_name, deb_version)
+    return s in packagelist
 
 def get_depends(repo_url, deb_name, os_platform, arch):
     """

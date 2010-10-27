@@ -56,7 +56,7 @@ from vcstools import svn_url_exists
 
 from rosdistro import Distro
 from rosdeb import ubuntu_release, debianize_name, debianize_version, platforms, ubuntu_release_name, \
-    deb_in_repo, load_Packages, get_repo_version, get_stack_version
+    deb_in_repo, load_Packages, get_repo_version, get_stack_version, BadRepo
 
 NAME = 'list_missing.py' 
 TARBALL_URL = "https://code.ros.org/svn/release/download/stacks/%(stack_name)s/%(base_name)s/%(f_name)s"
@@ -233,7 +233,7 @@ def generate_allhtml_report(output, distro_name, os_platforms):
             key = "%s-%s"%(os_platform, arch)
             try:
                 missing_primary, missing_dep, missing_excluded, missing_excluded_dep = get_missing(distro, os_platform, arch)
-            except:
+            except BadRepo:
                 for s in distro.stacks.iterkeys():
                     stacks[s][key] = MISSING_REPO
                 continue
@@ -297,7 +297,10 @@ td {
 """)
         for os_platform in os_platforms:
             for arch in arches:
-                main_version = get_repo_version(ROS_REPO, distro, os_platform, arch)
+                try:
+                    main_version = get_repo_version(ROS_REPO, distro, os_platform, arch)
+                except BadRepo:
+                    main_version = "<no repo>"
                 fixed_version = get_repo_version(SHADOW_FIXED_REPO, distro, os_platform, arch)
                 f.write("<tr><td>%s-%s</td><td>%s</td><td>%s</td><td>%s</td></tr>\n"%(os_platform, arch, distro.version, fixed_version, main_version))
         f.write("</table>")

@@ -18,3 +18,4 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
 rosbuild_add_pyunit_future(test/test_rosdeb_rosutil.py)
 rosbuild_add_pyunit_future(test/test_rosdeb_source_deb.py)
+rosbuild_add_pyunit_future(test/test_rosdeb_repo.py)
