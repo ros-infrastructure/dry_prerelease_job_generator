@@ -276,6 +276,13 @@ def get_html_table_header(h, distro_name, os_platforms, arches, counts, job):
             url = h.build_job_url('%s-%s-%s-%s'%(job, distro_name, os_platform, arch), parameters=params)
             b.write('<th>%s-%s<a href="%s">[+]</a></th>'%(os_platform, arch, url))
     b.write('</tr>')
+
+    b.write('<tr><td>&nbsp;</td>')
+    for os_platform in os_platforms:
+        for arch in arches:
+            b.write('<td>%s</td>'%counts['%s-%s'%(os_platform, arch)])
+    b.write('</tr>')
+    
     return b.getvalue()
     
 def get_html_repository_status(distro, os_platforms, arches):
