@@ -269,6 +269,44 @@ def stack_rosdeps(stack_name, stack_dir, platform):
 
     return deb_deps
         
+def missing_stack_rosdeps(stack_name, stack_dir, platform):
+    """
+    Calculate list of rosdeps that are missing definitions on platform.
+    
+    NOTE: one flaw in this implementation is that it uses the rosdep
+    view from the *active environment* to generate the rosdeps. It
+    does not generate them from specific versions of stacks. The hope
+    is that rosdeps improve monotonically over time, so that this will
+    not be a major issue.
+
+    @param platform: platform name (e.g. lucid)
+    @return: dictionary mapping packages to their missing rosdep mappings
+    @rtype: {str: [str]}
+    """
+    
+    # hardcode OS for now as we don't build straight debian
+    os_name = 'ubuntu'
+    # reverse lookup version number, which is the key for rosdep
+    os_version = [k for k, v in rosdeb.get_ubuntu_map().iteritems() if v == platform][0]
+    
+    yc = YamlCache(os_name, os_version)
+    package_manifests = package_manifests_of(stack_dir)
+    packages = {}
+    for p, m_file in package_manifests:
+        missing = []
+        packages[p] = missing
+        m = roslib.manifest.parse_file(m_file)
+        rosdeps = [d.name for d in m.rosdeps]
+        if not rosdeps:
+            continue
+            
+        rdlp = RosdepLookupPackage(os_name, os_version, p, yc)
+        for r in rosdeps:
+            value = rdlp.lookup_rosdep(r)
+            if not value or '\n' in value:
+                missing.append(r)
+    return packages
+
 def send_email(smtp_server, from_addr, to_addrs, subject, text):
     import smtplib
     from email.mime.text import MIMEText
