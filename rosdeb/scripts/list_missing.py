@@ -250,8 +250,10 @@ def generate_allhtml_report(output, distro_name, os_platforms):
                 url = SOURCEDEB_URI%locals()
 
                 if svn_url_exists(url):
+                    print "missing primary", url
                     stacks[s][key] = MISSING_PRIMARY
                 else:
+                    print "missing sourcedeb", url                    
                     stacks[s][key] = MISSING_SOURCEDEB
             for s in missing_dep:
                 stacks[s][key] = MISSING_DEP
@@ -368,7 +370,7 @@ td {
                     f.write('<tr><td><a href="%s">%s %s</a></td>'%(url, stack, shadow_version))
                 else:
                     # temporarily including [+] for all right now to help bringup maverick
-                    f.write('<tr><td bgcolor="%s"><a href="%s">%s %s</a> <a href="%s">[+]</a></td>'%(color, url, stack, shadow_version, job_url))                    
+                    f.write('<tr><td><a href="%s">%s %s</a> <a href="%s">[+]</a></td>'%(url, stack, shadow_version, job_url)) 
                 
             for os_platform in os_platforms:
                 for arch in arches:
