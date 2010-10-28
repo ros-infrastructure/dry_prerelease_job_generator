@@ -577,7 +577,7 @@ if not workspace:
     sys.exit(1)
 
 hdd_tmp_dir = os.getenv("HDD_TMP_DIR", "/tmp")
-
+path = os.path.join(options.chroot_dir, os.getenv("JOB_NAME", "job_name_unset"))
 
 
 
@@ -614,7 +614,7 @@ if options.arch not in valid_archs:
     parser.error("%s is not a valid arch: %s"%(options.arch, valid_archs))
 
 
-path = os.path.join(options.chroot_dir, os.getenv("JOB_NAME"))
+
 print "chroot path", path    
 print "parameters"
 print "distro", options.distro
