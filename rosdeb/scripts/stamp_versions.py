@@ -323,7 +323,7 @@ def load_distro(distro_name):
     distro_uri = "https://code.ros.org/svn/release/trunk/distros/%s.rosdistro"%distro_name
     return Distro(distro_uri)
     
-def stamp_debs(distro, os_platform, arch, staging_dir):
+def stamp_debs(distro, os_platform, arch, staging_dir, force=False):
     distro_name = distro.release_name
 
     # Retrieve the package list from the shadow repo
@@ -366,7 +366,7 @@ def stamp_debs(distro, os_platform, arch, staging_dir):
     else:
         missing = True
 
-    if not missing:
+    if not missing or force:
         return upload_debs(debs, distro_name, os_platform, arch)
     else:
         print >> sys.stderr, "Missing debs expected from distro file.  Aborting"
@@ -446,7 +446,7 @@ def build_debs_main():
             ok = False
                 
         if ok and not options.check:
-            failed += stamp_debs(distro, os_platform, arch, staging_dir)
+            failed += stamp_debs(distro, os_platform, arch, staging_dir, options.force)
 
         if not options.check:
             if options.staging_dir is None:
