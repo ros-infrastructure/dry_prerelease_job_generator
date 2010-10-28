@@ -191,7 +191,7 @@ println &quot;${build_failures_context}&quot;&#xd;
 
 import roslib; roslib.load_manifest("job_generation")
 import rosdistro
-from jobs_common import *
+from job_generation.jobs_common import *
 import hudson
 import sys
 import re
