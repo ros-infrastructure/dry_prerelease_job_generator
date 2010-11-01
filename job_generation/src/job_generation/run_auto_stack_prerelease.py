@@ -22,6 +22,8 @@ def main():
                       help='Stack name')
     parser.add_option('--rosdistro', dest = 'rosdistro', default=False, action='store',
                       help='Ros distro name')
+    parser.add_option('--repeat', dest = 'repeat', default=0, action='store',
+                      help='How many times to repeat the tests of the stack itself')
     (options, args) = parser.parse_args()
     if not options.stacklist or not options.rosdistro:
         print 'You did not specify all options to run this script.'
@@ -81,11 +83,15 @@ def main():
     
     # Run hudson helper for stacks only
     print 'Running Hudson Helper'
-    env['ROS_TEST_RESULTS_DIR'] = os.environ['ROS_TEST_RESULTS_DIR'] + '/' + STACK_DIR
-    helper = subprocess.Popen(('./hudson_helper --dir-test %s build'%STACK_DIR).split(' '), env=env)
-    helper.communicate()
-    if helper.returncode != 0:
-        return helper.returncode
+    res = 0
+    for r in range(0, int(options.repeat)+1):
+        env['ROS_TEST_RESULTS_DIR'] = os.environ['ROS_TEST_RESULTS_DIR'] + '/' + STACK_DIR + '_run_' + str(r)
+        helper = subprocess.Popen(('./hudson_helper --dir-test %s build'%STACK_DIR).split(' '), env=env)
+        helper.communicate()
+        if helper.returncode != 0:
+            res = helper.returncode
+    if res != 0:
+        return res
 
 
     # Install Debian packages of ALL stacks in distro
