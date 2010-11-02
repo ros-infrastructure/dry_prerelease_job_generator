@@ -45,7 +45,25 @@ import shutil
 from vcstools import svn, bzr, git, hg
 
 
+
+    
+
+
 class GITClientTest(unittest.TestCase):
+    def setup_git_repo(directory):
+
+        subprocess.check_call(["git", "init"], cwd=directory)
+        subprocess.check_call(["touch", "one"], cwd=directory)
+        subprocess.check_call(["git", "add", "one"], cwd=directory)
+        subprocess.check_call(["git", "commit", "one", "-m", "\"commit one\""], cwd=directory)
+        po = subprocess.Popen(["git", "log", "-n", "1", "--pretty=format:\"%H\""], cwd=directory, stdout=subprocess.PIPE)
+        self.hash1 = po.stdout.read().rstrip('"').lstrip('"')
+        subprocess.check_call(["git", "branch", "b_two"], cwd=directory)
+        subprocess.check_call(["touch", "two"], cwd=directory)
+        subprocess.check_call(["git", "add", "two"], cwd=directory)
+        subprocess.check_call(["git", "commit", "two", "-m", "\"commit two\""], cwd=directory)
+        po = subprocess.Popen(["git", "log", "-n", "1", "--pretty=format:\"%H\""], cwd=directory, stdout=subprocess.PIPE)
+        self.hash2 = po.stdout.read().rstrip('"').lstrip('"')
 
     def setUp(self):
         self.directories = {}
@@ -148,4 +166,10 @@ class GITClientTest(unittest.TestCase):
 
 if __name__ == '__main__':
     from ros import rostest
-    rostest.unitrun('vcstools', 'test_git', GITClientTest, coverage_packages=['vcstools'])
+    from roslib import os_detect
+    os_detector = os_detect.OSDetect()
+    if os_detector.get_name() == "ubuntu" and os_detector.get_version() == "9.04":
+        print "jaunty detected, skipping test"
+    else:
+        rostest.unitrun('vcstools', 'test_git', GITClientTest, coverage_packages=['vcstools'])
+    #setup_git_repo("/tmp/git")
