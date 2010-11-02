@@ -45,6 +45,16 @@ import roslib
 
 from vcstools import svn, bzr, git, hg
 
+class FakeHGClientTest(unittest.TestCase):
+
+    def setUp(self):
+        pass
+    def tearDown(self):
+        pass
+
+    def test_get_url_by_reading(self):
+        pass
+
 class HGClientTest(unittest.TestCase):
 
     def setUp(self):
@@ -124,4 +134,10 @@ class HGClientTest(unittest.TestCase):
 
 if __name__ == '__main__':
     from ros import rostest
-    rostest.unitrun('vcstools', 'test_vcs', HGClientTest,  coverage_packages=['vcstools'])
+    from roslib import os_detect
+    os_detector = os_detect.OSDetect()
+    if os_detector.get_name() == "ubuntu" and os_detector.get_version() == "9.04":
+        print "jaunty detected, skipping test"
+        rostest.unitrun('vcstools', 'test_vcs', FakeHGClientTest,  coverage_packages=['vcstools'])
+    else:
+        rostest.unitrun('vcstools', 'test_vcs', HGClientTest,  coverage_packages=['vcstools'])
