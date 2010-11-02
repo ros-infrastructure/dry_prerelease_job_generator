@@ -14,7 +14,7 @@ ROSBUILD_SSH_URI = 'http://wgs24.willowgarage.com/hudson_slave_configuration_fil
 
 # Valid options
 valid_archs = ['i386', 'i686', 'amd64']
-valid_ubuntu_distros = ['hardy', 'jaunty', 'karmic', 'lucid']
+valid_ubuntu_distros = ['hardy', 'jaunty', 'karmic', 'lucid', 'maverick']
 valid_debian_distros = ['lenny']
 
 

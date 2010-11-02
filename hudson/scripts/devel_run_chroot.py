@@ -571,13 +571,6 @@ class TempRamFS:
 
 
 
-workspace = os.getenv("WORKSPACE")
-if not workspace:
-    print "you must export WORKSPACE"
-    sys.exit(1)
-
-hdd_tmp_dir = os.getenv("HDD_TMP_DIR", "/tmp")
-
 
 
 
@@ -602,6 +595,8 @@ parser.add_option("--script", action="store", dest="script",
                   type="string", help="Script filename to execute on the remote machine")
 parser.add_option("--ssh-key-file", action="store", dest="ssh_key_path", default=None,
                   type="string", help="filename to use for ssh key tarball, instead of URI")
+parser.add_option("--workspace", action="store", dest="workspace", default=None,
+                  type="string", help="The directory to replecate into the chroot. Overrides WORKSPACE in env.")
 parser.add_option("--interactive", action="store_true", dest="interactive", default=False,
                   help="Pop up an xterm to interact in.")
 
@@ -614,7 +609,17 @@ if options.arch not in valid_archs:
     parser.error("%s is not a valid arch: %s"%(options.arch, valid_archs))
 
 
-path = os.path.join(options.chroot_dir, os.getenv("JOB_NAME"))
+workspace = os.getenv("WORKSPACE")
+if options.workspace:
+    workspace = options.workspace
+if not workspace:
+    parser.error("you must export WORKSPACE or set --workspace")
+
+hdd_tmp_dir = os.getenv("HDD_TMP_DIR", "/tmp")
+path = os.path.join(options.chroot_dir, os.getenv("JOB_NAME", "job_name_unset"))
+
+
+
 print "chroot path", path    
 print "parameters"
 print "distro", options.distro

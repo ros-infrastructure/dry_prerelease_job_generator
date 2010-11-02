@@ -37,13 +37,18 @@ import sys
 import unittest
 import subprocess
 
+import roslib
+
 class LegacyVcsTest(unittest.TestCase):
 
     def test_svn_url_exists(self):
         from vcstools import svn_url_exists
         self.assert_(svn_url_exists('https://code.ros.org/svn/ros/'))
         self.assert_(svn_url_exists('https://code.ros.org/svn/ros/stacks/ros/trunk/CMakeLists.txt'))
-        self.failIf(svn_url_exists('https://code.ros.org/svn/ros/stacks/ros/trunk/FAKEFILE.txt'))
+
+        od = roslib.os_detect.OSDetect()
+        if od.get_version() != "9.04":
+            self.failIf(svn_url_exists('https://code.ros.org/svn/ros/stacks/ros/trunk/FAKEFILE.txt'))
 
 if __name__ == '__main__':
     from ros import rostest

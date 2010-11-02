@@ -201,5 +201,10 @@ class BZRClientTest(unittest.TestCase):
 
 if __name__ == '__main__':
     from ros import rostest
-    rostest.unitrun('vcstools', 'test_vcs', BZRClientTest, coverage_packages=['vcstools'])  
+    from roslib import os_detect
+    os_detector = os_detect.OSDetect()
+    if os_detector.get_name() == "ubuntu" and os_detector.get_version() == "9.04":
+        print "jaunty detected, skipping test"
+    else:
+        rostest.unitrun('vcstools', 'test_vcs', BZRClientTest, coverage_packages=['vcstools'])  
     rostest.unitrun('vcstools', 'test_vcs', SVNClientTest, coverage_packages=['vcstools'])  

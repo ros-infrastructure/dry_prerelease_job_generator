@@ -32,10 +32,10 @@ HUDSON_HG = """
   </scm>
 """
 
-# template to create develop hudscon configuration file
-HUDSON_DEVEL_CONFIG = """<?xml version='1.0' encoding='UTF-8'?>
+# template to create post-release hudscon configuration file
+HUDSON_POST_RELEASE_CONFIG = """<?xml version='1.0' encoding='UTF-8'?>
 <project> 
-  <description>Build of STACKNAME development branch for ROSDISTRO on UBUNTUDISTRO, ARCH</description> 
+  <description>Build of STACKNAME post-release for ROSDISTRO on UBUNTUDISTRO, ARCH</description> 
  <logRotator> 
     <daysToKeep>21</daysToKeep> 
     <numToKeep>-1</numToKeep> 
@@ -47,7 +47,7 @@ HUDSON_DEVEL_CONFIG = """<?xml version='1.0' encoding='UTF-8'?>
     </hudson.plugins.trac.TracProjectProperty> 
   </properties> 
   HUDSON_VCS
-  <assignedNode>devel</assignedNode>
+  <assignedNode>released</assignedNode>
   <canRoam>false</canRoam> 
   <disabled>false</disabled> 
   <blockBuildWhenUpstreamBuilding>false</blockBuildWhenUpstreamBuilding> 
@@ -63,24 +63,24 @@ HUDSON_DEVEL_CONFIG = """<?xml version='1.0' encoding='UTF-8'?>
 #!/usr/bin/env bash
 set -o errexit
 echo "_________________________________BEGIN SCRIPT______________________________________"
+sudo apt-get install ros-ROSDISTRO-ros --yes
+source /opt/ros/ROSDISTRO/setup.sh
+
 export INSTALL_DIR=/tmp/install_dir
 export WORKSPACE=/tmp/ros
 export ROS_TEST_RESULTS_DIR=/tmp/ros/test_results
 export JOB_NAME=$JOB_NAME
 export BUILD_NUMBER=$BUILD_NUMBER
 export HUDSON_URL=$HUDSON_URL
+export ROS_PACKAGE_PATH=\$INSTALL_DIR/ros_release:/opt/ros/ROSDISTRO/stacks
 
 mkdir -p \$INSTALL_DIR
 cd \$INSTALL_DIR
-wget  --no-check-certificate http://code.ros.org/svn/ros/installers/trunk/hudson/hudson_helper
-wget  --no-check-certificate http://code.ros.org/svn/ros/stacks/ros_release/trunk/job_generation/src/job_generation/jobs_common.py 
-wget  --no-check-certificate http://code.ros.org/svn/ros/stacks/ros_release/trunk/job_generation/src/job_generation/run_auto_stack_devel.py 
-chmod +x hudson_helper  
-chmod +x run_auto_stack_devel.py
 
-sudo apt-get install ros-ROSDISTRO-ros --yes
-source /opt/ros/ROSDISTRO/setup.sh
-./run_auto_stack_devel.py --stack STACKNAME --rosdistro ROSDISTRO --repeat 0
+wget  --no-check-certificate http://code.ros.org/svn/ros/installers/trunk/hudson/hudson_helper 
+chmod +x hudson_helper
+svn co https://code.ros.org/svn/ros/stacks/ros_release/trunk ros_release
+./ros_release/job_generation/src/job_generation/run_auto_stack_postrelease.py --stack STACKNAME --rosdistro ROSDISTRO
 echo "_________________________________END SCRIPT_______________________________________"
 DELIM
 
@@ -89,9 +89,9 @@ set -o errexit
 rm -rf $WORKSPACE/test_results
 rm -rf $WORKSPACE/test_output
 
-wget https://code.ros.org/svn/ros/stacks/ros_release/trunk/hudson/scripts/run_chroot.py --no-check-certificate -O $WORKSPACE/run_chroot.py
+wget  --no-check-certificate https://code.ros.org/svn/ros/stacks/ros_release/trunk/hudson/scripts/run_chroot.py -O $WORKSPACE/run_chroot.py
 chmod +x $WORKSPACE/run_chroot.py
-cd $WORKSPACE &amp;&amp; $WORKSPACE/run_chroot.py --distro=UBUNTUDISTRO --arch=ARCH  --ramdisk --ssh-key-file=/home/rosbuild/rosbuild-ssh.tar --script=$WORKSPACE/script.sh
+cd $WORKSPACE &amp;&amp; $WORKSPACE/run_chroot.py --distro=UBUNTUDISTRO --arch=ARCH  --ramdisk --ssh-key-file=/home/rosbuild/rosbuild-ssh.tar --script=$WORKSPACE/script.sh --hdd-scratch=/tmp/install_dir
      </command> 
     </hudson.tasks.Shell> 
   </builders> 
@@ -191,7 +191,7 @@ println &quot;${build_failures_context}&quot;&#xd;
 
 import roslib; roslib.load_manifest("job_generation")
 import rosdistro
-from jobs_common import *
+from job_generation.jobs_common import *
 import hudson
 import sys
 import re
@@ -199,14 +199,14 @@ import urllib
 import optparse 
 
 
-def devel_job_name(rosdistro, stack_name, ubuntu, arch):
-    return "_".join(['devel', rosdistro, stack_name, ubuntu, arch])
+def post_release_job_name(rosdistro, stack_name, ubuntu, arch):
+    return "_".join(['released', rosdistro, stack_name, ubuntu, arch])
 
 
-def create_devel_configs(rosdistro, stack):
+def create_post_release_configs(rosdistro, stack):
     # create gold distro
-    gold_job = devel_job_name(rosdistro, stack.name, UBUNTU_DISTRO_MAP[rosdistro][0], ARCHES[0])
-    gold_children = [devel_job_name(rosdistro, stack.name, u, a)
+    gold_job = post_release_job_name(rosdistro, stack.name, UBUNTU_DISTRO_MAP[rosdistro][0], ARCHES[0])
+    gold_children = [post_release_job_name(rosdistro, stack.name, u, a)
                      for a in ARCHES for u in UBUNTU_DISTRO_MAP[rosdistro]]
     gold_children.remove(gold_job)
 
@@ -214,16 +214,16 @@ def create_devel_configs(rosdistro, stack):
     configs = {}
     for ubuntudistro in UBUNTU_DISTRO_MAP[rosdistro]:
         for arch in ARCHES:
-            name = devel_job_name(rosdistro, stack.name, ubuntudistro, arch)
+            name = post_release_job_name(rosdistro, stack.name, ubuntudistro, arch)
 
             # create VCS block
             if stack.vcs_config.type == 'svn':
                 hudson_vcs = HUDSON_SVN
                 hudson_vcs = hudson_vcs.replace('STACKNAME', stack.name)
-                hudson_vcs = hudson_vcs.replace('STACKURI', stack.vcs_config.anon_dev)
+                hudson_vcs = hudson_vcs.replace('STACKURI', stack.vcs_config.anon_distro_tag)
             elif stack.vcs_config.type == 'hg':
                 hudson_vcs = HUDSON_HG
-                hudson_vcs = hudson_vcs.replace('STACKBRANCH', stack.vcs_config.dev_branch)
+                hudson_vcs = hudson_vcs.replace('STACKBRANCH', stack.vcs_config.distro_tag)
                 hudson_vcs = hudson_vcs.replace('STACKURI', stack.vcs_config.repo_uri)
                 hudson_vcs = hudson_vcs.replace('STACKNAME', stack.name)
                 
@@ -231,10 +231,10 @@ def create_devel_configs(rosdistro, stack):
             time_trigger = ''
             job_children = ''
             if name == gold_job:
-                time_trigger = '*/5 * * * *'
+                time_trigger = '0 3 * * *'
                 job_children = ', '.join(gold_children)
 
-            hudson_config = HUDSON_DEVEL_CONFIG
+            hudson_config = HUDSON_POST_RELEASE_CONFIG
             hudson_config = hudson_config.replace('UBUNTUDISTRO', ubuntudistro)
             hudson_config = hudson_config.replace('ARCH', arch)
             hudson_config = hudson_config.replace('ROSDISTRO', rosdistro)
@@ -277,17 +277,17 @@ def main():
 
 
     # generate hudson config files
-    devel_configs = {}
+    post_release_configs = {}
     if options.stacks:
         stack_list = options.stacks
     else:
         stack_list = distro_obj.stacks
     for stack_name in stack_list:
-        devel_configs.update(create_devel_configs(distro_obj.release_name, distro_obj.stacks[stack_name]))
+        post_release_configs.update(create_post_release_configs(distro_obj.release_name, distro_obj.stacks[stack_name]))
 
 
-    # send devel tests to Hudson
-    for job_name in devel_configs:
+    # send post_release tests to Hudson
+    for job_name in post_release_configs:
         exists = hudson_instance.job_exists(job_name)
 
         # delete old job
@@ -298,12 +298,12 @@ def main():
 
         # reconfigure job
         elif exists:
-            hudson_instance.reconfig_job(job_name, devel_configs[job_name])
+            hudson_instance.reconfig_job(job_name, post_release_configs[job_name])
             print "Reconfigure job %s"%job_name
 
         # create job
         elif not exists:
-            hudson_instance.create_job(job_name, devel_configs[job_name])
+            hudson_instance.create_job(job_name, post_release_configs[job_name])
             print "Creating new job %s"%job_name
 
 if __name__ == '__main__':

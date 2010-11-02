@@ -40,6 +40,7 @@ import roslib; roslib.load_manifest('rosdeb')
 
 import os
 import sys
+import cStringIO
 import subprocess
 import shutil
 import tempfile
@@ -209,7 +210,110 @@ COLORS = {
     MISSING_EXCLUDED_DEP: 'lightgrey',
     }
 
+def sourcedeb_url(distro, stack_name, os_platform):
+    # have to setup locals for substitution
+    distro_name = distro.release_name
+    stack_version = distro.stacks[stack_name].version
+    deb_name = "ros-%s-%s"%(distro_name, debianize_name(stack_name))
+    return SOURCEDEB_URI%locals()
+
+def get_html_legend():
+    return """<h2>Stack Debbuild Status</h2>
+<h3>Legend</h3>
+<ul>
+<li>Missing (deb): <span style="background-color: %s;">&nbsp;%s&nbsp;</span></li>
+<li>Missing (sourcedeb): <span style="background-color: %s;">&nbsp;%s&nbsp;</span></li>
+<li>Depends Missing: <span style="background-color: %s;">&nbsp;%s&nbsp;</span></li>
+<li>Excluded: <span style="background-color: %s;">&nbsp;%s&nbsp;</span></li>
+<li>Depends Excluded: <span style="background-color: %s;">&nbsp;%s&nbsp;</span></li> 
+</ul>"""%(COLORS[MISSING_PRIMARY], MISSING_PRIMARY, 
+          COLORS[MISSING_SOURCEDEB], MISSING_SOURCEDEB, 
+          COLORS[MISSING_DEP], MISSING_DEP, 
+          COLORS[MISSING_EXCLUDED], MISSING_EXCLUDED, 
+          COLORS[MISSING_EXCLUDED_DEP], MISSING_EXCLUDED_DEP
+          )
+    
+def get_html_header(distro_name):
+    return """<html>
+<head>
+<title>
+%(distro_name)s: debbuild report
+</title>
+</head>
+<style type="text/css">
+body {
+  font-family: Helvetica, Arial, Verdana, sans-serif;
+  font-size: 12px;
+}
+.title {
+  background-color: lightgrey;
+  padding: 10px;
+}
+table {
+  border: 1px solid lightgrey;
+}
+th {
+  border: 1px solid lightgrey;
+}
+td {
+  font-size: 12px;
+  border: 1px solid lightgrey;
+}
+</style>
+<body>
+<h1><span class="title">%(distro_name)s: debbuild report</span></h1>"""%locals()
+    
+def get_html_table_header(h, distro_name, os_platforms, arches, counts, job):
+    b = cStringIO.StringIO()
+    b.write("""<strong>Click [+] to trigger a new build of the selected stack/platform</strong>")
+<table cellspacing=0 border="1">
+   <tr>
+     <th>Stack</th>""")
+
+    params = {'STACK_NAME': 'ALL'}
+    for os_platform in os_platforms:
+        for arch in arches:
+            url = h.build_job_url('%s-%s-%s-%s'%(job, distro_name, os_platform, arch), parameters=params)
+            b.write('<th>%s-%s<a href="%s">[+]</a></th>'%(os_platform, arch, url))
+    b.write('</tr>')
+
+    b.write('<tr><td>&nbsp;</td>')
+    for os_platform in os_platforms:
+        for arch in arches:
+            b.write('<td>%s</td>'%counts['%s-%s'%(os_platform, arch)])
+    b.write('</tr>')
+    
+    return b.getvalue()
+    
+def get_html_repository_status(distro, os_platforms, arches):
+    b = cStringIO.StringIO()
+    b.write("""<h2>Repository Status</h2>
+<table border="0" cellspacing="0">
+<tr>
+<th>Platform</th><th>Shadow</th><th>Shadow-Fixed</th><th>Public</th>
+</tr>
+""")
+    for os_platform in os_platforms:
+        for arch in arches:
+            try:
+                main_version = get_repo_version(ROS_REPO, distro, os_platform, arch)
+            except BadRepo:
+                main_version = "[no repo]"
+            try:
+                fixed_version = get_repo_version(SHADOW_FIXED_REPO, distro, os_platform, arch)
+            except BadRepo:
+                fixed_version = "[no repo]"
+            b.write("<tr><td>%s-%s</td><td>%s</td><td>%s</td><td>%s</td></tr>\n"%(os_platform, arch, distro.version, fixed_version, main_version))
+    b.write("</table>")
+    return b.getvalue()
+
+def sourcedeb_job_url(h, distro_name, stack, stack_version):
+    params = {'STACK_NAME': stack, 'DISTRO_NAME': distro_name,'STACK_VERSION': stack_version}
+    return h.build_job_url('debbuild-sourcedeb', parameters=params)                            
+    
 def generate_allhtml_report(output, distro_name, os_platforms):
+    import hudson
+    h = hudson.Hudson(HUDSON)
     distro = load_distro(distro_name)
 
     main_repo = {}
@@ -242,112 +346,32 @@ def generate_allhtml_report(output, distro_name, os_platforms):
             args = get_missing(distro, os_platform, arch)
             counts[key] = ','.join([str(len(x)) for x in args])
             missing_primary, missing_dep, missing_excluded, missing_excluded_dep = args
-            for s in missing_primary:
-                # check to see if we actually have a source deb for this stack
-                stack_name = s # for SOURCEDEB_URI
-                stack_version = distro.stacks[s].version
-                deb_name = "ros-%s-%s"%(distro_name, debianize_name(s))
-                url = SOURCEDEB_URI%locals()
 
-                if svn_url_exists(url):
+            for s in missing_primary:
+                if svn_url_exists(sourcedeb_url(distro, s, os_platform)):
                     stacks[s][key] = MISSING_PRIMARY
                 else:
                     stacks[s][key] = MISSING_SOURCEDEB
             for s in missing_dep:
-                stacks[s][key] = MISSING_DEP
+                if svn_url_exists(sourcedeb_url(distro, s, os_platform)):
+                    stacks[s][key] = MISSING_DEP
+                else:
+                    stacks[s][key] = MISSING_SOURCEDEB
             for s in missing_excluded:
                 stacks[s][key] = MISSING_EXCLUDED
             for s in missing_excluded_dep:
                 stacks[s][key] = MISSING_EXCLUDED_DEP
            
     with open(output, 'w') as f:
-        f.write("""<html>
-<head>
-<title>
-%(distro_name)s: debbuild report
-</title>
-</head>
-<style type="text/css">
-body {
-  font-family: Helvetica, Arial, Verdana, sans-serif;
-  font-size: 12px;
-}
-.title {
-  background-color: lightgrey;
-  padding: 10px;
-}
-table {
-  border: 1px solid lightgrey;
-}
-th {
-  border: 1px solid lightgrey;
-}
-td {
-  font-size: 12px;
-  border: 1px solid lightgrey;
-}
-</style>
-<body>
-<h1><span class="title">%(distro_name)s: debbuild report</span></h1>"""%locals())
-
-        f.write("""<h2>Repository Status</h2>
-<table border="0" cellspacing="0">
-<tr>
-<th>Platform</th><th>Shadow</th><th>Shadow-Fixed</th><th>Public</th>
-</tr>
-""")
-        for os_platform in os_platforms:
-            for arch in arches:
-                try:
-                    main_version = get_repo_version(ROS_REPO, distro, os_platform, arch)
-                except BadRepo:
-                    main_version = "[no repo]"
-                try:
-                    fixed_version = get_repo_version(SHADOW_FIXED_REPO, distro, os_platform, arch)
-                except BadRepo:
-                    fixed_version = "[no repo]"
-                f.write("<tr><td>%s-%s</td><td>%s</td><td>%s</td><td>%s</td></tr>\n"%(os_platform, arch, distro.version, fixed_version, main_version))
-        f.write("</table>")
-
-        f.write("""<h2>Stack Debbuild Status</h2>
-<h3>Legend</h3>
-<ul>
-<li>Missing (deb): <span style="background-color: %s;">&nbsp;%s&nbsp;</span></li>
-<li>Missing (sourcedeb): <span style="background-color: %s;">&nbsp;%s&nbsp;</span></li>
-<li>Depends Missing: <span style="background-color: %s;">&nbsp;%s&nbsp;</span></li>
-<li>Excluded: <span style="background-color: %s;">&nbsp;%s&nbsp;</span></li>
-<li>Depends Excluded: <span style="background-color: %s;">&nbsp;%s&nbsp;</span></li> 
-</ul>"""%(COLORS[MISSING_PRIMARY], MISSING_PRIMARY, 
-          COLORS[MISSING_SOURCEDEB], MISSING_SOURCEDEB, 
-          COLORS[MISSING_DEP], MISSING_DEP, 
-          COLORS[MISSING_EXCLUDED], MISSING_EXCLUDED, 
-          COLORS[MISSING_EXCLUDED_DEP], MISSING_EXCLUDED_DEP
-          ))
-        f.write("<strong>Click [+] to trigger a new build of the selected stack/platform</strong>")
-        f.write("""<table cellspacing=0 border="1">
-<tr>
-<th>Stack</th>""")
-
+        f.write(get_html_header(distro_name))
+        f.write(get_html_repository_status(distro, os_platforms, arches))
+        f.write(get_html_legend())
         job = 'debbuild-build-debs'
-        source_job = 'debbuild-sourcedeb'
-        import hudson
-        h = hudson.Hudson(HUDSON)
-
-        params = {'STACK_NAME': 'ALL'}
-        for os_platform in os_platforms:
-            for arch in arches:
-                url = h.build_job_url('%s-%s-%s-%s'%(job, distro_name, os_platform, arch), parameters=params)
-                f.write('<th>%s-%s<a href="%s">[+]</a></th>'%(os_platform, arch, url))
-        f.write('</tr>')
-        
-        f.write('<tr><td>&nbsp;</td>')
-        for os_platform in os_platforms:
-            for arch in arches:
-                f.write('<td>%s</td>'%counts['%s-%s'%(os_platform, arch)])
-        f.write('</tr>')
+        f.write(get_html_table_header(h, distro_name, os_platforms, arches, counts, job))
         
         stack_names = sorted(stacks.keys())
         for stack in stack_names:
+
             d = stacks[stack]
             shadow_version = distro.stacks[stack].version
 
@@ -356,15 +380,19 @@ td {
             stack_version = shadow_version
             url = SOURCEDEB_DIR_URI%locals()
             
-            # MISSING_SOURCEDEB is os/arch independent, so treat row as a whole
+            # MISSING_SOURCEDEB is os/arch independent, so treat row as a whole            
             sample_key = "%s-%s"%(os_platforms[0], arches[0])
             if sample_key in d and d[sample_key] == MISSING_SOURCEDEB:
                 color = COLORS[d[sample_key]]
-                params = {'STACK_NAME': stack, 'DISTRO_NAME': distro_name,'STACK_VERSION': shadow_version}
-                job_url = h.build_job_url(source_job, parameters=params)                            
+                job_url = sourcedeb_job_url(h, distro_name, stack, shadow_version)
                 f.write('<tr><td bgcolor="%s"><a href="%s">%s %s</a> <a href="%s">[+]</a></td>'%(color, url, stack, shadow_version, job_url))
             else:
-                f.write('<tr><td><a href="%s">%s %s</a></td>'%(url, stack, shadow_version))
+                if 0:
+                    f.write('<tr><td><a href="%s">%s %s</a></td>'%(url, stack, shadow_version))
+                else:
+                    job_url = sourcedeb_job_url(h, distro_name, stack, shadow_version)
+                    # temporarily including [+] for all right now to help bringup maverick
+                    f.write('<tr><td><a href="%s">%s %s</a> <a href="%s">[+]</a></td>'%(url, stack, shadow_version, job_url)) 
                 
             for os_platform in os_platforms:
                 for arch in arches:
@@ -375,10 +403,10 @@ td {
                     try:
                         match = get_stack_version(main_repo[key], distro_name, stack)
                         if match != shadow_version:
-                            version_str = '<em>'+match+'</em>'
+                            match = match or '0'
+                            version_str = '<em>'+str(match)+'</em>'
                     except Exception, e:
                         print str(e)
-                        pass
                     
                     if key in d:
                         val = d[key]

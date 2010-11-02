@@ -45,7 +45,7 @@ cd \$INSTALL_DIR
 wget  --no-check-certificate http://code.ros.org/svn/ros/installers/trunk/hudson/hudson_helper 
 chmod +x hudson_helper
 svn co https://code.ros.org/svn/ros/stacks/ros_release/trunk ros_release
-./ros_release/job_generation/src/job_generation/run_auto_stack_prerelease.py STACKARGS --rosdistro ROSDISTRO
+./ros_release/job_generation/src/job_generation/run_auto_stack_prereleaseDEVEL.py STACKARGS --rosdistro ROSDISTRO --repeat REPEAT
 
 echo "_________________________________END SCRIPT_______________________________________"
 DELIM
@@ -160,7 +160,7 @@ println &quot;${build_failures_context}&quot;&#xd;
 
 import roslib; roslib.load_manifest("job_generation")
 import rosdistro
-from jobs_common import *
+from job_generation.jobs_common import *
 import hudson
 import urllib
 import optparse 
@@ -168,7 +168,7 @@ import optparse
 
 
 
-def create_prerelease_configs(rosdistro, stack_list, email):
+def create_prerelease_configs(rosdistro, stack_list, email, repeat, devel):
     # create hudson config files for each ubuntu distro
     configs = {}
     for ubuntudistro in UBUNTU_DISTRO_MAP[rosdistro]:
@@ -181,6 +181,11 @@ def create_prerelease_configs(rosdistro, stack_list, email):
             hudson_config = hudson_config.replace('STACKNAME', '---'.join(stack_list))
             hudson_config = hudson_config.replace('STACKARGS', ' '.join(['--stack %s'%s for s in stack_list]))
             hudson_config = hudson_config.replace('EMAIL', email)
+            hudson_config = hudson_config.replace('REPEAT', repeat)
+            if devel:
+                hudson_config = hudson_config.replace('DEVEL', '_devel')                
+            else:
+                hudson_config = hudson_config.replace('DEVEL', '')                 
             configs[name] = hudson_config
     return configs
     
@@ -196,6 +201,10 @@ def main():
                       help="Specify the ros distro to operate on (defaults to cturtle)")
     parser.add_option('--email', dest='email', action='store',
                       help='Send email to this address')
+    parser.add_option('--repeat', dest = 'repeat', default=0, action='store',
+                      help='How many times to repeat the tests of the stack itself')
+    parser.add_option('--devel', dest = 'devel', default=False, action='store_true',
+                      help='Use the development script')
     (options, args) = parser.parse_args()
     if not options.email:
         print 'Please provide your email address: --email you@willowgarage.com'
@@ -228,7 +237,7 @@ def main():
 
     # send prerelease tests to Hudson
     print 'Creating pre-release Hudson jobs:'
-    prerelease_configs = create_prerelease_configs(options.rosdistro, options.stacks, options.email)
+    prerelease_configs = create_prerelease_configs(options.rosdistro, options.stacks, options.email, options.repeat, options.devel)
     for job_name in prerelease_configs:
         exists = hudson_instance.job_exists(job_name)
 
