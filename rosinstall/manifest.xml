@@ -6,9 +6,9 @@
   </description>
   <author>Tully Foote</author>
   <license>BSD</license>
-  <review status="unreviewed" notes=""/>
+  <review status="API Cleared" notes=""/>
   <url>http://ros.org/wiki/rosinstall</url>
-  <depend package="roslib2"/>
+  <depend package="vcstools"/>
 
 </package>
 
