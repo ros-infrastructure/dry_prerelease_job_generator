@@ -201,7 +201,7 @@ def main():
                       help="Specify the ros distro to operate on (defaults to cturtle)")
     parser.add_option('--email', dest='email', action='store',
                       help='Send email to this address')
-    parser.add_option('--repeat', dest = 'repeat', default=0, action='store',
+    parser.add_option('--repeat', dest = 'repeat', default='0', action='store',
                       help='How many times to repeat the tests of the stack itself')
     parser.add_option('--devel', dest = 'devel', default=False, action='store_true',
                       help='Use the development script')
