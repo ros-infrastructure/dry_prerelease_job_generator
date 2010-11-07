@@ -71,6 +71,12 @@ def checkout(vcs, uri, dir_path):
         else:
             cwd = dir_path
             cmd = ['bzr', 'up']
+    elif vcs == 'hg':
+        if fresh_install:
+            cmd = ['hg', 'clone', uri, dir_path]
+        else:
+            cwd = dir_path
+            cmd = ['hg', 'pull']
     else:
         raise ValueError("unknown vcs: %s"%vcs)
     import subprocess
