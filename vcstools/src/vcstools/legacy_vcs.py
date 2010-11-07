@@ -65,7 +65,6 @@ def checkout(vcs, uri, dir_path):
             cwd = dir_path
             cmd = ['git', 'pull']
     elif vcs == 'bzr':
-        url = url[4:]      
         if fresh_install:
             cmd = ['bzr', 'checkout', uri, dir_path]
         else:
