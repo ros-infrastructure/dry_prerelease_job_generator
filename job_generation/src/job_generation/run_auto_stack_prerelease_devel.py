@@ -107,11 +107,11 @@ def main():
         if res != '':
             for r in res.split('\n'):
                 depends_on[r] = ''
+    print 'Removing the stacks we are testing from the depends_on list'
+    depends_on_keys = list(set(depends_on.keys()) - set(options.stacklist))
     if len(depends_on.keys()) == 0:
         print 'No stacks depends on %s, finishing test.'%options.stacklist        
         return 0
-    print 'Removing the stacks we are testing from the depends_on list'
-    depends_on_keys = list(set(depends_on.keys()) - set(options.stacklist))
     print 'These stacks depend on the stacks we are testing: "%s"'%str(depends_on_keys)
     rosinstall = stacks_to_rosinstall(depends_on_keys, rosdistro_obj.stacks, 'distro')
     rosinstall_file = '%s.rosinstall'%DEPENDS_ON_DIR
