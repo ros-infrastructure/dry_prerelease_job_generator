@@ -181,7 +181,7 @@ def create_prerelease_configs(rosdistro, stack_list, email, repeat, devel):
             hudson_config = hudson_config.replace('STACKNAME', '---'.join(stack_list))
             hudson_config = hudson_config.replace('STACKARGS', ' '.join(['--stack %s'%s for s in stack_list]))
             hudson_config = hudson_config.replace('EMAIL', email)
-            hudson_config = hudson_config.replace('REPEAT', repeat)
+            hudson_config = hudson_config.replace('REPEAT', str(repeat))
             if devel:
                 hudson_config = hudson_config.replace('DEVEL', '_devel')                
             else:
