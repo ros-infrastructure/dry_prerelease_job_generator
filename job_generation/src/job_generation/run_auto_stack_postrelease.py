@@ -96,7 +96,7 @@ def main():
 
     # Remove stacks that depend on this stack from Debians
     print 'Removing all stack from Debian that depend on this stack'
-    subprocess.Popen(('sudo apt-get remove %s --yes'%(stack_to_deb(options.stack))).split(' ')).communicate()
+    subprocess.Popen(('sudo apt-get remove %s --yes'%stack_to_deb(options.stack, options.rosdistro)).split(' ')).communicate()
 
 
     # Run hudson helper for all stacks
