@@ -43,7 +43,7 @@ def main():
 
     # Run hudson helper 
     print 'Running Hudson Helper'
-    helper = subprocess.Popen(('./hudson_helper --dir-test %s build'%stack_dir).split(' '), env=env)
+    helper = subprocess.Popen(('./hudson_helper --dir-test %s build'%env['WORKSPACE']).split(' '), env=env)
     helper.communicate()
     return helper.returncode
 
