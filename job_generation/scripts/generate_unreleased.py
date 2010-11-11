@@ -1,6 +1,28 @@
 #!/usr/bin/python
 
 
+HUDSON_SVN_ITEM = """
+   <hudson.scm.SubversionSCM_-ModuleLocation> 
+     <remote>STACKURI</remote> 
+     <local>STACKNAME</local> 
+   </hudson.scm.SubversionSCM_-ModuleLocation> 
+"""
+
+HUDSON_SVN = """
+  <scm class="hudson.scm.SubversionSCM"> 
+    <locations> 
+      HUDSON_SVN_ITEMS
+    </locations> 
+    <useUpdate>false</useUpdate> 
+    <doRevert>false</doRevert> 
+    <excludedRegions></excludedRegions> 
+    <includedRegions></includedRegions> 
+    <excludedUsers></excludedUsers> 
+    <excludedRevprop></excludedRevprop> 
+    <excludedCommitMessages></excludedCommitMessages> 
+  </scm> 
+"""
+
 # template to create unreleased hudson configuration file
 HUDSON_UNRELEASED_CONFIG = """<?xml version='1.0' encoding='UTF-8'?>
 <project> 
@@ -15,8 +37,8 @@ HUDSON_UNRELEASED_CONFIG = """<?xml version='1.0' encoding='UTF-8'?>
       <tracWebsite>http://code.ros.org/trac/ros/</tracWebsite> 
     </hudson.plugins.trac.TracProjectProperty> 
   </properties> 
-  <scm/>
-  <assignedNode>hudson-devel</assignedNode>
+  HUDSON_VCS
+  <assignedNode>unreleased</assignedNode>
   <canRoam>false</canRoam> 
   <disabled>false</disabled> 
   <blockBuildWhenUpstreamBuilding>false</blockBuildWhenUpstreamBuilding> 
@@ -49,7 +71,7 @@ cd \$INSTALL_DIR
 wget --no-check-certificate http://code.ros.org/svn/ros/installers/trunk/hudson/hudson_helper 
 chmod +x hudson_helper
 svn co https://code.ros.org/svn/ros/stacks/ros_release/trunk ros_release
-./ros_release/job_generation/src/job_generation/run_auto_stack_unreleased.py --rosinstall ROSINSTALL --rosdistro ROSDISTRO
+./ros_release/job_generation/src/job_generation/run_auto_stack_unreleased.py --rosdistro ROSDISTRO
 
 echo "_________________________________END SCRIPT_______________________________________"
 DELIM
@@ -159,14 +181,28 @@ println &quot;${build_failures_context}&quot;&#xd;
 """
 
 import roslib; roslib.load_manifest("job_generation")
-from jobs_common import *
+from job_generation.jobs_common import *
 import hudson
 import urllib
 import optparse 
+import yaml
 
 
 def unreleased_job_name(rosdistro, rosinstall, ubuntudistro, arch):
     return "_".join(['unreleased', rosdistro, rosinstall.split('/')[-1].split('.')[0], ubuntudistro, arch])
+
+
+def rosinstall_to_vcs(rosinstall):
+    with open(rosinstall) as f:
+        rosinstall = yaml.load(f.read())
+        items = ''
+        for r in rosinstall:
+            item = HUDSON_SVN_ITEM
+            item = item.replace('STACKNAME', r['svn']['local-name'])
+            item = item.replace('STACKURI', r['svn']['uri'])
+            items += item
+        return HUDSON_SVN.replace('HUDSON_SVN_ITEMS', items)
+
 
 
 def create_unreleased_configs(rosdistro, rosinstall):
@@ -186,14 +222,14 @@ def create_unreleased_configs(rosdistro, rosinstall):
             time_trigger = ''
             job_children = ''
             if name == gold_job:
-                time_trigger = '30 * * * *'
+                time_trigger = '/5 * * * *'
                 job_children = ', '.join(gold_children)
 
             hudson_config = HUDSON_UNRELEASED_CONFIG
             hudson_config = hudson_config.replace('UBUNTUDISTRO', ubuntudistro)
             hudson_config = hudson_config.replace('ARCH', arch)
             hudson_config = hudson_config.replace('ROSDISTRO', rosdistro)
-            hudson_config = hudson_config.replace('ROSINSTALL', rosinstall)
+            hudson_config = hudson_config.replace('HUDSON_VCS', rosinstall_to_vcs(rosinstall))
             hudson_config = hudson_config.replace('TIME_TRIGGER', time_trigger)
             hudson_config = hudson_config.replace('JOB_CHILDREN', job_children)
             hudson_config = hudson_config.replace('EMAIL', 'wim+hudson_auto_stack@willowgarage.com')
@@ -229,6 +265,7 @@ def main():
     # send unreleased tests to Hudson
     print 'Creating unreleased Hudson jobs:'
     unreleased_configs = create_unreleased_configs(options.rosdistro, options.rosinstall)
+
     for job_name in unreleased_configs:
         exists = hudson_instance.job_exists(job_name)
 

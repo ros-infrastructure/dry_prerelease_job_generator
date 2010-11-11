@@ -4,3 +4,6 @@
 - svn: 
     local-name: wg_ros_pkg_trunk_cturtle
     uri: https://code.ros.org/svn/wg-ros-pkg/trunk
+- svn: 
+    local-name: ros_tutorials
+    uri: https://code.ros.org/svn/ros/stacks/ros_experimental/trunk
