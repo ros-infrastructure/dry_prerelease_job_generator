@@ -1,0 +1,22 @@
+<package>
+  <description brief="release toolchain">
+
+     Release toolchain for ROS.
+
+  </description>
+  <author>Ken Conley</author>
+  <license>BSD</license>
+  <review status="experimental" notes=""/>
+  <url>http://ros.org/wiki/release</url>
+
+  <depend package="roslib" />
+  <depend package="rosdistro" />  
+  <depend package="vcstools" />
+  <depend package="rosdeb" />
+  <depend package="hudson" />
+
+  <rosdep name="python-yaml" />
+
+</package>
+
+
