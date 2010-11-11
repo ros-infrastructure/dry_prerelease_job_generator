@@ -242,7 +242,7 @@ def create_devel_configs(rosdistro, stack):
             hudson_config = hudson_config.replace('HUDSON_VCS', hudson_vcs)
             hudson_config = hudson_config.replace('TIME_TRIGGER', time_trigger)
             hudson_config = hudson_config.replace('JOB_CHILDREN', job_children)
-            hudson_config = hudson_config.replace('EMAIL', 'wim+hudson_auto_stack@willowgarage.com')
+            hudson_config = hudson_config.replace('EMAIL', 'wim+devel@willowgarage.com')
             configs[name] = hudson_config
     return configs
 

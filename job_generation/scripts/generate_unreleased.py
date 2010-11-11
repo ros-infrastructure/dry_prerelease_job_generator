@@ -232,7 +232,7 @@ def create_unreleased_configs(rosdistro, rosinstall):
             hudson_config = hudson_config.replace('HUDSON_VCS', rosinstall_to_vcs(rosinstall))
             hudson_config = hudson_config.replace('TIME_TRIGGER', time_trigger)
             hudson_config = hudson_config.replace('JOB_CHILDREN', job_children)
-            hudson_config = hudson_config.replace('EMAIL', 'wim+hudson_auto_stack@willowgarage.com')
+            hudson_config = hudson_config.replace('EMAIL', 'wim+unreleased@willowgarage.com')
             configs[name] = hudson_config
     return configs
     
