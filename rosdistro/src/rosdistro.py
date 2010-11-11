@@ -213,6 +213,28 @@ def get_rules(distro, stack_name):
         raise Exception("cannot load _rules")
     return props
         
+# TODO: integrate with Distro
+def get_repo(distro, stack_name):
+    """
+    Retrieve repo from distro for specified stack This operates on
+    the raw distro dictionary document.
+
+    @param distro: rosdistro document
+    @type  distro: dict
+    @param stack_name: name of stack to get rules for
+    @type  stack_name: str
+    """
+
+    if stack_name == 'ROS':
+        stack_name = 'ros'
+
+    stacks = distro.get('stacks')
+    if stack_name in stacks:
+        if 'repo' in stacks[stack_name]:
+            return stacks[stack_name]['repo']
+    return None
+
+
 def load_distro_stacks(distro_doc, stack_names, release_name=None, version=None):
     """
     @param distro_doc: dictionary form of rosdistro file
@@ -247,13 +269,14 @@ def load_distro_stacks(distro_doc, stack_names, release_name=None, version=None)
 
         stack_version = stack_props[stack_name].get('version', 'unversioned')
         rules = get_rules(distro_doc, stack_name)
-        stacks[stack_name] = DistroStack(stack_name, rules, stack_version, release_name, version)
+        repo = get_repo(distro_doc, stack_name)
+        stacks[stack_name] = DistroStack(stack_name, rules, stack_version, release_name, version, repo)
     return stacks
 
 class DistroStack(object):
     """Stores information about a stack release"""
 
-    def __init__(self, stack_name, rules, stack_version, release_name, release_version):
+    def __init__(self, stack_name, rules, stack_version, release_name, release_version, repo = None):
         self.name = stack_name
         self.release_name = release_name
         self.release_version = release_version        
@@ -261,6 +284,7 @@ class DistroStack(object):
         self._rules = rules
         
         self.update_version(stack_version)
+        self.repo = repo
 
     def update_version(self, stack_version):
         rules = self._rules
@@ -400,3 +424,59 @@ class Distro(object):
 
         self.stacks = load_distro_stacks(self.distro_props, self.stack_names, release_name=self.release_name, version=self.version)
         self.ros = self.stacks.get('ros', None)
+
+
+def stack_to_rosinstall(stack, branch, anonymous=True):
+    """
+    Generate the rosinstall dictionary entry for a stack in the rosdistro
+    @param stack A DistroStack for a particular stack
+    @param branch Select the branch or tag from 'devel', 'release' or 'distro' of the stack to checkout
+    @param anonymous For svn use anonymous access url. ( It usually doesn't have write permissions. )
+    """
+    result = []
+
+    uri = None
+    version = None
+
+    vcs = stack.vcs_config
+    if not branch in ['devel', 'release', 'distro']:
+        raise DistroException('Unsupported branch type %s for stack %s'%(branch, stack.name))
+
+    if not vcs.type in ['svn', 'hg', 'bzr', 'git']:
+        raise DistroException( 'Unsupported vcs type %s for stack %s'%(vcs.type, stack.name))
+        
+    if vcs.type == 'svn':
+        if branch == 'devel':
+            if anonymous: 
+                uri = vcs.anon_dev
+            else:
+                uri = vcs.dev
+            #return "- svn: {uri: '%s', local-name: '%s'}\n"%(vcs.anon_dev, stack.name)
+        elif branch == 'distro':
+            if anonymous: 
+                uri = vcs.anon_distro_tag
+            else:
+                uri = vcs.distro_tag
+        elif branch == 'release':
+            if anonymous: 
+                uri = vcs.anon_release_tag
+            else:
+                uri = vcs.release_tag
+
+    else:#if vcs.type == 'hg' or vcs.type == 'git' or vcs.type == 'bzr':
+        uri = vcs.repo_uri
+        if branch == 'devel':
+            version = vcs.dev_branch
+        elif branch == 'distro':
+            version = vcs.distro_tag
+        elif branch == 'release':
+            version = vcs.release_tag
+
+
+    if version:
+        result.append({vcs.type: {"uri": uri, 'local-name': stack.name, 'version': version} } )
+    else:
+        result.append({vcs.type: {"uri": uri, 'local-name': stack.name} } )
+
+
+#def variant_to_rosinstall(variant, 
