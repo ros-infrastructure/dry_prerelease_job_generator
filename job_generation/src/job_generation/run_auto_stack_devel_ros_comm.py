@@ -66,7 +66,7 @@ def main():
     res = 0
     for r in range(0, options.repeat+1):
         env['ROS_TEST_RESULTS_DIR'] = os.environ['ROS_TEST_RESULTS_DIR']+'/run_'+str(r)
-        helper = subprocess.Popen(('./hudson_helper --dir-test %s --dir-test ros_comm build'%stack_dir).split(' '), env=env)
+        helper = subprocess.Popen(('./hudson_helper --dir-test %s --dir-test /tmp/ros/ros_comm build'%stack_dir).split(' '), env=env)
         helper.communicate()
         if helper.returncode != 0:
             res = helper.returncode
