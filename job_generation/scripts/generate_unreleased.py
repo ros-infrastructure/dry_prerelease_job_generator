@@ -43,9 +43,9 @@ HUDSON_UNRELEASED_CONFIG = """<?xml version='1.0' encoding='UTF-8'?>
   <disabled>false</disabled> 
   <blockBuildWhenUpstreamBuilding>false</blockBuildWhenUpstreamBuilding> 
   <triggers class="vector"> 
-    <hudson.triggers.TimerTrigger> 
+    <hudson.triggers.SCMTrigger> 
       <spec>TIME_TRIGGER</spec> 
-    </hudson.triggers.TimerTrigger> 
+    </hudson.triggers.SCMTrigger> 
   </triggers> 
   <concurrentBuild>false</concurrentBuild> 
   <builders> 
