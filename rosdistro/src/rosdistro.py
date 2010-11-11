@@ -228,7 +228,8 @@ def get_repo(distro, stack_name):
     if stack_name == 'ROS':
         stack_name = 'ros'
 
-    stacks = distro.get('stacks')
+    
+    stacks = distro.get('stacks', {})
     if stack_name in stacks:
         if 'repo' in stacks[stack_name]:
             return stacks[stack_name]['repo']
