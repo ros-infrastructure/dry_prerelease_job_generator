@@ -85,7 +85,7 @@ wget  --no-check-certificate https://code.ros.org/svn/ros/stacks/ros_release/tru
 chmod +x $WORKSPACE/run_chroot.py
 cd $WORKSPACE &amp;&amp; $WORKSPACE/run_chroot.py --distro=UBUNTUDISTRO --arch=ARCH  --ramdisk --script=$WORKSPACE/script.sh
      </command> 
-h    </hudson.tasks.Shell> 
+    </hudson.tasks.Shell> 
   </builders> 
   <publishers> 
     <hudson.tasks.BuildTrigger> 
@@ -222,7 +222,7 @@ def create_unreleased_configs(rosdistro, rosinstall):
             time_trigger = ''
             job_children = ''
             if name == gold_job:
-                time_trigger = '/5 * * * *'
+                time_trigger = '*/5 * * * *'
                 job_children = ', '.join(gold_children)
 
             hudson_config = HUDSON_UNRELEASED_CONFIG
@@ -271,18 +271,19 @@ def main():
 
         # delete job
         if options.delete and exists:
-            hudson_instance.delete_job(job_name)
             print "Deleting job %s"%job_name
+            hudson_instance.delete_job(job_name)
 
         # reconfigure job
         elif exists:
-            hudson_instance.reconfig_job(job_name, unreleased_configs[job_name])
             print "  - %s"%job_name
+            hudson_instance.reconfig_job(job_name, unreleased_configs[job_name])
 
         # create job
         elif not exists:
-            hudson_instance.create_job(job_name, unreleased_configs[job_name])
             print "  - %s"%job_name
+            hudson_instance.create_job(job_name, unreleased_configs[job_name])
+
 
 
 if __name__ == '__main__':
