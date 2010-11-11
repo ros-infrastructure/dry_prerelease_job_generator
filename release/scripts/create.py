@@ -38,7 +38,7 @@ from __future__ import with_statement
 PKG = 'release'
 NAME="create.py"
 
-VERSION=1
+VERSION=2
 
 import roslib; roslib.load_manifest(PKG)
 
@@ -130,7 +130,7 @@ def load_sys_args():
  * version (e.g. 1.0.1)
  * distro release name (e.g. cturtle.rosdistro)""")
     name, version, release_name = args
-    distro_file = os.path.join(pkg_dir, 'distros', '%s.rosdistro'%(release_name))
+    distro_file = os.path.join(pkg_dir, '..', 'distros', '%s.rosdistro'%(release_name))
     distro_file = os.path.abspath(distro_file)
     if not os.path.isfile(distro_file):
         parser.error("Could not find rosdistro file for [%s].\nExpected it in %s"%(release_name, distro_file))
