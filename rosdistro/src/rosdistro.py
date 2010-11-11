@@ -213,28 +213,6 @@ def get_rules(distro, stack_name):
         raise Exception("cannot load _rules")
     return props
         
-# TODO: integrate with Distro
-def get_repo(distro, stack_name):
-    """
-    Retrieve repo from distro for specified stack This operates on
-    the raw distro dictionary document.
-
-    @param distro: rosdistro document
-    @type  distro: dict
-    @param stack_name: name of stack to get rules for
-    @type  stack_name: str
-    """
-
-    if stack_name == 'ROS':
-        stack_name = 'ros'
-
-    
-    stacks = distro.get('stacks', {})
-    if stack_name in stacks:
-        if 'repo' in stacks[stack_name]:
-            return stacks[stack_name]['repo']
-    return None
-
 
 def load_distro_stacks(distro_doc, stack_names, release_name=None, version=None):
     """
@@ -270,14 +248,13 @@ def load_distro_stacks(distro_doc, stack_names, release_name=None, version=None)
 
         stack_version = stack_props[stack_name].get('version', 'unversioned')
         rules = get_rules(distro_doc, stack_name)
-        repo = get_repo(distro_doc, stack_name)
-        stacks[stack_name] = DistroStack(stack_name, rules, stack_version, release_name, version, repo)
+        stacks[stack_name] = DistroStack(stack_name, rules, stack_version, release_name, version)
     return stacks
 
 class DistroStack(object):
     """Stores information about a stack release"""
 
-    def __init__(self, stack_name, rules, stack_version, release_name, release_version, repo = None):
+    def __init__(self, stack_name, rules, stack_version, release_name, release_version):
         self.name = stack_name
         self.release_name = release_name
         self.release_version = release_version        
@@ -285,7 +262,8 @@ class DistroStack(object):
         self._rules = rules
         
         self.update_version(stack_version)
-        self.repo = repo
+        self.repo = rules.get('repo', None)
+
 
     def update_version(self, stack_version):
         rules = self._rules
