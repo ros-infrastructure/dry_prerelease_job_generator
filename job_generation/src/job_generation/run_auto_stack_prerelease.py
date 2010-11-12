@@ -71,6 +71,7 @@ def main():
     for stack in options.stacklist:
         with open('%s/%s/stack.xml'%(STACK_DIR, stack)) as stack_file:
             depends = stack_manifest.parse(stack_file.read()).depends
+            print 'Installing dependencies of %s: %s'%(stack, str(depends))
         subprocess.Popen(('sudo apt-get install %s --yes'%(stacks_to_debs(depends, options.rosdistro))).split(' ')).communicate()
 
 
