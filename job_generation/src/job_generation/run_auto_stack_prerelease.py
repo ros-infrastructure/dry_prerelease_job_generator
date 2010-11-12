@@ -66,7 +66,7 @@ def main():
 
 
     # Install Debian packages of stack dependencies
-    print 'Installing debian packages of stack dependencies'
+    print 'Installing debian packages of stack dependencies from stacks %s'%str(options.stacklist)
     subprocess.Popen('sudo apt-get update'.split(' ')).communicate()
     for stack in options.stacklist:
         with open('%s/%s/stack.xml'%(STACK_DIR, stack)) as stack_file:
