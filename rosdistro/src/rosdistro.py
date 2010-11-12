@@ -456,6 +456,21 @@ def stack_to_rosinstall(stack, branch, anonymous=True):
         result.append({vcs.type: {"uri": uri, 'local-name': stack.name, 'version': version} } )
     else:
         result.append({vcs.type: {"uri": uri, 'local-name': stack.name} } )
+    return result
+
+def variant_to_rosinstall(variant_name, distro, branch, anonymous=True):
+    rosinstall_dict = []
+    variant = distro.variants.get(variant_name, None)
+    if not variant:
+        return []
+    for s in variant.stack_names:
+        if s in distro.stacks:
+            rosinstall_dict.extend(stack_to_rosinstall(distro.stacks[s], branch, anonymous))
+    return rosinstall_dict
 
 
-#def variant_to_rosinstall(variant, 
+def distro_to_rosinstall(distro, branch, anonymous=True):
+    rosinstall_dict = []
+    for s in distro.stacks:
+        rosinstall_dict.extend(stack_to_rosinstall(distro.stacks[s], branch, anonymous))
+    return rosinstall_dict
