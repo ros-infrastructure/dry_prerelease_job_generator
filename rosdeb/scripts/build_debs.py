@@ -147,10 +147,12 @@ def compute_deps(distro, stack_name):
             raise BuildFailure("[%s] not found in distro."%(s))
         seen.add(s)
         v = distro.stacks[s].version
-        si = load_info(s, v)
-        for d in si['depends']:
-            add_stack(d)
-        ordered_deps.append((s,v))
+        if v:
+            # version-less entries are ignored
+            si = load_info(s, v)
+            for d in si['depends']:
+                add_stack(d)
+            ordered_deps.append((s,v))
 
     if stack_name == 'ALL':
         for s in distro.stacks.keys():
@@ -471,7 +473,7 @@ def build_debs_main():
                     failure_message = "Could not upload debs"
 
         except Exception, e:
-            failure_message = "Internal failure release system. Please notify leibs and kwc @willowgarage.com:\n%s\n\n%s"%(e, traceback.format_exc(e))
+            failure_message = "Internal failure in the release system. Please notify leibs and kwc @willowgarage.com:\n%s\n\n%s"%(e, traceback.format_exc(e))
         finally:
             if options.staging_dir is None:
                 shutil.rmtree(staging_dir)
