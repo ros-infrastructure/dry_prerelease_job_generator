@@ -150,6 +150,9 @@ def get_missing(distro, os_platform, arch):
 
     # Build the deps in order
     for (sn, sv) in deps:
+        if not sv:
+            missing_primary.add(sn)
+            continue
         deb_name = "ros-%s-%s"%(distro_name, debianize_name(sn))
         deb_version = debianize_version(sv, '0', os_platform)
         if not deb_in_repo(SHADOW_REPO, deb_name, deb_version, os_platform, arch):

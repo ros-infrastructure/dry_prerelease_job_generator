@@ -88,8 +88,11 @@ def debianize_Distro(distro):
     """
     for stack in distro.stacks.itervalues():
         try:
-            stack.debian_version = debianize_version(stack.version, stack.release_version)
             stack.debian_name    = debianize_name("ros-%s-%s"%(stack.release_name,stack.name))
+            if stack.version:
+                stack.debian_version = debianize_version(stack.version, stack.release_version)
+            else:
+                stack.debian_version = None
         except rosdistro.DistroException:
             # ignore on non debian systems. This really belongs in an extension
             stack.debian_version = stack.debian_name = None
