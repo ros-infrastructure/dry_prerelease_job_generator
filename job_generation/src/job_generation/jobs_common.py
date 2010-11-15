@@ -63,5 +63,7 @@ def stacks_to_rosinstall(stack_list, stack_map, branch):
     for s in stack_list:
         if s in stack_map:
             res += stack_to_rosinstall(stack_map[s], branch)
+        else:
+            print 'Stack "%s" is not in stack list. Not adding this stack to rosinstall file'%s
     return res
     
