@@ -68,7 +68,8 @@ def distro_version(version_val):
 
 def expand_rule(rule, stack_name, stack_ver, release_name, revision=None):
     s = rule.replace('$STACK_NAME', stack_name)
-    s =    s.replace('$STACK_VERSION', stack_ver)
+    if stack_ver:
+        s = s.replace('$STACK_VERSION', stack_ver)
     s =    s.replace('$RELEASE_NAME', release_name)
     if s.find('$REVISION') > 0 and not revision:
         raise DistroException("revision specified but not supplied by build_release")
