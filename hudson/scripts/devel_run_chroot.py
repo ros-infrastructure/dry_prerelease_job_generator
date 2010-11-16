@@ -18,6 +18,13 @@ valid_ubuntu_distros = ['hardy', 'jaunty', 'karmic', 'lucid', 'maverick']
 valid_debian_distros = ['lenny']
 
 
+def run_chroot_check_call(cmd):
+    subprocess.check_call(cmd, stderr = subprocess.STDOUT)
+
+def run_chroot_call(cmd):
+    return subprocess.call(cmd, stderr = subprocess.STDOUT)
+    
+
 def get_mount_points(pattern = "chroot"):
     mnt = subprocess.Popen("mount", stdout=subprocess.PIPE)
     out = mnt.communicate()[0]
@@ -51,13 +58,13 @@ def unmount_directories(mounts):
     for m in mounts:
         print "Unmounting %s:"%m
         cmd = "sudo umount -f %s"%m
-        subprocess.call(cmd.split())
+        run_chroot_call(cmd.split())
 
 def kill_processes(processes, level=''):
     for p in processes:
         print "Killing %s %s:"%(level, p)
         cmd = "sudo kill %s %s"%(level, p)
-        subprocess.call(cmd.split())
+        run_chroot_call(cmd.split())
 
 def add_binfmg_misc_mounts(mounts):
     """
@@ -128,7 +135,7 @@ def execute_chroot(cmd, path, user='root'):
                 envs.append("%s='%s'"%(k, v))
         full_cmd = ['sudo', 'chroot', path, 'su', user, '-s', '/bin/bash',  '-c', '%s %s'%(" ".join(envs), " ".join(cmd))]
     print "Executing", full_cmd
-    subprocess.check_call(full_cmd)
+    subprocess.check_call(full_cmd, stderr=subprocess.STDOUT)
 
 
 
@@ -163,18 +170,18 @@ class ChrootInstance:
         #shutil.rmtree(self.chroot_path, True)
         cmd = ["sudo", "rm", "-rf", self.chroot_path]
         print "executing", cmd
-        subprocess.call(cmd)
+        run_chroot_call(cmd)
 
     def unmount_proc_sys(self):
         cmd = ['sudo', 'umount', '-f',  "%s/proc"%self.chroot_path]
         print cmd
-        subprocess.call(cmd)
+        run_chroot_call(cmd)
         cmd = ['sudo', 'umount', '-f',  "%s/dev/pts"%self.chroot_path]
         print cmd
-        subprocess.call(cmd)
+        run_chroot_call(cmd)
         cmd = ['sudo', 'umount', '-f', "%s/sys"%self.chroot_path]
         print cmd
-        subprocess.call(cmd)
+        run_chroot_call(cmd)
 
     def mount_proc_sys(self):
         #hack since we mount it in 2 places and umount is safe
@@ -183,18 +190,18 @@ class ChrootInstance:
 
         cmd = ['sudo', 'mount', '--bind', "/proc", "%s/proc"%self.chroot_path]
         print cmd
-        subprocess.call(cmd)
+        run_chroot_call(cmd)
         cmd = ['sudo', 'mount', '--bind', "/dev/pts", "%s/dev/pts"%self.chroot_path]
         print cmd
-        subprocess.call(cmd)
+        run_chroot_call(cmd)
         cmd = ['sudo', 'mount', '--bind', "/sys", "%s/sys"%self.chroot_path]
         print cmd
-        subprocess.call(cmd)
+        run_chroot_call(cmd)
 
     def bootstrap(self):
         cmd = ['sudo', 'apt-get', 'install', 'debootstrap']
         print cmd
-        subprocess.check_call(cmd)
+        run_chroot_check_call(cmd)
         
         deboot_url = 'http://aptproxy.willowgarage.com/us.archive.ubuntu.com/ubuntu'
         if self.distro in valid_debian_distros:
@@ -202,17 +209,17 @@ class ChrootInstance:
 
         cmd = ['sudo', 'debootstrap', '--arch', self.arch, self.distro, self.chroot_path, deboot_url]
         print cmd
-        subprocess.check_call(cmd)
+        run_chroot_check_call(cmd)
         print "Finished debootstrap"
 
 
         # replicate host settings
         cmd = ['sudo', 'cp', '/etc/resolv.conf', os.path.join(self.chroot_path, 'etc')]
         print "Runing cmd", cmd
-        subprocess.check_call(cmd)
+        run_chroot_check_call(cmd)
         cmd = ['sudo', 'cp', '/etc/hosts', os.path.join(self.chroot_path, 'etc')]
         print "Runing cmd", cmd
-        subprocess.check_call(cmd)
+        run_chroot_check_call(cmd)
 
         # Move sources.list to apt-proxy
         sources=os.path.join(self.chroot_path, 'etc', 'apt', 'sources.list.d', 'aptproxy.list')
@@ -226,7 +233,7 @@ class ChrootInstance:
             tf.flush()
             cmd = ['sudo', 'cp', tf.name, sources]
             print "Runing cmd", cmd
-            subprocess.check_call(cmd)
+            run_chroot_check_call(cmd)
 
         
         self.add_ros_sources()
@@ -246,11 +253,11 @@ class ChrootInstance:
             
             startstop=os.path.join(self.chroot_path,'sbin/start-stop-daemon')
             print "disabling start-stop", startstop
-            subprocess.check_call(['sudo', 'cp', tf.name, startstop])
+            run_chroot_check_call(['sudo', 'cp', tf.name, startstop])
             
             invokerc=os.path.join(self.chroot_path,'usr/sbin/invoke-rc.d')
             print "disabling start-stop", invokerc
-            subprocess.check_call(['sudo', 'cp', tf.name, invokerc])
+            run_chroot_check_call(['sudo', 'cp', tf.name, invokerc])
 
 
         self.mount_proc_sys()
@@ -263,7 +270,7 @@ class ChrootInstance:
 
           # Fix the sudoers file
         sudoers_path = os.path.join(self.chroot_path, 'etc/sudoers')
-        subprocess.check_call(['sudo', 'chown', '0.0', sudoers_path])
+        run_chroot_check_call(['sudo', 'chown', '0.0', sudoers_path])
 
         print "debconf executing"
         chrootcmd = ['sudo', 'chroot', self.chroot_path]
@@ -322,7 +329,7 @@ class ChrootInstance:
             tf.flush()
             cmd = ['sudo', 'cp', tf.name, ros_source]
             print "Runing cmd", cmd
-            subprocess.check_call(cmd)
+            run_chroot_check_call(cmd)
 
             
         print "adding code.ros.org gpg key"
@@ -345,7 +352,7 @@ class ChrootInstance:
             tf.flush()
             cmd = ['sudo', 'cp', tf.name, nvidia_source]
             print "Runing cmd", cmd
-            subprocess.check_call(cmd)
+            run_chroot_check_call(cmd)
 
             
         print "adding wg gpg key"
@@ -388,12 +395,12 @@ class ChrootInstance:
 
     def replecate_workspace(self):
         print "Linking in workspace"
-        subprocess.check_call(["sudo", "mkdir", "-p", self.ws_remote_path]);
+        run_chroot_check_call(["sudo", "mkdir", "-p", self.ws_remote_path]);
         # backwards compatability /tmp/ros
-        subprocess.check_call(["sudo", "mkdir", "-p", os.path.join(self.ws_remote_path, "../ros")]);
-        subprocess.check_call(['sudo', 'mount', '--bind', self.host_workspace, self.ws_remote_path])
+        run_chroot_check_call(["sudo", "mkdir", "-p", os.path.join(self.ws_remote_path, "../ros")]);
+        run_chroot_check_call(['sudo', 'mount', '--bind', self.host_workspace, self.ws_remote_path])
         #backwards compatability /tmp/ros
-        subprocess.check_call(['sudo', 'mount', '--bind', self.host_workspace, os.path.join(self.ws_remote_path, "../ros")])        
+        run_chroot_check_call(['sudo', 'mount', '--bind', self.host_workspace, os.path.join(self.ws_remote_path, "../ros")])        
         cmd = ['chown', '-R', 'rosbuild:rosbuild', self.mount_path]
         self.execute(cmd)
 
@@ -401,25 +408,25 @@ class ChrootInstance:
             self.temp_hdd_dir = tempfile.mkdtemp(dir=self.hdd_tmp_dir)
             self.hdd_remote_mount = os.path.join(self.chroot_path, self.scratch_dir.lstrip('/'))
             print "created tempdir", self.temp_hdd_dir
-            subprocess.check_call(['sudo', 'mkdir', '-p', self.hdd_remote_mount])
-            subprocess.check_call(['sudo', 'mount', '--bind', self.temp_hdd_dir, self.hdd_remote_mount])
+            run_chroot_check_call(['sudo', 'mkdir', '-p', self.hdd_remote_mount])
+            run_chroot_check_call(['sudo', 'mount', '--bind', self.temp_hdd_dir, self.hdd_remote_mount])
             print "mounting tempdir to %s"%os.path.join(self.chroot_path, self.scratch_dir)
 
 
     def write_back_workspace(self):
         
         print "unmounting workspace"
-        subprocess.call(['sudo', 'umount', '-f', self.ws_remote_path])
+        run_chroot_call(['sudo', 'umount', '-f', self.ws_remote_path])
         #backwards compatability /tmp/ros
-        subprocess.call(['sudo', 'umount', '-f', os.path.join(self.ws_remote_path, "../ros")])       
+        run_chroot_call(['sudo', 'umount', '-f', os.path.join(self.ws_remote_path, "../ros")])       
 
         print "Cleaning up permissions on workspace."
-        subprocess.call(['sudo', 'chown', '-R', '%d:%d'%(os.geteuid(), os.geteuid()), self.host_workspace])
+        run_chroot_call(['sudo', 'chown', '-R', '%d:%d'%(os.geteuid(), os.geteuid()), self.host_workspace])
 
         
         if self.scratch_dir:
             print "Cleaning up scratch mount %s"%self.hdd_remote_mount
-            subprocess.call(['sudo', 'umount', '-f', self.hdd_remote_mount])
+            run_chroot_call(['sudo', 'umount', '-f', self.hdd_remote_mount])
             print "deleting tempdir", self.hdd_tmp_dir
             shutil.rmtree(self.temp_hdd_dir)
 
@@ -518,7 +525,7 @@ def run_chroot(options, path, workspace, hdd_tmp_dir):
             remote_script_name = os.path.join("/tmp", os.path.basename(options.script))
             cmd = ["sudo", "cp", options.script, os.path.join(chrti.chroot_path, "tmp")]
             print "Executing", cmd
-            subprocess.check_call(cmd);
+            run_chroot_check_call(cmd);
             cmd = ("chown rosbuild:rosbuild %s"%remote_script_name).split()
             chrti.execute(cmd)
             cmd = ("chmod +x %s"%remote_script_name).split()
@@ -531,7 +538,7 @@ def run_chroot(options, path, workspace, hdd_tmp_dir):
             
         if options.interactive:
             print "xhost localhost"
-            subprocess.check_call(["xhost", "localhost"])
+            run_chroot_check_call(["xhost", "localhost"])
 
             cmd = "apt-get install -y xterm".split()
             print chrti.execute(cmd)
@@ -552,9 +559,9 @@ class TempRamFS:
     def __enter__(self):
         
         cmd = ['sudo', 'mkdir', '-p', self.path]
-        subprocess.check_call(cmd)
+        run_chroot_check_call(cmd)
         cmd = ['sudo', 'mount', '-t', 'tmpfs', '-o', 'size=%s,mode=0755'%self.size, 'tmpfs', self.path]
-        subprocess.check_call(cmd)
+        run_chroot_check_call(cmd)
         return self
 
     def __exit__(self, mtype, value, tb):
@@ -563,7 +570,7 @@ class TempRamFS:
             traceback.print_exception(mtype, value, tb, file=sys.stdout)
             
         cmd = ['sudo', 'umount', '-f', self.path]
-        if not subprocess.call(cmd):
+        if not run_chroot_call(cmd):
             print "WARNING: UNCLEAN TMPFS CHROOT UNMONT"
         else:
             print "Successfully umounted tmpfs chroot."
@@ -630,17 +637,17 @@ print "Checking for abandoned chroots"
 if not clean_up_chroots():
     print "Failed to clean up abandoned chroots, continuing."
 
-subprocess.check_call(['sudo', 'mkdir', '-p', path])
+run_chroot_check_call(['sudo', 'mkdir', '-p', path])
 
 
 if options.ramdisk:
     with TempRamFS(path, options.ramdisk_size):
         cmd = ['mount']
-        subprocess.check_call(cmd)
+        run_chroot_check_call(cmd)
         run_chroot(options, path, workspace, hdd_tmp_dir)
 
     cmd = ['mount']
-    subprocess.check_call(cmd)
+    run_chroot_check_call(cmd)
 
 else:
     run_chroot(options, path, workspace, hdd_tmp_dir)
