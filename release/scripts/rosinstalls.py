@@ -84,7 +84,9 @@ def main():
 
             for stack_name in sorted(variant_stacks[name]):
                 uri = checkouts[stack_name]
-                if stack_name == 'ros' or not 'code.ros.org' in uri:
+                if not uri:
+                    continue
+                elif stack_name == 'ros' or not 'code.ros.org' in uri:
                     continue
                 else:
                     local_name = "stacks/%s"%stack_name
@@ -92,7 +94,9 @@ def main():
                 
             for stack_name in sorted(variant_stacks_extended[name]):
                 uri = checkouts[stack_name]
-                if stack_name == 'ros' or not 'code.ros.org' in uri:
+                if not uri:
+                    continue
+                elif stack_name == 'ros' or not 'code.ros.org' in uri:
                     continue
                 else:
                     local_name = "stacks/%s"%stack_name

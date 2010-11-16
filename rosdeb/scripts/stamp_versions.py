@@ -363,7 +363,7 @@ def stamp_debs(distro, os_platform, arch, staging_dir, force=False):
             missing = True
 
     # Build the special "all" metapackage
-    d = create_meta_pkg(packagelist, distro, distro_name, "all", set(distro.stack_names) - missing_ok, os_platform, arch, staging_dir)
+    d = create_meta_pkg(packagelist, distro, distro_name, "all", set(distro.released_stacks.keys()) - missing_ok, os_platform, arch, staging_dir)
     if d:
         debs.append(d)
     else:
