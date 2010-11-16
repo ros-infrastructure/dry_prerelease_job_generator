@@ -348,7 +348,8 @@ class Distro(object):
 
         self.ros = None
         self.stacks = {} # {str: DistroStack}
-        self.stack_names = [] 
+        self.stack_names = []
+        self.released_stacks = {}  # {str: DistroStack}
         self.variants = {}
         self.distro_props = None
 
@@ -403,8 +404,26 @@ class Distro(object):
             raise DistroException("this program assumes that ros is in your variant")
 
         self.stacks = load_distro_stacks(self.distro_props, self.stack_names, release_name=self.release_name, version=self.version)
+        for s, obj in self.stacks.iteritems():
+            if obj.version:
+                self.released_stacks[s] = obj
         self.ros = self.stacks.get('ros', None)
 
+
+# TODO Ken's suggested restructuring template
+#mappings_dvcs = {}
+#vcs_maps = {
+#    'svn-anon': mappings_svn_anon,
+#    'svn': mappings_svn,
+#    'git': mappings_dvcs,
+#    'hg': mappings_dvcs,
+#}
+#if vcs.type == 'svn':
+#    if anon:
+#        mapping
+#else:
+#    mappigns = vcs_maps[vcs.type]
+#uri = getattr(vcs, d[branch])
 
 def stack_to_rosinstall(stack, branch, anonymous=True):
     """
@@ -464,14 +483,26 @@ def variant_to_rosinstall(variant_name, distro, branch, anonymous=True):
     variant = distro.variants.get(variant_name, None)
     if not variant:
         return []
+    for s in variant.props['stacks']:
+        if s in distro.released_stacks:
+            rosinstall_dict.extend(stack_to_rosinstall(distro.stacks[s], branch, anonymous))
+    return rosinstall_dict
+
+def extended_variant_to_rosinstall(variant_name, distro, branch, anonymous=True):
+    rosinstall_dict = []
+    variant = distro.variants.get(variant_name, None)
+    if not variant:
+        return []
     for s in variant.stack_names:
-        if s in distro.stacks:
+        if s in distro.released_stacks:
             rosinstall_dict.extend(stack_to_rosinstall(distro.stacks[s], branch, anonymous))
     return rosinstall_dict
 
 
 def distro_to_rosinstall(distro, branch, anonymous=True):
     rosinstall_dict = []
-    for s in distro.stacks:
-        rosinstall_dict.extend(stack_to_rosinstall(distro.stacks[s], branch, anonymous))
+    for s in distro.released_stacks.itervalues():
+        rosinstall_dict.extend(stack_to_rosinstall(s, branch, anonymous))
     return rosinstall_dict
+
+
