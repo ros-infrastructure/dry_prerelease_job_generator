@@ -147,15 +147,16 @@ def compute_deps(distro, stack_name):
             raise BuildFailure("[%s] not found in distro."%(s))
         seen.add(s)
         v = distro.stacks[s].version
-        if v:
-            # version-less entries are ignored
-            si = load_info(s, v)
-            for d in si['depends']:
-                add_stack(d)
-            ordered_deps.append((s,v))
+        if not v:
+            raise BuildFailure("[%s] has not been released (version-less)."%(s))
+        # version-less entries are ignored
+        si = load_info(s, v)
+        for d in si['depends']:
+            add_stack(d)
+        ordered_deps.append((s,v))
 
     if stack_name == 'ALL':
-        for s in distro.stacks.keys():
+        for s in distro.released_stacks.keys():
             add_stack(s)
     else:
         add_stack(stack_name)
