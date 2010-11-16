@@ -342,6 +342,9 @@ def stamp_debs(distro, os_platform, arch, staging_dir, force=False):
     # Build the new debs
     for (sn,s) in distro.stacks.iteritems():
         sv = s.version
+        if not sv:
+            # not released
+            continue
         d = do_download_and_fix(packagelist, distro, distro_name, sn, sv, os_platform, arch, staging_dir)
         if d:
             debs.append(d)
