@@ -281,9 +281,9 @@ def main():
     if options.stacks:
         stack_list = options.stacks
     else:
-        stack_list = distro_obj.stacks
+        stack_list = distro_obj.released_stacks
     for stack_name in stack_list:
-        post_release_configs.update(create_post_release_configs(distro_obj.release_name, distro_obj.stacks[stack_name]))
+        post_release_configs.update(create_post_release_configs(distro_obj.release_name, distro_obj.released_stacks[stack_name]))
 
 
     # send post_release tests to Hudson
