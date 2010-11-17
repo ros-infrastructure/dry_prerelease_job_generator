@@ -247,7 +247,7 @@ def load_distro_stacks(distro_doc, stack_names, release_name=None, version=None)
         if stack_name[0] == '_':
             continue
 
-        stack_version = stack_props[stack_name].get('version', 'unversioned')
+        stack_version = stack_props[stack_name].get('version', None)
         rules = get_rules(distro_doc, stack_name)
         stacks[stack_name] = DistroStack(stack_name, rules, stack_version, release_name, version)
     return stacks
