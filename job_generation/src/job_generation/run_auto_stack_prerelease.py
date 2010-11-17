@@ -95,8 +95,8 @@ def main():
 
 
     # Install Debian packages of ALL stacks in distro
-    print 'Installing all stacks of ros distro %s: %s'%(options.rosdistro, str(rosdistro_obj.stacks.keys()))
-    for stack in rosdistro_obj.stacks:
+    print 'Installing all stacks of ros distro %s: %s'%(options.rosdistro, str(rosdistro_obj.released_stacks.keys()))
+    for stack in rosdistro_obj.released_stacks:
         subprocess.Popen(('sudo apt-get install %s --yes'%(stack_to_deb(stack, options.rosdistro))).split(' ')).communicate()
     
 
@@ -115,7 +115,7 @@ def main():
         print 'No stacks depends on %s, finishing test.'%options.stacklist        
         return 0
     print 'These stacks depend on the stacks we are testing: "%s"'%str(depends_on_keys)
-    rosinstall = stacks_to_rosinstall(depends_on_keys, rosdistro_obj.stacks, 'distro')
+    rosinstall = stacks_to_rosinstall(depends_on_keys, rosdistro_obj.released_stacks, 'distro')
     rosinstall_file = '%s.rosinstall'%DEPENDS_ON_DIR
     with open(rosinstall_file, 'w') as f:
         f.write(rosinstall)
