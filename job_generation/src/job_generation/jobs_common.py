@@ -13,7 +13,7 @@ ARCHES = ['amd64', 'i386']
 
 # ubuntu distro mapping to ros distro
 UBUNTU_DISTRO_MAP = {'unstable': ['lucid', 'maverick'],
-                     'cturtle':  ['lucid', 'karmic', 'jaunty'],
+                     'cturtle':  ['lucid', 'karmic', 'jaunty', 'maverick'],
                      'boxturtle':['hardy','karmic', 'jaunty']}
 
 # path to hudson server
