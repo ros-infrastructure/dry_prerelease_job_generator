@@ -79,6 +79,9 @@ class GITClient(vcs_base.VCSClientBase):
         #print "Git Installing: %s"%cmd
         if not subprocess.call(cmd, cwd=self._path, shell=True) == 0:
             return False
+        cmd = "git submodule update --init --recursive"
+        if not subprocess.call(cmd, cwd=self._path, shell=True) == 0:
+            return False
         return True
 
     def update(self, version='master'):
@@ -110,6 +113,9 @@ class GITClient(vcs_base.VCSClientBase):
                 #cannot update if branch has changed
                 return False
             cmd = "git pull"
+            if not subprocess.call(cmd, cwd=self._path, shell=True) == 0:
+                return False
+            cmd = "git submodule update --init --recursive"
             if not subprocess.call(cmd, cwd=self._path, shell=True) == 0:
                 return False
         return True
