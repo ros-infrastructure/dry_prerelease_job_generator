@@ -120,6 +120,12 @@ class BZRClientTest(unittest.TestCase):
         shutil.rmtree(directory)
         self.directories.pop(subdir)
 
+class FakeBZRClientTest(unittest.TestCase):
+
+
+    def test_get_url_by_reading(self):
+        self.assertTrue("Test not running on Jaunty")
+
 
 
 if __name__ == '__main__':
@@ -128,6 +134,7 @@ if __name__ == '__main__':
     os_detector = os_detect.OSDetect()
     if os_detector.get_name() == "ubuntu" and os_detector.get_version() == "9.04":
         print "jaunty detected, skipping test"
+        rostest.unitrun('vcstools', 'test_vcs', FakeBZRClientTest, coverage_packages=['vcstools'])  
     else:
         rostest.unitrun('vcstools', 'test_vcs', BZRClientTest, coverage_packages=['vcstools'])  
 
