@@ -41,6 +41,15 @@ import os
 import vcs_base
 
 class BZRClient(vcs_base.VCSClientBase):
+    def __init__(self, path):
+        """
+        Raise LookupError if bzr not detected
+        """
+        vcs_base.VCSClientBase.__init__(self, path)
+        with open(os.devnull, 'w') as fnull:
+            if subprocess.call("bzr help".split(), stdout=fnull, stderr=fnull) != 0:
+                raise LookupError("bzr not installed, cannnot create a bzr vcs client")
+
     def get_url(self):
         """
         @return: BZR URL of the directory path (output of bzr info command), or None if it cannot be determined

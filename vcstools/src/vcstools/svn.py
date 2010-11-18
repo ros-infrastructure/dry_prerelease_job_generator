@@ -41,6 +41,15 @@ import os
 import vcs_base
 
 class SVNClient(vcs_base.VCSClientBase):
+    def __init__(self, path):
+        """
+        Raise LookupError if svn not detected
+        """
+        vcs_base.VCSClientBase.__init__(self, path)
+        with open(os.devnull, 'w') as fnull:
+            if subprocess.call("svn help".split(), stdout=fnull, stderr=fnull) != 0:
+                raise LookupError("svn not installed, cannnot create an svn vcs client")
+ 
     def get_url(self):
         """
         @return: SVN URL of the directory path (output of svn info command), or None if it cannot be determined

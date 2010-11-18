@@ -45,6 +45,14 @@ import sys
 branch_name = "rosinstall_tagged_branch"
 
 class GITClient(vcs_base.VCSClientBase):
+    def __init__(self, path):
+        """
+        Raise LookupError if git not detected
+        """
+        vcs_base.VCSClientBase.__init__(self, path)
+        with open(os.devnull, 'w') as fnull:
+            if subprocess.call("git help".split(), stdout=fnull, stderr=fnull) != 0:
+                raise LookupError("git not installed, cannnot create a git vcs client")
 
     def get_url(self):
         """
