@@ -17,15 +17,15 @@ valid_ubuntu_distros = ['hardy', 'jaunty', 'karmic', 'lucid', 'maverick']
 valid_debian_distros = ['lenny']
 
 
-def local_check_call(cmd, suppress_output=False):
-    if suppress_output:
+def local_check_call(cmd, display_output=False):
+    if not display_output:
         with open(os.devnull, 'w') as fh:
             subprocess.check_call(cmd, stderr = fh, stdout=fh)
     else:
         subprocess.check_call(cmd, stderr = subprocess.STDOUT)
 
-def local_call(cmd, suppress_output=False):
-    if suppress_output:
+def local_call(cmd, display_output=False):
+    if not display_output:
         with open(os.devnull, 'w') as fh:
             return subprocess.call(cmd, stderr = fh, stdout=fh)
     else:
@@ -483,20 +483,20 @@ class ChrootInstance:
         self.unmount_proc_sys()
         self.write_back_workspace()
 
-    def execute(self, cmd, robust = False, user='root'):
+    def execute(self, cmd, robust = False, user='root', display = False):
         start_time = time.time()
         if robust:
             try:
-                self.execute_chroot(cmd, user)
+                self.execute_chroot(cmd, user, display)
             except subprocess.CalledProcessError, ex:
                 pass
         else:
-            self.execute_chroot(cmd, user)
+            self.execute_chroot(cmd, user, display)
         net_time = time.time() - start_time
         self.profile.append((net_time, "executed: %s"%cmd))
 
 
-    def execute_chroot(self, cmd, user='root'):
+    def execute_chroot(self, cmd, user='root', display = False):
         if user == 'root':
             full_cmd = ["sudo", "chroot", self.chroot_path]
             full_cmd.extend(cmd)
@@ -508,13 +508,13 @@ class ChrootInstance:
                     envs.append("%s='%s'"%(k, v))
             full_cmd = ['sudo', 'chroot', self.chroot_path, 'su', user, '-s', '/bin/bash',  '-c', '%s %s'%(" ".join(envs), " ".join(cmd))]
         print "Executing", full_cmd
-        self.check_call(full_cmd)
+        self.check_call(full_cmd, display)
 
-    def check_call(self, cmd):
-        local_check_call(cmd, not self.debug_chroot)
+    def check_call(self, cmd, display = False):
+        local_check_call(cmd, display or self.debug_chroot)
 
-    def call(self, cmd):
-        return local_call(cmd, not self.debug_chroot)
+    def call(self, cmd, display = False):
+        return local_call(cmd, display or self.debug_chroot)
 
 def run_chroot(options, path, workspace, hdd_tmp_dir):
     with ChrootInstance(options.distro, options.arch, path, workspace, clear_chroot = not options.persist, ssh_key_path=options.ssh_key_path, use_wg_sources = options.use_wg_sources, scratch_dir = options.hdd_scratch, hdd_tmp_dir=hdd_tmp_dir, debug_chroot= options.debug_chroot) as chrti:
@@ -551,7 +551,7 @@ def run_chroot(options, path, workspace, hdd_tmp_dir):
             if options.arch in ['i386', 'i686']:
                 cmd.insert(0, options.arch)
                 cmd.insert(0, "setarch")
-            chrti.execute(cmd, user="rosbuild")
+            chrti.execute(cmd, user="rosbuild", display=True)
             
         if options.interactive:
             print "xhost localhost"
