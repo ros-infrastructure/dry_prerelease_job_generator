@@ -551,8 +551,11 @@ def run_chroot(options, path, workspace, hdd_tmp_dir):
             if options.arch in ['i386', 'i686']:
                 cmd.insert(0, options.arch)
                 cmd.insert(0, "setarch")
+            print "Executing Script", cmd
+            print "vvvvvvvvvvvvvvvvvvv Begin Script Output vvvvvvvvvvvvvvvvvv"
             chrti.execute(cmd, user="rosbuild", display=True)
-            
+            print "^^^^^^^^^^^^^^^^^^^ End Script Output ^^^^^^^^^^^^^^^^^^^^"
+
         if options.interactive:
             print "xhost localhost"
             local_check_call(["xhost", "localhost"])
