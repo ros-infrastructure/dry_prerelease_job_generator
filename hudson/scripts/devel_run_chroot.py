@@ -589,7 +589,7 @@ class TempRamFS:
                 print >> sys.stderr, "Caught exception, closing out ramdisk"
             
         cmd = ['sudo', 'umount', '-f', self.path]
-        if not self.call(cmd):
+        if not local_call(cmd):
             print "WARNING: UNCLEAN TMPFS CHROOT UNMONT"
         else:
             print "Successfully umounted tmpfs chroot."
