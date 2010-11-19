@@ -454,8 +454,10 @@ class ChrootInstance:
         return self
     def __exit__(self, mtype, value, tb):
         if tb:
-            print "Caught exception shutting down"
-            traceback.print_exception(mtype, value, tb, file=sys.stdout)
+            if isinstance(value, subprocess.CalledProcessError):
+                print "Command failed, shutting down chroot"
+            else:
+                print "Exception in chroot, shutting down chroot"
             
         self.shutdown()
 
@@ -557,15 +559,16 @@ class TempRamFS:
 
     def __exit__(self, mtype, value, tb):
         if tb:
-            print "Caught exception, closing out ramdisk"
-            traceback.print_exception(mtype, value, tb, file=sys.stdout)
+            if isinstance(value, subprocess.CalledProcessError):
+                print >> sys.stderr, "Command failed, closing out ramdisk"
+            else:
+                print >> sys.stderr, "Caught exception, closing out ramdisk"
             
         cmd = ['sudo', 'umount', '-f', self.path]
         if not subprocess.call(cmd):
             print "WARNING: UNCLEAN TMPFS CHROOT UNMONT"
         else:
             print "Successfully umounted tmpfs chroot."
-
 
 
 
@@ -628,17 +631,20 @@ if not clean_up_chroots():
 subprocess.check_call(['sudo', 'mkdir', '-p', path])
 
 
-if options.ramdisk:
-    with TempRamFS(path, options.ramdisk_size):
+try:
+    if options.ramdisk:
+        with TempRamFS(path, options.ramdisk_size):
+            cmd = ['mount']
+            subprocess.check_call(cmd)
+            run_chroot(options, path, workspace, hdd_tmp_dir)
+
         cmd = ['mount']
         subprocess.check_call(cmd)
+
+    else:
         run_chroot(options, path, workspace, hdd_tmp_dir)
 
-    cmd = ['mount']
-    subprocess.check_call(cmd)
-
-else:
-    run_chroot(options, path, workspace, hdd_tmp_dir)
-
+except subprocess.CalledProcessError, e:
+    print >> sys.stderr, "Command failed: %s"%(str(e))
 
 sys.exit(0)
