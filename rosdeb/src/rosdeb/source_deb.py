@@ -266,6 +266,11 @@ def control_data(stack_name, stack_version, stack_file=None):
     # locked later on due to lack of ABI compat
     metadata['depends'] = [d.stack for d in m.depends]
 
+    # #3100: REMOVE THIS AROUND PHASE 3
+    if stack_name not in ['ros', 'ros_comm'] and 'ros_comm' not in metadata['depends']:
+        metadata['depends'].append('ros_comm')
+    # END #3100
+    
     metadata['rosdeps'] = rosdeps = {}
     for platform in platforms():
         try:
