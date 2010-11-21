@@ -28,7 +28,7 @@ def local_check_call(cmd, display_output=False):
         l = p.stdout.readline()
         if not l:
             break
-        print l
+        print l, ##extra comma because lines already have \n.  I"m assuming this is lower overhead than l.strip()
 
 def local_call(cmd, display_output=False):
     if not display_output:
@@ -40,7 +40,7 @@ def local_call(cmd, display_output=False):
         l = p.stdout.readline()
         if not l:
             break
-        print l
+        print l,  ##extra comma because lines already have \n.  I"m assuming this is lower overhead than l.strip()
     if p.returncode == None:
         print "stdout finished but process not exited!!!"
         p.communicate()
