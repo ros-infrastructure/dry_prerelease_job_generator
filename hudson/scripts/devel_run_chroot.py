@@ -21,15 +21,32 @@ def local_check_call(cmd, display_output=False):
     if not display_output:
         with open(os.devnull, 'w') as fh:
             subprocess.check_call(cmd, stderr = fh, stdout=fh)
-    else:
-        subprocess.check_call(cmd, stderr = subprocess.STDOUT)
+        return
+    p = subprocess.Popen(cmd, stderr = subprocess.STDOUT, stdout=subprocess.PIPE)
+
+    while True:
+        l = p.stdout.readline()
+        if not l:
+            break
+        print l
 
 def local_call(cmd, display_output=False):
     if not display_output:
         with open(os.devnull, 'w') as fh:
             return subprocess.call(cmd, stderr = fh, stdout=fh)
-    else:
-        return subprocess.call(cmd, stderr = subprocess.STDOUT)
+    p = subprocess.Popen(cmd, stderr = subprocess.STDOUT, stdout=subprocess.PIPE)
+
+    while True:
+        l = p.stdout.readline()
+        if not l:
+            break
+        print l
+    if p.returncode == None:
+        print "stdout finished but process not exited!!!"
+        p.communicate()
+    return p.returncode
+#    else:
+#        return subprocess.call(cmd, stderr = subprocess.STDOUT)
     
 
 def get_mount_points(pattern = "chroot"):
