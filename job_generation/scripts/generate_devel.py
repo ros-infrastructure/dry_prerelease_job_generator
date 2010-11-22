@@ -26,9 +26,6 @@ hudson_scm_managers = {'svn':"""
     <clean>false</clean>
     <forest>false</forest>
     <branch>STACKBRANCH</branch>
-    <browser class="hudson.plugins.mercurial.browser.HgWeb">
-      <url>https://stack-nxt.foote-ros-pkg.googlecode.com/hg/</url>
-    </browser>
   </scm>
 """,
                        'git':"""
