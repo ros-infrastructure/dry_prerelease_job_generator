@@ -253,6 +253,8 @@ def main():
     parser = optparse.OptionParser()
     parser.add_option('--delete', dest = 'delete', default=False, action='store_true',
                       help='Delete jobs from Hudson')    
+    parser.add_option('--start', dest = 'start', default=False, action='store_true',
+                      help='Start jobs')    
     parser.add_option('--stack', dest = 'stacks', action='append',
                       help="Specify the stacks to operate on (defaults to all stacks)")
     parser.add_option('--rosdistro', dest = 'rosdistro', action='store', default='cturtle',
@@ -305,6 +307,10 @@ def main():
         elif not exists:
             hudson_instance.create_job(job_name, post_release_configs[job_name])
             print "Creating new job %s"%job_name
+
+        # start job
+        if options.start:
+            hudson_instance.build_job(job_name)
 
 if __name__ == '__main__':
     main()
