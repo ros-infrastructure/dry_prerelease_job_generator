@@ -51,8 +51,8 @@ class BZRClientTest(unittest.TestCase):
         directory = tempfile.mkdtemp()
         name = "setUp"
         self.directories[name] = directory
-        self.readonly_url = "http://bazaar.launchpad.net/~tully.foote/ffm/trunk/"
-        self.readonly_version = "-r24"
+        self.readonly_url = "http://bazaar.launchpad.net/~tully.foote/+junk/ros-vcstools-test/"
+        self.readonly_version = "-r1"
         self.readonly_path = os.path.join(directory, "readonly")
         bzrc = bzr.BZRClient(self.readonly_path)
         self.assertTrue(bzrc.checkout(self.readonly_url, self.readonly_version))
@@ -78,7 +78,7 @@ class BZRClientTest(unittest.TestCase):
         directory = tempfile.mkdtemp()
         self.directories["checkout_test"] = directory
         local_path = os.path.join(directory, "ros")
-        url = "http://bazaar.launchpad.net/~tully.foote/ffm/trunk/"
+        url = "http://bazaar.launchpad.net/~tully.foote/+junk/ros-vcstools-test/"
         bzrc = bzr.BZRClient(local_path)
         self.assertFalse(bzrc.path_exists())
         self.assertFalse(bzrc.detect_presence())
@@ -100,8 +100,8 @@ class BZRClientTest(unittest.TestCase):
         subdir = "checkout_specific_version_test"
         self.directories[subdir] = directory
         local_path = os.path.join(directory, "ros")
-        url = "http://bazaar.launchpad.net/~tully.foote/ffm/trunk/"
-        version = "-r20"
+        url = "http://bazaar.launchpad.net/~tully.foote/+junk/ros-vcstools-test/"
+        version = "-r1"
         bzrc = bzr.BZRClient(local_path)
         self.assertFalse(bzrc.path_exists())
         self.assertFalse(bzrc.detect_presence())
@@ -113,7 +113,7 @@ class BZRClientTest(unittest.TestCase):
         self.assertEqual(bzrc.get_url(), url)
         self.assertEqual(bzrc.get_version(), version)
         
-        new_version = '-r21'
+        new_version = '-r2'
         self.assertTrue(bzrc.update(new_version))
         self.assertEqual(bzrc.get_version(), new_version)
         
