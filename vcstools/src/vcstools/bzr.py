@@ -39,6 +39,7 @@ New in ROS C-Turtle.
 import subprocess
 import os
 import vcs_base
+import urllib
 
 class BZRClient(vcs_base.VCSClientBase):
     def __init__(self, path):
@@ -58,7 +59,7 @@ class BZRClient(vcs_base.VCSClientBase):
             output = subprocess.Popen(['bzr', 'info', self._path], stdout=subprocess.PIPE).communicate()[0]
             matches = [l for l in output.split('\n') if l.startswith('  parent branch:')]
             if matches:
-                return matches[0][17:]
+                return urllib.url2pathname(matches[0][17:])
         return None
 
     def detect_presence(self):
