@@ -106,7 +106,6 @@ class RosinstallCommandlineOverlays(unittest.TestCase):
         self.directories = {}
         self.base = tempfile.mkdtemp()
         cmd = self.rosinstall_fn[:]
-        #cmd.extend([self.base, "http://www.ros.org/rosinstalls/boxturtle_base.rosinstall"])
         cmd.extend([self.base, os.path.join(roslib.packages.get_pkg_dir("test_rosinstall"), "rosinstalls", "ros_w_release.rosinstall")])
         self.assertEqual(0,subprocess.call(cmd))
 
@@ -122,9 +121,9 @@ class RosinstallCommandlineOverlays(unittest.TestCase):
         self.assertTrue(os.path.exists(generated_rosinstall_filename))
         source_yaml = rosinstall.helpers.get_yaml_from_uri(generated_rosinstall_filename)
         self.assertEqual(source_yaml, 
-                         [{'svn': { 'uri': 'https://code.ros.org/svn/ros/stacks/ros/tags/boxturtle',
+                         [{'svn': { 'uri': 'https://code.ros.org/svn/ros/stacks/ros/tags/unstable',
                                     'local-name': 'ros'} },
-                          {'svn': { 'uri': 'https://code.ros.org/svn/ros/stacks/ros_release/trunk',
+                          {'svn': { 'uri': 'https://code.ros.org/svn/ros/stacks/ros_release/tags/unstable',
                                     'local-name': 'ros_release'} }
                           ])
 
@@ -141,7 +140,7 @@ class RosinstallCommandlineOverlays(unittest.TestCase):
 - other:
     local-name: %s/ros
 - svn:
-    uri: https://code.ros.org/svn/ros-pkg/stacks/common_msgs/tags/boxturtle
+    uri: https://code.ros.org/svn/ros-pkg/stacks/common_msgs/tags/unstable
     local-name: stacks/common_msgs
 """%(self.base, self.base)
             print file_text
