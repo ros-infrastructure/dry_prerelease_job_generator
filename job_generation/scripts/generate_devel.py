@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
-HUDSON_SVN = """
+
+hudson_scm_managers = {'svn':"""
   <scm class="hudson.scm.SubversionSCM"> 
     <locations> 
       <hudson.scm.SubversionSCM_-ModuleLocation> 
@@ -16,9 +17,8 @@ HUDSON_SVN = """
     <excludedRevprop></excludedRevprop> 
     <excludedCommitMessages></excludedCommitMessages> 
   </scm> 
-"""
-
-HUDSON_HG = """
+""",
+                       'hg':"""
   <scm class="hudson.plugins.mercurial.MercurialSCM">
     <source>STACKURI</source>
     <modules></modules>
@@ -30,7 +30,53 @@ HUDSON_HG = """
       <url>https://stack-nxt.foote-ros-pkg.googlecode.com/hg/</url>
     </browser>
   </scm>
+""",
+                       'git':"""
+
+  <scm class="hudson.plugins.git.GitSCM">
+    <configVersion>1</configVersion>
+    <remoteRepositories>
+      <org.spearce.jgit.transport.RemoteConfig>
+        <string>origin</string>
+        <int>5</int>
+
+        <string>fetch</string>
+        <string>+refs/heads/*:refs/remotes/origin/*</string>
+        <string>receivepack</string>
+        <string>git-upload-pack</string>
+        <string>uploadpack</string>
+        <string>git-upload-pack</string>
+
+        <string>url</string>
+        <string>STACKURI</string>
+        <string>tagopt</string>
+        <string></string>
+      </org.spearce.jgit.transport.RemoteConfig>
+    </remoteRepositories>
+    <branches>
+
+      <hudson.plugins.git.BranchSpec>
+        <name>STACKBRANCH</name>
+      </hudson.plugins.git.BranchSpec>
+    </branches>
+    <localBranch></localBranch>
+    <mergeOptions/>
+    <recursiveSubmodules>false</recursiveSubmodules>
+    <doGenerateSubmoduleConfigurations>false</doGenerateSubmoduleConfigurations>
+
+    <authorOrCommitter>false</authorOrCommitter>
+    <clean>false</clean>
+    <wipeOutWorkspace>false</wipeOutWorkspace>
+    <buildChooser class="hudson.plugins.git.util.DefaultBuildChooser"/>
+    <gitTool>Default</gitTool>
+    <submoduleCfg class="list"/>
+    <relativeTargetDir>STACKNAME</relativeTargetDir>
+
+    <excludedRegions></excludedRegions>
+    <excludedUsers></excludedUsers>
+  </scm>
 """
+}
 
 # template to create develop hudscon configuration file
 HUDSON_DEVEL_CONFIG = """<?xml version='1.0' encoding='UTF-8'?>
@@ -217,16 +263,21 @@ def create_devel_configs(rosdistro, stack):
             name = devel_job_name(rosdistro, stack.name, ubuntudistro, arch)
 
             # create VCS block
+            if stack.vcs_config.type in hudson_scm_managers:
+                hudson_vcs = hudson_scm_managers[stack.vcs_config.type]
+            else:
+                raise NotImplementedError("vcs type %s not implemented as hudson scm manager"%stack.vcs_config.type)
+
+            
             if stack.vcs_config.type == 'svn':
                 hudson_vcs = HUDSON_SVN
                 hudson_vcs = hudson_vcs.replace('STACKNAME', stack.name)
                 hudson_vcs = hudson_vcs.replace('STACKURI', stack.vcs_config.anon_dev)
-            elif stack.vcs_config.type == 'hg':
-                hudson_vcs = HUDSON_HG
+            else: #dvcs
                 hudson_vcs = hudson_vcs.replace('STACKBRANCH', stack.vcs_config.dev_branch)
                 hudson_vcs = hudson_vcs.replace('STACKURI', stack.vcs_config.repo_uri)
                 hudson_vcs = hudson_vcs.replace('STACKNAME', stack.name)
-                
+
             # check if this is the 'gold' job
             time_trigger = ''
             job_children = ''
