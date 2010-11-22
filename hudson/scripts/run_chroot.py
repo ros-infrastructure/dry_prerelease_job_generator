@@ -683,12 +683,7 @@ local_check_call(['sudo', 'mkdir', '-p', path])
 try:
     if options.ramdisk:
         with TempRamFS(path, options.ramdisk_size):
-            cmd = ['mount']
-            subprocess.check_call(cmd)
             run_chroot(options, path, workspace, hdd_tmp_dir)
-
-        cmd = ['mount']
-        subprocess.check_call(cmd)
 
     else:
         run_chroot(options, path, workspace, hdd_tmp_dir)
