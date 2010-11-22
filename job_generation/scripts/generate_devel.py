@@ -64,7 +64,7 @@ hudson_scm_managers = {'svn':"""
     <recursiveSubmodules>false</recursiveSubmodules>
     <doGenerateSubmoduleConfigurations>false</doGenerateSubmoduleConfigurations>
 
-    <authorOrCommitter>false</authorOrCommitter>
+    <authorOrCommitter>Hudson</authorOrCommitter>
     <clean>false</clean>
     <wipeOutWorkspace>false</wipeOutWorkspace>
     <buildChooser class="hudson.plugins.git.util.DefaultBuildChooser"/>
