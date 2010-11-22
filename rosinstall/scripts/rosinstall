@@ -492,9 +492,9 @@ def rosinstall_main(argv):
   if config.ros_path() and not options.nobuild:
     print "Bootstrapping ROS build"
     if options.rosdep_yes:
-      subprocess.check_call("source %s && rosmake rostest --rosdep-install --rosdep-yes" % (os.path.join(options.path, 'setup.sh')), shell=True, executable='/bin/bash')
+      subprocess.check_call("source %s && rosmake ros --rosdep-install --rosdep-yes" % (os.path.join(options.path, 'setup.sh')), shell=True, executable='/bin/bash')
     else:
-      subprocess.check_call("source %s && rosmake rostest --rosdep-install" % (os.path.join(options.path, 'setup.sh')), shell=True, executable='/bin/bash')
+      subprocess.check_call("source %s && rosmake ros --rosdep-install" % (os.path.join(options.path, 'setup.sh')), shell=True, executable='/bin/bash')
   print "\ndone. Now, type 'source %s/setup.sh' to set up your environment.\nAdd that to the bottom of your ~/.bashrc to set it up every time.\n\n" % options.path
 
   if not install_success:
