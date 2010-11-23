@@ -156,105 +156,107 @@ def source_deb_main():
 
     # COLLECT ARGS
     from optparse import OptionParser
-    parser = OptionParser(usage="usage: %prog <distro> <stack> <version> <os-platform>", prog=NAME)
-    # disabling for now, will be worth implementing soon enough
-    #parser.add_option("-f", "--file",
-    #                  dest="file", default=None,
-    #                  help="use local .tar.bz2 instead of downloading", metavar="TARBALL")
-    parser.add_option("-d", "--dir",
-                      dest="staging_dir", default=None,
-                      help="directory to use for staging source debs", metavar="STAGING_DIR")
+    parser = OptionParser(usage="usage: %prog <distro> <stack> <version> [os-platform]", prog=NAME)
     parser.add_option("--hudson",
                       dest="hudson", action='store_true', default=False,
-                      help="execute Hudson-style, which builds all platforms")
+                      help="execute for Hudson-based job.")
     parser.add_option("--smtp",
                       dest="smtp", default=None,
                       help="SMTP server to use for failure emails")
 
     (options, args) = parser.parse_args()
 
-    if len(args) < 3:
+    if len(args) < 3 or len(args) > 4:
         parser.error('invalid args')
         
     distro_name    = args[0]
     stack_name     = args[1]
     stack_version  = args[2]
 
-    if options.hudson:
-
-        if len(args) != 3:
-            parser.error('please specify distro name, stack name, and stack version')
-        if options.staging_dir:
-            parser.error("cannot override directory in Hudson mode")
+    if len(args) == 3:
         try:
             import rosdeb.targets
             targets = rosdeb.targets.os_platform[distro_name]
         except:
             parser.error("unknown distro [%s]"%(distro_name))
+    else:
+        targets = [args[3]]
 
-        errors = []
-        success = []
+    errors = []
+    success = []
 
-        for os_platform in targets:
-            staging_dir = os.path.join(tempfile.gettempdir(), "rosdeb-%s"%(os_platform))
-            if os.path.exists(staging_dir):
-                shutil.rmtree(staging_dir)
-            os.mkdir(staging_dir)
-            try:
-                _source_deb_main(distro_name, stack_name, stack_version, os_platform, staging_dir)
-                success.append(os_platform)
-            except Exception, e:
-                errors.append((os_platform, e))
+    for os_platform in targets:
+        staging_dir = os.path.join(tempfile.gettempdir(), "rosdeb-%s"%(os_platform))
+        if os.path.exists(staging_dir):
+            shutil.rmtree(staging_dir)
+        os.mkdir(staging_dir)
+        try:
+            _source_deb_main(distro_name, stack_name, stack_version, os_platform, staging_dir)
+            success.append(os_platform)
+        except Exception, e:
+            errors.append((os_platform, e))
                 
+    if options.hudson:
         for os_platform in success:
             print "triggering build-debs for %s, %s, %s"%(stack_name, distro_name, os_platform)
             trigger_hudson_build_debs(stack_name, distro_name, os_platform)
 
-        # Handle build failures:
-        #  - print out failed OS platforms
-        #  - send failure e-mail
-        if errors:
+    # Handle build failures:
+    #  - print out failed OS platforms
+    #  - send failure e-mail
+    if errors:
 
-            # create and print error message
-            error_msgs = '='*80 + '\nERRORS\n' + '='*80 + '\n'
-            
-            error_msgs += 'Stack [%s-%s] in distro [%s] failed to build on the following OS platforms:\n%s\n\n'%(stack_name, stack_version, distro_name, [x for x, y in errors])
-            
-            for os_platform, e in errors:
-                error_msgs += '[%s]: %s\n'%(os_platform, str(e))
+        # create and print error message
+        error_msgs = '='*80 + '\nERRORS\n' + '='*80 + '\n'
+
+        failed_targets = [x for x, y in errors]
+        error_msgs += 'Stack [%s-%s] in distro [%s] failed to build on the following OS platforms:\n%s\n\n'%(stack_name, stack_version, distro_name, failed_targets)
+
+        for os_platform, e in errors:
+            error_msgs += '[%s]: %s\n'%(os_platform, str(e))
+
+        error_msgs += '='*80 + '\n'
+
+        print >> sys.stderr, error_msgs
+
+        # load the control data
+        import yaml
+        control_file = os.path.join(staging_dir, "%s-%s.yaml"%(stack_name, stack_version))
+        with open(control_file) as f:
+            control = yaml.load(f)
+
+        # Send e-mail for failed platforms if smtp server name is provided
+        if options.smtp and 'contact' in control:
+            to_addr = control['contact']
+            email_msg = error_msgs
+            if success:
+                email_msg = 'Stack [%s-%s] in distro [%s] succeeded on the following OS platforms:\n%s\n\n'%(stack_name, stack_version, distro_name, success) + email_msg
+            email_msg = """Stack [%s-%s]
+
+There were failures in building the source deb package for this stack.
+These failures are generally caused by missing dependencies on target
+platforms.  If this stack is not expected to work on all target
+platforms, you may be able to disregard this e-mail.
+
+This e-mail is sent regardless of current 'excludes' settings to
+assist stack maintainers who are attempting to test compatibility on
+new targets.
+
+"""%(stack_name, stack_version)+ email_msg
+
+            if set(targets) == set(failed_targets):
+                subject = 'source debian build [%s-%s] failed on all platforms'%(stack_name, stack_version)
+            else:
+                subject = 'source debian build [%s-%s] failed on %s'%(stack_name, stack_version, ', '.join(failed_targets))
                 
-            error_msgs += '='*80 + '\n'
-            
-            print >> sys.stderr, error_msgs
+            send_email(options.smtp, EMAIL_FROM_ADDR, to_addr, subject, email_msg)
+        elif not 'contact' in control:
+            print >> sys.stderr, "no contact e-mail in control file, will not send e-mail to owner"
+        elif not options.smtp:
+            print >> sys.stderr, "no SMTP server configured, will not send e-mail to owner"                
 
-            # load the control data
-            import yaml
-            control_file = os.path.join(staging_dir, "%s-%s.yaml"%(stack_name, stack_version))
-            with open(control_file) as f:
-                control = yaml.load(f)
-
-            # Send e-mail for failed platforms if smtp server name is provided
-            if options.smtp and 'contact' in control:
-                to_addr = control['contact']
-                email_msg = error_msgs
-                if success:
-                    email_msg = 'Stack [%s-%s] in distro [%s] succeeded on the following OS platforms:\n%s\n\n'%(stack_name, stack_version, distro_name, success) + email_msg
-                subject = 'debian build [%s-%s] failed'%(stack_name, stack_version)
-                send_email(options.smtp, EMAIL_FROM_ADDR, to_addr, subject, email_msg)
-            elif not 'contact' in control:
-                print >> sys.stderr, "no contact e-mail in control file, will not send e-mail to owner"
-            elif not options.smtp:
-                print >> sys.stderr, "no SMTP server configured, will not send e-mail to owner"                
-
-            # Exit with error code to signal build failure
-            sys.exit(2)
-            
-    else:
-        if len(args) != 4:
-            parser.error('please specify distro name, stack name, stack version, and platform (e.g. lucid)')
-        os_platform    = args[3]
-        staging_dir = options.staging_dir or os.getcwd()
-        _source_deb_main(distro_name, stack_name, stack_version, os_platform, staging_dir)
+        # Exit with error code to signal build failure
+        sys.exit(2)
         
 if __name__ == '__main__':
     source_deb_main()

@@ -1,9 +1,0 @@
-setup.py
-src/roslib2/__init__.py
-src/roslib2/distro.py
-src/roslib2/vcs/__init__.py
-src/roslib2/vcs/bzr.py
-src/roslib2/vcs/git.py
-src/roslib2/vcs/legacy_vcs.py
-src/roslib2/vcs/svn.py
-src/roslib2/vcs/vcs_base.py

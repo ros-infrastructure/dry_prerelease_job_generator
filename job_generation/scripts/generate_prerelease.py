@@ -181,7 +181,7 @@ def create_prerelease_configs(rosdistro, stack_list, email, repeat, devel):
             hudson_config = hudson_config.replace('STACKNAME', '---'.join(stack_list))
             hudson_config = hudson_config.replace('STACKARGS', ' '.join(['--stack %s'%s for s in stack_list]))
             hudson_config = hudson_config.replace('EMAIL', email)
-            hudson_config = hudson_config.replace('REPEAT', repeat)
+            hudson_config = hudson_config.replace('REPEAT', str(repeat))
             if devel:
                 hudson_config = hudson_config.replace('DEVEL', '_devel')                
             else:
@@ -201,7 +201,7 @@ def main():
                       help="Specify the ros distro to operate on (defaults to cturtle)")
     parser.add_option('--email', dest='email', action='store',
                       help='Send email to this address')
-    parser.add_option('--repeat', dest = 'repeat', default=0, action='store',
+    parser.add_option('--repeat', dest = 'repeat', default='0', action='store',
                       help='How many times to repeat the tests of the stack itself')
     parser.add_option('--devel', dest = 'devel', default=False, action='store_true',
                       help='Use the development script')
@@ -223,7 +223,7 @@ def main():
     distro_obj = rosdistro.Distro(ROSDISTRO_MAP[options.rosdistro])
     for s in options.stacks:
         if not s in distro_obj.stacks:
-            print 'Stack %s does not exist in the %s disro file. Before you can run the prerelease scripts you need to add this stack to the rosdistro file'%(s, options.rosdistro)
+            print 'Stack "%s" does not exist in the %s disro file. Before you can run the prerelease scripts you need to add this stack to the rosdistro file'%(s, options.rosdistro)
             return
 
         

@@ -1,6 +1,7 @@
+#!/usr/bin/env python
 # Software License Agreement (BSD License)
 #
-# Copyright (c) 2010, Willow Garage, Inc.
+# Copyright (c) 2009, Willow Garage, Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -29,44 +30,32 @@
 # LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
-#
 
+import sys
+import build_debs
+from optparse import OptionParser
 
-import svn, bzr, hg, git
-import os
+NAME="build_interactive.py"
 
-
-class VCSClient: 
-  def __init__(self, vcs_type, path):
-    self._path = path
-    self.vcs_types = {
-      "svn": svn.SVNClient,
-      "bzr": bzr.BZRClient,
-      "git": git.GITClient,
-      "hg": hg.HGClient,
-      }
-    if not vcs_type in self.vcs_types:
-      raise LookupError("%s VCS type undefined"%vcs_type)
-    self.vcs = self.vcs_types[vcs_type](path)
+def interactive_main():
+    parser = OptionParser(usage="usage: %prog <distro> <stack> <os-platform> <arch>", prog=NAME)
+    options, args = parser.parse_args()
+    if len(args) != 4:
+        parser.error("four arguments expected")
     
-  def path_exists(self):
-      return os.path.exists(self._path)
+    distro_name, stack_name, os_platform, arch = args
+    sys.argv = [sys.argv[0], distro_name, stack_name, os_platform, arch, '--force', '--noupload', '--interactive', '--noramdisk']
+    try:
+        build_debs.build_debs_main()
+    except SystemExit:
+        print "FAILURE"
+        print "did you 'sudo apt-get install pbuilder'?"        
+        sys.exit(1)
 
-  def get_path(self):
-      return self._path
+#export ROS_DESTDIR=/tmp/buildd/freiburg_tools-0.1.0/debian/ros-unstable-freiburg-tools
+#. /tmp/buildd/freiburg_tools-0.1.0/setup_deb.sh
+#roscd freiburg_tools
+#make
 
-  # pass through VCSClientBase API
-  def get_version(self):
-    return self.vcs.get_version()
-  def checkout(self, url, version=''):
-    return self.vcs.checkout(url, version)
-  def update(self, version):
-    return self.vcs.update(version)
-  def detect_presence(self):
-    return self.vcs.detect_presence()
-  def get_vcs_type_name(self):
-    return self.vcs.get_vcs_type_name()
-  def get_url(self):
-    return self.vcs.get_url()
-  def get_branch_parent(self):
-    return self.vcs.get_branch_parent()
+if __name__ == '__main__':
+    interactive_main()

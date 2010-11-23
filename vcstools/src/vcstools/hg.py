@@ -42,6 +42,16 @@ import vcs_base
 import sys
 
 class HGClient(vcs_base.VCSClientBase):
+        
+    def __init__(self, path):
+        """
+        Raise LookupError if hg not detected
+        """
+        vcs_base.VCSClientBase.__init__(self, path)
+        with open(os.devnull, 'w') as fnull:
+            if subprocess.call("hg help".split(), stdout=fnull, stderr=fnull) != 0:
+                raise LookupError("hg not installed, cannnot create a hg vcs client")
+
     def get_url(self):
         """
         @return: HG URL of the directory path (output of hg paths command), or None if it cannot be determined

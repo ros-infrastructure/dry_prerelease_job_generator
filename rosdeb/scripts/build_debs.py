@@ -147,20 +147,24 @@ def compute_deps(distro, stack_name):
             raise BuildFailure("[%s] not found in distro."%(s))
         seen.add(s)
         v = distro.stacks[s].version
+        if not v:
+            raise BuildFailure("[%s] has not been released (version-less)."%(s))
+        # version-less entries are ignored
         si = load_info(s, v)
         for d in si['depends']:
             add_stack(d)
         ordered_deps.append((s,v))
 
     if stack_name == 'ALL':
-        for s in distro.stacks.keys():
+        for s in distro.released_stacks.keys():
             add_stack(s)
     else:
         add_stack(stack_name)
 
     # #3100: REMOVE THIS AROUND PHASE 3
     if distro.release_name == 'unstable':
-        if stack_name not in ['ros', 'ros_comm', 'documentation'] and 'ros_comm' not in ordered_deps:
+        if stack_name not in ['ros', 'ros_comm'] and 'ros_comm' not in ordered_deps:
+            print "adding implicit dependency on ros_comm, %s"%(distro.stacks['ros_comm'].version)
             ordered_deps.append(('ros_comm', distro.stacks['ros_comm'].version))
     # END #3100
     return ordered_deps
@@ -248,11 +252,15 @@ apt-get update"""%locals())
         os.chmod(p, stat.S_IRWXU)
 
     if interactive:
+
         # Hook scripts to make us interactive:
         p = os.path.join(hook_dir, 'B50interactive')
         with open(p, 'w') as f:
             f.write("""#!/bin/sh
 echo "Entering interactive environment.  Exit when done to continue pbuilder operation."
+export ROS_DESTDIR=/tmp/buildd/%(deb_name)s-%(stack_version)s/debian/%(deb_name)s
+source /tmp/buildd/%(deb_name)s-%(stack_version)s/setup_deb.sh
+roscd %(stack_name)s
 bash </dev/tty
 echo "Resuming pbuilder"
 """%locals())
@@ -263,6 +271,9 @@ echo "Resuming pbuilder"
         with open(p, 'w') as f:
             f.write("""#!/bin/sh
 echo "Entering interactive environment.  Exit when done to continue pbuilder operation."
+export ROS_DESTDIR=/tmp/buildd/%(deb_name)s-%(stack_version)s/debian/%(deb_name)s
+source /tmp/buildd/%(deb_name)s-%(stack_version)s/setup_deb.sh
+roscd %(stack_name)s
 bash </dev/tty
 echo "Resuming pbuilder"
 """%locals())
@@ -471,7 +482,7 @@ def build_debs_main():
                     failure_message = "Could not upload debs"
 
         except Exception, e:
-            failure_message = "Internal failure release system. Please notify leibs and kwc @willowgarage.com:\n%s\n\n%s"%(e, traceback.format_exc(e))
+            failure_message = "Internal failure in the release system. Please notify leibs and kwc @willowgarage.com:\n%s\n\n%s"%(e, traceback.format_exc(e))
         finally:
             if options.staging_dir is None:
                 shutil.rmtree(staging_dir)
@@ -479,14 +490,15 @@ def build_debs_main():
     if failure_message:
         print >> sys.stderr, failure_message
 
-        failure_message = "%s\n\n%s"%(failure_message, os.environ['BUILD_URL'])
-        if options.smtp and stack_name != 'ALL' and distro is not None:
-            stack_version = distro.stacks[stack_name].version
-            control = download_control(stack_name, stack_version)
-            if  'contact' in control:
-                to_addr = control['contact']
-                subject = 'debian build [%s-%s-%s-%s] failed'%(distro_name, stack_name, os_platform, arch)
-                send_email(options.smtp, EMAIL_FROM_ADDR, to_addr, subject, failure_message)
+        if not options.interactive:
+            failure_message = "%s\n\n%s"%(failure_message, os.environ.get('BUILD_URL', ''))
+            if options.smtp and stack_name != 'ALL' and distro is not None:
+                stack_version = distro.stacks[stack_name].version
+                control = download_control(stack_name, stack_version)
+                if  'contact' in control:
+                    to_addr = control['contact']
+                    subject = 'debian build [%s-%s-%s-%s] failed'%(distro_name, stack_name, os_platform, arch)
+                    send_email(options.smtp, EMAIL_FROM_ADDR, to_addr, subject, failure_message)
         sys.exit(1)
             
 

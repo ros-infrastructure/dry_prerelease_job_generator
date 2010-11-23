@@ -1,16 +1,16 @@
 all:
 	echo "noop for debbuild"
 
-build:
-	mkdir -p src/rosinstall
-	svn export --force $(shell rospack find roslib2)/src/roslib2 src/rosinstall
+setup:
+	mkdir -p src/rosinstall/vcs
+	svn export --force $(shell rospack find vcstools)/src/vcstools src/rosinstall/vcs
 
 
 clean_dist:
 	-rm -f MANIFEST
 	-rm -rf dist
 
-distro: all clean_dist
+distro: setup clean_dist
 	python setup.py sdist
 
 clean: clean_dist

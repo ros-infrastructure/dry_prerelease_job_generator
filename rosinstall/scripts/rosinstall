@@ -95,7 +95,10 @@ class OtherConfigElement(ConfigElement):
 class VCSConfigElement(ConfigElement):
   def __init__(self, path, uri, version=''):
     self.path = path
-    self.uri = uri
+    if uri.endswith('/'):  # strip trailing slashes to not be too strict #3061
+      self.uri = uri[:-1]
+    else:
+      self.uri = uri
     self.version = version
 
   def install(self,  backup_path = None,arg_mode = 'abort'):
@@ -105,21 +108,23 @@ class VCSConfigElement(ConfigElement):
         if not self.vcsc.checkout(self.uri, self.version):
             return False
     else:
-      if not self.vcsc.detect_presence() \
-            or self.vcsc.get_url() != self.uri \
-            or (self.vcsc.get_vcs_type_name() == 'git' \
-                  and (self.vcsc.get_version() != self.version \
-                         and self.vcsc.get_branch_parent() != self.version)):
+      error_message = None
+      if not self.vcsc.detect_presence():
+        error_message = "Failed to detect %s presence at %s."%(sefl.vcsc.type, self.path)
+      elif self.vcsc.get_url() != self.uri:
+        error_message = "url %s does not match %s requested."%(self.vcsc.get_url(), self.uri)
+      elif (self.vcsc.get_vcs_type_name() == 'git' \
+              and (self.vcsc.get_version() != self.version \
+                     and self.vcsc.get_branch_parent() != self.version)):
+        error_message = "The version %s of repo %s requested to be checked out into %s is not the current branch or commit and cannot be blindly updated in place."%(self.version, self.uri, self.path)
+      if error_message:
         if mode == 'prompt':
             valid_modes = ['(d)elete', '(a)bort', '(b)ackup']
-            mode = prompt_del_abort_retry("%s does not have the same url as requested %s. %s: "%(self.path, self.uri, ", ".join(valid_modes)))
+            mode = prompt_del_abort_retry("%s %s: "%(error_message, ", ".join(valid_modes)))
             if mode == 'backup':
               backup_path = get_backup_path()
         if mode == 'abort':
-          if not self.vcsc.detect_presence():
-            raise ROSInstallException("Directory '%s' already exists but is not of type %s"%(self.vcsc.get_path(), self.vcsc.get_vcs_type_name()))
-          else:
-            raise ROSInstallException("Directory '%s' already exists but is at url:%s not requested %s"%(self.vcsc.get_path(), self.vcsc.get_url(), self.uri))
+          raise ROSInstallException(error_message)
         elif mode == 'backup':
           self.backup(backup_path)
         elif mode == 'delete':
@@ -487,9 +492,9 @@ def rosinstall_main(argv):
   if config.ros_path() and not options.nobuild:
     print "Bootstrapping ROS build"
     if options.rosdep_yes:
-      subprocess.check_call("source %s && rosmake rostest --rosdep-install --rosdep-yes" % (os.path.join(options.path, 'setup.sh')), shell=True, executable='/bin/bash')
+      subprocess.check_call("source %s && rosmake ros --rosdep-install --rosdep-yes" % (os.path.join(options.path, 'setup.sh')), shell=True, executable='/bin/bash')
     else:
-      subprocess.check_call("source %s && rosmake rostest --rosdep-install" % (os.path.join(options.path, 'setup.sh')), shell=True, executable='/bin/bash')
+      subprocess.check_call("source %s && rosmake ros --rosdep-install" % (os.path.join(options.path, 'setup.sh')), shell=True, executable='/bin/bash')
   print "\ndone. Now, type 'source %s/setup.sh' to set up your environment.\nAdd that to the bottom of your ~/.bashrc to set it up every time.\n\n" % options.path
 
   if not install_success:

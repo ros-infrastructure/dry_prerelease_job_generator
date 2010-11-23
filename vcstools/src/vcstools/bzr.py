@@ -39,8 +39,18 @@ New in ROS C-Turtle.
 import subprocess
 import os
 import vcs_base
+import urllib
 
 class BZRClient(vcs_base.VCSClientBase):
+    def __init__(self, path):
+        """
+        Raise LookupError if bzr not detected
+        """
+        vcs_base.VCSClientBase.__init__(self, path)
+        with open(os.devnull, 'w') as fnull:
+            if subprocess.call("bzr help".split(), stdout=fnull, stderr=fnull) != 0:
+                raise LookupError("bzr not installed, cannnot create a bzr vcs client")
+
     def get_url(self):
         """
         @return: BZR URL of the directory path (output of bzr info command), or None if it cannot be determined
@@ -49,7 +59,7 @@ class BZRClient(vcs_base.VCSClientBase):
             output = subprocess.Popen(['bzr', 'info', self._path], stdout=subprocess.PIPE).communicate()[0]
             matches = [l for l in output.split('\n') if l.startswith('  parent branch:')]
             if matches:
-                return matches[0][17:]
+                return urllib.url2pathname(matches[0][17:])
         return None
 
     def detect_presence(self):

@@ -37,10 +37,9 @@ def main():
     env['JOB_NAME'] = os.environ['JOB_NAME']
     env['BUILD_NUMBER'] = os.environ['BUILD_NUMBER']
     env['PWD'] = os.environ['WORKSPACE']
-    env['ROS_PACKAGE_PATH'] = '%s:%s:%s:/opt/ros/%s/stacks'%(os.environ['INSTALL_DIR']+'/'+'ros_release',
-                                                             os.environ['INSTALL_DIR']+'/'+STACK_DIR,
-                                                             os.environ['INSTALL_DIR']+'/'+DEPENDS_ON_DIR,
-                                                             options.rosdistro)
+    env['ROS_PACKAGE_PATH'] = '%s:%s:/opt/ros/%s/stacks'%(os.environ['INSTALL_DIR']+'/'+STACK_DIR,
+                                                          os.environ['INSTALL_DIR']+'/'+DEPENDS_ON_DIR,
+                                                          options.rosdistro)
     if 'ros' in options.stacklist:
         env['ROS_ROOT'] = os.environ['INSTALL_DIR']+'/'+STACK_DIR+'/ros'
         print "We're building ROS, so setting the ROS_ROOT to %s"%(env['ROS_ROOT'])
@@ -107,12 +106,15 @@ def main():
         res, err = subprocess.Popen(('rosstack depends-on %s'%stack).split(' '), stdout=subprocess.PIPE, env=env).communicate()
         if res != '':
             for r in res.split('\n'):
-                depends_on[r] = ''
-    if len(depends_on.keys()) == 0:
+                if r != '':
+                    depends_on[r] = ''
+    print 'Removing the stacks we are testing from the depends_on list'
+    depends_on_keys = list(set(depends_on.keys()) - set(options.stacklist))
+    if len(depends_on_keys) == 0:
         print 'No stacks depends on %s, finishing test.'%options.stacklist        
         return 0
-    print 'These stacks depend on the stacks we are testing: "%s"'%str(depends_on.keys())
-    rosinstall = stacks_to_rosinstall(depends_on.keys(), rosdistro_obj.stacks, 'distro')
+    print 'These stacks depend on the stacks we are testing: "%s"'%str(depends_on_keys)
+    rosinstall = stacks_to_rosinstall(depends_on_keys, rosdistro_obj.stacks, 'distro')
     rosinstall_file = '%s.rosinstall'%DEPENDS_ON_DIR
     with open(rosinstall_file, 'w') as f:
         f.write(rosinstall)

@@ -8,5 +8,6 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
 rosbuild_add_pyunit(test/test_hg.py TIMEOUT 500)
 rosbuild_add_pyunit(test/test_git.py TIMEOUT 500)
-rosbuild_add_pyunit(test/test_vcs.py TIMEOUT 500)
+rosbuild_add_pyunit(test/test_bzr.py TIMEOUT 500)
+rosbuild_add_pyunit(test/test_svn.py TIMEOUT 500)
 rosbuild_add_pyunit(test/test_vcstools_legacy_vcs.py)

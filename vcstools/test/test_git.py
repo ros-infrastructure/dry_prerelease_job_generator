@@ -78,8 +78,8 @@ class GITClientTest(unittest.TestCase):
         directory = tempfile.mkdtemp()
         name = "setUp"
         self.directories[name] = directory
-        self.readonly_url = "http://github.com/ipa320/care-o-bot.git"
-        self.readonly_version = "d68b7ead0614228a2a352330aad17b617cac4c84"
+        self.readonly_url = "https://github.com/tfoote/ros-get-test.git"
+        self.readonly_version = "c55a19422c67b7c83f8c5d6e10b41b1f2711e5a6"
         self.readonly_path = os.path.join(directory, "readonly")
         gitc = git.GITClient(self.readonly_path)
         self.assertTrue(gitc.checkout(self.readonly_url, self.readonly_version))
@@ -105,7 +105,7 @@ class GITClientTest(unittest.TestCase):
         directory = tempfile.mkdtemp()
         self.directories["checkout_test"] = directory
         local_path = os.path.join(directory, "ros")
-        url = "http://github.com/ipa320/care-o-bot.git"
+        url = "https://github.com/tfoote/ros-get-test.git"
         gitc = git.GITClient(local_path)
         self.assertFalse(gitc.path_exists())
         self.assertFalse(gitc.detect_presence())
@@ -128,8 +128,8 @@ class GITClientTest(unittest.TestCase):
         subdir = "checkout_specific_version_test"
         self.directories[subdir] = directory
         local_path = os.path.join(directory, "ros")
-        url = "http://github.com/ipa320/care-o-bot.git"
-        version = "d68b7ead0614228a2a352330aad17b617cac4c84"
+        url = "https://github.com/tfoote/ros-get-test.git"
+        version = "c55a19422c67b7c83f8c5d6e10b41b1f2711e5a6"
         gitc = git.GITClient(local_path)
         self.assertFalse(gitc.path_exists())
         self.assertFalse(gitc.detect_presence())
@@ -140,7 +140,7 @@ class GITClientTest(unittest.TestCase):
         self.assertEqual(gitc.get_url(), url)
         self.assertEqual(gitc.get_version(), version)
         
-        new_version = '1fd87b781c64de366c6a6d4be8cdc76fbee5541e'
+        new_version = '9f7d666bb183f31e8a1443e7b16428ba190c37e3'
         self.assertTrue(gitc.update(new_version))
         self.assertEqual(gitc.get_version(), new_version)
         
@@ -152,7 +152,7 @@ class GITClientTest(unittest.TestCase):
         subdir = "checkout_specific_version_test"
         self.directories[subdir] = directory
         local_path = os.path.join(directory, "ros")
-        url = "http://github.com/ipa320/care-o-bot.git"
+        url = "https://github.com/tfoote/ros-get-test.git"
         branch = "master"
         gitc = git.GITClient(local_path)
         self.assertFalse(gitc.path_exists())
