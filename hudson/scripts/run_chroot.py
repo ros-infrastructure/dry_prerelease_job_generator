@@ -168,6 +168,7 @@ class ChrootInstance:
         self.ssh_key_path = ssh_key_path
         self.use_wg_sources = use_wg_sources
         self.hdd_tmp_dir = hdd_tmp_dir
+        self.hdd_remote_mount = ""
         self.scratch_dir = scratch_dir
         self.debug_chroot = False # if enabled print to screen during setup and teardown
 
