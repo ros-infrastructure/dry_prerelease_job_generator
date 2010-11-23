@@ -143,10 +143,10 @@ def compute_deps(distro, stack_name):
     def add_stack(s):
         if s in seen:
             return
-        if s not in distro.stacks:
+        if s not in distro.released_stacks:
             raise BuildFailure("[%s] not found in distro."%(s))
         seen.add(s)
-        v = distro.stacks[s].version
+        v = distro.released_stacks[s].version
         if not v:
             raise BuildFailure("[%s] has not been released (version-less)."%(s))
         # version-less entries are ignored
@@ -164,8 +164,8 @@ def compute_deps(distro, stack_name):
     # #3100: REMOVE THIS AROUND PHASE 3
     if distro.release_name == 'unstable':
         if stack_name not in ['ros', 'ros_comm'] and 'ros_comm' not in ordered_deps:
-            print "adding implicit dependency on ros_comm, %s"%(distro.stacks['ros_comm'].version)
-            ordered_deps.append(('ros_comm', distro.stacks['ros_comm'].version))
+            print "adding implicit dependency on ros_comm, %s"%(distro.released_stacks['ros_comm'].version)
+            ordered_deps.append(('ros_comm', distro.released_stacks['ros_comm'].version))
     # END #3100
     return ordered_deps
 
@@ -176,7 +176,7 @@ def create_chroot(distro, distro_name, os_platform, arch):
     if os.path.exists(distro_tgz):
         return
 
-    ros_info = load_info('ros', distro.stacks['ros'].version)
+    ros_info = load_info('ros', distro.released_stacks['ros'].version)
 
     # Things that this build infrastructure depends on
     basedeps = ['wget', 'lsb-release', 'debhelper']
@@ -354,7 +354,7 @@ reprepro -b /var/packages/ros-shadow/ubuntu -V processincoming %(os_platform)s
 def build_debs(distro, stack_name, os_platform, arch, staging_dir, force, noupload, interactive):
     distro_name = distro.release_name
 
-    if stack_name != 'ALL' and stack_name not in distro.stacks:
+    if stack_name != 'ALL' and stack_name not in distro.released_stacks:
         raise BuildFailure("stack [%s] not found in distro [%s]."%(stack_name, distro_name))
 
     # Create the environment where we build the debs, if necessary

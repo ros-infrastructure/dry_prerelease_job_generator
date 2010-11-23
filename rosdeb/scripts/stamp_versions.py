@@ -131,8 +131,8 @@ def rewrite_control_file(control_file, distro_name, distro, stack_name, stack_ve
         pkg = pkg.strip()
         if pkg[:len(distro_prefix)] == distro_prefix:
             pkg_strip = pkg[len(distro_prefix):].replace('-','_')
-            if pkg_strip in distro.stacks:
-                pkg_ver = distro.stacks[pkg_strip].version
+            if pkg_strip in distro.released_stacks:
+                pkg_ver = distro.released_stacks[pkg_strip].version
                 pkg_deb_ver = debianize_version(pkg_ver, distro.version, os_platform)
                 
                 locked_depends.append(pkg+' (= %s)'%pkg_deb_ver)
@@ -237,9 +237,9 @@ def create_meta_pkg(packagelist, distro, distro_name, metapackage, deps, os_plat
     missing = False
 
     for stack in deps:
-        if stack in distro.stacks:
+        if stack in distro.released_stacks:
             stack_deb_name = "ros-%s-%s"%(distro_name, stack.replace('_','-'))
-            stack_ver = distro.stacks[stack].version
+            stack_ver = distro.released_stacks[stack].version
             stack_deb_ver = debianize_version(stack_ver, distro.version, os_platform)
             if stack_deb_name in packagelist:
                 locked_depends.append(stack_deb_name+' (= %s)'%stack_deb_ver)
@@ -340,7 +340,7 @@ def stamp_debs(distro, os_platform, arch, staging_dir, force=False):
     missing_ok = missing_excluded.union(missing_excluded_dep)
 
     # Build the new debs
-    for (sn,s) in distro.stacks.iteritems():
+    for (sn,s) in distro.released_stacks.iteritems():
         sv = s.version
         if not sv:
             # not released
