@@ -233,7 +233,6 @@ def create_post_release_configs(rosdistro, stack):
             if name == gold_job:
                 time_trigger = '0 3 * * *'
                 job_children = ', '.join(gold_children)
-
             hudson_config = HUDSON_POST_RELEASE_CONFIG
             hudson_config = hudson_config.replace('UBUNTUDISTRO', ubuntudistro)
             hudson_config = hudson_config.replace('ARCH', arch)
