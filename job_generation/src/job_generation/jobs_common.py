@@ -1,4 +1,6 @@
 #!/usr/bin/python
+import rosdistro
+import yaml
 
 ROSDISTRO_FOLDER_MAP = {'unstable': 'https://code.ros.org/svn/release/trunk/distros',
                         'cturtle': 'https://code.ros.org/svn/release/trunk/distros',
@@ -31,31 +33,8 @@ def stacks_to_debs(stack_list, rosdistro):
     return ' '.join([stack_to_deb(s, rosdistro) for s in stack_list])
 
 def stack_to_rosinstall(stack, branch):
-    vcs = stack.vcs_config
-    if not branch in ['devel', 'release', 'distro']:
-        print 'Unsupported branch type %s for stack %s'%(branch, stack.name)
-        return ''
-    if not vcs.type in ['svn', 'hg']:
-        print 'Unsupported vcs type %s for stack %s'%(vcs.type, stack.name)
-        return ''
-        
-    if vcs.type == 'svn':
-        if branch == 'devel':
-            return "- svn: {uri: '%s', local-name: '%s'}\n"%(vcs.anon_dev, stack.name)
-        elif branch == 'distro':
-            return "- svn: {uri: '%s', local-name: '%s'}\n"%(vcs.anon_distro_tag, stack.name)            
-
-        elif branch == 'release':
-            return "- svn: {uri: '%s', local-name: '%s'}\n"%(vcs.anon_release_tag, stack.name)  
-
-    elif vcs.type == 'hg':
-        if branch == 'devel':
-            return "- hg: {uri: '%s', version: '%s', local-name: '%s'}\n"%(vcs.repo_uri, vcs.dev_branch, stack.name)
-        elif branch == 'distro':
-            return "- hg: {uri: '%s', version: '%s', local-name: '%s'}\n"%(vcs.repo_uri, vcs.distro_tag, stack.name)
-        elif branch == 'release':
-            return "- hg: {uri: '%s', version: '%s', local-name: '%s'}\n"%(vcs.repo_uri, vcs.release_tag, stack.name)
-
+    ri = rosdistro.stack_to_rosinstall(stack, branch)
+    return yaml.dump(ri)
 
 
 def stacks_to_rosinstall(stack_list, stack_map, branch):
