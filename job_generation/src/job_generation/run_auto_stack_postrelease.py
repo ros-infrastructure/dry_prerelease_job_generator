@@ -74,9 +74,10 @@ def main():
 
 
     # Install Debian packages of ALL stacks in distro
-    print 'Installing all stacks of ros distro %s: %s'%(options.rosdistro, str(rosdistro_obj.stacks.keys()))
-    for stack in rosdistro_obj.stacks:
+    print 'Installing all released stacks of ros distro %s: %s'%(options.rosdistro, str(rosdistro_obj.released_stacks.keys()))
+    for stack in rosdistro_obj.released_stacks:
         subprocess.Popen(('sudo apt-get install %s --yes'%(stack_to_deb(stack, options.rosdistro))).split(' ')).communicate()
+
     
 
     # Install all stacks that depend on this stack
@@ -86,12 +87,16 @@ def main():
     if res == '':
         print 'No stack depends on %s, finishing test.'%options.stack
         return 0
-    rosinstall = stacks_to_rosinstall(res.split('\n'), rosdistro_obj.stacks, 'distro')
+    rosinstall = stacks_to_rosinstall(res.split('\n'), rosdistro_obj.released_stacks, 'distro')
     print 'Running rosinstall on "%s"'%rosinstall
     rosinstall_file = '%s.rosinstall'%DEPENDS_ON_DIR
     with open(rosinstall_file, 'w') as f:
         f.write(rosinstall)
     subprocess.Popen(('rosinstall %s /opt/ros/%s %s'%(DEPENDS_ON_DIR, options.rosdistro, rosinstall_file)).split(' ')).communicate()
+
+    # Remove stacks that depend on this stack from Debians
+    print 'Removing all stack from Debian that depend on this stack'
+    subprocess.Popen(('sudo apt-get remove %s --yes'%stack_to_deb(options.stack, options.rosdistro)).split(' ')).communicate()
 
 
     # Run hudson helper for all stacks

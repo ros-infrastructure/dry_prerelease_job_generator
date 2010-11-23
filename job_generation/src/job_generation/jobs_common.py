@@ -12,8 +12,8 @@ ROSDISTRO_MAP = {'unstable': 'https://code.ros.org/svn/release/trunk/distros/uns
 ARCHES = ['amd64', 'i386']
 
 # ubuntu distro mapping to ros distro
-UBUNTU_DISTRO_MAP = {'unstable': ['lucid'],
-                     'cturtle':  ['lucid', 'karmic', 'jaunty'],
+UBUNTU_DISTRO_MAP = {'unstable': ['lucid', 'maverick'],
+                     'cturtle':  ['lucid', 'karmic', 'jaunty', 'maverick'],
                      'boxturtle':['hardy','karmic', 'jaunty']}
 
 # path to hudson server
@@ -63,5 +63,7 @@ def stacks_to_rosinstall(stack_list, stack_map, branch):
     for s in stack_list:
         if s in stack_map:
             res += stack_to_rosinstall(stack_map[s], branch)
+        else:
+            print 'Stack "%s" is not in stack list. Not adding this stack to rosinstall file'%s
     return res
     

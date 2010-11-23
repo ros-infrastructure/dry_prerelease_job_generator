@@ -233,7 +233,6 @@ def create_post_release_configs(rosdistro, stack):
             if name == gold_job:
                 time_trigger = '0 3 * * *'
                 job_children = ', '.join(gold_children)
-
             hudson_config = HUDSON_POST_RELEASE_CONFIG
             hudson_config = hudson_config.replace('UBUNTUDISTRO', ubuntudistro)
             hudson_config = hudson_config.replace('ARCH', arch)
@@ -242,7 +241,7 @@ def create_post_release_configs(rosdistro, stack):
             hudson_config = hudson_config.replace('HUDSON_VCS', hudson_vcs)
             hudson_config = hudson_config.replace('TIME_TRIGGER', time_trigger)
             hudson_config = hudson_config.replace('JOB_CHILDREN', job_children)
-            hudson_config = hudson_config.replace('EMAIL', 'wim+hudson_auto_stack@willowgarage.com')
+            hudson_config = hudson_config.replace('EMAIL', 'wim+released@willowgarage.com')
             configs[name] = hudson_config
     return configs
 
@@ -253,6 +252,8 @@ def main():
     parser = optparse.OptionParser()
     parser.add_option('--delete', dest = 'delete', default=False, action='store_true',
                       help='Delete jobs from Hudson')    
+    parser.add_option('--start', dest = 'start', default=False, action='store_true',
+                      help='Start jobs')    
     parser.add_option('--stack', dest = 'stacks', action='append',
                       help="Specify the stacks to operate on (defaults to all stacks)")
     parser.add_option('--rosdistro', dest = 'rosdistro', action='store', default='cturtle',
@@ -281,9 +282,9 @@ def main():
     if options.stacks:
         stack_list = options.stacks
     else:
-        stack_list = distro_obj.stacks
+        stack_list = distro_obj.released_stacks
     for stack_name in stack_list:
-        post_release_configs.update(create_post_release_configs(distro_obj.release_name, distro_obj.stacks[stack_name]))
+        post_release_configs.update(create_post_release_configs(distro_obj.release_name, distro_obj.released_stacks[stack_name]))
 
 
     # send post_release tests to Hudson
@@ -305,6 +306,10 @@ def main():
         elif not exists:
             hudson_instance.create_job(job_name, post_release_configs[job_name])
             print "Creating new job %s"%job_name
+
+        # start job
+        if options.start:
+            hudson_instance.build_job(job_name)
 
 if __name__ == '__main__':
     main()

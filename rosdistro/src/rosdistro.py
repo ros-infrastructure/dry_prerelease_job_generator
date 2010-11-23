@@ -68,7 +68,8 @@ def distro_version(version_val):
 
 def expand_rule(rule, stack_name, stack_ver, release_name, revision=None):
     s = rule.replace('$STACK_NAME', stack_name)
-    s =    s.replace('$STACK_VERSION', stack_ver)
+    if stack_ver:
+        s = s.replace('$STACK_VERSION', stack_ver)
     s =    s.replace('$RELEASE_NAME', release_name)
     if s.find('$REVISION') > 0 and not revision:
         raise DistroException("revision specified but not supplied by build_release")
@@ -213,6 +214,7 @@ def get_rules(distro, stack_name):
         raise Exception("cannot load _rules")
     return props
         
+
 def load_distro_stacks(distro_doc, stack_names, release_name=None, version=None):
     """
     @param distro_doc: dictionary form of rosdistro file
@@ -245,7 +247,7 @@ def load_distro_stacks(distro_doc, stack_names, release_name=None, version=None)
         if stack_name[0] == '_':
             continue
 
-        stack_version = stack_props[stack_name].get('version', 'unversioned')
+        stack_version = stack_props[stack_name].get('version', None)
         rules = get_rules(distro_doc, stack_name)
         stacks[stack_name] = DistroStack(stack_name, rules, stack_version, release_name, version)
     return stacks
@@ -261,6 +263,8 @@ class DistroStack(object):
         self._rules = rules
         
         self.update_version(stack_version)
+        self.repo = rules.get('repo', None)
+
 
     def update_version(self, stack_version):
         rules = self._rules
@@ -344,7 +348,8 @@ class Distro(object):
 
         self.ros = None
         self.stacks = {} # {str: DistroStack}
-        self.stack_names = [] 
+        self.stack_names = []
+        self.released_stacks = {}  # {str: DistroStack}
         self.variants = {}
         self.distro_props = None
 
@@ -399,4 +404,105 @@ class Distro(object):
             raise DistroException("this program assumes that ros is in your variant")
 
         self.stacks = load_distro_stacks(self.distro_props, self.stack_names, release_name=self.release_name, version=self.version)
+        for s, obj in self.stacks.iteritems():
+            if obj.version:
+                self.released_stacks[s] = obj
         self.ros = self.stacks.get('ros', None)
+
+
+# TODO Ken's suggested restructuring template
+#mappings_dvcs = {}
+#vcs_maps = {
+#    'svn-anon': mappings_svn_anon,
+#    'svn': mappings_svn,
+#    'git': mappings_dvcs,
+#    'hg': mappings_dvcs,
+#}
+#if vcs.type == 'svn':
+#    if anon:
+#        mapping
+#else:
+#    mappigns = vcs_maps[vcs.type]
+#uri = getattr(vcs, d[branch])
+
+def stack_to_rosinstall(stack, branch, anonymous=True):
+    """
+    Generate the rosinstall dictionary entry for a stack in the rosdistro
+    @param stack A DistroStack for a particular stack
+    @param branch Select the branch or tag from 'devel', 'release' or 'distro' of the stack to checkout
+    @param anonymous For svn use anonymous access url. ( It usually doesn't have write permissions. )
+    """
+    result = []
+
+    uri = None
+    version = None
+
+    vcs = stack.vcs_config
+    if not branch in ['devel', 'release', 'distro']:
+        raise DistroException('Unsupported branch type %s for stack %s'%(branch, stack.name))
+
+    if not vcs.type in ['svn', 'hg', 'bzr', 'git']:
+        raise DistroException( 'Unsupported vcs type %s for stack %s'%(vcs.type, stack.name))
+        
+    if vcs.type == 'svn':
+        if branch == 'devel':
+            if anonymous: 
+                uri = vcs.anon_dev
+            else:
+                uri = vcs.dev
+            #return "- svn: {uri: '%s', local-name: '%s'}\n"%(vcs.anon_dev, stack.name)
+        elif branch == 'distro':
+            if anonymous: 
+                uri = vcs.anon_distro_tag
+            else:
+                uri = vcs.distro_tag
+        elif branch == 'release':
+            if anonymous: 
+                uri = vcs.anon_release_tag
+            else:
+                uri = vcs.release_tag
+
+    else:#if vcs.type == 'hg' or vcs.type == 'git' or vcs.type == 'bzr':
+        uri = vcs.repo_uri
+        if branch == 'devel':
+            version = vcs.dev_branch
+        elif branch == 'distro':
+            version = vcs.distro_tag
+        elif branch == 'release':
+            version = vcs.release_tag
+
+
+    if version:
+        result.append({vcs.type: {"uri": uri, 'local-name': stack.name, 'version': version} } )
+    else:
+        result.append({vcs.type: {"uri": uri, 'local-name': stack.name} } )
+    return result
+
+def variant_to_rosinstall(variant_name, distro, branch, anonymous=True):
+    rosinstall_dict = []
+    variant = distro.variants.get(variant_name, None)
+    if not variant:
+        return []
+    for s in variant.props['stacks']:
+        if s in distro.released_stacks:
+            rosinstall_dict.extend(stack_to_rosinstall(distro.stacks[s], branch, anonymous))
+    return rosinstall_dict
+
+def extended_variant_to_rosinstall(variant_name, distro, branch, anonymous=True):
+    rosinstall_dict = []
+    variant = distro.variants.get(variant_name, None)
+    if not variant:
+        return []
+    for s in variant.stack_names:
+        if s in distro.released_stacks:
+            rosinstall_dict.extend(stack_to_rosinstall(distro.stacks[s], branch, anonymous))
+    return rosinstall_dict
+
+
+def distro_to_rosinstall(distro, branch, anonymous=True):
+    rosinstall_dict = []
+    for s in distro.released_stacks.itervalues():
+        rosinstall_dict.extend(stack_to_rosinstall(s, branch, anonymous))
+    return rosinstall_dict
+
+

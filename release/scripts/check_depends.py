@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # Software License Agreement (BSD License)
 #
 # Copyright (c) 2010, Willow Garage, Inc.
@@ -30,10 +31,43 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 #
-"""
-Library for tools that need to interact with ROS-support version control systems.
+# Revision $Id: rosutil.py 11648 2010-10-21 04:43:34Z tfoote $
+# $Author: tfoote $
 
-New in ROS C-Turtle.
-"""
+import roslib; roslib.load_manifest('rosdeb')
+import os
+import sys
 
-from legacy_vcs import *
+import roslib.stacks
+from rosdeb.targets import os_platform
+from rosdeb.rosutil import missing_stack_rosdeps
+
+def usage():
+    print """Usage: check_depends.py <stack-name> <distro>"""
+    sys.exit(os.EX_USAGE)
+    
+def print_missing(stack_name, release_name):
+    d = roslib.stacks.get_stack_dir(stack_name)
+    targets = os_platform[release_name]
+    print "Targets: %s"%(', '.join(targets))
+    bad = False
+    for platform in targets:
+        missing = missing_stack_rosdeps(stack_name, d, platform)
+        for p, l in missing.iteritems():
+            if l:
+                if not bad:
+                    print "\nMissing:"
+                print "[%s][%s]: %s"%(p,platform, ','.join(l))
+                bad = True
+    return bad
+    
+def check_depends_main():
+    if len(sys.argv) != 3:
+        usage()
+    stack_name, release_name = sys.argv[1:]
+    if print_missing(stack_name, release_name):
+        sys.exit(1)
+    
+if __name__ == '__main__':
+    check_depends_main()
+    

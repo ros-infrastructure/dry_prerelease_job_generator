@@ -87,8 +87,7 @@ def load_info(stack_name, stack_version):
             _distro_yaml_cache[url] = l = yaml.load(urllib2.urlopen(url))
             return l
     except:
-        print >> sys.stderr, "Problem fetching yaml info for %s %s (%s)"%(stack_name, stack_version, url)
-        sys.exit(1)
+        raise Exception("Problem fetching yaml info for %s %s (%s)"%(stack_name, stack_version, url))
 
 def compute_deps(distro, stack_name):
 
@@ -103,9 +102,15 @@ def compute_deps(distro, stack_name):
             sys.exit(1)
         seen.add(s)
         v = distro.stacks[s].version
-        si = load_info(s, v)
-        for d in si['depends']:
-            add_stack(d)
+        try:
+            si = load_info(s, v)
+            for d in si['depends']:
+                add_stack(d)
+        except Exception, e:
+            # this is a soft-fail. If the load_info fails, it means
+            # the stack is missing. We will detect it missing
+            # elsewhere.
+            print >> sys.stderr, str(e)
         ordered_deps.append((s,v))
 
     if stack_name == 'ALL':
@@ -145,11 +150,19 @@ def get_missing(distro, os_platform, arch):
 
     # Build the deps in order
     for (sn, sv) in deps:
+        if not sv:
+            missing_primary.add(sn)
+            continue
         deb_name = "ros-%s-%s"%(distro_name, debianize_name(sn))
         deb_version = debianize_version(sv, '0', os_platform)
         if not deb_in_repo(SHADOW_REPO, deb_name, deb_version, os_platform, arch):
-            si = load_info(sn, sv)
-            depends = set(si['depends'])
+            try:
+                si = load_info(sn, sv)
+                depends = set(si['depends'])
+            except:
+                # stack is missing, including its info
+                depends = set()
+                
             if excludes.check(sn):
                 missing_excluded.add(sn)
                 missing_primary.add(sn)
