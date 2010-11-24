@@ -29,6 +29,10 @@ def local_check_call(cmd, display_output=False):
         if not l:
             break
         print l, ##extra comma because lines already have \n.  I"m assuming this is lower overhead than l.strip()
+
+    if p.returncode == None:
+        print "stdout finished but process not exited!!!"
+        p.communicate()
     if p.returncode != 0:
         raise subprocess.CalledProcessError(p.returncode, cmd)
 
