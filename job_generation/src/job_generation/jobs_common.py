@@ -35,7 +35,7 @@ def stack_to_rosinstall(stack, branch):
     if not branch in ['devel', 'release', 'distro']:
         print 'Unsupported branch type %s for stack %s'%(branch, stack.name)
         return ''
-    if not vcs.type in ['svn', 'hg']:
+    if not vcs.type in ['svn', 'hg', 'git']:
         print 'Unsupported vcs type %s for stack %s'%(vcs.type, stack.name)
         return ''
         
@@ -48,13 +48,13 @@ def stack_to_rosinstall(stack, branch):
         elif branch == 'release':
             return "- svn: {uri: '%s', local-name: '%s'}\n"%(vcs.anon_release_tag, stack.name)  
 
-    elif vcs.type == 'hg':
+    elif vcs.type == 'hg' or vcs.type =='git':
         if branch == 'devel':
-            return "- hg: {uri: '%s', version: '%s', local-name: '%s'}\n"%(vcs.repo_uri, vcs.dev_branch, stack.name)
+            return "- %s: {uri: '%s', version: '%s', local-name: '%s'}\n"%(vcs.type, vcs.repo_uri, vcs.dev_branch, stack.name)
         elif branch == 'distro':
-            return "- hg: {uri: '%s', version: '%s', local-name: '%s'}\n"%(vcs.repo_uri, vcs.distro_tag, stack.name)
+            return "- %s: {uri: '%s', version: '%s', local-name: '%s'}\n"%(vcs.type, vcs.repo_uri, vcs.distro_tag, stack.name)
         elif branch == 'release':
-            return "- hg: {uri: '%s', version: '%s', local-name: '%s'}\n"%(vcs.repo_uri, vcs.release_tag, stack.name)
+            return "- %s: {uri: '%s', version: '%s', local-name: '%s'}\n"%(vcs.type, vcs.repo_uri, vcs.release_tag, stack.name)
 
 
 
