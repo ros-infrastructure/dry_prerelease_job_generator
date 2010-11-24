@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+1;2305;0c#!/usr/bin/env python
 
 import subprocess
 import os, sys
@@ -29,6 +29,8 @@ def local_check_call(cmd, display_output=False):
         if not l:
             break
         print l, ##extra comma because lines already have \n.  I"m assuming this is lower overhead than l.strip()
+    if p.returncode != 0:
+        raise CalledProcessError("%s failed"%cmd)
 
 def local_call(cmd, display_output=False):
     if not display_output:
