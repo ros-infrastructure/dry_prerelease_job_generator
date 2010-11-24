@@ -45,6 +45,7 @@ cd \$INSTALL_DIR
 wget  --no-check-certificate http://code.ros.org/svn/ros/installers/trunk/hudson/hudson_helper 
 chmod +x hudson_helper
 svn co https://code.ros.org/svn/ros/stacks/ros_release/trunk ros_release
+sudo apt-get install git-core mercurial -y
 ./ros_release/job_generation/src/job_generation/run_auto_stack_prereleaseDEVEL.py STACKARGS --rosdistro ROSDISTRO --repeat REPEAT
 
 echo "_________________________________END SCRIPT_______________________________________"
