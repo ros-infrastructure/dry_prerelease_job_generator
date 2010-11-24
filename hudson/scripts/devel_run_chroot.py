@@ -30,7 +30,7 @@ def local_check_call(cmd, display_output=False):
             break
         print l, ##extra comma because lines already have \n.  I"m assuming this is lower overhead than l.strip()
     if p.returncode != 0:
-        raise CalledProcessError("%s failed"%cmd)
+        raise subprocess.CalledProcessError("%s failed"%cmd)
 
 def local_call(cmd, display_output=False):
     if not display_output:
