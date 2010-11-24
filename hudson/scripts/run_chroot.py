@@ -1,4 +1,4 @@
-1;2305;0c#!/usr/bin/env python
+#!/usr/bin/env python
 
 import subprocess
 import os, sys
