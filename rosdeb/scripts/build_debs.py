@@ -61,7 +61,7 @@ import stamp_versions
 
 NAME = 'build_debs.py' 
 TARBALL_URL = "https://code.ros.org/svn/release/download/stacks/%(stack_name)s/%(base_name)s/%(f_name)s"
-SHADOW_REPO="http://code.ros.org/packages/ros-shadow/"
+SHADOW_REPO="http://packages.ros.org/ros-shadow/"
 
 import traceback
 
@@ -196,7 +196,7 @@ def create_chroot(distro, distro_name, os_platform, arch):
 
     deplist = ' '.join(basedeps+rosdeps)
 
-    subprocess.check_call(['sudo', 'pbuilder', '--create', '--distribution', os_platform, '--debootstrapopts', '--arch=%s'%arch, '--othermirror', 'deb http://code.ros.org/packages/ros-shadow/ubuntu %s main'%(os_platform), '--basetgz', distro_tgz, '--components', 'main restricted universe multiverse', '--extrapackages', deplist])
+    subprocess.check_call(['sudo', 'pbuilder', '--create', '--distribution', os_platform, '--debootstrapopts', '--arch=%s'%arch, '--othermirror', 'deb http://packages.ros.org/ros-shadow/ubuntu %s main'%(os_platform), '--basetgz', distro_tgz, '--components', 'main restricted universe multiverse', '--extrapackages', deplist])
 
 
 def do_deb_build(distro_name, stack_name, stack_version, os_platform, arch, staging_dir, noupload, interactive):
@@ -318,15 +318,15 @@ dpkg -l %(deb_name)s
         base_files = [deb_file + x for x in ['_%s.deb'%(arch), '_%s.changes'%(arch)]]
         files = [os.path.join(results_dir, x) for x in base_files]
     
-        print "uploading debs for %s-%s to pub5"%(stack_name, stack_version)
-        subprocess.check_call(['scp'] + files + ['rosbuild@pub5:/var/packages/ros-shadow/ubuntu/incoming/%s'%os_platform])
+        print "uploading debs for %s-%s to pub8"%(stack_name, stack_version)
+        subprocess.check_call(['scp'] + files + ['rosbuild@pub8:/var/packages/ros-shadow/ubuntu/incoming/%s'%os_platform])
 
         # Assemble string for moving all files from incoming to queue (while lock is being held)
         move_str = '\n'.join(['mv '+os.path.join('/var/packages/ros-shadow/ubuntu/incoming',os_platform,x)+' '+os.path.join('/var/packages/ros-shadow/ubuntu/queue',os_platform,x) for x in base_files])
 
         # This script moves files into queue directory, removes all dependent debs, removes the existing deb, and then processes the incoming files
         remote_cmd = "TMPFILE=`mktemp` || exit 1 && cat > ${TMPFILE} && chmod +x ${TMPFILE} && ${TMPFILE}; ret=${?}; rm ${TMPFILE}; exit ${ret}"
-        run_script = subprocess.Popen(['ssh', 'rosbuild@pub5', remote_cmd], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        run_script = subprocess.Popen(['ssh', 'rosbuild@pub8', remote_cmd], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         invalidate = [deb_name] + get_depends(deb_name, os_platform, arch)
         invalidate_cmds = ["reprepro -b /var/packages/ros-shadow/ubuntu -V -A %(arch)s removefilter %(os_platform)s 'Package (==%(deb_name_x)s)'"%locals() for deb_name_x in  invalidate]
         invalidate_str = "\n".join(invalidate_cmds)

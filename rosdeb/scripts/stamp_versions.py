@@ -180,7 +180,7 @@ def do_download_and_fix(packagelist, distro, distro_name, stack_name, stack_vers
 
             dest = os.path.join(workdir, f_name)
 
-            url = "http://code.ros.org/packages/%s/ubuntu/%s"%(SOURCE_REPO,packagelist[deb_name]['Filename'])
+            url = "http://packages.ros.org/%s/ubuntu/%s"%(SOURCE_REPO,packagelist[deb_name]['Filename'])
             conn = urllib.urlopen(url)
             if conn.getcode() != 200:
                 print >> sys.stderr, "%d problem downloading: %s"%(conn.getcode(), url)
@@ -278,7 +278,7 @@ Description: Meta package for %(metapackage)s variant of ROS.
 
 def upload_debs(files,distro_name,os_platform,arch):
 
-    subprocess.check_call(['scp'] + files + ['rosbuild@pub5:/var/packages/%s/ubuntu/incoming/%s'%(DEST_REPO,os_platform)])
+    subprocess.check_call(['scp'] + files + ['rosbuild@pub8:/var/packages/%s/ubuntu/incoming/%s'%(DEST_REPO,os_platform)])
 
     base_files = [x.split('/')[-1] for x in files]
 
@@ -291,7 +291,7 @@ def upload_debs(files,distro_name,os_platform,arch):
 
     # This script moves files into queue directory, removes all dependent debs, removes the existing deb, and then processes the incoming files
     remote_cmd = "TMPFILE=`mktemp` || exit 1 && cat > ${TMPFILE} && chmod +x ${TMPFILE} && ${TMPFILE}; ret=${?}; rm ${TMPFILE}; exit ${ret}"
-    run_script = subprocess.Popen(['ssh', 'rosbuild@pub5', remote_cmd], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    run_script = subprocess.Popen(['ssh', 'rosbuild@pub8', remote_cmd], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     script_content = """
 #!/bin/bash
 set -o errexit
@@ -327,7 +327,7 @@ def stamp_debs(distro, os_platform, arch, staging_dir, force=False):
     distro_name = distro.release_name
 
     # Retrieve the package list from the shadow repo
-    packageurl="http://code.ros.org/packages/ros-shadow/ubuntu/dists/%(os_platform)s/main/binary-%(arch)s/Packages"%locals()
+    packageurl="http://packages.ros.org/ros-shadow/ubuntu/dists/%(os_platform)s/main/binary-%(arch)s/Packages"%locals()
     packagetxt = urllib2.urlopen(packageurl).read()
     packagelist = parse_deb_packages(packagetxt)
 

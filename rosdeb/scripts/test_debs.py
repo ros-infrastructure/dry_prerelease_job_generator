@@ -55,8 +55,8 @@ from rosdeb.core import ubuntu_release, debianize_name, debianize_version, platf
 
 NAME = 'build_debs.py' 
 TARBALL_URL = "https://code.ros.org/svn/release/download/stacks/%(stack_name)s/%(base_name)s/%(f_name)s"
-SHADOW_REPO="http://code.ros.org/packages/ros-shadow/"
-SHADOW_REPO_FIXED="http://code.ros.org/packages/ros-shadow/"
+SHADOW_REPO="http://packages.ros.org/ros-shadow/"
+SHADOW_REPO_FIXED="http://packages.ros.org/ros-shadow/"
 
 import traceback
 
@@ -135,7 +135,7 @@ def create_chroot(distro, distro_name, os_platform, arch):
 
     deplist = ' '.join(basedeps+ros_info['rosdeps'][os_platform])
 
-    subprocess.check_call(['sudo', 'pbuilder', '--create', '--distribution', os_platform, '--debootstrapopts', '--arch=%s'%arch, '--othermirror', 'deb http://code.ros.org/packages/ros-shadow/ubuntu %s main'%(os_platform), '--basetgz', distro_tgz, '--components', 'main restricted universe multiverse', '--extrapackages', deplist])
+    subprocess.check_call(['sudo', 'pbuilder', '--create', '--distribution', os_platform, '--debootstrapopts', '--arch=%s'%arch, '--othermirror', 'deb http://packages.ros.org/ros-shadow/ubuntu %s main'%(os_platform), '--basetgz', distro_tgz, '--components', 'main restricted universe multiverse', '--extrapackages', deplist])
 
 
 
@@ -192,7 +192,7 @@ echo "Resuming pbuilder"
 
     verify_txt="""#!/bin/bash
 set -o errexit
-echo "deb http://code.ros.org/packages/ros-shadow-fixed/ubuntu %(os_platform)s main" > /etc/apt/sources.list.d/ros-shadow-fixed.list
+echo "deb http://packages.ros.org/ros-shadow-fixed/ubuntu %(os_platform)s main" > /etc/apt/sources.list.d/ros-shadow-fixed.list
 wget https://code.ros.org/svn/ros/stacks/ros_release/trunk/rosdeb/resources/test_debs/test-nobuild.patch -O /tmp/test-nobuild.patch
 apt-get update
 apt-get install %(deb_name)s -y --force-yes
