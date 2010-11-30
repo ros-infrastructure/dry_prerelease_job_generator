@@ -128,7 +128,7 @@ def load_sys_args():
         parser.error("""You must specify: 
  * stack name (e.g. common_msgs)
  * version (e.g. 1.0.1)
- * distro release name (e.g. cturtle.rosdistro)""")
+ * distro release name (e.g. cturtle)""")
     name, version, release_name = args
     distro_file = os.path.join(pkg_dir, '..', 'distros', '%s.rosdistro'%(release_name))
     distro_file = os.path.abspath(distro_file)
