@@ -123,7 +123,12 @@ def main():
     rosinstall_file = '%s.rosinstall'%DEPENDS_ON_DIR
     with open(rosinstall_file, 'w') as f:
         f.write(rosinstall)
-    subprocess.Popen(('rosinstall %s /opt/ros/%s %s'%(DEPENDS_ON_DIR, options.rosdistro, rosinstall_file)).split(' ')).communicate()
+    helper = subprocess.Popen(('rosinstall %s /opt/ros/%s %s'%(DEPENDS_ON_DIR, options.rosdistro, rosinstall_file)).split(' '))
+    helper.communicate()
+    if helper.returncode != 0:
+        print 'Failed to do a source install of the depends-on stacks.'
+        return helper.returncode
+    
 
     # Remove stacks that depend on this stack from Debians
     print 'Removing all stacks from Debian that depend on these stacks'
