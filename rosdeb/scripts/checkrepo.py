@@ -114,14 +114,14 @@ def get_deb_packages(uri):
 
 # for testing purposes
 urls = [
-    'http://code.ros.org/packages/ros/ubuntu/dists/hardy/main/binary-amd64/Packages',
-    'http://code.ros.org/packages/ros/ubuntu/dists/hardy/main/binary-i386/Packages',
-    'http://code.ros.org/packages/ros/ubuntu/dists/jaunty/main/binary-amd64/Packages',
-    'http://code.ros.org/packages/ros/ubuntu/dists/jaunty/main/binary-i386/Packages',
-    'http://code.ros.org/packages/ros/ubuntu/dists/karmic/main/binary-amd64/Packages',
-    'http://code.ros.org/packages/ros/ubuntu/dists/karmic/main/binary-i386/Packages',
-    'http://code.ros.org/packages/ros/ubuntu/dists/lucid/main/binary-amd64/Packages',
-    'http://code.ros.org/packages/ros/ubuntu/dists/lucid/main/binary-i386/Packages',
+    'http://packages.ros.org/ros/ubuntu/dists/hardy/main/binary-amd64/Packages',
+    'http://packages.ros.org/ros/ubuntu/dists/hardy/main/binary-i386/Packages',
+    'http://packages.ros.org/ros/ubuntu/dists/jaunty/main/binary-amd64/Packages',
+    'http://packages.ros.org/ros/ubuntu/dists/jaunty/main/binary-i386/Packages',
+    'http://packages.ros.org/ros/ubuntu/dists/karmic/main/binary-amd64/Packages',
+    'http://packages.ros.org/ros/ubuntu/dists/karmic/main/binary-i386/Packages',
+    'http://packages.ros.org/ros/ubuntu/dists/lucid/main/binary-amd64/Packages',
+    'http://packages.ros.org/ros/ubuntu/dists/lucid/main/binary-i386/Packages',
     ]
 
 distros = [
