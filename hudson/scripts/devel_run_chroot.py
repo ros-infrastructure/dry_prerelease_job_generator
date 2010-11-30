@@ -173,6 +173,7 @@ class ChrootInstance:
         self.workspace_successfully_copied = False
         self.ssh_key_path = ssh_key_path
         self.use_wg_sources = use_wg_sources
+        self.hdd_remote_mount = ""
         self.hdd_tmp_dir = hdd_tmp_dir
         self.scratch_dir = scratch_dir
         self.debug_chroot = False # if enabled print to screen during setup and teardown
@@ -342,7 +343,7 @@ class ChrootInstance:
         with tempfile.NamedTemporaryFile() as tf:
             print "Adding code.ros.org as source"
             #tf.write("deb http://code.ros.org/packages/ros/ubuntu %s main\n" % self.distro)
-            tf.write("deb http://code.ros.org/packages/ros-shadow-fixed/ubuntu %s main\n" % self.distro)
+            tf.write("deb http://packages.ros.org/ros-shadow-fixed/ubuntu %s main\n" % self.distro)
             tf.flush()
             cmd = ['sudo', 'cp', tf.name, ros_source]
             print "Runing cmd", cmd

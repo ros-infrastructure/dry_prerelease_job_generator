@@ -29,6 +29,7 @@ def local_check_call(cmd, display_output=False):
         if not l:
             break
         print l, ##extra comma because lines already have \n.  I"m assuming this is lower overhead than l.strip()
+
     if p.returncode == None:
         print "stdout finished but process not exited!!!"
         p.communicate()
@@ -172,8 +173,8 @@ class ChrootInstance:
         self.workspace_successfully_copied = False
         self.ssh_key_path = ssh_key_path
         self.use_wg_sources = use_wg_sources
-        self.hdd_tmp_dir = hdd_tmp_dir
         self.hdd_remote_mount = ""
+        self.hdd_tmp_dir = hdd_tmp_dir
         self.scratch_dir = scratch_dir
         self.debug_chroot = False # if enabled print to screen during setup and teardown
 
@@ -342,7 +343,7 @@ class ChrootInstance:
         with tempfile.NamedTemporaryFile() as tf:
             print "Adding code.ros.org as source"
             #tf.write("deb http://code.ros.org/packages/ros/ubuntu %s main\n" % self.distro)
-            tf.write("deb http://code.ros.org/packages/ros-shadow-fixed/ubuntu %s main\n" % self.distro)
+            tf.write("deb http://packages.ros.org/ros-shadow-fixed/ubuntu %s main\n" % self.distro)
             tf.flush()
             cmd = ['sudo', 'cp', tf.name, ros_source]
             print "Runing cmd", cmd
@@ -690,7 +691,6 @@ try:
     if options.ramdisk:
         with TempRamFS(path, options.ramdisk_size):
             run_chroot(options, path, workspace, hdd_tmp_dir)
-
     else:
         run_chroot(options, path, workspace, hdd_tmp_dir)
     sys.exit(0)
