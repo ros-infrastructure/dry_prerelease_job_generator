@@ -71,12 +71,13 @@ def main():
     for stack in options.stacklist:
         with open('%s/%s/stack.xml'%(STACK_DIR, stack)) as stack_file:
             depends = stack_manifest.parse(stack_file.read()).depends
-            print 'Installing dependencies of %s: %s'%(stack, str(depends))
-        helper = subprocess.Popen(('sudo apt-get install %s --yes'%(stacks_to_debs(depends, options.rosdistro))).split(' '))
-        helper.communicate()
-        if helper.returncode != 0:
-            print 'Failed to install dependencies of stack %s: %s'%(stack, str(depends))
-            return helper.returncode
+        if len(depends) != 0:
+            print 'Installing debian packages of stack dependencies: %s'%str(depends)
+            res = subprocess.call(('sudo apt-get install %s --yes'%(stacks_to_debs(depends, options.rosdistro))).split(' '))
+            if res != 0:
+                return res
+        else:
+            print 'Stack %s does not have any dependencies, not installing any other debian packages'%stack
 
 
     # Install system dependencies
