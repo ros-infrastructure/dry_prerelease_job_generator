@@ -433,7 +433,9 @@ class ChrootInstance:
 
     def write_back_workspace(self):
         
-        print "unmounting workspace"
+        print "unmounting workspace %s"%self.ws_remote_path
+        self.call(['ls', self.ws_remote_path])
+
         self.call(['sudo', 'umount', '-f', self.ws_remote_path])
         #backwards compatability /tmp/ros
         self.call(['sudo', 'umount', '-f', os.path.join(self.ws_remote_path, "../ros")])       
