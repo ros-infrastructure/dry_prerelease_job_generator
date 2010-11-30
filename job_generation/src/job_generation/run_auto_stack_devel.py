@@ -52,11 +52,13 @@ def main():
     subprocess.Popen('sudo apt-get update'.split(' ')).communicate()
     with open('%s/stack.xml'%stack_dir) as stack_file:
         depends = stack_manifest.parse(stack_file.read()).depends
-    print 'Installing debian packages of stack dependencies: %s'%str(depends)        
-    helper = subprocess.Popen(('sudo apt-get install %s --yes'%(stacks_to_debs(depends, options.rosdistro))).split(' '))
-    helper.communicate()
-    if helper.returncode != 0:
-        return helper.returncode
+    if len(depends) != 0:
+        print 'Installing debian packages of stack dependencies: %s'%str(depends)        
+        res = subprocess.call(('sudo apt-get install %s --yes'%(stacks_to_debs(depends, options.rosdistro))).split(' '))
+        if res != 0:
+            return res
+    else:
+        print 'Stack does not have any dependencies, not installing any other debian packages'
 
     # Install system dependencies
     print 'Installing system dependencies'
@@ -68,10 +70,9 @@ def main():
     res = 0
     for r in range(0, options.repeat+1):
         env['ROS_TEST_RESULTS_DIR'] = os.environ['ROS_TEST_RESULTS_DIR']+'/run_'+str(r)
-        helper = subprocess.Popen(('./hudson_helper --dir-test %s build'%stack_dir).split(' '), env=env)
-        helper.communicate()
-        if helper.returncode != 0:
-            res = helper.returncode
+        res_one = subprocess.call(('./hudson_helper --dir-test %s build'%stack_dir).split(' '), env=env)
+        if res_one != 0:
+            res = res_one
     return res
 
 
