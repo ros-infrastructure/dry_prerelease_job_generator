@@ -126,7 +126,7 @@ def load_vcs_config(rules, rule_eval):
             r = rules['git']
 
         if not r:
-            raise NotImplementeException("Rules %s not implemented"%rules)
+            raise NotImplementedError("Rules %s not implemented"%rules)
 
         vcs_config.repo_uri      = rule_eval(r['uri'])
 
@@ -138,8 +138,8 @@ def load_vcs_config(rules, rule_eval):
         vcs_config.dev_branch    = rule_eval(r['dev-branch'])
         vcs_config.distro_tag    = rule_eval(r['distro-tag'])
         vcs_config.release_tag   = rule_eval(r['release-tag'])
-    else:
-        raise NotImplementeException("Rules %s not implemented"%rules)
+    #else:
+    #    raise NotImplementedError("Rules %s not implemented"%rules)
 
     return vcs_config
     
