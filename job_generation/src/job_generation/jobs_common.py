@@ -50,11 +50,11 @@ def stack_to_rosinstall(stack, branch):
 
     elif vcs.type == 'hg' or vcs.type =='git':
         if branch == 'devel':
-            return "- %s: {uri: '%s', version: '%s', local-name: '%s'}\n"%(vcs.type, vcs.repo_uri, vcs.dev_branch, stack.name)
+            return "- %s: {uri: '%s', version: '%s', local-name: '%s'}\n"%(vcs.type, vcs.anon_repo_uri, vcs.dev_branch, stack.name)
         elif branch == 'distro':
-            return "- %s: {uri: '%s', version: '%s', local-name: '%s'}\n"%(vcs.type, vcs.repo_uri, vcs.distro_tag, stack.name)
+            return "- %s: {uri: '%s', version: '%s', local-name: '%s'}\n"%(vcs.type, vcs.anon_repo_uri, vcs.distro_tag, stack.name)
         elif branch == 'release':
-            return "- %s: {uri: '%s', version: '%s', local-name: '%s'}\n"%(vcs.type, vcs.repo_uri, vcs.release_tag, stack.name)
+            return "- %s: {uri: '%s', version: '%s', local-name: '%s'}\n"%(vcs.type, vcs.anon_repo_uri, vcs.release_tag, stack.name)
 
 
 
