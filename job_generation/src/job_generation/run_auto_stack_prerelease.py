@@ -71,6 +71,8 @@ def main():
     for stack in options.stacklist:
         with open('%s/%s/stack.xml'%(STACK_DIR, stack)) as stack_file:
             depends = stack_manifest.parse(stack_file.read()).depends
+        for s in options.stacklist:  # remove stacks we are testing from dependency list, as debians might not yet exist
+            depends.remove(s)
         if len(depends) != 0:
             print 'Installing debian packages of stack dependencies: %s'%str(depends)
             res = subprocess.call(('sudo apt-get install %s --yes'%(stacks_to_debs(depends, options.rosdistro))).split(' '))
