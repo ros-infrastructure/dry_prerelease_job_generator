@@ -138,7 +138,7 @@ def load_vcs_config(rules, rule_eval):
         vcs_config.dev_branch    = rule_eval(r['dev-branch'])
         vcs_config.distro_tag    = rule_eval(r['distro-tag'])
         vcs_config.release_tag   = rule_eval(r['release-tag'])
-    #else:
+    #else: Required until legacy support for 'dev' rules are dropped.
     #    raise NotImplementedError("Rules %s not implemented"%rules)
 
     return vcs_config
