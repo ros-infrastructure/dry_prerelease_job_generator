@@ -113,23 +113,34 @@ def load_vcs_config(rules, rule_eval):
             vcs_config.anon_release_tag = vcs_config.release_tag
             
             
-    elif 'hg' in rules:
-        import vcstools.hg
-        vcs_config = vcstools.hg.HGConfig()
+    elif 'hg' in rules or 'git' in rules:
+        r = None
+        if 'hg' in rules:
+            import vcstools.hg
+            vcs_config = vcstools.hg.HGConfig()
+            r = rules['hg']
 
-        vcs_config.repo_uri      = rule_eval(rules['hg']['uri'])
-        vcs_config.dev_branch    = rule_eval(rules['hg']['dev-branch'])
-        vcs_config.distro_tag    = rule_eval(rules['hg']['distro-tag'])
-        vcs_config.release_tag   = rule_eval(rules['hg']['release-tag'])
+        elif 'git' in rules:
+            import vcstools.git
+            vcs_config = vcstools.git.GITConfig()
+            r = rules['git']
 
-    elif 'git' in rules:
-        import vcstools.git
-        vcs_config = vcstools.git.GITConfig()
+        if not r:
+            raise NotImplementeException("Rules %s not implemented"%rules)
 
-        vcs_config.repo_uri      = rule_eval(rules['git']['uri'])
-        vcs_config.dev_branch    = rule_eval(rules['git']['dev-branch'])
-        vcs_config.distro_tag    = rule_eval(rules['git']['distro-tag'])
-        vcs_config.release_tag   = rule_eval(rules['git']['release-tag'])
+        print r
+        vcs_config.repo_uri      = rule_eval(r['uri'])
+
+        if 'anon-uri' in r:
+            vcs_config.anon_repo_uri      = rule_eval(r['anon-uri'])
+        else:
+            vcs_config.anon_repo_uri      = vcs_config.repo_uri
+
+        vcs_config.dev_branch    = rule_eval(r['dev-branch'])
+        vcs_config.distro_tag    = rule_eval(r['distro-tag'])
+        vcs_config.release_tag   = rule_eval(r['release-tag'])
+    else:
+        raise NotImplementeException("Rules %s not implemented"%rules)
 
     return vcs_config
     
@@ -463,7 +474,10 @@ def stack_to_rosinstall(stack, branch, anonymous=True):
                 uri = vcs.release_tag
 
     else:#if vcs.type == 'hg' or vcs.type == 'git' or vcs.type == 'bzr':
-        uri = vcs.repo_uri
+        if anonymous:
+            uri = vcs.anon_repo_uri
+        else:
+            uri = vcs.repo_uri
         if branch == 'devel':
             version = vcs.dev_branch
         elif branch == 'distro':

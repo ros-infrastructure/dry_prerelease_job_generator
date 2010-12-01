@@ -111,12 +111,14 @@ class HGConfig(object):
     def __init__(self):
         self.type = 'hg'
         self.repo_uri      = None
+        self.anon_repo_uri = None
         self.dev_branch    = None
         self.distro_tag    = None
         self.release_tag   = None
 
     def __eq__(self, other):
         return self.repo_uri == other.repo_uri and \
+            self.anon_repo_uri == other.anon_repo_uri and \
             self.dev_branch == other.dev_branch and \
             self.release_tag == other.release_tag and \
             self.distro_tag == other.distro_tag
