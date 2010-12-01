@@ -128,7 +128,6 @@ def load_vcs_config(rules, rule_eval):
         if not r:
             raise NotImplementeException("Rules %s not implemented"%rules)
 
-        print r
         vcs_config.repo_uri      = rule_eval(r['uri'])
 
         if 'anon-uri' in r:
