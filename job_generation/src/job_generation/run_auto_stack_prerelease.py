@@ -70,7 +70,7 @@ def main():
     subprocess.Popen('sudo apt-get update'.split(' ')).communicate()
     for stack in options.stacklist:
         with open('%s/%s/stack.xml'%(STACK_DIR, stack)) as stack_file:
-            depends = stack_manifest.parse(stack_file.read()).depends
+            depends = [d for d in stack_manifest.parse(stack_file.read()).depends]  # convert to list
         for s in options.stacklist:  # remove stacks we are testing from dependency list, as debians might not yet exist
             if s in depends:
                 depends.remove(s)
