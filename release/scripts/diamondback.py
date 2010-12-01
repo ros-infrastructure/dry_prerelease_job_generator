@@ -16,7 +16,12 @@ frozen = [
     'image_transport_plugins',
     'imu_drivers',
     'laser_pipeline',
+    'physics_ode',
+    'pr2_gui',
     'robot_model',
+    'ros',
+    'rx',
+    'simulator_gazebo',
     'slam_gmapping',
     'visualization_common',
     ]

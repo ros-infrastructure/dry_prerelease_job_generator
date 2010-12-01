@@ -39,6 +39,8 @@ def create_notes(released):
 def load_additional():
     d = roslib.packages.get_pkg_dir(PKG)
     released = []
+    if not os.path.exists(os.path.join(d, 'scripts', 'additional.txt')): 
+        return {}
     with open(os.path.join(d, 'scripts', 'additional.txt')) as f:
         for l in f:
             if l.strip():

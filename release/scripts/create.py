@@ -128,7 +128,7 @@ def load_sys_args():
         parser.error("""You must specify: 
  * stack name (e.g. common_msgs)
  * version (e.g. 1.0.1)
- * distro release name (e.g. cturtle.rosdistro)""")
+ * distro release name (e.g. cturtle)""")
     name, version, release_name = args
     distro_file = os.path.join(pkg_dir, '..', 'distros', '%s.rosdistro'%(release_name))
     distro_file = os.path.abspath(distro_file)
@@ -294,32 +294,53 @@ def tag_git(distro_stack):
 
     config = distro_stack.vcs_config
 
-    for tag_name in [config.release_tag, config.distro_tag]:
-        from_url = config.repo_uri
+    from_url = config.repo_uri
 
-        make_tag = False
-        while True:
-            prompt = raw_input("Would you like to tag %s as %s in %s, [y/n]"%(config.dev_branch, tag_name, from_url))
-            if prompt == 'y':
-                make_tag = True
-                break
-            elif prompt == 'n':
-                break
-            
-        if make_tag == False:
-            continue
-
+    # First create a release tag in the git repository.
+    make_tag = False
+    while True:
+        prompt = raw_input("Would you like to tag %s as %s in %s, [y/n]"%(config.dev_branch, config.release_tag, from_url))
+        if prompt == 'y':
+            make_tag = True
+            break
+        elif prompt == 'n':
+            break
+        
+    if make_tag == True:
         tempdir = tempfile.mkdtemp()
         temp_repo = os.path.join(tempdir, distro_stack.name)
         gc = GITClient(temp_repo)
         gc.checkout(from_url, config.dev_branch)
 
-        subprocess.check_call(['git', 'tag', '-f', tag_name], cwd=temp_repo)
+        subprocess.check_call(['git', 'tag', '-f', config.release_tag], cwd=temp_repo)
         subprocess.check_call(['git', 'push', '--tags'], cwd=temp_repo)
+
+    # Now create a distro branch. In git tags are not overwritten
+    # during updates, so a branch is a much better solution since
+    # branches can be force-updated by fetch.
+    make_tag = False
+    while True:
+        branch_name = config.distro_tag+"_released"
+        prompt = raw_input("Would you like to create the branch %s as %s in %s, [y/n]"%(config.dev_branch, branch_name, from_url))
+        if prompt == 'y':
+            make_tag = True
+            break
+        elif prompt == 'n':
+            break
+        
+    if make_tag == True:
+        tempdir = tempfile.mkdtemp()
+        temp_repo = os.path.join(tempdir, distro_stack.name)
+        gc = GITClient(temp_repo)
+        gc.checkout(from_url, config.dev_branch)
+
+        subprocess.check_call(['git', 'branch', '-f', branch_name, config.dev_branch], cwd=temp_repo)
+        subprocess.check_call(['git', 'push', from_url, branch_name], cwd=temp_repo)
+    
     #if not ask_and_call(cmds):    
     #    print "create_release will not create this tag in subversion"
     #else:
-    urls.append(tag_name)
+    urls.append(config.distro_tag)
     return urls
 
 def print_bold(m):
