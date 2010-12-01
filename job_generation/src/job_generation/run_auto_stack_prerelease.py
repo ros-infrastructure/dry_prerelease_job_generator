@@ -75,7 +75,7 @@ def main():
             if s in depends:
                 depends.remove(s)
         if len(depends) != 0:
-            print 'Installing debian packages of stack dependencies: %s'%str(depends)
+            print 'Installing debian packages of "%s" dependencies: %s'%(stack, str(depends))
             res = subprocess.call(('sudo apt-get install %s --yes'%(stacks_to_debs(depends, options.rosdistro))).split(' '))
             if res != 0:
                 return res
