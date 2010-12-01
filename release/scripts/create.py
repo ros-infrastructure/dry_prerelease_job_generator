@@ -320,7 +320,8 @@ def tag_git(distro_stack):
     # branches can be force-updated by fetch.
     make_tag = False
     while True:
-        prompt = raw_input("Would you like to create the branch %s as %s in %s, [y/n]"%(config.dev_branch, config.distro_tag, from_url))
+        branch_name = config.distro_tag+"_released"
+        prompt = raw_input("Would you like to create the branch %s as %s in %s, [y/n]"%(config.dev_branch, branch_name, from_url))
         if prompt == 'y':
             make_tag = True
             break
@@ -333,8 +334,8 @@ def tag_git(distro_stack):
         gc = GITClient(temp_repo)
         gc.checkout(from_url, config.dev_branch)
 
-        subprocess.check_call(['git', 'branch', '-f', config.distro_tag, config.dev_branch], cwd=temp_repo)
-        subprocess.check_call(['git', 'push'], cwd=temp_repo)
+        subprocess.check_call(['git', 'branch', '-f', branch_name, config.dev_branch], cwd=temp_repo)
+        subprocess.check_call(['git', 'push', from_url, branch_name], cwd=temp_repo)
     
     #if not ask_and_call(cmds):    
     #    print "create_release will not create this tag in subversion"
