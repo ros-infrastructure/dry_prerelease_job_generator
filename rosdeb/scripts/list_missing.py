@@ -114,7 +114,7 @@ def compute_deps(distro, stack_name):
         ordered_deps.append((s,v))
 
     if stack_name == 'ALL':
-        for s in distro.stacks.keys():
+        for s in distro.released_stacks.keys():
             add_stack(s)
     else:
         add_stack(stack_name)
