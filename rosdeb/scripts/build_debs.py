@@ -144,7 +144,7 @@ def compute_deps(distro, stack_name):
         if s in seen:
             return
         if s not in distro.released_stacks:
-            raise BuildFailure("[%s] not found in distro."%(s))
+            raise BuildFailure("[%s] not found in distro."%(str(s)))
         seen.add(s)
         v = distro.released_stacks[s].version
         if not v:
