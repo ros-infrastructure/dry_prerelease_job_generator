@@ -267,7 +267,6 @@ def create_devel_configs(rosdistro, stack):
 
             
             if stack.vcs_config.type == 'svn':
-                hudson_vcs = HUDSON_SVN
                 hudson_vcs = hudson_vcs.replace('STACKNAME', stack.name)
                 hudson_vcs = hudson_vcs.replace('STACKURI', stack.vcs_config.anon_dev)
             else: #dvcs

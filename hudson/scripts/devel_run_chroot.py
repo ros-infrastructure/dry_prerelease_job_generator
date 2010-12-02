@@ -30,6 +30,12 @@ def local_check_call(cmd, display_output=False):
             break
         print l, ##extra comma because lines already have \n.  I"m assuming this is lower overhead than l.strip()
 
+    if p.returncode == None:
+        print "stdout finished but process not exited!!!"
+        p.communicate()
+    if p.returncode != 0:
+        raise subprocess.CalledProcessError(p.returncode, cmd)
+
 def local_call(cmd, display_output=False):
     if not display_output:
         with open(os.devnull, 'w') as fh:
@@ -167,6 +173,7 @@ class ChrootInstance:
         self.workspace_successfully_copied = False
         self.ssh_key_path = ssh_key_path
         self.use_wg_sources = use_wg_sources
+        self.hdd_remote_mount = ""
         self.hdd_tmp_dir = hdd_tmp_dir
         self.scratch_dir = scratch_dir
         self.debug_chroot = False # if enabled print to screen during setup and teardown
@@ -336,7 +343,7 @@ class ChrootInstance:
         with tempfile.NamedTemporaryFile() as tf:
             print "Adding code.ros.org as source"
             #tf.write("deb http://code.ros.org/packages/ros/ubuntu %s main\n" % self.distro)
-            tf.write("deb http://code.ros.org/packages/ros-shadow-fixed/ubuntu %s main\n" % self.distro)
+            tf.write("deb http://packages.ros.org/ros-shadow-fixed/ubuntu %s main\n" % self.distro)
             tf.flush()
             cmd = ['sudo', 'cp', tf.name, ros_source]
             print "Runing cmd", cmd
@@ -542,7 +549,7 @@ def run_chroot(options, path, workspace, hdd_tmp_dir):
         cmd = "apt-get update".split()
         chrti.execute(cmd)
 
-        cmd = "apt-get install -y --force-yes build-essential python-yaml cmake subversion mercurial wget python-setuptools".split()
+        cmd = "apt-get install -y --force-yes build-essential python-yaml cmake subversion mercurial git-core wget python-setuptools".split()
         chrti.execute(cmd)
 
         cmd = "sudo easy_install -U rosinstall".split()

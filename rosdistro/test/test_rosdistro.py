@@ -190,15 +190,30 @@ class DistroTest(unittest.TestCase):
         # hg
         rules = {'hg':
                      {'uri': 'http://uri',
+                      'anon-uri': 'http://anon-uri',
                       'dev-branch': 'http://dev-branch',
                       'release-tag': 'http://release-tag',
                       'distro-tag': 'http://distro-tag'}}
         vc = load_vcs_config(rules, rule_eval)
         self.assertEquals(vc.repo_uri, 'http://uri-evaled')
+        self.assertEquals(vc.anon_repo_uri, 'http://anon-uri-evaled')
         self.assertEquals(vc.dev_branch, 'http://dev-branch-evaled')    
         self.assertEquals(vc.distro_tag, 'http://distro-tag-evaled')
         self.assertEquals(vc.release_tag, 'http://release-tag-evaled')
         
+        # git
+        rules = {'git':
+                     {'uri': 'http://uri',
+                      'anon-uri': 'http://anon-uri',
+                      'dev-branch': 'http://dev-branch',
+                      'release-tag': 'http://release-tag',
+                      'distro-tag': 'http://distro-tag'}}
+        vc = load_vcs_config(rules, rule_eval)
+        self.assertEquals(vc.repo_uri, 'http://uri-evaled')
+        self.assertEquals(vc.anon_repo_uri, 'http://anon-uri-evaled')
+        self.assertEquals(vc.dev_branch, 'http://dev-branch-evaled')    
+        self.assertEquals(vc.distro_tag, 'http://distro-tag-evaled')
+        self.assertEquals(vc.release_tag, 'http://release-tag-evaled')
         
     def test_get_rules(self):
         from rosdistro import get_rules

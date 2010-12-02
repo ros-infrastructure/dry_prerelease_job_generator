@@ -37,7 +37,7 @@ import sys
 import unittest
 
 #TODO: these need to be in a config file somewhere
-REPO_URL="http://code.ros.org/packages/%(repo)s/"
+REPO_URL="http://packages.ros.org/%(repo)s/"
 SHADOW_REPO=REPO_URL%{'repo': 'ros-shadow'}
 SHADOW_FIXED_REPO=REPO_URL%{'repo': 'ros-shadow-fixed'}
 ROS_REPO=REPO_URL%{'repo': 'ros'}

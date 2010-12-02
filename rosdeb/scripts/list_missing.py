@@ -62,7 +62,7 @@ from rosdeb import ubuntu_release, debianize_name, debianize_version, platforms,
 NAME = 'list_missing.py' 
 TARBALL_URL = "https://code.ros.org/svn/release/download/stacks/%(stack_name)s/%(base_name)s/%(f_name)s"
 
-REPO_URL="http://code.ros.org/packages/%(repo)s/"
+REPO_URL="http://packages.ros.org/%(repo)s/"
 SHADOW_REPO=REPO_URL%{'repo': 'ros-shadow'}
 SHADOW_FIXED_REPO=REPO_URL%{'repo': 'ros-shadow-fixed'}
 ROS_REPO=REPO_URL%{'repo': 'ros'}

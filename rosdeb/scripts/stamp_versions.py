@@ -131,8 +131,8 @@ def rewrite_control_file(control_file, distro_name, distro, stack_name, stack_ve
         pkg = pkg.strip()
         if pkg[:len(distro_prefix)] == distro_prefix:
             pkg_strip = pkg[len(distro_prefix):].replace('-','_')
-            if pkg_strip in distro.stacks:
-                pkg_ver = distro.stacks[pkg_strip].version
+            if pkg_strip in distro.released_stacks:
+                pkg_ver = distro.released_stacks[pkg_strip].version
                 pkg_deb_ver = debianize_version(pkg_ver, distro.version, os_platform)
                 
                 locked_depends.append(pkg+' (= %s)'%pkg_deb_ver)
@@ -180,7 +180,7 @@ def do_download_and_fix(packagelist, distro, distro_name, stack_name, stack_vers
 
             dest = os.path.join(workdir, f_name)
 
-            url = "http://code.ros.org/packages/%s/ubuntu/%s"%(SOURCE_REPO,packagelist[deb_name]['Filename'])
+            url = "http://packages.ros.org/%s/ubuntu/%s"%(SOURCE_REPO,packagelist[deb_name]['Filename'])
             conn = urllib.urlopen(url)
             if conn.getcode() != 200:
                 print >> sys.stderr, "%d problem downloading: %s"%(conn.getcode(), url)
@@ -237,9 +237,9 @@ def create_meta_pkg(packagelist, distro, distro_name, metapackage, deps, os_plat
     missing = False
 
     for stack in deps:
-        if stack in distro.stacks:
+        if stack in distro.released_stacks:
             stack_deb_name = "ros-%s-%s"%(distro_name, stack.replace('_','-'))
-            stack_ver = distro.stacks[stack].version
+            stack_ver = distro.released_stacks[stack].version
             stack_deb_ver = debianize_version(stack_ver, distro.version, os_platform)
             if stack_deb_name in packagelist:
                 locked_depends.append(stack_deb_name+' (= %s)'%stack_deb_ver)
@@ -278,7 +278,7 @@ Description: Meta package for %(metapackage)s variant of ROS.
 
 def upload_debs(files,distro_name,os_platform,arch):
 
-    subprocess.check_call(['scp'] + files + ['rosbuild@pub5:/var/packages/%s/ubuntu/incoming/%s'%(DEST_REPO,os_platform)])
+    subprocess.check_call(['scp'] + files + ['rosbuild@pub8:/var/packages/%s/ubuntu/incoming/%s'%(DEST_REPO,os_platform)])
 
     base_files = [x.split('/')[-1] for x in files]
 
@@ -291,7 +291,7 @@ def upload_debs(files,distro_name,os_platform,arch):
 
     # This script moves files into queue directory, removes all dependent debs, removes the existing deb, and then processes the incoming files
     remote_cmd = "TMPFILE=`mktemp` || exit 1 && cat > ${TMPFILE} && chmod +x ${TMPFILE} && ${TMPFILE}; ret=${?}; rm ${TMPFILE}; exit ${ret}"
-    run_script = subprocess.Popen(['ssh', 'rosbuild@pub5', remote_cmd], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    run_script = subprocess.Popen(['ssh', 'rosbuild@pub8', remote_cmd], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     script_content = """
 #!/bin/bash
 set -o errexit
@@ -327,7 +327,7 @@ def stamp_debs(distro, os_platform, arch, staging_dir, force=False):
     distro_name = distro.release_name
 
     # Retrieve the package list from the shadow repo
-    packageurl="http://code.ros.org/packages/ros-shadow/ubuntu/dists/%(os_platform)s/main/binary-%(arch)s/Packages"%locals()
+    packageurl="http://packages.ros.org/ros-shadow/ubuntu/dists/%(os_platform)s/main/binary-%(arch)s/Packages"%locals()
     packagetxt = urllib2.urlopen(packageurl).read()
     packagelist = parse_deb_packages(packagetxt)
 
@@ -340,7 +340,7 @@ def stamp_debs(distro, os_platform, arch, staging_dir, force=False):
     missing_ok = missing_excluded.union(missing_excluded_dep)
 
     # Build the new debs
-    for (sn,s) in distro.stacks.iteritems():
+    for (sn,s) in distro.released_stacks.iteritems():
         sv = s.version
         if not sv:
             # not released

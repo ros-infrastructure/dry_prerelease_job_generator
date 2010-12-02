@@ -70,9 +70,17 @@ def main():
     subprocess.Popen('sudo apt-get update'.split(' ')).communicate()
     for stack in options.stacklist:
         with open('%s/%s/stack.xml'%(STACK_DIR, stack)) as stack_file:
-            depends = stack_manifest.parse(stack_file.read()).depends
-            print 'Installing dependencies of %s: %s'%(stack, str(depends))
-        subprocess.Popen(('sudo apt-get install %s --yes'%(stacks_to_debs(depends, options.rosdistro))).split(' ')).communicate()
+            depends = [str(d) for d in stack_manifest.parse(stack_file.read()).depends]  # convert to list
+        for s in options.stacklist:  # remove stacks we are testing from dependency list, as debians might not yet exist
+            if s in depends:
+                depends.remove(s)
+        if len(depends) != 0:
+            print 'Installing debian packages of "%s" dependencies: %s'%(stack, str(depends))
+            res = subprocess.call(('sudo apt-get install %s --yes'%(stacks_to_debs(depends, options.rosdistro))).split(' '))
+            if res != 0:
+                return res
+        else:
+            print 'Stack %s does not have any dependencies, not installing any other debian packages'%stack
 
 
     # Install system dependencies
@@ -119,7 +127,12 @@ def main():
     rosinstall_file = '%s.rosinstall'%DEPENDS_ON_DIR
     with open(rosinstall_file, 'w') as f:
         f.write(rosinstall)
-    subprocess.Popen(('rosinstall %s /opt/ros/%s %s'%(DEPENDS_ON_DIR, options.rosdistro, rosinstall_file)).split(' ')).communicate()
+    helper = subprocess.Popen(('rosinstall %s /opt/ros/%s %s'%(DEPENDS_ON_DIR, options.rosdistro, rosinstall_file)).split(' '))
+    helper.communicate()
+    if helper.returncode != 0:
+        print 'Failed to do a source install of the depends-on stacks.'
+        return helper.returncode
+    
 
     # Remove stacks that depend on this stack from Debians
     print 'Removing all stacks from Debian that depend on these stacks'
