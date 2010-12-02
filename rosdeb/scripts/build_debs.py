@@ -155,9 +155,7 @@ def compute_deps(distro, stack_name):
         # #3100: REMOVE THIS AROUND PHASE 3
         if distro.release_name == 'unstable':
             if s not in ['ros', 'ros_comm'] and 'ros_comm' not in loaded_deps:
-                # This print would otherwise get spammy due to the recursive nature of this function
-                # print "adding implicit dependency on ros_comm, %s"%(distro.released_stacks['ros_comm'].version)
-                loaded_deps.append(('ros_comm', distro.released_stacks['ros_comm'].version))
+                loaded_deps.append('ros_comm')
         # END #3100
         for d in loaded_deps:
             add_stack(d)
