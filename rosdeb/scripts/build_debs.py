@@ -151,7 +151,15 @@ def compute_deps(distro, stack_name):
             raise BuildFailure("[%s] has not been released (version-less)."%(s))
         # version-less entries are ignored
         si = load_info(s, v)
-        for d in si['depends']:
+        loaded_deps = si['depends']
+        # #3100: REMOVE THIS AROUND PHASE 3
+        if distro.release_name == 'unstable':
+            if s not in ['ros', 'ros_comm'] and 'ros_comm' not in loaded_deps:
+                # This print would otherwise get spammy due to the recursive nature of this function
+                # print "adding implicit dependency on ros_comm, %s"%(distro.released_stacks['ros_comm'].version)
+                loaded_deps.append(('ros_comm', distro.released_stacks['ros_comm'].version))
+        # END #3100
+        for d in loaded_deps:
             add_stack(d)
         ordered_deps.append((s,v))
 
@@ -161,12 +169,6 @@ def compute_deps(distro, stack_name):
     else:
         add_stack(stack_name)
 
-    # #3100: REMOVE THIS AROUND PHASE 3
-    if distro.release_name == 'unstable':
-        if stack_name not in ['ros', 'ros_comm'] and 'ros_comm' not in ordered_deps:
-            print "adding implicit dependency on ros_comm, %s"%(distro.released_stacks['ros_comm'].version)
-            ordered_deps.append(('ros_comm', distro.released_stacks['ros_comm'].version))
-    # END #3100
     return ordered_deps
 
 def create_chroot(distro, distro_name, os_platform, arch):
