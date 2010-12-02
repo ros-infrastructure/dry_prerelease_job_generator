@@ -57,7 +57,7 @@ def checkout(vcs, uri, dir_path):
     cmd = cwd = None
     fresh_install = not os.path.exists(dir_path)
     if vcs == 'svn':
-        cmd = ['svn', 'co', uri, dir_path]
+        cmd = ['svn', 'co', '--non-interactive', '--trust-server-cert', uri, dir_path]
     elif vcs == 'git':
         if fresh_install:
             cmd = ['git', 'clone', uri, dir_path]
