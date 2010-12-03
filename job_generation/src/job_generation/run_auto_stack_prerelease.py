@@ -131,7 +131,7 @@ def main():
     helper.communicate()
     if helper.returncode != 0:
         print 'Failed to do a source install of the depends-on stacks.'
-        print "rosintall file:\n{{{\n%s\n}}}"%rosintall
+        print "rosintall file:\n{{{\n%s\n}}}"%rosinstall
         return helper.returncode
     
 
