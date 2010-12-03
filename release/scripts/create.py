@@ -320,7 +320,7 @@ def tag_git(distro_stack):
     # branches can be force-updated by fetch.
     make_tag = False
     while True:
-        branch_name = config.distro_tag+"_released"
+        branch_name = config.distro_tag
         prompt = raw_input("Would you like to create the branch %s as %s in %s, [y/n]"%(config.dev_branch, branch_name, from_url))
         if prompt == 'y':
             make_tag = True
