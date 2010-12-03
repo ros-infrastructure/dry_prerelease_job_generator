@@ -16,6 +16,7 @@ ifeq (${ROS_DISTRO_NAME}, unstable)
 	bash -c ". setup_deb.sh && ./purge_build.py ${ROS_DISTRO_DIR}"
 endif
 	rm -rf ${ROS_STACK_DIR}/${ROS_STACK_NAME}/*/build/CMakeFiles
+	python -mcompileall ${ROS_STACK_DIR}/${ROS_STACK_NAME}
 	./fixrpath.py ${ROS_STACK_DIR}/${ROS_STACK_NAME} ${ROS_DISTRO_DIR} ${ROS_DISTRO_DIR_FINAL}
 	./fixpc.py ${ROS_STACK_DIR}/${ROS_STACK_NAME} ${ROS_DISTRO_DIR} ${ROS_DISTRO_DIR_FINAL}
 
