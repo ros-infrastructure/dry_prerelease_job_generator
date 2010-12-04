@@ -20,7 +20,7 @@ endif
 	cp setup.sh ${ROS_DISTRO_DIR}/
 	cp .rosinstall ${ROS_DISTRO_DIR}/
 	mkdir -p ${ROS_DISTRO_DIR}/stacks
-	python -mcompileall ${ROS_DISTRO_DIR}/ros
+	-python -mcompileall ${ROS_DISTRO_DIR}/ros
 	./fixrpath.py ${ROS_DISTRO_DIR}/ros ${ROS_DISTRO_DIR} ${ROS_DISTRO_DIR_FINAL}
 	./fixpc.py ${ROS_DISTRO_DIR}/ros ${ROS_DISTRO_DIR} ${ROS_DISTRO_DIR_FINAL}
 
