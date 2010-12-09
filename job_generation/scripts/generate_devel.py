@@ -271,7 +271,7 @@ def create_devel_configs(rosdistro, stack):
                 hudson_vcs = hudson_vcs.replace('STACKURI', stack.vcs_config.anon_dev)
             else: #dvcs
                 hudson_vcs = hudson_vcs.replace('STACKBRANCH', stack.vcs_config.dev_branch)
-                hudson_vcs = hudson_vcs.replace('STACKURI', stack.vcs_config.repo_uri)
+                hudson_vcs = hudson_vcs.replace('STACKURI', stack.vcs_config.anon_repo_uri)
                 hudson_vcs = hudson_vcs.replace('STACKNAME', stack.name)
 
             # check if this is the 'gold' job

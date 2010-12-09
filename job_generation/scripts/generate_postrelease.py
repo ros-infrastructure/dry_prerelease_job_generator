@@ -224,7 +224,7 @@ def create_post_release_configs(rosdistro, stack):
             elif stack.vcs_config.type == 'hg':
                 hudson_vcs = HUDSON_HG
                 hudson_vcs = hudson_vcs.replace('STACKBRANCH', stack.vcs_config.distro_tag)
-                hudson_vcs = hudson_vcs.replace('STACKURI', stack.vcs_config.repo_uri)
+                hudson_vcs = hudson_vcs.replace('STACKURI', stack.vcs_config.anon_repo_uri)
                 hudson_vcs = hudson_vcs.replace('STACKNAME', stack.name)
                 
             # check if this is the 'gold' job
