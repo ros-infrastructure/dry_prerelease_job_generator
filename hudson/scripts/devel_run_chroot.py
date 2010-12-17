@@ -9,8 +9,6 @@ import optparse
 import traceback
 import urllib
 
-ROSBUILD_SSH_URI = 'http://wgs24.willowgarage.com/hudson_slave_configuration_files/rosbuild-ssh.tar'
-
 # Valid options
 valid_archs = ['i386', 'i686', 'amd64']
 valid_ubuntu_distros = ['hardy', 'jaunty', 'karmic', 'lucid', 'maverick']
@@ -397,18 +395,13 @@ class ChrootInstance:
         if self.ssh_key_path:
             print "retrieving %s to %s"%(self.ssh_key_path, local_tmp)
             shutil.copy(self.ssh_key_path, local_tmp)
-        else:
-            print "retrieving %s to %s"%(ROSBUILD_SSH_URI, local_tmp)
-            urllib.urlretrieve(ROSBUILD_SSH_URI, local_tmp)
             
         if not os.path.exists(tardestdir):
             os.makedirs(tardestdir)
         print "untarring %s"%local_tmp
         subprocess.check_call(['sudo', 'tar', 'xf', local_tmp], cwd=tardestdir)
-        #subprocess.check_call(['sudo', 'rm', '-rf', local_tmp_dir])
         shutil.rmtree(local_tmp_dir)
 
-        #self.execute(['tar', 'xf', os.path.join('home', 'rosbuild', 'rosbuild-ssh.tar')], cwd=os.path.join('home', 'rosbuild'))
         self.execute(['chown', '-R', 'rosbuild:rosbuild', '/home/rosbuild'])
 
     def replecate_workspace(self):
