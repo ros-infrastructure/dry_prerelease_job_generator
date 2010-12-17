@@ -31,24 +31,8 @@ HUDSON_DEVEL_CONFIG = """<?xml version='1.0' encoding='UTF-8'?>
 #!/usr/bin/env bash
 set -o errexit
 echo "_________________________________BEGIN SCRIPT______________________________________"
-export INSTALL_DIR=/tmp/install_dir
-export WORKSPACE=/tmp/ros
-export ROS_TEST_RESULTS_DIR=/tmp/ros/test_results
-export JOB_NAME=$JOB_NAME
-export BUILD_NUMBER=$BUILD_NUMBER
-export HUDSON_URL=$HUDSON_URL
-
-mkdir -p \$INSTALL_DIR
-cd \$INSTALL_DIR
-wget  --no-check-certificate http://code.ros.org/svn/ros/installers/trunk/hudson/hudson_helper
-wget  --no-check-certificate http://code.ros.org/svn/ros/stacks/ros_release/trunk/job_generation/src/job_generation/jobs_common.py 
-wget  --no-check-certificate http://code.ros.org/svn/ros/stacks/ros_release/trunk/job_generation/src/job_generation/run_auto_stack_devel.py 
-chmod +x hudson_helper  
-chmod +x run_auto_stack_devel.py
-
-sudo apt-get install ros-ROSDISTRO-ros --yes
-source /opt/ros/ROSDISTRO/setup.sh
-./run_auto_stack_devel.py --stack STACKNAME --rosdistro ROSDISTRO --repeat 0
+BOOTSTRAP_SCRIPT
+rosrun job_generation run_auto_stack_devel.py --stack STACKNAME --rosdistro ROSDISTRO --repeat 0
 echo "_________________________________END SCRIPT_______________________________________"
 DELIM
 
@@ -161,8 +145,6 @@ import roslib; roslib.load_manifest("job_generation")
 import rosdistro
 from job_generation.jobs_common import *
 import hudson
-import sys
-import re
 import urllib
 import optparse 
 
@@ -207,6 +189,7 @@ def create_devel_configs(rosdistro, stack):
                 job_children = ', '.join(gold_children)
 
             hudson_config = HUDSON_DEVEL_CONFIG
+            hudson_config = hudson_config.replace('BOOTSTRAP_SCRIPT', BOOTSTRAP_SCRIPT)
             hudson_config = hudson_config.replace('UBUNTUDISTRO', ubuntudistro)
             hudson_config = hudson_config.replace('ARCH', arch)
             hudson_config = hudson_config.replace('ROSDISTRO', rosdistro)
