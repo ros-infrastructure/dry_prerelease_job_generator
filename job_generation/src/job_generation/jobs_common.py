@@ -22,6 +22,80 @@ SERVER = 'http://build.willowgarage.com'
 # config path
 CONFIG_PATH = 'http://wgs24.willowgarage.com/hudson-html/hds.xml'
 
+hudson_scm_managers = {'svn':"""
+  <scm class="hudson.scm.SubversionSCM"> 
+    <locations> 
+      <hudson.scm.SubversionSCM_-ModuleLocation> 
+        <remote>STACKURI</remote> 
+        <local>STACKNAME</local> 
+      </hudson.scm.SubversionSCM_-ModuleLocation> 
+    </locations> 
+    <useUpdate>false</useUpdate> 
+    <doRevert>false</doRevert> 
+    <excludedRegions></excludedRegions> 
+    <includedRegions></includedRegions> 
+    <excludedUsers></excludedUsers> 
+    <excludedRevprop></excludedRevprop> 
+    <excludedCommitMessages></excludedCommitMessages> 
+  </scm> 
+""",
+                       'hg':"""
+  <scm class="hudson.plugins.mercurial.MercurialSCM">
+    <source>STACKURI</source>
+    <modules></modules>
+    <subdir>STACKNAME</subdir>
+    <clean>false</clean>
+    <forest>false</forest>
+    <branch>STACKBRANCH</branch>
+  </scm>
+""",
+                       'git':"""
+
+  <scm class="hudson.plugins.git.GitSCM">
+    <configVersion>1</configVersion>
+    <remoteRepositories>
+      <org.spearce.jgit.transport.RemoteConfig>
+        <string>origin</string>
+        <int>5</int>
+
+        <string>fetch</string>
+        <string>+refs/heads/*:refs/remotes/origin/*</string>
+        <string>receivepack</string>
+        <string>git-upload-pack</string>
+        <string>uploadpack</string>
+        <string>git-upload-pack</string>
+
+        <string>url</string>
+        <string>STACKURI</string>
+        <string>tagopt</string>
+        <string></string>
+      </org.spearce.jgit.transport.RemoteConfig>
+    </remoteRepositories>
+    <branches>
+
+      <hudson.plugins.git.BranchSpec>
+        <name>STACKBRANCH</name>
+      </hudson.plugins.git.BranchSpec>
+    </branches>
+    <localBranch></localBranch>
+    <mergeOptions/>
+    <recursiveSubmodules>false</recursiveSubmodules>
+    <doGenerateSubmoduleConfigurations>false</doGenerateSubmoduleConfigurations>
+
+    <authorOrCommitter>Hudson</authorOrCommitter>
+    <clean>false</clean>
+    <wipeOutWorkspace>false</wipeOutWorkspace>
+    <buildChooser class="hudson.plugins.git.util.DefaultBuildChooser"/>
+    <gitTool>Default</gitTool>
+    <submoduleCfg class="list"/>
+    <relativeTargetDir>STACKNAME</relativeTargetDir>
+
+    <excludedRegions></excludedRegions>
+    <excludedUsers></excludedUsers>
+  </scm>
+"""
+}
+
 def stack_to_deb(stack, rosdistro):
     return '-'.join(['ros', rosdistro, str(stack).replace('_','-')])
 
