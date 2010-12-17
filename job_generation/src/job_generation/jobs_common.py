@@ -1,5 +1,25 @@
 #!/usr/bin/python
 
+BOOTSTRAP_SCRIPT = """
+sudo apt-get install ros-ROSDISTRO-ros --yes
+source /opt/ros/ROSDISTRO/setup.sh
+
+export INSTALL_DIR=/tmp/install_dir
+export WORKSPACE=/tmp/ros
+export ROS_TEST_RESULTS_DIR=/tmp/ros/test_results
+export JOB_NAME=$JOB_NAME
+export BUILD_NUMBER=$BUILD_NUMBER
+export HUDSON_URL=$HUDSON_URL
+export ROS_PACKAGE_PATH=\$INSTALL_DIR/ros_release:/opt/ros/ROSDISTRO/stacks
+
+mkdir -p \$INSTALL_DIR
+cd \$INSTALL_DIR
+
+wget  --no-check-certificate http://code.ros.org/svn/ros/installers/trunk/hudson/hudson_helper 
+chmod +x hudson_helper
+svn co https://code.ros.org/svn/ros/stacks/ros_release/trunk ros_release
+"""
+
 ROSDISTRO_FOLDER_MAP = {'unstable': 'https://code.ros.org/svn/release/trunk/distros',
                         'cturtle': 'https://code.ros.org/svn/release/trunk/distros',
                         'boxturtle': 'http://www.ros.org/distros'}
@@ -21,6 +41,7 @@ SERVER = 'http://build.willowgarage.com'
 
 # config path
 CONFIG_PATH = 'http://wgs24.willowgarage.com/hudson-html/hds.xml'
+
 
 hudson_scm_managers = {'svn':"""
   <scm class="hudson.scm.SubversionSCM"> 
