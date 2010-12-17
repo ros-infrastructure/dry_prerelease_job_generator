@@ -217,16 +217,20 @@ def create_post_release_configs(rosdistro, stack):
             name = post_release_job_name(rosdistro, stack.name, ubuntudistro, arch)
 
             # create VCS block
+            if stack.vcs_config.type in hudson_scm_managers:
+                hudson_vcs = hudson_scm_managers[stack.vcs_config.type]
+            else:
+                raise NotImplementedError("vcs type %s not implemented as hudson scm manager"%stack.vcs_config.type)
+
+            
             if stack.vcs_config.type == 'svn':
-                hudson_vcs = HUDSON_SVN
                 hudson_vcs = hudson_vcs.replace('STACKNAME', stack.name)
-                hudson_vcs = hudson_vcs.replace('STACKURI', stack.vcs_config.anon_distro_tag)
-            elif stack.vcs_config.type == 'hg':
-                hudson_vcs = HUDSON_HG
-                hudson_vcs = hudson_vcs.replace('STACKBRANCH', stack.vcs_config.distro_tag)
+                hudson_vcs = hudson_vcs.replace('STACKURI', stack.vcs_config.anon_dev)
+            else: #dvcs
+                hudson_vcs = hudson_vcs.replace('STACKBRANCH', stack.vcs_config.dev_branch)
                 hudson_vcs = hudson_vcs.replace('STACKURI', stack.vcs_config.anon_repo_uri)
                 hudson_vcs = hudson_vcs.replace('STACKNAME', stack.name)
-                
+
             # check if this is the 'gold' job
             time_trigger = ''
             job_children = ''
@@ -308,7 +312,7 @@ def main():
             print "Creating new job %s"%job_name
 
         # start job
-        if options.start:
+        if options.start and '0 3 * * *' in post_release_configs[job_name]:  # only start gold jobs
             hudson_instance.build_job(job_name)
 
 if __name__ == '__main__':
