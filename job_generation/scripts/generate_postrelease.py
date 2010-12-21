@@ -277,6 +277,9 @@ def main():
     # send post_release tests to Hudson
     for job_name in post_release_configs:
         exists = hudson_instance.job_exists(job_name)
+        if hudson_instance.job_is_running(job_name):
+            print "Not reconfiguring running job %s"%job_name
+            continue
 
         # delete old job
         if options.delete:
