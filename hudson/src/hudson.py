@@ -290,7 +290,6 @@ class Hudson(object):
         """
         info = self.get_job_info(name)
         if 'color' in info:
-            print info['color']
             if string.find(info['color'], "_anime") > 0:
                 return True
         return False
