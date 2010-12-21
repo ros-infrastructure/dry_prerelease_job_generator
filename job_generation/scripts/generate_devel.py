@@ -244,7 +244,7 @@ def main():
     # send devel tests to Hudson
     for job_name in devel_configs:
         exists = hudson_instance.job_exists(job_name)
-        if hudson_instance.job_is_running(job_name):
+        if exists and hudson_instance.job_is_running(job_name):
             print "Not reconfiguring running job %s"%job_name
             continue
 
