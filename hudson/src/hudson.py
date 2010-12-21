@@ -58,6 +58,7 @@ import urllib
 import base64
 import traceback
 import json
+import string
 
 JOB_INFO     = 'job/%(name)s/api/python?depth=0'
 Q_INFO       = 'queue/api/python?depth=0'
@@ -281,6 +282,18 @@ class Hudson(object):
         if not self.job_exists(name):
             raise HudsonException("no such job[%s]"%(name))
         return self.hudson_open(urllib2.Request(self.build_job_url(name, parameters, token), ''))        
+
+    def job_is_running(self, name):
+        """
+        Test if a job is running
+        @param name The job name
+        """
+        info = self.get_job_info(name)
+        if 'color' in info:
+            print info['color']
+            if string.find(info['color'], "_anime") > 0:
+                return True
+        return False
     
 
     def configure_slave(self, name, ip):
