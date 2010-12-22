@@ -312,6 +312,9 @@ class ChrootInstance:
         if self.distro == 'lucid':
             # The --force-yes is necessary to accept the nvidia-current
             # package without a valid GPG signature.
+            self.execute(['apt-get', 'install', '-y', '--force-yes', 'linux-headers-2.6.32-23'])
+            self.execute(['apt-get', 'install', '-y', '--force-yes', 'linux-headers-2.6.32-23-generic'])
+            self.execute(['apt-get', 'install', '-y', '--force-yes', 'linux-image-2.6.32-23-generic'])
             self.execute(['apt-get', 'install', '-y', '--force-yes', 'nvidia-current'])
             self.execute(['mknod', '/dev/nvidia0', 'c', '195', '0'])
             self.execute(['mknod', '/dev/nvidiactl', 'c', '195', '255'])
