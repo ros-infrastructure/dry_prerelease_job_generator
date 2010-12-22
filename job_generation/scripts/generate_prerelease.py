@@ -219,9 +219,18 @@ def main():
         hudson_instance = hudson.Hudson(SERVER, info[0], info[1])
 
 
+
+    prerelease_configs = create_prerelease_configs(options.rosdistro, options.stacks, options.email, options.repeat, options.devel)
+    # check if jobs are not already running
+    for job_name in prerelease_configs:
+        exists = hudson_instance.job_exists(job_name)
+        if exists and hudson_instance.job_is_running(job_name):
+            print 'Cannot create job %s because a job with the same name is already running.'%job_name
+            print 'Please try again when this job finished running.'
+            return 
+
     # send prerelease tests to Hudson
     print 'Creating pre-release Hudson jobs:'
-    prerelease_configs = create_prerelease_configs(options.rosdistro, options.stacks, options.email, options.repeat, options.devel)
     for job_name in prerelease_configs:
         exists = hudson_instance.job_exists(job_name)
 
