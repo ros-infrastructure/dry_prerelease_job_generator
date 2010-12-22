@@ -13,7 +13,7 @@ from job_generation.jobs_common import *
 
 def main():
     parser = optparse.OptionParser()
-    parser.add_option('--overlay', dest = 'overlay', default=False, action='store_true',
+    parser.add_option('--overlay', dest = 'overlay', action='store',
                       help='Create overlay file')    
     parser.add_option('--variant', dest = 'variant', action='store',
                       help="Specify the variant to create a rosinstall for")
@@ -34,7 +34,7 @@ def main():
         return
 
     # generate rosinstall file for variant
-    if options.overlay:
+    if options.overlay == 'yes':
         rosinstall = rosdistro.variant_to_rosinstall(options.variant, distro_obj, 'release')
     else:
         rosinstall = rosdistro.extended_variant_to_rosinstall(options.variant, distro_obj, 'release')        
