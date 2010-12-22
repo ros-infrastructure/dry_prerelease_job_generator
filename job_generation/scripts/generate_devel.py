@@ -143,6 +143,7 @@ println &quot;${build_failures_context}&quot;&#xd;
 
 import roslib; roslib.load_manifest("job_generation")
 import rosdistro
+import time
 from job_generation.jobs_common import *
 import hudson
 import urllib
@@ -208,6 +209,8 @@ def main():
     parser = optparse.OptionParser()
     parser.add_option('--delete', dest = 'delete', default=False, action='store_true',
                       help='Delete jobs from Hudson')    
+    parser.add_option('--wait', dest = 'wait', default=False, action='store_true',
+                      help='Wait for running jobs to finish to reconfigure them')    
     parser.add_option('--stack', dest = 'stacks', action='append',
                       help="Specify the stacks to operate on (defaults to all stacks)")
     parser.add_option('--rosdistro', dest = 'rosdistro', action='store', default='cturtle',
@@ -241,28 +244,41 @@ def main():
         devel_configs.update(create_devel_configs(distro_obj.release_name, distro_obj.stacks[stack_name]))
 
 
+
     # send devel tests to Hudson
-    for job_name in devel_configs:
-        exists = hudson_instance.job_exists(job_name)
-        if exists and hudson_instance.job_is_running(job_name):
-            print "Not reconfiguring running job %s"%job_name
-            continue
+    finished = False
+    while not finished:
+        devel_configs_todo = {}
+        for job_name in devel_configs:
+            exists = hudson_instance.job_exists(job_name)
+            if exists and hudson_instance.job_is_running(job_name):
+                print "Not reconfiguring running job %s because it is still running"%job_name
+                devel_configs_todo[job_name] = devel_configs[job_name]
+                continue
 
-        # delete old job
-        if options.delete:
-            if exists:
-                hudson_instance.delete_job(job_name)
-                print "Deleting job %s"%job_name
+            # delete old job
+            if options.delete:
+                if exists:
+                    hudson_instance.delete_job(job_name)
+                    print "Deleting job %s"%job_name
 
-        # reconfigure job
-        elif exists:
-            hudson_instance.reconfig_job(job_name, devel_configs[job_name])
-            print "Reconfigure job %s"%job_name
+            # reconfigure job
+            elif exists:
+                hudson_instance.reconfig_job(job_name, devel_configs[job_name])
+                print "Reconfigure job %s"%job_name
 
-        # create job
-        elif not exists:
-            hudson_instance.create_job(job_name, devel_configs[job_name])
-            print "Creating new job %s"%job_name
+            # create job
+            elif not exists:
+                hudson_instance.create_job(job_name, devel_configs[job_name])
+                print "Creating new job %s"%job_name
+
+        if options.wait and len(devel_configs_todo) > 0:
+            devel_configs = devel_configs_todo
+            devel_configs_todo = {}
+            time.sleep(10.0)
+        else:
+            finished = True
+
 
 if __name__ == '__main__':
     main()

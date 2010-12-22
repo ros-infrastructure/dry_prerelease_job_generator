@@ -175,6 +175,7 @@ println &quot;${build_failures_context}&quot;&#xd;
 
 import roslib; roslib.load_manifest("job_generation")
 import rosdistro
+import time
 from job_generation.jobs_common import *
 import hudson
 import urllib
@@ -239,6 +240,8 @@ def main():
     parser = optparse.OptionParser()
     parser.add_option('--delete', dest = 'delete', default=False, action='store_true',
                       help='Delete jobs from Hudson')    
+    parser.add_option('--wait', dest = 'wait', default=False, action='store_true',
+                      help='Wait for running jobs to finish to reconfigure them')    
     parser.add_option('--start', dest = 'start', default=False, action='store_true',
                       help='Start jobs')    
     parser.add_option('--stack', dest = 'stacks', action='append',
@@ -274,32 +277,45 @@ def main():
         post_release_configs.update(create_post_release_configs(distro_obj.release_name, distro_obj.released_stacks[stack_name]))
 
 
+
     # send post_release tests to Hudson
-    for job_name in post_release_configs:
-        exists = hudson_instance.job_exists(job_name)
-        if exists and hudson_instance.job_is_running(job_name):
-            print "Not reconfiguring running job %s"%job_name
-            continue
+    finished = False
+    while not finished:
+        post_release_configs_todo = {}
+        for job_name in post_release_configs:
+            exists = hudson_instance.job_exists(job_name)
+            if exists and hudson_instance.job_is_running(job_name):
+                print "Not reconfiguring running job %s because it is still running"%job_name
+                post_release_configs_todo[job_name] = post_release_configs[job_name]
+                continue
 
-        # delete old job
-        if options.delete:
-            if exists:
-                hudson_instance.delete_job(job_name)
-                print "Deleting job %s"%job_name
+            # delete old job
+            if options.delete:
+                if exists:
+                    hudson_instance.delete_job(job_name)
+                    print "Deleting job %s"%job_name
 
-        # reconfigure job
-        elif exists:
-            hudson_instance.reconfig_job(job_name, post_release_configs[job_name])
-            print "Reconfigure job %s"%job_name
+            # reconfigure job
+            elif exists:
+                hudson_instance.reconfig_job(job_name, post_release_configs[job_name])
+                print "Reconfigure job %s"%job_name
 
-        # create job
-        elif not exists:
-            hudson_instance.create_job(job_name, post_release_configs[job_name])
-            print "Creating new job %s"%job_name
+            # create job
+            elif not exists:
+                hudson_instance.create_job(job_name, post_release_configs[job_name])
+                print "Creating new job %s"%job_name
 
-        # start job
-        if options.start and '0 3 * * *' in post_release_configs[job_name]:  # only start gold jobs
-            hudson_instance.build_job(job_name)
+            # start job
+            if options.start and '0 3 * * *' in post_release_configs[job_name]:  # only start gold jobs
+                hudson_instance.build_job(job_name)
+
+        if options.wait and len(post_release_configs_todo) > 0:
+            post_release_configs = post_release_configs_todo
+            post_release_configs_todo = {}
+            time.sleep(10.0)
+        else:
+            finished = True
+
 
 if __name__ == '__main__':
     main()
