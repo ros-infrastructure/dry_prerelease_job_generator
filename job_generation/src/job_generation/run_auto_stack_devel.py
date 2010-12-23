@@ -28,14 +28,7 @@ def main():
         print 'Setting repeat from %d to 0'%options.repeat 
 
     # set environment
-    env = {}
-    env['WORKSPACE'] = os.environ['WORKSPACE']
-    env['INSTALL_DIR'] = os.environ['INSTALL_DIR']
-    env['HOME'] = os.environ['INSTALL_DIR']
-    env['JOB_NAME'] = os.environ['JOB_NAME']
-    env['BUILD_NUMBER'] = os.environ['BUILD_NUMBER']
-    env['ROS_TEST_RESULTS_DIR'] = os.environ['ROS_TEST_RESULTS_DIR']
-    env['PWD'] = os.environ['WORKSPACE']
+    env = get_environment()
     env['ROS_PACKAGE_PATH'] = '%s:/opt/ros/%s/stacks'%(os.environ['WORKSPACE'], options.rosdistro)
     if options.stack == 'ros':
         env['ROS_ROOT'] = env['WORKSPACE']+'/ros'

@@ -162,3 +162,14 @@ def stacks_to_rosinstall(stack_list, stack_map, branch):
             print 'Stack "%s" is not in stack list. Not adding this stack to rosinstall file'%s
     return res
     
+def get_environment():
+    env = {}
+    env['WORKSPACE'] = os.environ['WORKSPACE']
+    env['INSTALL_DIR'] = os.environ['INSTALL_DIR']
+    env['HOME'] = os.environ['INSTALL_DIR']
+    env['JOB_NAME'] = os.environ['JOB_NAME']
+    env['BUILD_NUMBER'] = os.environ['BUILD_NUMBER']
+    env['ROS_TEST_RESULTS_DIR'] = os.environ['ROS_TEST_RESULTS_DIR']
+    env['PWD'] = os.environ['WORKSPACE']
+    return env
+
