@@ -15,25 +15,12 @@ import subprocess
 
 def main():
     # parse command line options
-    parser = optparse.OptionParser()
+    (options, args) = get_options(['rosdistro', 'stack'], [])
+    if not options:
+        return -1
     
-    parser.add_option('--stack', dest = 'stack', action='store',
-                      help='Stack name')
-    parser.add_option('--rosdistro', dest = 'rosdistro', default=False, action='store',
-                      help='Ros distro name')
-    (options, args) = parser.parse_args()
-    if not options.stack or not options.rosdistro:
-        print 'You did not specify all options to run this script.'
-        return
-
-
     # set environment
-    env = {}
-    env['WORKSPACE'] = os.environ['WORKSPACE']
-    env['HOME'] = os.environ['WORKSPACE']
-    env['JOB_NAME'] = os.environ['JOB_NAME']
-    env['BUILD_NUMBER'] = os.environ['BUILD_NUMBER']
-    env['PWD'] = os.environ['WORKSPACE']
+    env = get_environment()
     env['ROS_PACKAGE_PATH'] = '%s:%s:/opt/ros/%s/stacks'%(os.environ['WORKSPACE']+'/'+options.stack,
                                                           os.environ['INSTALL_DIR']+'/'+DEPENDS_ON_DIR,
                                                           options.rosdistro)

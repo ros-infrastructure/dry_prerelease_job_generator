@@ -206,7 +206,7 @@ def create_devel_configs(rosdistro, stack):
     
 
 def main():
-    options = get_options(['rosdistro'], ['delete', 'wait', 'stack'])
+    (options, args) = get_options(['rosdistro'], ['delete', 'wait', 'stack'])
     if not options:
         return -1
 

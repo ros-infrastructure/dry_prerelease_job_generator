@@ -10,7 +10,7 @@ import subprocess
 
 def main():
     # parse command line options
-    options = get_options(['stack', 'rosdistro'], ['repeat'])
+    (options, args) = get_options(['stack', 'rosdistro'], ['repeat'])
     if not options:
         return -1
     if len(options.stack) > 1:

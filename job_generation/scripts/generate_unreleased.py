@@ -223,7 +223,7 @@ def create_unreleased_configs(rosdistro, rosinstall):
     
 
 def main():
-    options = get_options(['rosdistro', 'rosinstall'], ['delete'])
+    (options, args) = get_options(['rosdistro', 'rosinstall'], ['delete'])
     if not options:
         return -1
 

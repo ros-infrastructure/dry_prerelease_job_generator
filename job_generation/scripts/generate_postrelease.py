@@ -237,7 +237,7 @@ def create_post_release_configs(rosdistro, stack):
     
 
 def main():
-    options = get_options(['rosdistro'], ['delete', 'wait', 'start', 'stack'])
+    (options, args) = get_options(['rosdistro'], ['delete', 'wait', 'start', 'stack'])
     if not options:
         return -1
 

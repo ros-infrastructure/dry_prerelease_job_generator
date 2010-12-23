@@ -14,7 +14,7 @@ from pysqlite2 import dbapi2 as sqlite
 
 
 def main():
-    options = get_options(['rosdistro', 'overlay', 'variant'], ['database'])
+    (options, args) = get_options(['rosdistro', 'overlay', 'variant'], ['database'])
     if not options:
         return -1
 
