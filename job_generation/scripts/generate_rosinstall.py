@@ -9,6 +9,7 @@ import subprocess
 import rosdistro 
 import optparse
 from job_generation.jobs_common import *
+#from pysqlite2 import dbapi2 as sqlite
 
 
 def main():
@@ -19,6 +20,8 @@ def main():
                       help="Specify the variant to create a rosinstall for")
     parser.add_option('--rosdistro', dest = 'rosdistro', action='store', 
                       help="Specify the ros distro to operate on")
+    parser.add_option('--database', dest = 'database', action='store', 
+                      help="Store requests in database")
     (options, args) = parser.parse_args()
     if not options.rosdistro in UBUNTU_DISTRO_MAP.keys():
         print 'Rosdistro %s does not exist. Options are %s'%(options.rosdistro, UBUNTU_DISTRO_MAP.keys())
@@ -40,6 +43,18 @@ def main():
         rosinstall = rosdistro.extended_variant_to_rosinstall(options.variant, distro_obj, 'release')        
 
     print rosinstall
+
+    # write to database
+    # if options.database:
+    #     connection = sqlite.connect(options.database)
+    #     cursor = connection.cursor()
+    #     try:
+    #         cursor.execute('CREATE TABLE rosinstall (stamp TIMESTAMP, rosdistro TEXT, variant TEXT, overlay TEXT)')
+    #     except sqlite.OperationalError:
+    #         pass
+    #     cursor.execute('INSERT INTO rosdistro VALUES (?, ?, ?, ?)', (datetime.datetime.now(), options.rosdistro, options.values, options.overlay))
+    # connection.commit()
+
 
 if __name__ == '__main__':
     main()
