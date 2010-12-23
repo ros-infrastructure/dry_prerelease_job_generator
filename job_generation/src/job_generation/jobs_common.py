@@ -255,4 +255,4 @@ def get_options(required, optional):
                 print 'Variant "%s" does not exist in the %s disro file.'%(options.variant, options.rosdistro)
                 return None
 
-    return options
+    return (options, args)

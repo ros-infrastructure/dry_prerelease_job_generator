@@ -172,15 +172,16 @@ def create_prerelease_configs(rosdistro, stack_list, email, repeat):
     
 
 def main():
-    options = get_options(['stack', 'rosdistro', 'email'], ['repeat'])
+    (options, args) = get_options(['stack', 'rosdistro', 'email'], ['repeat'])
     if not options:
         return -1
 
-        
     # create hudson instance
-    info = urllib.urlopen(CONFIG_PATH).read().split(',')
-    hudson_instance = hudson.Hudson(SERVER, info[0], info[1])
-
+    if len(args) == 2:
+        hudson_instance = hudson.Hudson(SERVER, args[0], args[1])
+    else:
+        info = urllib.urlopen(CONFIG_PATH).read().split(',')
+        hudson_instance = hudson.Hudson(SERVER, info[0], info[1])
 
     prerelease_configs = create_prerelease_configs(options.rosdistro, options.stack, options.email, options.repeat)
     # check if jobs are not already running
