@@ -258,7 +258,7 @@ def get_options(required, optional):
     return (options, args)
 
 
-def schedule_jobs(jobs, wait=False, delete=False, hudson_obj=None):
+def schedule_jobs(jobs, wait=False, delete=False, start=False, hudson_obj=None):
     # create hudson instance
     if not hudson_obj:
         info = urllib.urlopen(CONFIG_PATH).read().split(',')
@@ -285,11 +285,15 @@ def schedule_jobs(jobs, wait=False, delete=False, hudson_obj=None):
             # reconfigure job
             elif exists:
                 hudson_obj.reconfig_job(job_name, jobs[job_name])
+                if start:
+                    hudson_obj.build_job(job_name)
                 print " - %s"%job_name
 
             # create job
             elif not exists:
                 hudson_obj.create_job(job_name, jobs[job_name])
+                if start:
+                    hudson_obj.build_job(job_name)
                 print " - %s"%job_name
 
         if wait and len(jobs_todo) > 0:

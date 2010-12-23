@@ -194,7 +194,7 @@ def main():
 
     # send prerelease tests to Hudson
     print 'Creating pre-release Hudson jobs:'
-    schedule_jobs(prerelease_configs, hudson_obj=hudson_instance)
+    schedule_jobs(prerelease_configs, start=True, hudson_obj=hudson_instance)
     print 'You will receive %d emails on %s, one for each job'%(len(prerelease_configs), options.email)
     print 'You can follow the progress of these jobs on <%s/view/pre-release>'%(SERVER)
 
