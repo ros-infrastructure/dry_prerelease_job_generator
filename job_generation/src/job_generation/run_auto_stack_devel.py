@@ -10,22 +10,13 @@ import subprocess
 
 def main():
     # parse command line options
-    parser = optparse.OptionParser()
-    
-    parser.add_option('--stack', dest = 'stack', default=False, action='store',
-                      help='Stack name')
-    parser.add_option('--rosdistro', dest = 'rosdistro', default=False, action='store',
-                      help='Ros distro name')
-    parser.add_option('--repeat', dest = 'repeat', default=0, action='store',
-                      help='How many times to repeat the test')
-    (options, args) = parser.parse_args()
-    if not options.stack or not options.rosdistro:
-        print 'You did not specify all options to run this script.'
-        return
-    options.repeat = int(options.repeat)
-    if options.repeat < 0:
-        options.repeat = 0
-        print 'Setting repeat from %d to 0'%options.repeat 
+    options = get_options(['stack', 'rosdistro'], ['repeat'])
+    if not options:
+        return -1
+    if len(options.stack) > 1:
+        print "You can only provide one stack at a time"
+        return -1
+    options.stack = options.stack[0]
 
     # set environment
     env = get_environment()
