@@ -2,6 +2,7 @@
 
 import os
 import optparse
+import rosdistro
 
 BOOTSTRAP_SCRIPT = """
 sudo apt-get install ros-ROSDISTRO-ros --yes
@@ -184,18 +185,69 @@ def get_options(required, optional):
         parser.add_option('--rosdistro', dest = 'rosdistro', default=False, action='store',
                           help='Ros distro name')
     if 'stack' in ops:
-        parser.add_option('--stack', dest = 'stack', default=False, action='store',
+        parser.add_option('--stack', dest = 'stack', action='append',
                           help='Stack name')
+    if 'email' in ops:
+        parser.add_option('--email', dest = 'email', default=False, action='store',
+                          help='Email address to send results to')
     if 'repeat' in ops:
         parser.add_option('--repeat', dest = 'repeat', default=0, action='store',
                           help='How many times to repeat the test')
+    if 'delete' in ops:
+        parser.add_option('--delete', dest = 'delete', default=False, action='store_true',
+                          help='Delete jobs from Hudson')    
+    if 'wait' in ops:
+        parser.add_option('--wait', dest = 'wait', default=False, action='store_true',
+                          help='Wait for running jobs to finish to reconfigure them')    
+    if 'start' in ops:
+        parser.add_option('--start', dest = 'start', default=False, action='store_true',
+                          help='Start jobs')    
+    if 'rosinstall' in ops:
+        parser.add_option('--rosinstall', dest = 'rosinstall', action='store',
+                          help="Specify the rosinstall file that refers to unreleased code.")
+    if 'overlay' in ops:
+        parser.add_option('--overlay', dest = 'overlay', action='store',
+                          help='Create overlay file')
+    if 'variant' in ops:
+        parser.add_option('--variant', dest = 'variant', action='store',
+                          help="Specify the variant to create a rosinstall for")
+    if 'database' in ops:
+        parser.add_option('--database', dest = 'database', action='store',
+                          help="Specify database file")
+
     (options, args) = parser.parse_args()
+    
 
     # check if required arguments are there
     for r in required:
-        if not r in options.keys():
+        if not parser.has_option('--'+r):
             print 'You need to specify "--%s"'%r
             return None
 
+    # postprocessing
+    if parser.has_option('--email') and not '@' in options.email:
+        options.email = options.email + '@willowgarage.com'        
+
+
+    # check if rosdistro exists
+    if parser.has_option('--rosdistro') and not options.rosdistro in UBUNTU_DISTRO_MAP.keys():
+        print 'You profided an invalid "--rosdistro %s" argument. Options are %s'%(options.rosdistro, UBUNTU_DISTRO_MAP.keys())
+        return None
+
+    # check if stacks exist
+    if parser.has_option('--stack') and parser.has_option('--rosdistro'):
+        distro_obj = rosdistro.Distro(ROSDISTRO_MAP[options.rosdistro])
+        for s in options.stack:
+            if not s in distro_obj.stacks:
+                print 'Stack "%s" does not exist in the %s disro file.'%(s, options.rosdistro)
+                print 'You need to add this stack to the rosdistro file'
+                return None
+
+    # check if variant exists
+    if parser.has_option('--variant') and parser.has_option('--rosdistro'):
+        distro_obj = rosdistro.Distro(ROSDISTRO_MAP[options.rosdistro])
+        if not options.variant in distro_obj.variants:
+                print 'Variant "%s" does not exist in the %s disro file.'%(s, options.rosdistro)
+                return None
 
     return options
