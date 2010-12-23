@@ -1,5 +1,6 @@
 #!/usr/bin/python
 
+from roslib import stack_manifest
 import os
 import optparse
 import rosdistro
