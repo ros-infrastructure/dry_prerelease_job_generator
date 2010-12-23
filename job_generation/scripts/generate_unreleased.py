@@ -223,24 +223,9 @@ def create_unreleased_configs(rosdistro, rosinstall):
     
 
 def main():
-    parser = optparse.OptionParser()
-    parser.add_option('--delete', dest = 'delete', default=False, action='store_true',
-                      help='Delete jobs from Hudson')    
-    parser.add_option('--rosinstall', dest = 'rosinstall', action='store',
-                      help="Specify the rosinstall file that refers to unreleased code.")
-    parser.add_option('--rosdistro', dest = 'rosdistro', action='store',
-                      help="Specify the ros distro to operate on (defaults to cturtle)")
-    (options, args) = parser.parse_args()
-    if not options.rosdistro:
-        print 'Please provide the ros distro you want to test: --rosdistro cturtle'
-        return
-    if not options.rosdistro in UBUNTU_DISTRO_MAP.keys():
-        print 'You profided an invalid "--rosdistro %s" argument. Options are %s'%(options.rosdistro, UBUNTU_DISTRO_MAP.keys())
-        return
-    if not options.rosinstall:
-        print 'Please provide the rosinstall of unreleased code to test: --rosinstall foo.rosinstall'
-        return
-        
+    options = get_options(['rosdistro', 'rosinstall'], ['delete'])
+    if not options:
+        return -1
 
     # hudson instance
     info = urllib.urlopen(CONFIG_PATH).read().split(',')

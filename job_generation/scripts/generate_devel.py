@@ -206,19 +206,9 @@ def create_devel_configs(rosdistro, stack):
     
 
 def main():
-    parser = optparse.OptionParser()
-    parser.add_option('--delete', dest = 'delete', default=False, action='store_true',
-                      help='Delete jobs from Hudson')    
-    parser.add_option('--wait', dest = 'wait', default=False, action='store_true',
-                      help='Wait for running jobs to finish to reconfigure them')    
-    parser.add_option('--stack', dest = 'stacks', action='append',
-                      help="Specify the stacks to operate on (defaults to all stacks)")
-    parser.add_option('--rosdistro', dest = 'rosdistro', action='store', default='cturtle',
-                      help="Specify the ros distro to operate on (defaults to cturtle)")
-    (options, args) = parser.parse_args()
-    if not options.rosdistro in UBUNTU_DISTRO_MAP.keys():
-        print 'You profided an invalid "--rosdistro %s" argument. Options are %s'%(options.rosdistro, UBUNTU_DISTRO_MAP.keys())
-        return
+    options = get_options(['rosdistro'], ['delete', 'wait', 'stack'])
+    if not options:
+        return -1
 
 
     # Parse distro file
@@ -227,17 +217,14 @@ def main():
 
 
     # create hudson instance
-    if len(args) == 2:
-        hudson_instance = hudson.Hudson(SERVER, args[0], args[1])        
-    else:
-        info = urllib.urlopen(CONFIG_PATH).read().split(',')
-        hudson_instance = hudson.Hudson(SERVER, info[0], info[1])
+    info = urllib.urlopen(CONFIG_PATH).read().split(',')
+    hudson_instance = hudson.Hudson(SERVER, info[0], info[1])
 
 
     # generate hudson config files
     devel_configs = {}
-    if options.stacks:
-        stack_list = options.stacks
+    if options.stack:
+        stack_list = options.stack
     else:
         stack_list = distro_obj.stacks
     for stack_name in stack_list:

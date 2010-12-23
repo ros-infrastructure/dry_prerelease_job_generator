@@ -14,28 +14,12 @@ from pysqlite2 import dbapi2 as sqlite
 
 
 def main():
-    parser = optparse.OptionParser()
-    parser.add_option('--overlay', dest = 'overlay', action='store',
-                      help='Create overlay file')    
-    parser.add_option('--variant', dest = 'variant', action='store',
-                      help="Specify the variant to create a rosinstall for")
-    parser.add_option('--rosdistro', dest = 'rosdistro', action='store', 
-                      help="Specify the ros distro to operate on")
-    parser.add_option('--database', dest = 'database', action='store', 
-                      help="Store requests in database")
-    (options, args) = parser.parse_args()
-    if not options.rosdistro in UBUNTU_DISTRO_MAP.keys():
-        print 'Rosdistro %s does not exist. Options are %s'%(options.rosdistro, UBUNTU_DISTRO_MAP.keys())
-        return
+    options = get_options(['rosdistro', 'overlay', 'variant'], ['database'])
+    if not options:
+        return -1
 
     # Parse distro file
     distro_obj = rosdistro.Distro(ROSDISTRO_MAP[options.rosdistro])
-    
-
-    # check if variant exists
-    if not options.variant in distro_obj.variants:
-        print 'Variant %s does not exist in rosdistro %s'%(options.variant, options.rosdistro)
-        return
 
     # generate rosinstall file for variant
     if options.overlay == 'yes':
@@ -58,7 +42,6 @@ def main():
             connection.commit()
         except:
             pass
-
 
 if __name__ == '__main__':
     main()

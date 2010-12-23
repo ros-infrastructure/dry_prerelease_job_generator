@@ -247,7 +247,7 @@ def get_options(required, optional):
     if 'variant' in ops and options.variant:
         distro_obj = rosdistro.Distro(ROSDISTRO_MAP[options.rosdistro])
         if not options.variant in distro_obj.variants:
-                print 'Variant "%s" does not exist in the %s disro file.'%(s, options.rosdistro)
+                print 'Variant "%s" does not exist in the %s disro file.'%(options.variant, options.rosdistro)
                 return None
 
     return options

@@ -29,7 +29,7 @@ HUDSON_PRERELEASE_CONFIG = """<?xml version='1.0' encoding='UTF-8'?>
 set -o errexit
 echo "_________________________________BEGIN SCRIPT______________________________________"
 BOOTSTRAP_SCRIPT
-rosrun job_generation run_auto_stack_prereleaseDEVEL.py STACKARGS --rosdistro ROSDISTRO --repeat REPEAT
+rosrun job_generation run_auto_stack_prerelease.py STACKARGS --rosdistro ROSDISTRO --repeat REPEAT
 echo "_________________________________END SCRIPT_______________________________________"
 DELIM
 
@@ -151,7 +151,7 @@ import optparse
 
 
 
-def create_prerelease_configs(rosdistro, stack_list, email, repeat, devel):
+def create_prerelease_configs(rosdistro, stack_list, email, repeat):
     # create hudson config files for each ubuntu distro
     configs = {}
     for ubuntudistro in UBUNTU_DISTRO_MAP[rosdistro]:
@@ -166,61 +166,23 @@ def create_prerelease_configs(rosdistro, stack_list, email, repeat, devel):
             hudson_config = hudson_config.replace('STACKARGS', ' '.join(['--stack %s'%s for s in stack_list]))
             hudson_config = hudson_config.replace('EMAIL', email)
             hudson_config = hudson_config.replace('REPEAT', str(repeat))
-            if devel:
-                hudson_config = hudson_config.replace('DEVEL', '_devel')                
-            else:
-                hudson_config = hudson_config.replace('DEVEL', '')                 
             configs[name] = hudson_config
     return configs
     
     
 
 def main():
-    parser = optparse.OptionParser()
-    parser.add_option('--delete', dest = 'delete', default=False, action='store_true',
-                      help='Delete jobs from Hudson')    
-    parser.add_option('--stack', dest = 'stacks', action='append',
-                      help="Specify the stacks to operate on. You can use this argument multiple times to build multiple stacks at onece")
-    parser.add_option('--rosdistro', dest = 'rosdistro', action='store',
-                      help="Specify the ros distro to operate on (defaults to cturtle)")
-    parser.add_option('--email', dest='email', action='store',
-                      help='Send email to this address')
-    parser.add_option('--repeat', dest = 'repeat', default='0', action='store',
-                      help='How many times to repeat the tests of the stack itself')
-    parser.add_option('--devel', dest = 'devel', default=False, action='store_true',
-                      help='Use the development script')
-    (options, args) = parser.parse_args()
-    if not options.email:
-        print 'Please provide your email address: --email you@willowgarage.com'
-        return
-    if not '@' in options.email: 
-        options.email = options.email + '@willowgarage.com'
-    if not options.rosdistro:
-        print 'Please provide the ros distro you want to test: --rosdistro cturtle'
-        return
-    if not options.rosdistro in UBUNTU_DISTRO_MAP.keys():
-        print 'You profided an invalid "--rosdistro %s" argument. Options are %s'%(options.rosdistro, UBUNTU_DISTRO_MAP.keys())
-        return
-    if not options.stacks:
-        print 'Please provide at least one stack to test: --stack pr2_doors'
-        return
-    distro_obj = rosdistro.Distro(ROSDISTRO_MAP[options.rosdistro])
-    for s in options.stacks:
-        if not s in distro_obj.stacks:
-            print 'Stack "%s" does not exist in the %s disro file. Before you can run the prerelease scripts you need to add this stack to the rosdistro file'%(s, options.rosdistro)
-            return
+    options = get_options(['stack', 'rosdistro', 'email'], ['repeat'])
+    if not options:
+        return -1
 
         
     # create hudson instance
-    if len(args) == 2:
-        hudson_instance = hudson.Hudson(SERVER, args[0], args[1])        
-    else:
-        info = urllib.urlopen(CONFIG_PATH).read().split(',')
-        hudson_instance = hudson.Hudson(SERVER, info[0], info[1])
+    info = urllib.urlopen(CONFIG_PATH).read().split(',')
+    hudson_instance = hudson.Hudson(SERVER, info[0], info[1])
 
 
-
-    prerelease_configs = create_prerelease_configs(options.rosdistro, options.stacks, options.email, options.repeat, options.devel)
+    prerelease_configs = create_prerelease_configs(options.rosdistro, options.stack, options.email, options.repeat)
     # check if jobs are not already running
     for job_name in prerelease_configs:
         exists = hudson_instance.job_exists(job_name)
@@ -234,13 +196,8 @@ def main():
     for job_name in prerelease_configs:
         exists = hudson_instance.job_exists(job_name)
 
-        # delete job
-        if options.delete and exists:
-            hudson_instance.delete_job(job_name)
-            print "Deleting job %s"%job_name
-
         # reconfigure job
-        elif exists:
+        if exists:
             hudson_instance.reconfig_job(job_name, prerelease_configs[job_name])
             hudson_instance.build_job(job_name)
             print "  - %s"%job_name
