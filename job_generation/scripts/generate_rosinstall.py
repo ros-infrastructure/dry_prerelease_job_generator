@@ -8,8 +8,9 @@ import sys
 import subprocess
 import rosdistro 
 import optparse
+import datetime
 from job_generation.jobs_common import *
-#from pysqlite2 import dbapi2 as sqlite
+from pysqlite2 import dbapi2 as sqlite
 
 
 def main():
@@ -45,15 +46,15 @@ def main():
     print rosinstall
 
     # write to database
-    # if options.database:
-    #     connection = sqlite.connect(options.database)
-    #     cursor = connection.cursor()
-    #     try:
-    #         cursor.execute('CREATE TABLE rosinstall (stamp TIMESTAMP, rosdistro TEXT, variant TEXT, overlay TEXT)')
-    #     except sqlite.OperationalError:
-    #         pass
-    #     cursor.execute('INSERT INTO rosdistro VALUES (?, ?, ?, ?)', (datetime.datetime.now(), options.rosdistro, options.values, options.overlay))
-    # connection.commit()
+    if options.database:
+        connection = sqlite.connect(options.database)
+        cursor = connection.cursor()
+        try:
+            cursor.execute('CREATE TABLE rosinstall (stamp TIMESTAMP, rosdistro TEXT, variant TEXT, overlay TEXT)')
+        except sqlite.OperationalError:
+            pass
+        cursor.execute('INSERT INTO rosinstall VALUES (?, ?, ?, ?)', (datetime.datetime.now(), options.rosdistro, options.variant, options.overlay))
+    connection.commit()
 
 
 if __name__ == '__main__':
