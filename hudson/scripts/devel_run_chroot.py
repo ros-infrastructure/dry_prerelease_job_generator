@@ -339,7 +339,7 @@ class ChrootInstance:
         """
         ros_source=os.path.join(self.chroot_path, 'etc', 'apt', 'sources.list.d', 'ros-latest.list')
         with tempfile.NamedTemporaryFile() as tf:
-            print "Adding code.ros.org as source"
+            print "Adding packages.ros.org as source"
             #tf.write("deb http://code.ros.org/packages/ros/ubuntu %s main\n" % self.distro)
             tf.write("deb http://packages.ros.org/ros-shadow-fixed/ubuntu %s main\n" % self.distro)
             tf.flush()
