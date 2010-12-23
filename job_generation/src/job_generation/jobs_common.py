@@ -218,6 +218,10 @@ def get_options(required, optional):
     (options, args) = parser.parse_args()
     
 
+    # make repeat an int
+    if 'repeat' in ops:
+        options.repeat = int(options.repeat)
+
     # check if required arguments are there
     for r in required:
         if not eval('options.%s'%r):
