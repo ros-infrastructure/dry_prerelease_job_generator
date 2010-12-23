@@ -1,5 +1,8 @@
 #!/usr/bin/python
 
+import os
+import optparse
+
 BOOTSTRAP_SCRIPT = """
 sudo apt-get install ros-ROSDISTRO-ros --yes
 source /opt/ros/ROSDISTRO/setup.sh
@@ -173,3 +176,26 @@ def get_environment():
     env['PWD'] = os.environ['WORKSPACE']
     return env
 
+
+def get_options(required, optional):
+    parser = optparse.OptionParser()
+    ops = required + optional
+    if 'rosdistro' in ops:
+        parser.add_option('--rosdistro', dest = 'rosdistro', default=False, action='store',
+                          help='Ros distro name')
+    if 'stack' in ops:
+        parser.add_option('--stack', dest = 'stack', default=False, action='store',
+                          help='Stack name')
+    if 'repeat' in ops:
+        parser.add_option('--repeat', dest = 'repeat', default=0, action='store',
+                          help='How many times to repeat the test')
+    (options, args) = parser.parse_args()
+
+    # check if required arguments are there
+    for r in required:
+        if not r in options.keys():
+            print 'You need to specify "--%s"'%r
+            return None
+
+
+    return options
