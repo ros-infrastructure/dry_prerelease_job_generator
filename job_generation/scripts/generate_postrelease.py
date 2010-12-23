@@ -1,36 +1,5 @@
 #!/usr/bin/python
 
-HUDSON_SVN = """
-  <scm class="hudson.scm.SubversionSCM"> 
-    <locations> 
-      <hudson.scm.SubversionSCM_-ModuleLocation> 
-        <remote>STACKURI</remote> 
-        <local>STACKNAME</local> 
-      </hudson.scm.SubversionSCM_-ModuleLocation> 
-    </locations> 
-    <useUpdate>false</useUpdate> 
-    <doRevert>false</doRevert> 
-    <excludedRegions></excludedRegions> 
-    <includedRegions></includedRegions> 
-    <excludedUsers></excludedUsers> 
-    <excludedRevprop></excludedRevprop> 
-    <excludedCommitMessages></excludedCommitMessages> 
-  </scm> 
-"""
-
-HUDSON_HG = """
-  <scm class="hudson.plugins.mercurial.MercurialSCM">
-    <source>STACKURI</source>
-    <modules></modules>
-    <subdir>STACKNAME</subdir>
-    <clean>false</clean>
-    <forest>false</forest>
-    <branch>STACKBRANCH</branch>
-    <browser class="hudson.plugins.mercurial.browser.HgWeb">
-      <url>https://stack-nxt.foote-ros-pkg.googlecode.com/hg/</url>
-    </browser>
-  </scm>
-"""
 
 # template to create post-release hudscon configuration file
 HUDSON_POST_RELEASE_CONFIG = """<?xml version='1.0' encoding='UTF-8'?>
@@ -177,7 +146,6 @@ import roslib; roslib.load_manifest("job_generation")
 import rosdistro
 import time
 from job_generation.jobs_common import *
-import hudson
 import urllib
 import optparse 
 
@@ -237,19 +205,13 @@ def create_post_release_configs(rosdistro, stack):
     
 
 def main():
-    (options, args) = get_options(['rosdistro'], ['delete', 'wait', 'start', 'stack'])
+    (options, args) = get_options(['rosdistro'], ['delete', 'wait', 'stack'])
     if not options:
         return -1
 
     # Parse distro file
     distro_obj = rosdistro.Distro(ROSDISTRO_MAP[options.rosdistro])
     print 'Operating on ROS distro %s'%distro_obj.release_name
-
-
-    # create hudson instance
-    info = urllib.urlopen(CONFIG_PATH).read().split(',')
-    hudson_instance = hudson.Hudson(SERVER, info[0], info[1])
-
 
     # generate hudson config files
     post_release_configs = {}
@@ -261,44 +223,8 @@ def main():
         post_release_configs.update(create_post_release_configs(distro_obj.release_name, distro_obj.released_stacks[stack_name]))
 
 
-
-    # send post_release tests to Hudson
-    finished = False
-    while not finished:
-        post_release_configs_todo = {}
-        for job_name in post_release_configs:
-            exists = hudson_instance.job_exists(job_name)
-            if exists and hudson_instance.job_is_running(job_name):
-                print "Not reconfiguring running job %s because it is still running"%job_name
-                post_release_configs_todo[job_name] = post_release_configs[job_name]
-                continue
-
-            # delete old job
-            if options.delete:
-                if exists:
-                    hudson_instance.delete_job(job_name)
-                    print "Deleting job %s"%job_name
-
-            # reconfigure job
-            elif exists:
-                hudson_instance.reconfig_job(job_name, post_release_configs[job_name])
-                print "Reconfigure job %s"%job_name
-
-            # create job
-            elif not exists:
-                hudson_instance.create_job(job_name, post_release_configs[job_name])
-                print "Creating new job %s"%job_name
-
-            # start job
-            if options.start and '0 3 * * *' in post_release_configs[job_name]:  # only start gold jobs
-                hudson_instance.build_job(job_name)
-
-        if options.wait and len(post_release_configs_todo) > 0:
-            post_release_configs = post_release_configs_todo
-            post_release_configs_todo = {}
-            time.sleep(10.0)
-        else:
-            finished = True
+    # schedule jobs
+    schedule_jobs(post_release_configs, options.wait, options.delete)
 
 
 if __name__ == '__main__':

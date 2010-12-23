@@ -194,21 +194,7 @@ def main():
 
     # send prerelease tests to Hudson
     print 'Creating pre-release Hudson jobs:'
-    for job_name in prerelease_configs:
-        exists = hudson_instance.job_exists(job_name)
-
-        # reconfigure job
-        if exists:
-            hudson_instance.reconfig_job(job_name, prerelease_configs[job_name])
-            hudson_instance.build_job(job_name)
-            print "  - %s"%job_name
-
-        # create job
-        elif not exists:
-            hudson_instance.create_job(job_name, prerelease_configs[job_name])
-            hudson_instance.build_job(job_name)
-            print "  - %s"%job_name
-
+    schedule_jobs(prerelease_configs, hudson_obj=hudson_instance)
     print 'You will receive %d emails on %s, one for each job'%(len(prerelease_configs), options.email)
     print 'You can follow the progress of these jobs on <%s/view/pre-release>'%(SERVER)
 

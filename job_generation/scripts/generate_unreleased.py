@@ -165,7 +165,6 @@ println &quot;${build_failures_context}&quot;&#xd;
 
 import roslib; roslib.load_manifest("job_generation")
 from job_generation.jobs_common import *
-import hudson
 import urllib
 import optparse 
 import yaml
@@ -223,36 +222,14 @@ def create_unreleased_configs(rosdistro, rosinstall):
     
 
 def main():
-    (options, args) = get_options(['rosdistro', 'rosinstall'], ['delete'])
+    (options, args) = get_options(['rosdistro', 'rosinstall'], ['delete', 'wait'])
     if not options:
         return -1
-
-    # hudson instance
-    info = urllib.urlopen(CONFIG_PATH).read().split(',')
-    hudson_instance = hudson.Hudson(SERVER, info[0], info[1])
 
     # send unreleased tests to Hudson
     print 'Creating unreleased Hudson jobs:'
     unreleased_configs = create_unreleased_configs(options.rosdistro, options.rosinstall)
-
-    for job_name in unreleased_configs:
-        exists = hudson_instance.job_exists(job_name)
-
-        # delete job
-        if options.delete and exists:
-            print "Deleting job %s"%job_name
-            hudson_instance.delete_job(job_name)
-
-        # reconfigure job
-        elif exists:
-            print "  - %s"%job_name
-            hudson_instance.reconfig_job(job_name, unreleased_configs[job_name])
-
-        # create job
-        elif not exists:
-            print "  - %s"%job_name
-            hudson_instance.create_job(job_name, unreleased_configs[job_name])
-
+    schedule_jobs(unreleased_configs, options.wait, options.delete)
 
 
 if __name__ == '__main__':

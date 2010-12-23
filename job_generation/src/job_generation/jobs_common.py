@@ -4,6 +4,9 @@ import roslib; roslib.load_manifest("job_generation")
 import os
 import optparse
 import rosdistro
+import hudson
+import urllib
+import time
 
 BOOTSTRAP_SCRIPT = """
 sudo apt-get install ros-ROSDISTRO-ros --yes
@@ -200,9 +203,6 @@ def get_options(required, optional):
     if 'wait' in ops:
         parser.add_option('--wait', dest = 'wait', default=False, action='store_true',
                           help='Wait for running jobs to finish to reconfigure them')    
-    if 'start' in ops:
-        parser.add_option('--start', dest = 'start', default=False, action='store_true',
-                          help='Start jobs')    
     if 'rosinstall' in ops:
         parser.add_option('--rosinstall', dest = 'rosinstall', default=None, action='store',
                           help="Specify the rosinstall file that refers to unreleased code.")
@@ -227,7 +227,7 @@ def get_options(required, optional):
     for r in required:
         if not eval('options.%s'%r):
             print 'You need to specify "--%s"'%r
-            return None
+            return (None, args)
 
     # postprocessing
     if 'email' in ops and options.email and not '@' in options.email:
@@ -237,7 +237,7 @@ def get_options(required, optional):
     # check if rosdistro exists
     if 'rosdistro' in ops and (not options.rosdistro or not options.rosdistro in UBUNTU_DISTRO_MAP.keys()):
         print 'You profided an invalid "--rosdistro %s" argument. Options are %s'%(options.rosdistro, UBUNTU_DISTRO_MAP.keys())
-        return None
+        return (None, args)
 
     # check if stacks exist
     if 'stack' in ops and options.stack:
@@ -246,13 +246,59 @@ def get_options(required, optional):
             if not s in distro_obj.stacks:
                 print 'Stack "%s" does not exist in the %s disro file.'%(s, options.rosdistro)
                 print 'You need to add this stack to the rosdistro file'
-                return None
+                return (None, args)
 
     # check if variant exists
     if 'variant' in ops and options.variant:
         distro_obj = rosdistro.Distro(ROSDISTRO_MAP[options.rosdistro])
         if not options.variant in distro_obj.variants:
                 print 'Variant "%s" does not exist in the %s disro file.'%(options.variant, options.rosdistro)
-                return None
+                return (None, args)
 
     return (options, args)
+
+
+def schedule_jobs(jobs, wait=False, delete=False, hudson_obj=None):
+    # create hudson instance
+    if not hudson_obj:
+        info = urllib.urlopen(CONFIG_PATH).read().split(',')
+        hudson_obj = hudson.Hudson(SERVER, info[0], info[1])
+
+    finished = False
+    while not finished:
+        jobs_todo = {}
+        for job_name in jobs:
+            exists = hudson_obj.job_exists(job_name)
+
+            # job is already running
+            if exists and hudson_obj.job_is_running(job_name):
+                jobs_todo[job_name] = jobs[job_name]
+                print "Not reconfiguring running job %s because it is still running"%job_name
+
+
+            # delete old job
+            elif delete:
+                if exists:
+                    hudson_obj.delete_job(job_name)
+                    print " - Deleting job %s"%job_name
+
+            # reconfigure job
+            elif exists:
+                hudson_obj.reconfig_job(job_name, jobs[job_name])
+                print " - %s"%job_name
+
+            # create job
+            elif not exists:
+                hudson_obj.create_job(job_name, jobs[job_name])
+                print " - %s"%job_name
+
+        if wait and len(jobs_todo) > 0:
+            jobs = jobs_todo
+            jobs_todo = {}
+            time.sleep(10.0)
+        else:
+            finished = True
+
+
+
+
