@@ -47,14 +47,17 @@ def main():
 
     # write to database
     if options.database:
-        connection = sqlite.connect(options.database)
-        cursor = connection.cursor()
         try:
-            cursor.execute('CREATE TABLE rosinstall (stamp TIMESTAMP, rosdistro TEXT, variant TEXT, overlay TEXT)')
-        except sqlite.OperationalError:
+            connection = sqlite.connect(options.database)
+            cursor = connection.cursor()
+            try:
+                cursor.execute('CREATE TABLE rosinstall (stamp TIMESTAMP, rosdistro TEXT, variant TEXT, overlay TEXT)')
+            except sqlite.OperationalError:
+                pass
+            cursor.execute('INSERT INTO rosinstall VALUES (?, ?, ?, ?)', (datetime.datetime.now(), options.rosdistro, options.variant, options.overlay))
+            connection.commit()
+        except:
             pass
-        cursor.execute('INSERT INTO rosinstall VALUES (?, ?, ?, ?)', (datetime.datetime.now(), options.rosdistro, options.variant, options.overlay))
-    connection.commit()
 
 
 if __name__ == '__main__':
