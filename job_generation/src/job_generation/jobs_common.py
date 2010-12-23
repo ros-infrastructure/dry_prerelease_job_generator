@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-from roslib import stack_manifest
+import roslib; roslib.load_manifest("job_generation")
 import os
 import optparse
 import rosdistro
