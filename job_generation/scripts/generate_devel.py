@@ -144,7 +144,6 @@ println &quot;${build_failures_context}&quot;&#xd;
 import roslib; roslib.load_manifest("job_generation")
 import rosdistro
 from job_generation.jobs_common import *
-import optparse 
 
 
 def devel_job_name(rosdistro, stack_name, ubuntu, arch):
@@ -207,21 +206,15 @@ def main():
     if not options:
         return -1
 
-
-    # Parse distro file
-    distro_obj = rosdistro.Distro(ROSDISTRO_MAP[options.rosdistro])
-    print 'Operating on ROS distro %s'%distro_obj.release_name
-
-
     # generate hudson config files
-    devel_configs = {}
+    distro_obj = rosdistro.Distro(ROSDISTRO_MAP[options.rosdistro])
     if options.stack:
         stack_list = options.stack
     else:
         stack_list = distro_obj.stacks
+    devel_configs = {}
     for stack_name in stack_list:
         devel_configs.update(create_devel_configs(distro_obj.release_name, distro_obj.stacks[stack_name]))
-
 
     # schedule jobs
     schedule_jobs(devel_configs, options.wait, options.delete)

@@ -182,8 +182,8 @@ def main():
     else:
         info = urllib.urlopen(CONFIG_PATH).read().split(',')
         hudson_instance = hudson.Hudson(SERVER, info[0], info[1])
-
     prerelease_configs = create_prerelease_configs(options.rosdistro, options.stack, options.email, options.repeat)
+
     # check if jobs are not already running
     for job_name in prerelease_configs:
         exists = hudson_instance.job_exists(job_name)

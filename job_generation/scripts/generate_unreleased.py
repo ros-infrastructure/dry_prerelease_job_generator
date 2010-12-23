@@ -165,8 +165,6 @@ println &quot;${build_failures_context}&quot;&#xd;
 
 import roslib; roslib.load_manifest("job_generation")
 from job_generation.jobs_common import *
-import urllib
-import optparse 
 import yaml
 
 
