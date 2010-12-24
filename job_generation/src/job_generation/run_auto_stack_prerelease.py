@@ -90,7 +90,7 @@ def main():
     # Install Debian packages of ALL stacks in distro
     print 'Installing all stacks of ros distro %s: %s'%(options.rosdistro, str(rosdistro_obj.released_stacks.keys()))
     for stack in rosdistro_obj.released_stacks:
-        call('sudo apt-get install %s --yes'%(stack_to_deb(stack, options.rosdistro)), env)
+        call('sudo apt-get install %s --yes'%(stack_to_deb(stack, options.rosdistro)), env, ignore_fail=True)
     
 
     # Install all stacks that depend on this stack

@@ -371,7 +371,7 @@ def write_file(filename, msg):
         f.write(msg)
     
 
-def call(command, env, fail_message=''):
+def call(command, env, fail_message='', ignore_fail=False):
     res = ''
     err = ''
     try:
@@ -380,15 +380,16 @@ def call(command, env, fail_message=''):
         if helper.returncode != 0:
             raise Exception
     except Exception:
-        fail_message += "\n=========================================\n"
-        fail_message += "Failed to execute '%s'"%command
-        fail_message += "\n=========================================\n"
-        fail_message += str(res)
-        fail_message += "\n=========================================\n"
-        fail_message += str(err)
-        write_file(env['WORKSPACE']+'/build_output/buildfailures.txt', fail_message)
-        write_file(env['WORKSPACE']+'/test_output/testfailures.txt', '')
-        write_file(env['WORKSPACE']+'/build_output/buildfailures-with-context.txt', '')
-        raise Exception
+        if not ignore_fail:
+            fail_message += "\n=========================================\n"
+            fail_message += "Failed to execute '%s'"%command
+            fail_message += "\n=========================================\n"
+            fail_message += str(res)
+            fail_message += "\n=========================================\n"
+            fail_message += str(err)
+            write_file(env['WORKSPACE']+'/build_output/buildfailures.txt', fail_message)
+            write_file(env['WORKSPACE']+'/test_output/testfailures.txt', '')
+            write_file(env['WORKSPACE']+'/build_output/buildfailures-with-context.txt', '')
+            raise Exception
 
         
