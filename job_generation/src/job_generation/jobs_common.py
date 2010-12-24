@@ -361,7 +361,8 @@ def call(command, env, fail_message=None):
     res = subprocess.call(command.split(' '), env)
     if res != 0:
         if fail_message:
-            with open(env['WORKSPACE']+'/build_output/buildfailures.txt', 'w') as f:
+            #with open(env['WORKSPACE']+'/build_output/buildfailures.txt', 'w') as f:
+            with open(env['WORKSPACE']+'/fail.txt', 'w') as f:
                 f.write(fail_message)
         raise Exception
 
