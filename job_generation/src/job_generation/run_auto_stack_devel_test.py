@@ -31,7 +31,6 @@ def main():
     env['PATH'] = '/opt/ros/%s/ros/bin:%s'%(options.rosdistro, os.environ['PATH'])
     stack_dir = os.path.join(env['WORKSPACE'], options.stack)
 
-    print 'Wimpie'
     call('wimpie command', env, 'Oh dear, this is failing again ;-)')
 
     # Install Debian packages of stack dependencies

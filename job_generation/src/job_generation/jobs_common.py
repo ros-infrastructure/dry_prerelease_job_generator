@@ -372,21 +372,17 @@ def write_file(filename, msg):
     
 
 def call(command, env, fail_message=None):
-    print "Calling '%s'"%command
     try:
         helper = subprocess.Popen(command.split(' '), env=env)
         helper.communicate()
         if helper.returncode != 0:
             raise Exception
     except Exception:
-        print "Command failed"
-        if fail_message:
-            print "Writing output files"
-            #write_file(env['ROS_TEST_RESULTS_DIR']+'/_hudson/fail.xml', RESULT_XML.replace('MESSAGE', fail_message))
-            write_file(env['WORKSPACE']+'/build_output/buildfailures.txt', fail_message)
-            write_file(env['WORKSPACE']+'/test_output/testfailures.txt', '')
-            write_file(env['WORKSPACE']+'/build_output/buildfailures-with-context.txt', '')
-            print "Writing output files finished, raising exception"
+        if not fail_message:
+            fail_message = "Failed to execute '%s'"%command
+        write_file(env['WORKSPACE']+'/build_output/buildfailures.txt', fail_message)
+        write_file(env['WORKSPACE']+'/test_output/testfailures.txt', '')
+        write_file(env['WORKSPACE']+'/build_output/buildfailures-with-context.txt', '')
         raise Exception
 
         
