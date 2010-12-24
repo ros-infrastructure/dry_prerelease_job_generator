@@ -7,6 +7,7 @@ import rosdistro
 import hudson
 import urllib
 import time
+import subprocess
 
 BOOTSTRAP_SCRIPT = """
 cat &gt; $WORKSPACE/script.sh &lt;&lt;DELIM
@@ -354,3 +355,14 @@ def get_email_triggers(when, send_devel=True):
 def get_job_name(jobtype, rosdistro, stack_name, ubuntu, arch):
     return "_".join([jobtype, rosdistro, stack_name, ubuntu, arch])
 
+
+
+def call(command, env, fail_message=None):
+    res = subprocess.call(command.split(' '), env)
+    if res != 0:
+        if fail_message:
+            with open(env['ROS_TEST_RESULTS_DIR']+'/fail.xml', 'w') as f:
+                f.write(fail_message)
+        raise Exception
+
+        
