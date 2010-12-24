@@ -21,15 +21,15 @@ def main():
     
     # set environment
     env = get_environment()
-    env['ROS_PACKAGE_PATH'] = '%s:%s:/opt/ros/%s/stacks'%(os.environ['WORKSPACE']+'/'+options.stack,
-                                                          os.environ['INSTALL_DIR']+'/'+DEPENDS_ON_DIR,
+    env['ROS_PACKAGE_PATH'] = '%s:%s:/opt/ros/%s/stacks'%(os.path.join(os.environ['WORKSPACE'], options.stack),
+                                                          os.path.join(os.environ['INSTALL_DIR'], DEPENDS_ON_DIR),
                                                           options.rosdistro)
     if options.stack == 'ros':
-        env['ROS_ROOT'] = os.environ['WORKSPACE']+'/'+options.stack
+        env['ROS_ROOT'] = os.path.join(os.environ['WORKSPACE'], options.stack)
         print "We're building ROS, so setting the ROS_ROOT to %s"%(env['ROS_ROOT'])
     else:
         env['ROS_ROOT'] = '/opt/ros/%s/ros'%options.rosdistro
-    env['PYTHONPATH'] = env['ROS_ROOT']+'/core/roslib/src'
+    env['PYTHONPATH'] = os.path.join(env['ROS_ROOT'], '/core/roslib/src')
     env['PATH'] = '/opt/ros/%s/ros/bin:%s'%(options.rosdistro, os.environ['PATH'])
 
 

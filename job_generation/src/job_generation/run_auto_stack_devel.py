@@ -22,14 +22,14 @@ def main():
     env = get_environment()
     env['ROS_PACKAGE_PATH'] = '%s:/opt/ros/%s/stacks'%(os.environ['WORKSPACE'], options.rosdistro)
     if options.stack == 'ros':
-        env['ROS_ROOT'] = env['WORKSPACE']+'/ros'
+        env['ROS_ROOT'] = os.path.join(env['WORKSPACE'], 'ros')
         print "Changing ROS_ROOT and PYTHONPATH because we are building ROS"
     else:
         env['ROS_ROOT'] = '/opt/ros/%s/ros'%options.rosdistro
-    env['PYTHONPATH'] = env['ROS_ROOT']+'/core/roslib/src'
+    env['PYTHONPATH'] = os.path.join(env['ROS_ROOT'], 'core', 'roslib', 'src')
 
     env['PATH'] = '/opt/ros/%s/ros/bin:%s'%(options.rosdistro, os.environ['PATH'])
-    stack_dir = env['WORKSPACE']+'/'+options.stack
+    stack_dir = os.path.join(env['WORKSPACE'], options.stack)
 
 
     # Install Debian packages of stack dependencies
