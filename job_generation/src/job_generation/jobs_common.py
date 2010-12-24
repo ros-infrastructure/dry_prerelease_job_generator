@@ -365,6 +365,12 @@ def ensure_dir(f):
     if not os.path.exists(d):
         os.makedirs(d)
 
+def write_file(filename, msg):
+    ensure_dir(filename)
+    with open(filename, 'w') as f:
+        f.write(msg)
+    
+
 def call(command, env, fail_message=None):
     print "Calling '%s'"%command
     try:
@@ -376,18 +382,10 @@ def call(command, env, fail_message=None):
         print "Command failed"
         if fail_message:
             print "Writing output files"
-            ensure_dir(env['ROS_TEST_RESULTS_DIR']+'/_hudson')
-            with open(env['ROS_TEST_RESULTS_DIR']+'/_hudson/fail.xml', 'w') as f:
-                f.write(RESULT_XML.replace('MESSAGE', fail_message))
-            ensure_dir(env['WORKSPACE'], '/build_output')
-            with open(env['WORKSPACE'], '/build_output/buildfailures.txt', 'w') as f:
-                f.write(fail_message)
-            ensure_dir(env['WORKSPACE'], '/test_output')
-            with open(env['WORKSPACE'], '/test_output/testfailures.txt', 'w') as f:
-                f.write(fail_message)
-            ensure_dir(env['WORKSPACE'], '/build_output')
-            with open(env['WORKSPACE'], '/build_output/buildfailures-with-context.txt', 'w') as f:
-                f.write(fail_message)
+            write_file(env['ROS_TEST_RESULTS_DIR']+'/_hudson/fail.xml', RESULT_XML.replace('MESSAGE', fail_message))
+            write_file(env['WORKSPACE'], '/build_output/buildfailures.txt', fail_message)
+            write_file(env['WORKSPACE'], '/test_output/testfailures.txt', fail_message)
+            write_file(env['WORKSPACE'], '/build_output/buildfailures-with-context.txt', fail_message)
             print "Writing output files finished, raising exception"
         raise Exception
 
