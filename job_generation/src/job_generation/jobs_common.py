@@ -365,12 +365,16 @@ def call(command, env, fail_message=None):
     res = subprocess.call(command.split(' '), env)
     if res != 0:
         if fail_message:
+            print "Writing output files"
             with open(env['ROS_TEST_RESULTS_DIR']+'/_hudson/fail.xml', 'w') as f:
                 f.write(RESULT_XML.replace('MESSAGE', fail_message))
             with open(env['WORKSPACE'], '/build_output/buildfailures.txt', 'w') as f:
                 f.write(fail_message)
             with open(env['WORKSPACE'], '/test_output/testfailures.txt', 'w') as f:
                 f.write(fail_message)
+            with open(env['WORKSPACE'], '/build_output/buildfailures-with-context.txt', 'w') as f:
+                f.write(fail_message)
+            print "Writing output files finished, raising exception"
         raise Exception
 
         
