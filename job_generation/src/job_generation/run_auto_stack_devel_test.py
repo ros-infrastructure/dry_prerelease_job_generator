@@ -32,7 +32,7 @@ def main():
     stack_dir = os.path.join(env['WORKSPACE'], options.stack)
 
     print 'Wimpie'
-    call('wimpie command', env, 'Wim Message test')
+    call('wimpie command', env, 'Oh dear, this is failing again ;-)')
 
     # Install Debian packages of stack dependencies
     subprocess.Popen('sudo apt-get update'.split(' ')).communicate()
@@ -63,7 +63,6 @@ def main():
 
 
 if __name__ == '__main__':
-    sys.exit(main())
     try:
         res = main()
         sys.exit( res )

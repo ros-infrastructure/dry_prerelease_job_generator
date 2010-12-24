@@ -382,10 +382,10 @@ def call(command, env, fail_message=None):
         print "Command failed"
         if fail_message:
             print "Writing output files"
-            write_file(env['ROS_TEST_RESULTS_DIR']+'/_hudson/fail.xml', RESULT_XML.replace('MESSAGE', fail_message))
+            #write_file(env['ROS_TEST_RESULTS_DIR']+'/_hudson/fail.xml', RESULT_XML.replace('MESSAGE', fail_message))
             write_file(env['WORKSPACE']+'/build_output/buildfailures.txt', fail_message)
-            write_file(env['WORKSPACE']+'/test_output/testfailures.txt', fail_message)
-            write_file(env['WORKSPACE']+'/build_output/buildfailures-with-context.txt', fail_message)
+            write_file(env['WORKSPACE']+'/test_output/testfailures.txt', '')
+            write_file(env['WORKSPACE']+'/build_output/buildfailures-with-context.txt', '')
             print "Writing output files finished, raising exception"
         raise Exception
 
