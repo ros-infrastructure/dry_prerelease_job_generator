@@ -47,12 +47,14 @@ def main():
     subprocess.Popen('sudo apt-get update'.split(' ')).communicate()
     with open('%s/%s/stack.xml'%(os.environ['WORKSPACE'], options.stack)) as stack_file:
         depends = stack_manifest.parse(stack_file.read()).depends
-    subprocess.Popen(('sudo apt-get install %s --yes'%(stacks_to_debs(depends, options.rosdistro))).split(' ')).communicate()
+    call('sudo apt-get install %s --yes'%(stacks_to_debs(depends, options.rosdistro)), env,
+         'Failed to install dependencies of stack %s'%options.stack)
 
 
     # Install system dependencies
     print 'Installing system dependencies'
-    subprocess.Popen(('rosmake -V --status-rate=0 --rosdep-install --rosdep-yes %s'%options.stack).split(' '), env=env).communicate()
+    call('rosmake -V --status-rate=0 --rosdep-install --rosdep-yes %s'%options.stack, env,
+         'Failed to install system dependencies of stack %s'%options.stack)
 
     
     # Run hudson helper for stacks only
@@ -67,7 +69,8 @@ def main():
     # Install Debian packages of ALL stacks in distro
     print 'Installing all released stacks of ros distro %s: %s'%(options.rosdistro, str(rosdistro_obj.released_stacks.keys()))
     for stack in rosdistro_obj.released_stacks:
-        subprocess.Popen(('sudo apt-get install %s --yes'%(stack_to_deb(stack, options.rosdistro))).split(' ')).communicate()
+        call('sudo apt-get install %s --yes'%(stack_to_deb(stack, options.rosdistro)), env,
+             'Failed to install Debian pacakge %s'%stack)
 
     
 
@@ -83,11 +86,13 @@ def main():
     rosinstall_file = '%s.rosinstall'%DEPENDS_ON_DIR
     with open(rosinstall_file, 'w') as f:
         f.write(rosinstall)
-    subprocess.Popen(('rosinstall %s /opt/ros/%s %s'%(DEPENDS_ON_DIR, options.rosdistro, rosinstall_file)).split(' ')).communicate()
+    call('rosinstall %s /opt/ros/%s %s'%(DEPENDS_ON_DIR, options.rosdistro, rosinstall_file), env,
+         'Failed to do source install of stacks that depend on %s'%options.stack)
 
     # Remove stacks that depend on this stack from Debians
     print 'Removing all stack from Debian that depend on this stack'
-    subprocess.Popen(('sudo apt-get remove %s --yes'%stack_to_deb(options.stack, options.rosdistro)).split(' ')).communicate()
+    call('sudo apt-get remove %s --yes'%stack_to_deb(options.stack, options.rosdistro), env,
+         'Failed to remove Debian pacakge %s'%options.stack)
 
 
     # Run hudson helper for all stacks
