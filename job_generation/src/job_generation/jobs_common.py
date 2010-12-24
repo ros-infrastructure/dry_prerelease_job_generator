@@ -357,12 +357,19 @@ def get_job_name(jobtype, rosdistro, stack_name, ubuntu, arch):
 
 
 
+RESULT_XML = """<?xml version="1.0" encoding="utf-8"?><testsuite name="MESSAGE" tests="0" errors="0" failures="0" time="0.0">  <system-out><![CDATA[]]></system-out>  <system-err><![CDATA[]]></system-err></testsuite>
+"""
+
+
 def call(command, env, fail_message=None):
     res = subprocess.call(command.split(' '), env)
     if res != 0:
         if fail_message:
-            #with open(env['WORKSPACE']+'/build_output/buildfailures.txt', 'w') as f:
             with open(env['ROS_TEST_RESULTS_DIR']+'/_hudson/fail.xml', 'w') as f:
+                f.write(RESULT_XML.replace('MESSAGE', fail_message))
+            with open(env['WORKSPACE'], '/build_output/buildfailures.txt', 'w') as f:
+                f.write(fail_message)
+            with open(env['WORKSPACE'], '/test_output/testfailures.txt', 'w') as f:
                 f.write(fail_message)
         raise Exception
 
