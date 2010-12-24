@@ -129,7 +129,12 @@ def main():
 
 
 if __name__ == '__main__':
-    sys.exit( main() )
+    try:
+        res = main()
+        sys.exit( res )
+    except Exception:
+        sys.exit(-1)
+
 
 
 
