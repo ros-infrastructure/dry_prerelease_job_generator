@@ -361,7 +361,7 @@ def call(command, env, fail_message=None):
     res = subprocess.call(command.split(' '), env)
     if res != 0:
         if fail_message:
-            with open(env['ROS_TEST_RESULTS_DIR']+'/fail.xml', 'w') as f:
+            with open(env['WORKSPACE']+'/build_output/buildfailures.txt', 'w') as f:
                 f.write(fail_message)
         raise Exception
 
