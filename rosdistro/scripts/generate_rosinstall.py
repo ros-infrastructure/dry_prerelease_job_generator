@@ -46,7 +46,7 @@ def main():
         for stack_name, stack in distro.stacks.iteritems():
             checkouts[stack_name] = stack.distro_svn
 
-        # create text for rosinstalls
+       # create text for rosinstalls
         variant_rosinstalls = []
 
         variant_stacks = {}
