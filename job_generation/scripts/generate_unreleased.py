@@ -100,8 +100,8 @@ from job_generation.jobs_common import *
 import yaml
 
 
-def unreleased_job_name(rosdistro, rosinstall, ubuntudistro, arch):
-    return "_".join(['unreleased', rosdistro, rosinstall.split('/')[-1].split('.')[0], ubuntudistro, arch])
+def unreleased_job_name(rosdistro, rosinstall, ubuntu, arch):
+    return get_job_name('unreleased', rosdistro, rosinstall.split('/')[-1].split('.')[0], ubuntu, arch)
 
 
 def rosinstall_to_vcs(rosinstall):

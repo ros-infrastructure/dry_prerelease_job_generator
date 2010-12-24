@@ -349,3 +349,8 @@ def get_email_triggers(when, send_devel=True):
             trigger = trigger.replace('SEND_DEVEL', 'false')
         triggers += trigger
     return triggers
+
+
+def get_job_name(jobtype, rosdistro, stack_name, ubuntu, arch):
+    return "_".join([jobtype, rosdistro, stack_name, ubuntu, arch])
+

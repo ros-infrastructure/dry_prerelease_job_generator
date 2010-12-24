@@ -79,7 +79,7 @@ from job_generation.jobs_common import *
 
 
 def devel_job_name(rosdistro, stack_name, ubuntu, arch):
-    return "_".join(['devel', rosdistro, stack_name, ubuntu, arch])
+    return get_job_name('devel', rosdistro, stack_name, ubuntu, arch)
 
 
 def create_devel_configs(rosdistro, stack):

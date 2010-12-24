@@ -83,7 +83,7 @@ import optparse
 
 
 def post_release_job_name(rosdistro, stack_name, ubuntu, arch):
-    return "_".join(['released', rosdistro, stack_name, ubuntu, arch])
+    return get_job_name('released', rosdistro, stack_name, ubuntu, arch)
 
 
 def create_post_release_configs(rosdistro, stack):

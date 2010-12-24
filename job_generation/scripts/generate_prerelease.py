@@ -71,6 +71,8 @@ import urllib
 import optparse 
 
 
+def prerelease_job_name(rosdistro, stack_list, ubuntu, arch):
+    return get_job_name('prerelease', rosdistro, '_'.join(stack_list), ubuntu, arch)
 
 
 def create_prerelease_configs(rosdistro, stack_list, email, repeat):
@@ -78,7 +80,7 @@ def create_prerelease_configs(rosdistro, stack_list, email, repeat):
     configs = {}
     for ubuntudistro in UBUNTU_DISTRO_MAP[rosdistro]:
         for arch in ARCHES:
-            name = "_".join(['prerelease', rosdistro, '_'.join(stack_list), ubuntudistro, arch])
+            name = prerelease_job_name(rosdistro, stack_list, ubuntudistro, arch)
             hudson_config = HUDSON_PRERELEASE_CONFIG
             hudson_config = hudson_config.replace('BOOTSTRAP_SCRIPT', BOOTSTRAP_SCRIPT)
             hudson_config = hudson_config.replace('SHUTDOWN_SCRIPT', SHUTDOWN_SCRIPT)
