@@ -64,7 +64,6 @@ def main():
 
 if __name__ == '__main__':
     sys.exit(main)
-    return
     try:
         res = main()
         sys.exit( res )
