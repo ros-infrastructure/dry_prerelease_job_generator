@@ -19,13 +19,15 @@ def main():
     if not options:
         return -1
     
+    stack_name = options.stack[0]
+
     # set environment
     env = get_environment()
-    env['ROS_PACKAGE_PATH'] = '%s:%s:/opt/ros/%s/stacks'%(os.path.join(os.environ['WORKSPACE'], options.stack[0]),
+    env['ROS_PACKAGE_PATH'] = '%s:%s:/opt/ros/%s/stacks'%(os.path.join(os.environ['WORKSPACE'], stack_name),
                                                           os.path.join(os.environ['INSTALL_DIR'], DEPENDS_ON_DIR),
                                                           options.rosdistro)
-    if options.stack == 'ros':
-        env['ROS_ROOT'] = os.path.join(os.environ['WORKSPACE'], options.stack)
+    if stack_name == 'ros':
+        env['ROS_ROOT'] = os.path.join(os.environ['WORKSPACE'], stack_name)
         print "We're building ROS, so setting the ROS_ROOT to %s"%(env['ROS_ROOT'])
     else:
         env['ROS_ROOT'] = '/opt/ros/%s/ros'%options.rosdistro
@@ -41,20 +43,20 @@ def main():
     # Install Debian packages of stack dependencies
     print 'Installing debian packages of stack dependencies'
     subprocess.Popen('sudo apt-get update'.split(' ')).communicate()
-    with open('%s/%s/stack.xml'%(os.environ['WORKSPACE'], options.stack)) as stack_file:
+    with open('%s/%s/stack.xml'%(os.environ['WORKSPACE'], stack_name)) as stack_file:
         depends = stack_manifest.parse(stack_file.read()).depends
     subprocess.Popen(('sudo apt-get install %s --yes'%(stacks_to_debs(depends, options.rosdistro))).split(' ')).communicate()
 
 
     # Install system dependencies
     print 'Installing system dependencies'
-    subprocess.Popen(('rosmake -V --status-rate=0 --rosdep-install --rosdep-yes %s'%options.stack).split(' '), env=env).communicate()
+    subprocess.Popen(('rosmake -V --status-rate=0 --rosdep-install --rosdep-yes %s'%stack_name).split(' '), env=env).communicate()
 
     
     # Run hudson helper for stacks only
     print 'Running Hudson Helper'
-    env['ROS_TEST_RESULTS_DIR'] = os.environ['ROS_TEST_RESULTS_DIR'] + '/' + options.stack
-    helper = subprocess.Popen(('./hudson_helper --dir-test %s/%s build'%(env['WORKSPACE'], options.stack)).split(' '), env=env)
+    env['ROS_TEST_RESULTS_DIR'] = os.environ['ROS_TEST_RESULTS_DIR'] + '/' + stack_name
+    helper = subprocess.Popen(('./hudson_helper --dir-test %s/%s build'%(env['WORKSPACE'], stack_name)).split(' '), env=env)
     helper.communicate()
     if helper.returncode != 0:
         return helper.returncode
@@ -69,10 +71,10 @@ def main():
 
     # Install all stacks that depend on this stack
     print 'Installing all stacks that depend on these stacks from source'
-    res, err = subprocess.Popen(('rosstack depends-on %s'%options.stack).split(' '), stdout=subprocess.PIPE, env=env).communicate()
+    res, err = subprocess.Popen(('rosstack depends-on %s'%stack_name).split(' '), stdout=subprocess.PIPE, env=env).communicate()
     print 'These stacks depend on the stacks we are testing: "%s"'%str(res)
     if res == '':
-        print 'No stack depends on %s, finishing test.'%options.stack
+        print 'No stack depends on %s, finishing test.'%stack_name
         return 0
     rosinstall = stacks_to_rosinstall(res.split('\n'), rosdistro_obj.released_stacks, 'distro')
     print 'Running rosinstall on "%s"'%rosinstall
@@ -83,7 +85,7 @@ def main():
 
     # Remove stacks that depend on this stack from Debians
     print 'Removing all stack from Debian that depend on this stack'
-    subprocess.Popen(('sudo apt-get remove %s --yes'%stack_to_deb(options.stack, options.rosdistro)).split(' ')).communicate()
+    subprocess.Popen(('sudo apt-get remove %s --yes'%stack_to_deb(stack_name, options.rosdistro)).split(' ')).communicate()
 
 
     # Run hudson helper for all stacks
