@@ -38,15 +38,15 @@ def main():
         depends = stack_manifest.parse(stack_file.read()).depends
     if len(depends) != 0:
         print 'Installing debian packages of stack dependencies: %s'%str(depends)        
-        res = subprocess.call(('sudo apt-get install %s --yes'%(stacks_to_debs(depends, options.rosdistro))).split(' '))
-        if res != 0:
-            return res
+        call('sudo apt-get install %s --yes'%(stacks_to_debs(depends, options.rosdistro)), env)
     else:
         print 'Stack does not have any dependencies, not installing any other debian packages'
 
     # Install system dependencies
     print 'Installing system dependencies'
-    subprocess.Popen(('rosmake -V --status-rate=0 --rosdep-install --rosdep-yes %s'%options.stack).split(' '), env=env).communicate()
+    call('rosmake -V --status-rate=0 --rosdep-install --rosdep-yes %s'%options.stack, env,
+         'Failed to install system dependencies of stack %s'%options.stack)
+    
 
 
     # Start Hudson Helper
