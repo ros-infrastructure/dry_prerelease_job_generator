@@ -373,13 +373,15 @@ def write_file(filename, msg):
 
 def call(command, env, fail_message=None):
     try:
-        helper = subprocess.Popen(command.split(' '), env=env)
-        helper.communicate()
+        helper = subprocess.Popen(command.split(' '), stdout=subprocess.PIPE, env=env)
+        res, err = helper.communicate()
         if helper.returncode != 0:
             raise Exception
     except Exception:
         if not fail_message:
-            fail_message = "Failed to execute '%s'"%command
+            fail_message = "Failed to execute '%s'\n=====================================\n"%command
+            fail_message += res
+            fail_message += err
         write_file(env['WORKSPACE']+'/build_output/buildfailures.txt', fail_message)
         write_file(env['WORKSPACE']+'/test_output/testfailures.txt', '')
         write_file(env['WORKSPACE']+'/build_output/buildfailures-with-context.txt', '')
