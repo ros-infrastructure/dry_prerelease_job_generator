@@ -362,6 +362,7 @@ RESULT_XML = """<?xml version="1.0" encoding="utf-8"?><testsuite name="MESSAGE" 
 
 
 def call(command, env, fail_message=None):
+    print "Calling 'command'"
     res = subprocess.call(command.split(' '), env)
     if res != 0:
         if fail_message:
