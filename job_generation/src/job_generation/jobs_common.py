@@ -379,9 +379,10 @@ def call(command, env, fail_message=None):
             raise Exception
     except Exception:
         if not fail_message:
-            fail_message = "Failed to execute '%s'\n=====================================\n"%command
-            fail_message += res
-            fail_message += err
+            fail_message = "Failed to execute '%s'"%command
+        fail_message += "\n=========================================\n"
+        fail_message += res
+        fail_message += err
         write_file(env['WORKSPACE']+'/build_output/buildfailures.txt', fail_message)
         write_file(env['WORKSPACE']+'/test_output/testfailures.txt', '')
         write_file(env['WORKSPACE']+'/build_output/buildfailures-with-context.txt', '')
