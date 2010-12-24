@@ -33,7 +33,7 @@ def main():
 
 
     # Install Debian packages of stack dependencies
-    subprocess.Popen('sudo apt-get update'.split(' ')).communicate()
+    call('sudo apt-get update', env)
     with open('%s/stack.xml'%stack_dir) as stack_file:
         depends = stack_manifest.parse(stack_file.read()).depends
     if len(depends) != 0:

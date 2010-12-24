@@ -44,7 +44,7 @@ def main():
 
     # Install Debian packages of stack dependencies
     print 'Installing debian packages of stack dependencies'
-    subprocess.Popen('sudo apt-get update'.split(' ')).communicate()
+    call('sudo apt-get update', env)
     with open('%s/%s/stack.xml'%(os.environ['WORKSPACE'], options.stack)) as stack_file:
         depends = stack_manifest.parse(stack_file.read()).depends
     call('sudo apt-get install %s --yes'%(stacks_to_debs(depends, options.rosdistro)), env,

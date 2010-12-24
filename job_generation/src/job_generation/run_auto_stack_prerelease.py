@@ -53,7 +53,7 @@ def main():
 
     # Install Debian packages of stack dependencies
     print 'Installing debian packages of stack dependencies from stacks %s'%str(options.stack)
-    subprocess.Popen('sudo apt-get update'.split(' ')).communicate()
+    call('sudo apt-get update', env)
     for stack in options.stack:
         with open('%s/%s/stack.xml'%(STACK_DIR, stack)) as stack_file:
             depends = [str(d) for d in stack_manifest.parse(stack_file.read()).depends]  # convert to list
