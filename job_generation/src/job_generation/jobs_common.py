@@ -9,6 +9,10 @@ import urllib
 import time
 
 BOOTSTRAP_SCRIPT = """
+cat &gt; $WORKSPACE/script.sh &lt;&lt;DELIM
+#!/usr/bin/env bash
+set -o errexit
+echo "_________________________________BEGIN SCRIPT______________________________________"
 sudo apt-get install ros-ROSDISTRO-ros --yes
 source /opt/ros/ROSDISTRO/setup.sh
 
@@ -26,6 +30,20 @@ cd \$INSTALL_DIR
 wget  --no-check-certificate http://code.ros.org/svn/ros/installers/trunk/hudson/hudson_helper 
 chmod +x hudson_helper
 svn co https://code.ros.org/svn/ros/stacks/ros_release/trunk ros_release
+"""
+
+SHUTDOWN_SCRIPT = """
+echo "_________________________________END SCRIPT_______________________________________"
+DELIM
+
+set -o errexit
+
+rm -rf $WORKSPACE/test_results
+rm -rf $WORKSPACE/test_output
+
+wget  --no-check-certificate https://code.ros.org/svn/ros/stacks/ros_release/trunk/hudson/scripts/run_chroot.py -O $WORKSPACE/run_chroot.py
+chmod +x $WORKSPACE/run_chroot.py
+cd $WORKSPACE &amp;&amp; $WORKSPACE/run_chroot.py --distro=UBUNTUDISTRO --arch=ARCH  --ramdisk --script=$WORKSPACE/script.sh
 """
 
 ROSDISTRO_FOLDER_MAP = {'unstable': 'https://code.ros.org/svn/release/trunk/distros',
@@ -49,6 +67,21 @@ SERVER = 'http://build.willowgarage.com'
 
 # config path
 CONFIG_PATH = 'http://wgs24.willowgarage.com/hudson-html/hds.xml'
+
+
+EMAIL_TRIGGER="""
+        <hudson.plugins.emailext.plugins.trigger.WHENTrigger> 
+          <email> 
+            <recipientList></recipientList> 
+            <subject>$PROJECT_DEFAULT_SUBJECT</subject> 
+            <body>$PROJECT_DEFAULT_CONTENT</body> 
+            <sendToDevelopers>SEND_DEVEL</sendToDevelopers> 
+            <sendToRecipientList>true</sendToRecipientList> 
+            <contentTypeHTML>false</contentTypeHTML> 
+            <script>true</script> 
+          </email> 
+        </hudson.plugins.emailext.plugins.trigger.WHENTrigger> 
+"""
 
 
 hudson_scm_managers = {'svn':"""
@@ -305,4 +338,14 @@ def schedule_jobs(jobs, wait=False, delete=False, start=False, hudson_obj=None):
 
 
 
-
+def get_email_triggers(when, send_devel=True):
+    triggers = ''
+    for w in when:
+        trigger = EMAIL_TRIGGER
+        trigger = trigger.replace('WHEN', w)
+        if send_devel:
+            trigger = trigger.replace('SEND_DEVEL', 'true')
+        else:
+            trigger = trigger.replace('SEND_DEVEL', 'false')
+        triggers += trigger
+    return triggers

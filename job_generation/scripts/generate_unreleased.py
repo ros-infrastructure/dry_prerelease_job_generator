@@ -50,23 +50,10 @@ HUDSON_UNRELEASED_CONFIG = """<?xml version='1.0' encoding='UTF-8'?>
   <concurrentBuild>false</concurrentBuild> 
   <builders> 
     <hudson.tasks.Shell> 
-      <command>cat &gt; $WORKSPACE/script.sh &lt;&lt;DELIM
-#!/usr/bin/env bash
-set -o errexit
-echo "_________________________________BEGIN SCRIPT______________________________________"
+      <command>
 BOOTSTRAP_SCRIPT
 rosrun job_generation run_auto_stack_unreleased.py --rosdistro ROSDISTRO
-echo "_________________________________END SCRIPT_______________________________________"
-DELIM
-
-set -o errexit
-
-rm -rf $WORKSPACE/test_results
-rm -rf $WORKSPACE/test_output
-
-wget  --no-check-certificate https://code.ros.org/svn/ros/stacks/ros_release/trunk/hudson/scripts/run_chroot.py -O $WORKSPACE/run_chroot.py
-chmod +x $WORKSPACE/run_chroot.py
-cd $WORKSPACE &amp;&amp; $WORKSPACE/run_chroot.py --distro=UBUNTUDISTRO --arch=ARCH  --ramdisk --script=$WORKSPACE/script.sh
+SHUTDOWN_SCRIPT
      </command> 
     </hudson.tasks.Shell> 
   </builders> 
@@ -85,62 +72,7 @@ cd $WORKSPACE &amp;&amp; $WORKSPACE/run_chroot.py --distro=UBUNTUDISTRO --arch=A
     <hudson.plugins.emailext.ExtendedEmailPublisher> 
       <recipientList>EMAIL</recipientList> 
       <configuredTriggers> 
-        <hudson.plugins.emailext.plugins.trigger.UnstableTrigger> 
-          <email> 
-            <recipientList></recipientList> 
-            <subject>$PROJECT_DEFAULT_SUBJECT</subject> 
-            <body>$PROJECT_DEFAULT_CONTENT</body> 
-            <sendToDevelopers>true</sendToDevelopers> 
-            <sendToRecipientList>true</sendToRecipientList> 
-            <contentTypeHTML>false</contentTypeHTML> 
-            <script>true</script> 
-          </email> 
-        </hudson.plugins.emailext.plugins.trigger.UnstableTrigger> 
-        <hudson.plugins.emailext.plugins.trigger.FailureTrigger> 
-          <email> 
-            <recipientList></recipientList> 
-            <subject>$PROJECT_DEFAULT_SUBJECT</subject> 
-            <body>$PROJECT_DEFAULT_CONTENT</body> 
-            <sendToDevelopers>true</sendToDevelopers> 
-            <sendToRecipientList>true</sendToRecipientList> 
-            <contentTypeHTML>false</contentTypeHTML> 
-            <script>true</script> 
-          </email> 
-        </hudson.plugins.emailext.plugins.trigger.FailureTrigger> 
-        <hudson.plugins.emailext.plugins.trigger.StillFailingTrigger> 
-          <email> 
-            <recipientList></recipientList> 
-            <subject>$PROJECT_DEFAULT_SUBJECT</subject> 
-            <body>$PROJECT_DEFAULT_CONTENT</body> 
-            <sendToDevelopers>true</sendToDevelopers> 
-            <sendToRecipientList>true</sendToRecipientList> 
-            <contentTypeHTML>false</contentTypeHTML> 
-            <script>true</script> 
-          </email> 
-        </hudson.plugins.emailext.plugins.trigger.StillFailingTrigger> 
-        <hudson.plugins.emailext.plugins.trigger.FixedTrigger> 
-          <email> 
-            <recipientList></recipientList> 
-            <subject>$PROJECT_DEFAULT_SUBJECT</subject> 
-            <body>$PROJECT_DEFAULT_CONTENT</body> 
-            <sendToDevelopers>true</sendToDevelopers> 
-            <sendToRecipientList>true</sendToRecipientList> 
-            <contentTypeHTML>false</contentTypeHTML> 
-            <script>true</script> 
-
-          </email> 
-        </hudson.plugins.emailext.plugins.trigger.FixedTrigger> 
-        <hudson.plugins.emailext.plugins.trigger.StillUnstableTrigger> 
-          <email> 
-            <recipientList></recipientList> 
-            <subject>$PROJECT_DEFAULT_SUBJECT</subject> 
-            <body>$PROJECT_DEFAULT_CONTENT</body> 
-            <sendToDevelopers>true</sendToDevelopers> 
-            <sendToRecipientList>true</sendToRecipientList> 
-            <contentTypeHTML>false</contentTypeHTML> 
-            <script>true</script> 
-          </email> 
-        </hudson.plugins.emailext.plugins.trigger.StillUnstableTrigger> 
+        EMAIL_TRIGGERS
       </configuredTriggers> 
       <defaultSubject>$DEFAULT_SUBJECT</defaultSubject> 
       <defaultContent>$DEFAULT_CONTENT&#xd;
@@ -207,6 +139,8 @@ def create_unreleased_configs(rosdistro, rosinstall):
 
             hudson_config = HUDSON_UNRELEASED_CONFIG
             hudson_config = hudson_config.replace('BOOTSTRAP_SCRIPT', BOOTSTRAP_SCRIPT)
+            hudson_config = hudson_config.replace('SHUTDOWN_SCRIPT', SHUTDOWN_SCRIPT)
+            hudson_config = hudson_config.replace('EMAIL_TRIGGERS', get_email_triggers(['Unstable', 'Failure', 'StillFailing', 'Fixed', 'StillUnstable']))
             hudson_config = hudson_config.replace('UBUNTUDISTRO', ubuntudistro)
             hudson_config = hudson_config.replace('ARCH', arch)
             hudson_config = hudson_config.replace('ROSDISTRO', rosdistro)
