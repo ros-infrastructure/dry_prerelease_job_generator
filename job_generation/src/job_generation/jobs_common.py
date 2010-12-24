@@ -363,9 +363,12 @@ RESULT_XML = """<?xml version="1.0" encoding="utf-8"?><testsuite name="MESSAGE" 
 
 def call(command, env, fail_message=None):
     print "Calling '%s'"%command
-    helper = subprocess.Popen(command.split(' '), env=env)
-    helper.communicate()
-    if helper.returncode != 0:
+    try:
+        helper = subprocess.Popen(command.split(' '), env=env)
+        helper.communicate()
+        if helper.returncode != 0:
+            raise Exception
+    except Exception:
         print "Command failed"
         if fail_message:
             print "Writing output files"
