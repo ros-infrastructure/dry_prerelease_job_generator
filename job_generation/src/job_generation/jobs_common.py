@@ -360,6 +360,10 @@ def get_job_name(jobtype, rosdistro, stack_name, ubuntu, arch):
 RESULT_XML = """<?xml version="1.0" encoding="utf-8"?><testsuite name="MESSAGE" tests="0" errors="0" failures="0" time="0.0">  <system-out><![CDATA[]]></system-out>  <system-err><![CDATA[]]></system-err></testsuite>
 """
 
+def ensure_dir(f):
+    d = os.path.dirname(f)
+    if not os.path.exists(d):
+        os.makedirs(d)
 
 def call(command, env, fail_message=None):
     print "Calling '%s'"%command
@@ -372,12 +376,16 @@ def call(command, env, fail_message=None):
         print "Command failed"
         if fail_message:
             print "Writing output files"
+            ensure_dir(env['ROS_TEST_RESULTS_DIR']+'/_hudson')
             with open(env['ROS_TEST_RESULTS_DIR']+'/_hudson/fail.xml', 'w') as f:
                 f.write(RESULT_XML.replace('MESSAGE', fail_message))
+            ensure_dir(env['WORKSPACE'], '/build_output')
             with open(env['WORKSPACE'], '/build_output/buildfailures.txt', 'w') as f:
                 f.write(fail_message)
+            ensure_dir(env['WORKSPACE'], '/test_output')
             with open(env['WORKSPACE'], '/test_output/testfailures.txt', 'w') as f:
                 f.write(fail_message)
+            ensure_dir(env['WORKSPACE'], '/build_output')
             with open(env['WORKSPACE'], '/build_output/buildfailures-with-context.txt', 'w') as f:
                 f.write(fail_message)
             print "Writing output files finished, raising exception"
