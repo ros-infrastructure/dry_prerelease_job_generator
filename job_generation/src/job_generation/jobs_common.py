@@ -362,9 +362,10 @@ RESULT_XML = """<?xml version="1.0" encoding="utf-8"?><testsuite name="MESSAGE" 
 
 
 def call(command, env, fail_message=None):
-    print "Calling 'command'"
+    print "Calling '%s'"%command
     res = subprocess.call(command.split(' '), env)
     if res != 0:
+        print "Command failed"
         if fail_message:
             print "Writing output files"
             with open(env['ROS_TEST_RESULTS_DIR']+'/_hudson/fail.xml', 'w') as f:
