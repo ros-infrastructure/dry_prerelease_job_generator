@@ -21,7 +21,7 @@ def main():
     
     # set environment
     env = get_environment()
-    env['ROS_PACKAGE_PATH'] = '%s:%s:/opt/ros/%s/stacks'%(os.path.join(os.environ['WORKSPACE'], str(options.stack)),
+    env['ROS_PACKAGE_PATH'] = '%s:%s:/opt/ros/%s/stacks'%(os.path.join(os.environ['WORKSPACE'], options.stack[0]),
                                                           os.path.join(os.environ['INSTALL_DIR'], DEPENDS_ON_DIR),
                                                           options.rosdistro)
     if options.stack == 'ros':
