@@ -17,7 +17,7 @@ sudo apt-get install ros-ROSDISTRO-ros --yes
 source /opt/ros/ROSDISTRO/setup.sh
 
 export INSTALL_DIR=/tmp/install_dir
-export WORKSPACE=/tmp/workspace
+export WORKSPACE=/tmp/ros
 export ROS_TEST_RESULTS_DIR=/tmp/ros/test_results
 export JOB_NAME=$JOB_NAME
 export BUILD_NUMBER=$BUILD_NUMBER
