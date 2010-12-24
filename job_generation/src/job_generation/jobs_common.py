@@ -375,7 +375,7 @@ def call(command, env, fail_message=''):
     res = ''
     err = ''
     try:
-        helper = subprocess.Popen(command.split(' '), stdout=subprocess.PIPE, env=env)
+        helper = subprocess.Popen(command.split(' '), stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env)
         res, err = helper.communicate()
         if helper.returncode != 0:
             raise Exception
