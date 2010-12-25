@@ -371,23 +371,24 @@ def write_file(filename, msg):
         f.write(msg)
     
 
-def call(command, env, fail_message='', ignore_fail=False):
+def call(command, env, message='', ignore_fail=False):
     res = ''
     err = ''
     try:
+        print message+'\nExecuting command "%s"'%command
         helper = subprocess.Popen(command.split(' '), stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env)
         res, err = helper.communicate()
         if helper.returncode != 0:
             raise Exception
     except Exception:
         if not ignore_fail:
-            fail_message += "\n=========================================\n"
-            fail_message += "Failed to execute '%s'"%command
-            fail_message += "\n=========================================\n"
-            fail_message += str(res)
-            fail_message += "\n=========================================\n"
-            fail_message += str(err)
-            write_file(env['WORKSPACE']+'/build_output/buildfailures.txt', fail_message)
+            message += "\n=========================================\n"
+            message += "Failed to execute '%s'"%command
+            message += "\n=========================================\n"
+            message += str(res)
+            message += "\n=========================================\n"
+            message += str(err)
+            write_file(env['WORKSPACE']+'/build_output/buildfailures.txt', message)
             write_file(env['WORKSPACE']+'/test_output/testfailures.txt', '')
             write_file(env['WORKSPACE']+'/build_output/buildfailures-with-context.txt', '')
             raise Exception

@@ -32,8 +32,7 @@ def main():
     call('sudo apt-get update', env)
     print 'Installing all stacks of ros distro %s: %s'%(options.rosdistro, str(rosdistro_obj.stacks.keys()))
     for stack in rosdistro_obj.stacks:
-        call('sudo apt-get install %s --yes'%(stack_to_deb(stack, options.rosdistro)), env,
-             'Failed to install Debian %s'%stack)
+        call('sudo apt-get install %s --yes'%(stack_to_deb(stack, options.rosdistro)), env, ignore_fail=True)
     
 
     # Run hudson helper 
