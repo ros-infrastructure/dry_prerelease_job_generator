@@ -22,11 +22,11 @@ def main():
 
     # set environment
     env = get_environment()
-    env['ROS_PACKAGE_PATH'] = '%s:%s:/opt/ros/%s/stacks'%(os.path.join(os.environ['INSTALL_DIR'], STACK_DIR),
-                                                          os.path.join(os.environ['INSTALL_DIR'], DEPENDS_ON_DIR),
+    env['ROS_PACKAGE_PATH'] = '%s:%s:/opt/ros/%s/stacks'%(env['INSTALL_DIR']+'/'+STACK_DIR,
+                                                          env['INSTALL_DIR']+'/'+DEPENDS_ON_DIR,
                                                           options.rosdistro)
     if 'ros' in options.stack:
-        env['ROS_ROOT'] = os.environ['INSTALL_DIR']+'/'+STACK_DIR+'/ros'
+        env['ROS_ROOT'] = env['INSTALL_DIR']+'/'+STACK_DIR+'/ros'
         print "We're building ROS, so setting the ROS_ROOT to %s"%(env['ROS_ROOT'])
     else:
         env['ROS_ROOT'] = '/opt/ros/%s/ros'%options.rosdistro
@@ -79,7 +79,7 @@ def main():
     print 'Running Hudson Helper'
     res = 0
     for r in range(0, int(options.repeat)+1):
-        env['ROS_TEST_RESULTS_DIR'] = os.environ['ROS_TEST_RESULTS_DIR'] + '/' + STACK_DIR + '_run_' + str(r)
+        env['ROS_TEST_RESULTS_DIR'] = env['ROS_TEST_RESULTS_DIR'] + '/' + STACK_DIR + '_run_' + str(r)
         helper = subprocess.Popen(('./hudson_helper --dir-test %s build'%STACK_DIR).split(' '), env=env)
         helper.communicate()
         if helper.returncode != 0:
@@ -123,7 +123,7 @@ def main():
 
     # Run hudson helper for all stacks
     print 'Running Hudson Helper'
-    env['ROS_TEST_RESULTS_DIR'] = os.environ['ROS_TEST_RESULTS_DIR'] + '/' + DEPENDS_ON_DIR
+    env['ROS_TEST_RESULTS_DIR'] = env['ROS_TEST_RESULTS_DIR'] + '/' + DEPENDS_ON_DIR
     helper = subprocess.Popen(('./hudson_helper --dir-test %s build'%DEPENDS_ON_DIR).split(' '), env=env)
     helper.communicate()
     return helper.returncode
