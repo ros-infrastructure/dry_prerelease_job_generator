@@ -33,7 +33,7 @@ def main():
         print "We're building ROS, so setting the ROS_ROOT to %s"%(env['ROS_ROOT'])
     else:
         env['ROS_ROOT'] = '/opt/ros/%s/ros'%options.rosdistro
-    env['PYTHONPATH'] = os.path.join(env['ROS_ROOT'], '/core/roslib/src')
+    env['PYTHONPATH'] = env['ROS_ROOT']+'/core/roslib/src'
     env['PATH'] = '/opt/ros/%s/ros/bin:%s'%(options.rosdistro, os.environ['PATH'])
 
 
