@@ -376,8 +376,9 @@ def call(command, env, message='', ignore_fail=False):
     err = ''
     try:
         print message+'\nExecuting command "%s"'%command
-        helper = subprocess.Popen(command.split(' '), stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env)
+        helper = subprocess.Popen(command.split(' '), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, env=env)
         res, err = helper.communicate()
+        print str(res)
         if helper.returncode != 0:
             raise Exception
     except Exception:
@@ -386,8 +387,6 @@ def call(command, env, message='', ignore_fail=False):
             message += "Failed to execute '%s'"%command
             message += "\n=========================================\n"
             message += str(res)
-            message += "\n=========================================\n"
-            message += str(err)
             message += "\n=========================================\n"
             message += "ROS_PACKAGE_PATH = %s\n"%env['ROS_PACKAGE_PATH']
             message += "\n=========================================\n"
