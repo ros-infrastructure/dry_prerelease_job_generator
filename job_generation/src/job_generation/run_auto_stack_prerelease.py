@@ -71,7 +71,7 @@ def main():
     # Install system dependencies
     print 'Installing system dependencies'
     for stack in options.stack:
-        call('rosmake -V --status-rate=0 --rosdep-install --rosdep-yes %s'%stack, env,
+        call('rosdep install -y %s'%stack, env,
              'Install system dependencies of stack %s'%stack)
 
     
