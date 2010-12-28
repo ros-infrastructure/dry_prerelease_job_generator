@@ -35,10 +35,10 @@ def main():
         call('sudo apt-get install %s --yes'%(stack_to_deb(stack, options.rosdistro)), env, ignore_fail=True)
     
     # install system dependencies of all packages
-    res, err = subprocess.Popen('rospack list'.split(' '), env=env, stdout=subprocess.PIPE).communicate()
-    packages = [p.split(' ')[0] for p in res.split('\n') if p != '']
-    for pkg in packages:
-        call('rosdep install -y %s'%pkg, env, 'Installing system dependencies of package %s'%pkg)
+    # res, err = subprocess.Popen('rospack list'.split(' '), env=env, stdout=subprocess.PIPE).communicate()
+    # packages = [p.split(' ')[0] for p in res.split('\n') if p != '']
+    # for pkg in packages:
+    #     call('rosdep install -y %s'%pkg, env, 'Installing system dependencies of package %s'%pkg)
 
 
     # Run hudson helper 
