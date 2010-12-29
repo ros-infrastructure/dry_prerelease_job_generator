@@ -11,7 +11,7 @@
 
   </description>
   <author>Maintained by Kenneth Conley</author>
-  <license>BSD,BSD, Python License</license>  
+  <license>BSD,Python License</license>  
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/ros_release</url>
   <depend stack="ros" /> <!-- roslib, rosdep -->
