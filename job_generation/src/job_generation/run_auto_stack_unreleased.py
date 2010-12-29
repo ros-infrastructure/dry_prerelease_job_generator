@@ -40,7 +40,8 @@ def main():
     for pkg in packages:
         if not pkg in rosdistro_obj.stacks:
             res, err = subprocess.Popen(('rospack find %s'%pkg).split(' '), env=env, stdout=subprocess.PIPE).communicate()
-            if not os.path.exists(res+'/ROS_BUILD_BLACKLIST'):
+            print "--->>%s<<---"%res
+            if not os.path.isfile(res+'/ROS_BUILD_BLACKLIST'):
                 call('rosdep install -y %s'%pkg, env, 'Installing system dependencies of package %s'%pkg)
             else:
                 print 'Skipping system dependencies of blacklisted package %s'%pkg
