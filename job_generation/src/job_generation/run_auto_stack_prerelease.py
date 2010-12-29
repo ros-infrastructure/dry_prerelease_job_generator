@@ -55,7 +55,9 @@ def main():
     print 'Installing debian packages of stack dependencies from stacks %s'%str(options.stack)
     call('sudo apt-get update', env)
     for stack in options.stack:
-        with open('%s/%s/stack.xml'%(STACK_DIR, stack)) as stack_file:
+        stack_xml = '%s/%s/stack.xml'%(STACK_DIR, stack)
+        call('ls %s'%stack_xml, env, 'Checking if stack %s contains "stack.xml" file'%stack)
+        with open(stack_xml) as stack_file:
             depends = [str(d) for d in stack_manifest.parse(stack_file.read()).depends]  # convert to list
         # remove stacks we are testing from dependency list, as debians might not yet exist
         for s in options.stack:  
