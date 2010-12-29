@@ -40,7 +40,7 @@ def main():
     for pkg in packages:
         if not pkg in rosdistro_obj.stacks:
             res, err = subprocess.Popen(('rospack find %s'%pkg).split(' '), env=env, stdout=subprocess.PIPE).communicate()
-            if not os.path.isfile(res[0,len(res)-1]+'/ROS_BUILD_BLACKLIST'):
+            if not os.path.isfile(res[0:len(res)-1]+'/ROS_BUILD_BLACKLIST'):
                 call('rosdep install -y %s'%pkg, env, 'Installing system dependencies of package %s'%pkg)
 
 
