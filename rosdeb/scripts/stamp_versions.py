@@ -229,7 +229,7 @@ def create_meta_pkg(packagelist, distro, distro_name, metapackage, deps, os_plat
         os.makedirs(debdir)
     control_file = os.path.join(debdir, 'control')
 
-    deb_name = "ros-%s-%s"%(distro_name, metapackage)
+    deb_name = "ros-%s-%s"%(distro_name, debianize_name(metapackage))
     deb_version = "1.0.0-%s~%s"%(distro.version, os_platform)
 
     locked_depends = []
@@ -376,7 +376,7 @@ def stamp_debs(distro, os_platform, arch, staging_dir, force=False):
         print >> sys.stderr, "Missing: %s"%(missing)
         return 1
 
-def build_debs_main():
+def stamp_debs_main():
 
     from optparse import OptionParser
     parser = OptionParser(usage="usage: %prog <distro> <os-platform> <arch>", prog=NAME)
@@ -458,5 +458,5 @@ def build_debs_main():
     sys.exit(failed)
         
 if __name__ == '__main__':
-    build_debs_main()
+    stamp_debs_main()
 
