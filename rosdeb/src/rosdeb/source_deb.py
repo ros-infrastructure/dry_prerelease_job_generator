@@ -111,12 +111,6 @@ def make_source_deb(distro_name, stack_name, stack_version, os_platform_name, st
     if not type(metadata) == dict:
         raise Exception("invalid control file: %s\nMetadata is [%s]"%(control_yaml, metadata))
 
-    # #3100: REMOVE THIS AROUND PHASE 3
-    if distro_name == 'unstable':
-        if stack_name not in ['ros', 'ros_comm', 'documentation'] and 'ros_comm' not in metadata['depends']:
-            metadata['depends'].append('ros_comm')
-    # END #3100
-    
     # make distro-specific
     metadata['package'] = debian_name
     with open(os.path.join(debian_d, 'control'), 'w') as f:
@@ -265,12 +259,6 @@ def control_data(stack_name, stack_version, stack_file=None):
     # do deps in two parts as ros stack depends need to become version
     # locked later on due to lack of ABI compat
     metadata['depends'] = [d.stack for d in m.depends]
-
-    # #3100: REMOVE THIS AROUND PHASE 3
-    if stack_name not in ['ros', 'ros_comm'] and 'ros_comm' not in metadata['depends']:
-        metadata['depends'].append('ros_comm')
-    # END #3100
-    
     metadata['rosdeps'] = rosdeps = {}
     for platform in platforms():
         try:

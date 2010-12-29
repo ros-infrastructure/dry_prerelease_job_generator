@@ -152,11 +152,6 @@ def compute_deps(distro, stack_name):
         # version-less entries are ignored
         si = load_info(s, v)
         loaded_deps = si['depends']
-        # #3100: REMOVE THIS AROUND PHASE 3
-        if distro.release_name == 'unstable':
-            if s not in ['ros', 'ros_comm'] and 'ros_comm' not in loaded_deps:
-                loaded_deps.append('ros_comm')
-        # END #3100
         for d in loaded_deps:
             add_stack(d)
         ordered_deps.append((s,v))
