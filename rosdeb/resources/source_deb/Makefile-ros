@@ -7,11 +7,9 @@ ${ROS_DISTRO_DIR}/ros: ros-${ROS_STACK_VERSION}.md5 ../ros-${ROS_STACK_VERSION}.
 	md5sum -c ros-${ROS_STACK_VERSION}.md5 && (mkdir -p ${ROS_DISTRO_DIR} && cd ${ROS_DISTRO_DIR} && tar -xjf $(CURDIR)/../ros-${ROS_STACK_VERSION}.tar.bz2 && mv ros-${ROS_STACK_VERSION} ros)
 
 install: ${ROS_DISTRO_DIR}/ros
+	./update_version.py debian/changelog.tmp > debian/changelog
 	bash -c ". setup_deb.sh && cd ${ROS_DISTRO_DIR}/ros && make"
         # Build the tests for now.  Eventually we will split this into a different deb target
-ifeq (${ROS_DISTRO_NAME}, testing)
-	bash -c ". setup_deb.sh && rosmake ros --target=tests"
-endif
 	bash -c ". setup_deb.sh && rosmake ros -i"
 	rm -rf ${ROS_DISTRO_DIR}/ros/*/build/CMakeFiles
 ifeq (${ROS_DISTRO_NAME}, unstable)

@@ -346,6 +346,32 @@ reprepro -b /var/packages/ros-shadow/ubuntu -V processincoming %(os_platform)s
         if res != 0:
             raise InternalBuildFailure("Could not run upload script:\n%s\n%s"%(o, e))
 
+def lock_debs(distro, os_platform, arch):
+
+        remote_cmd = "TMPFILE=`mktemp` || exit 1 && cat > ${TMPFILE} && chmod +x ${TMPFILE} && ${TMPFILE}; ret=${?}; rm ${TMPFILE}; exit ${ret}"
+        run_script = subprocess.Popen(['ssh', 'rosbuild@pub8', remote_cmd], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+
+        platform_upper = os_platform.upper()
+
+        script_content = """
+#!/bin/bash
+set -o errexit
+(
+flock 200
+export %(platform_upper)s_UPDATE=ros-%(os_platform)s-%(distro)s-%(arch)s
+/var/packages/ros-shadow-fixed/ubuntu/conf/gen_distributions.sh > /var/packages/ros-shadow-fixed/ubuntu/conf/distributions
+reprepro -V -b /var/packages/ros-shadow-fixed/ubuntu --noskipold update %(os_platform)s
+) 200>/var/lock/ros-shadow.lock
+"""%locals()
+
+        #Actually run script and check result
+        (o,e) = run_script.communicate(script_content)
+        res = run_script.wait()
+        print o
+        if res != 0:
+            raise InternalBuildFailure("Could not run upload script:\n%s\n%s"%(o, e))
+
+
 def build_debs(distro, stack_name, os_platform, arch, staging_dir, force, noupload, interactive):
     distro_name = distro.release_name
 
@@ -453,28 +479,31 @@ def build_debs_main():
             
     # If there was no failure and we did a build of ALL, so we go ahead and stamp the debs now
     if not failure_message and stack_name == 'ALL':
-        try:
-            if options.staging_dir is not None:
-                staging_dir    = options.staging_dir
-                staging_dir = os.path.abspath(staging_dir)
-            else:
-                staging_dir = tempfile.mkdtemp()
+        lock_debs(distro, os_platform, arch)
 
 
-            if os_platform not in rosdeb.platforms():
-                print >> sys.stderr, "[%s] is not a known platform.\nSupported platforms are: %s"%(os_platform, ' '.join(rosdeb.platforms()))
-                sys.exit(1)
+#        try:
+#            if options.staging_dir is not None:
+#                staging_dir    = options.staging_dir
+#                staging_dir = os.path.abspath(staging_dir)
+#            else:
+#                staging_dir = tempfile.mkdtemp()
 
-            if not os.path.exists(staging_dir):
-                print "creating staging dir: %s"%(staging_dir)
-                os.makedirs(staging_dir)
+
+#            if os_platform not in rosdeb.platforms():
+#                print >> sys.stderr, "[%s] is not a known platform.\nSupported platforms are: %s"%(os_platform, ' '.join(rosdeb.platforms()))
+#                sys.exit(1)
+
+#            if not os.path.exists(staging_dir):
+#                print "creating staging dir: %s"%(staging_dir)
+#                os.makedirs(staging_dir)
 
             # compare versions
-            old_version = get_repo_version(list_missing.SHADOW_FIXED_REPO, distro, os_platform, arch)
+#            old_version = get_repo_version(list_missing.SHADOW_FIXED_REPO, distro, os_platform, arch)
 
-            if old_version != distro.version:
-                if stamp_versions.stamp_debs(distro, os_platform, arch, staging_dir) != 0:
-                    failure_message = "Could not upload debs"
+#            if old_version != distro.version:                
+#                if stamp_versions.stamp_debs(distro, os_platform, arch, staging_dir) != 0:
+#                    failure_message = "Could not upload debs"
 
         except Exception, e:
             failure_message = "Internal failure in the release system. Please notify leibs and kwc @willowgarage.com:\n%s\n\n%s"%(e, traceback.format_exc(e))
