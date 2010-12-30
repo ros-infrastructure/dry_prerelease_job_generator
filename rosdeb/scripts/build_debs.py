@@ -286,20 +286,20 @@ echo "Resuming pbuilder"
     subprocess.check_call(archcmd+ ['sudo', 'pbuilder', '--build', '--basetgz', distro_tgz, '--configfile', conf_file, '--hookdir', hook_dir, '--buildresult', results_dir, '--binary-arch', '--buildplace', build_dir, dsc_file])
 
     # Set up an RE to look for the debian file and find the build_version
-    deb_version_wild = debianize_version(stack_version, '(\w)*', os_platform)
-    deb_file_wild = "%s_%s_%s\.deb"%(deb_name, deb_version,arch)
+    deb_version_wild = debianize_version(stack_version, '(\w*)', os_platform)
+    deb_file_wild = "%s_%s_%s\.deb"%(deb_name, deb_version_wild, arch)
     build_version = None
 
     # Extract the version number we just built:
     files = os.listdir(results_dir)
+
     for f in files:
         M = re.match(deb_file_wild, f)
         if M:
-            build_version = M.group(0)
+            build_version = M.group(1)
 
     if not build_version:
-        InternalBuildFailure("No deb-file generated matching template: %s"%deb_file_wild)
-
+        raise InternalBuildFailure("No deb-file generated matching template: %s"%deb_file_wild)
 
     deb_version_final = debianize_version(stack_version, build_version, os_platform)
     deb_file_final = "%s_%s"%(deb_name, deb_version)
