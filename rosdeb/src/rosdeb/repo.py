@@ -98,7 +98,7 @@ def get_repo_version(repo_url, distro, os_platform, arch):
 
 def deb_in_repo(repo_url, deb_name, deb_version, os_platform, arch, use_regex=True):
     packagelist = get_Packages(repo_url, os_platform, arch)
-    if strict_build_version:
+    if not use_regex:
         s = 'Package: %s\nVersion: %s'%(deb_name, deb_version)
         return s in packagelist
     else:
