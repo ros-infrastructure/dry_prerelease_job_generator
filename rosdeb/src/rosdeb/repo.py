@@ -37,6 +37,7 @@ Utilities for reading state from a debian repo
 """
 
 import urllib2
+import re
 
 from .core import debianize_name
 
@@ -95,10 +96,14 @@ def get_repo_version(repo_url, distro, os_platform, arch):
     version = matches[0][1]
     return version[version.find('-')+1:version.find('~')]
 
-def deb_in_repo(repo_url, deb_name, deb_version, os_platform, arch):
+def deb_in_repo(repo_url, deb_name, deb_version, os_platform, arch, use_regex=True):
     packagelist = get_Packages(repo_url, os_platform, arch)
-    s = 'Package: %s\nVersion: %s'%(deb_name, deb_version)
-    return s in packagelist
+    if strict_build_version:
+        s = 'Package: %s\nVersion: %s'%(deb_name, deb_version)
+        return s in packagelist
+    else:
+        M = re.search('^Package: %s\nVersion: %s$'%(deb_name, deb_version), packagelist, re.MULTILINE)
+        return M is not None
 
 def get_depends(repo_url, deb_name, os_platform, arch):
     """

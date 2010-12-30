@@ -58,6 +58,7 @@ from rosdeb import get_repo_version
 
 import list_missing
 import stamp_versions
+import re
 
 NAME = 'build_debs.py' 
 TARBALL_URL = "https://code.ros.org/svn/release/download/stacks/%(stack_name)s/%(base_name)s/%(f_name)s"
@@ -105,7 +106,7 @@ class TempRamFS:
 
     
 def deb_in_repo(deb_name, deb_version, os_platform, arch):
-    return rosdeb.deb_in_repo(SHADOW_REPO, deb_name, deb_version, os_platform, arch)
+    return rosdeb.deb_in_repo(SHADOW_REPO, deb_name, deb_version, os_platform, arch, use_regex=True)
 
 def get_depends(deb_name, os_platform, arch):
     return rosdeb.get_depends(SHADOW_REPO, deb_name, os_platform, arch)
@@ -284,11 +285,28 @@ echo "Resuming pbuilder"
     print "starting pbuilder build of %s-%s"%(stack_name, stack_version)
     subprocess.check_call(archcmd+ ['sudo', 'pbuilder', '--build', '--basetgz', distro_tgz, '--configfile', conf_file, '--hookdir', hook_dir, '--buildresult', results_dir, '--binary-arch', '--buildplace', build_dir, dsc_file])
 
+    # Set up an RE to look for the debian file and find the build_version
+    deb_version_wild = debianize_version(stack_version, '(\w)*', os_platform)
+    deb_file_wild = "%s_%s_%s\.deb"%(deb_name, deb_version,arch)
+    build_version = None
+
+    # Extract the version number we just built:
+    files = os.listdir(results_dir)
+    for f in files:
+        M = re.match(deb_file_wild, f)
+        if M:
+            build_version = M.group(0)
+
+    if not build_version:
+        InternalBuildFailure("No deb-file generated matching template: %s"%deb_file_wild)
+
+
+    deb_version_final = debianize_version(stack_version, build_version, os_platform)
+    deb_file_final = "%s_%s"%(deb_name, deb_version)
+
     # Build a package db if we have to
     print "starting package db build of %s-%s"%(stack_name, stack_version)
     subprocess.check_call(['bash', '-c', 'cd %(staging_dir)s && dpkg-scanpackages . > %(results_dir)s/Packages'%locals()])
-
-
 
 
     # Script to execute for deb verification
@@ -299,18 +317,17 @@ echo "Resuming pbuilder"
 set -o errexit
 echo "deb file:%(staging_dir)s results/" > /etc/apt/sources.list.d/pbuild.list
 apt-get update
-apt-get install %(deb_name)s=%(deb_version)s -y --force-yes
+apt-get install %(deb_name)s=%(deb_version_final)s -y --force-yes
 dpkg -l %(deb_name)s
 """%locals())
         os.chmod(verify_script, stat.S_IRWXU)
-
             
     print "starting verify script for %s-%s"%(stack_name, stack_version)
     subprocess.check_call(archcmd + ['sudo', 'pbuilder', '--execute', '--basetgz', distro_tgz, '--configfile', conf_file, '--bindmounts', results_dir, '--buildplace', build_dir, verify_script])
 
     if not noupload:
         # Upload the debs to the server
-        base_files = [deb_file + x for x in ['_%s.deb'%(arch), '_%s.changes'%(arch)]]
+        base_files = ['%s_%s.changes'%(deb_file, arch), "%_%s.deb"%(deb_file_final, arch)]
         files = [os.path.join(results_dir, x) for x in base_files]
     
         print "uploading debs for %s-%s to pub8"%(stack_name, stack_version)
@@ -397,7 +414,7 @@ def build_debs(distro, stack_name, os_platform, arch, staging_dir, force, nouplo
         # Only build debs we expect to be there
         if sn not in missing_ok:
             deb_name = "ros-%s-%s"%(distro_name, debianize_name(sn))
-            deb_version = debianize_version(sv, '0', os_platform)
+            deb_version = debianize_version(sv, '\w*', os_platform)
             if not deb_in_repo(deb_name, deb_version, os_platform, arch) or (force and sn == stack_name):
                 si = load_info(sn, sv)
                 depends = set(si['depends'])
