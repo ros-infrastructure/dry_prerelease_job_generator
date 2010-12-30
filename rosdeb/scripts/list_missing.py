@@ -154,8 +154,8 @@ def get_missing(distro, os_platform, arch):
             missing_primary.add(sn)
             continue
         deb_name = "ros-%s-%s"%(distro_name, debianize_name(sn))
-        deb_version = debianize_version(sv, '0', os_platform)
-        if not deb_in_repo(SHADOW_REPO, deb_name, deb_version, os_platform, arch):
+        deb_version = debianize_version(sv, '\w*', os_platform)
+        if not deb_in_repo(SHADOW_REPO, deb_name, deb_version, os_platform, arch, use_regex=True):
             try:
                 si = load_info(sn, sv)
                 depends = set(si['depends'])
@@ -309,6 +309,10 @@ def get_html_repository_status(distro, os_platforms, arches):
     for os_platform in os_platforms:
         for arch in arches:
             try:
+                shadow_version = get_repo_version(SHADOW_REPO, distro, os_platform, arch)
+            except BadRepo:
+                shadow_version = "[no repo]"
+            try:
                 main_version = get_repo_version(ROS_REPO, distro, os_platform, arch)
             except BadRepo:
                 main_version = "[no repo]"
@@ -316,7 +320,7 @@ def get_html_repository_status(distro, os_platforms, arches):
                 fixed_version = get_repo_version(SHADOW_FIXED_REPO, distro, os_platform, arch)
             except BadRepo:
                 fixed_version = "[no repo]"
-            b.write("<tr><td>%s-%s</td><td>%s</td><td>%s</td><td>%s</td></tr>\n"%(os_platform, arch, distro.version, fixed_version, main_version))
+            b.write("<tr><td>%s-%s</td><td>%s</td><td>%s</td><td>%s</td></tr>\n"%(os_platform, arch, shadow_version, fixed_version, main_version))
     b.write("</table>")
     return b.getvalue()
 

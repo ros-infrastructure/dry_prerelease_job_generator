@@ -88,13 +88,20 @@ def load_Packages(repo_url, os_platform, arch):
     return parse_Packages(get_Packages(repo_url, os_platform, arch))
 
 def get_repo_version(repo_url, distro, os_platform, arch):
+    """
+    Return the greatest build-stamp for any deb in the repository
+    """
     packagelist = load_Packages(repo_url, os_platform, arch)
-    deb_name = "ros-%s-ros"%(distro.release_name)
-    matches = [x for x in packagelist if x[0] == deb_name]
-    if not matches:
-        return None
-    version = matches[0][1]
-    return version[version.find('-')+1:version.find('~')]
+    return max(['0'] + [x[1][x[1].find('-')+1:x[1].find('~')] for x in packagelist])
+
+#    deb_name = "ros-%s-ros"%(distro.release_name)
+#    matches = [x for x in packagelist if x[0] == deb_name]
+#    if not matches:
+#        return None
+#    version = matches[0][1]
+#    return version[version.find('-')+1:version.find('~')]
+
+
 
 def deb_in_repo(repo_url, deb_name, deb_version, os_platform, arch, use_regex=True):
     packagelist = get_Packages(repo_url, os_platform, arch)
