@@ -208,6 +208,7 @@ def download_control(stack_name, stack_version):
 def control_file(metadata, distro_name, platform_name):
     data = metadata.copy()
     data['description-full'] = metadata['description-full'].rstrip()
+    data['distro_name'] = distro_name
     if data['maintainer'].startswith('Maintained by '):
         data['maintainer'] = data['maintainer'][len('Maintained by '):]
 
