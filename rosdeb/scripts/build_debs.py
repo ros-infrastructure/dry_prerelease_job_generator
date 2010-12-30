@@ -369,7 +369,7 @@ reprepro -V -b /var/packages/ros-shadow-fixed/ubuntu --noskipold update %(os_pla
         res = run_script.wait()
         print o
         if res != 0:
-            raise InternalBuildFailure("Could not run upload script:\n%s\n%s"%(o, e))
+            raise InternalBuildFailure("Could not run version-locking script:\n%s\n%s"%(o, e))
 
 
 def build_debs(distro, stack_name, os_platform, arch, staging_dir, force, noupload, interactive):
@@ -481,7 +481,7 @@ def build_debs_main():
     
     if not failure_message and stack_name == 'ALL':
         try:
-            lock_debs(distro, os_platform, arch)
+            lock_debs(distro.release_name, os_platform, arch)
         except Exception, e:
             failure_message = "Internal failure in the release system. Please notify leibs and kwc @willowgarage.com:\n%s\n\n%s"%(e, traceback.format_exc(e))
 
