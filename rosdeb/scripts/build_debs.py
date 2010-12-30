@@ -327,7 +327,7 @@ dpkg -l %(deb_name)s
 
     if not noupload:
         # Upload the debs to the server
-        base_files = ['%s_%s.changes'%(deb_file, arch), "%_%s.deb"%(deb_file_final, arch)]
+        base_files = ['%s_%s.changes'%(deb_file, arch), "%s_%s.deb"%(deb_file_final, arch)]
         files = [os.path.join(results_dir, x) for x in base_files]
     
         print "uploading debs for %s-%s to pub8"%(stack_name, stack_version)
