@@ -302,7 +302,7 @@ echo "Resuming pbuilder"
         raise InternalBuildFailure("No deb-file generated matching template: %s"%deb_file_wild)
 
     deb_version_final = debianize_version(stack_version, build_version, os_platform)
-    deb_file_final = "%s_%s"%(deb_name, deb_version)
+    deb_file_final = "%s_%s"%(deb_name, deb_version_final)
 
     # Build a package db if we have to
     print "starting package db build of %s-%s"%(stack_name, stack_version)
