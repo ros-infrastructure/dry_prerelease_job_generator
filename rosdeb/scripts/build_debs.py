@@ -478,8 +478,12 @@ def build_debs_main():
             shutil.rmtree(staging_dir)
             
     # If there was no failure and we did a build of ALL, so we go ahead and stamp the debs now
+    
     if not failure_message and stack_name == 'ALL':
-        lock_debs(distro, os_platform, arch)
+        try:
+            lock_debs(distro, os_platform, arch)
+        except Exception, e:
+            failure_message = "Internal failure in the release system. Please notify leibs and kwc @willowgarage.com:\n%s\n\n%s"%(e, traceback.format_exc(e))
 
 
 #        try:
@@ -505,8 +509,7 @@ def build_debs_main():
 #                if stamp_versions.stamp_debs(distro, os_platform, arch, staging_dir) != 0:
 #                    failure_message = "Could not upload debs"
 
-#        except Exception, e:
-#            failure_message = "Internal failure in the release system. Please notify leibs and kwc @willowgarage.com:\n%s\n\n%s"%(e, traceback.format_exc(e))
+
 #        finally:
 #            if options.staging_dir is None:
 #                shutil.rmtree(staging_dir)
