@@ -227,6 +227,7 @@ Priority: %(priority)s
 Maintainer: %(maintainer)s
 Build-Depends: debhelper (>= 5), chrpath, %(all-depends)s
 Standards-Version: 3.7.2
+XBC-WG-rosdistro: %(distro_name)s
 
 Package: %(package)s
 Architecture: any
