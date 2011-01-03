@@ -381,6 +381,7 @@ def call(command, env, message='', ignore_fail=False):
         print str(res)
         if helper.returncode != 0:
             raise Exception
+        return res
     except Exception:
         if not ignore_fail:
             message += "\n=========================================\n"
@@ -389,10 +390,9 @@ def call(command, env, message='', ignore_fail=False):
             message += str(res)
             message += "\n=========================================\n"
             message += "ROS_PACKAGE_PATH = %s\n"%env['ROS_PACKAGE_PATH']
-            message += "\n=========================================\n"
             message += "ROS_ROOT = %s\n"%env['ROS_ROOT']
-            message += "\n=========================================\n"
             message += "PYTHONPATH = %s\n"%env['PYTHONPATH']
+            message += "\n=========================================\n"
             write_file(env['WORKSPACE']+'/build_output/buildfailures.txt', message)
             write_file(env['WORKSPACE']+'/test_output/testfailures.txt', '')
             write_file(env['WORKSPACE']+'/build_output/buildfailures-with-context.txt', '')

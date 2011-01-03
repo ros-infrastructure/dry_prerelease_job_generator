@@ -35,11 +35,11 @@ def main():
         call('sudo apt-get install %s --yes'%(stack_to_deb(stack, options.rosdistro)), env, ignore_fail=True)
     
     # install system dependencies of all packages
-    res, err = subprocess.Popen('rospack list'.split(' '), env=env, stdout=subprocess.PIPE).communicate()
+    res = call('rospack list', env, 'Getting list of all packages')
     packages = [p.split(' ')[0] for p in res.split('\n') if p != '']
     for pkg in packages:
         if not pkg in rosdistro_obj.stacks:
-            res, err = subprocess.Popen(('rospack find %s'%pkg).split(' '), env=env, stdout=subprocess.PIPE).communicate()
+            res = call('rospack find %s'%pkg, env, 'Check if package is blacklisted')
             if not os.path.isfile(res[0:len(res)-1]+'/ROS_BUILD_BLACKLIST'):
                 call('rosdep install -y %s'%pkg, env, 'Installing system dependencies of package %s'%pkg)
 
