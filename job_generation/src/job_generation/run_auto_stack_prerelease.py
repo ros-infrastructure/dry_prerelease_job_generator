@@ -101,7 +101,7 @@ def main():
     print 'Installing all stacks that depend on these stacks from source'
     depends_on = {}
     for stack in options.stack:
-        res = call('rosstack depends-on %s'%stack, env, 'Getting list of stacks that depend on stack %s'stack)
+        res = call('rosstack depends-on %s'%stack, env, 'Getting list of stacks that depend on stack %s'%stack)
         if res != '':
             for r in res.split('\n'):
                 if r != '':
