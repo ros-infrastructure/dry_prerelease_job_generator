@@ -67,7 +67,7 @@ def parse_Packages(packagelist):
     @return: parsed tuples or None if packagelist is None
     """
     package_deps = []
-    package = deps = version = None
+    package = deps = version = distro = None
     for l in packagelist.split('\n'):
         if l.startswith('Package: '):
             package = l[len('Package: '):]
@@ -76,9 +76,11 @@ def parse_Packages(packagelist):
         elif l.startswith('Depends: '):
             deps = l[len('Depends: '):].split(',')
             deps = [d.strip() for d in deps]
-        if package != None and version != None and deps != None:
-            package_deps.append((package, version, deps))
-            package = version = deps = None
+        elif l.lower().startswith('wg-rosdistro: '):
+            distro = l[len('wg-rosdistro: '):]
+        if package != None and version != None and deps != None and distro != None:
+            package_deps.append((package, version, deps, distro))
+            package = version = deps = distro = None
     return package_deps
     
 def load_Packages(repo_url, os_platform, arch):
@@ -92,7 +94,7 @@ def get_repo_version(repo_url, distro, os_platform, arch):
     Return the greatest build-stamp for any deb in the repository
     """
     packagelist = load_Packages(repo_url, os_platform, arch)
-    return max(['0'] + [x[1][x[1].find('-')+1:x[1].find('~')] for x in packagelist])
+    return max(['0'] + [x[1][x[1].find('-')+1:x[1].find('~')] for x in packagelist if x[3] == distro])
 
 #    deb_name = "ros-%s-ros"%(distro.release_name)
 #    matches = [x for x in packagelist if x[0] == deb_name]
