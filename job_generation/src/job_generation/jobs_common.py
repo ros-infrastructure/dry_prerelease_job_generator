@@ -353,7 +353,10 @@ def get_email_triggers(when, send_devel=True):
 
 
 def get_job_name(jobtype, rosdistro, stack_name, ubuntu, arch):
+    if len(stack_name) > 50:
+        stack_name = stack_name[0:46]+'_...'
     return "_".join([jobtype, rosdistro, stack_name, ubuntu, arch])
+
 
 
 
