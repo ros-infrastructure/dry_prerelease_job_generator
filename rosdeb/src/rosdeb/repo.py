@@ -94,7 +94,7 @@ def get_repo_version(repo_url, distro, os_platform, arch):
     Return the greatest build-stamp for any deb in the repository
     """
     packagelist = load_Packages(repo_url, os_platform, arch)
-    return max(['0'] + [x[1][x[1].find('-')+1:x[1].find('~')] for x in packagelist if x[3] == distro])
+    return max(['0'] + [x[1][x[1].find('-')+1:x[1].find('~')] for x in packagelist if x[3] == distro.release_name])
 
 #    deb_name = "ros-%s-ros"%(distro.release_name)
 #    matches = [x for x in packagelist if x[0] == deb_name]
