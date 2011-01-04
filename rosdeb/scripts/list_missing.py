@@ -340,7 +340,17 @@ def generate_allhtml_report(output, distro_name, os_platforms):
             try:
                 main_repo["%s-%s"%(os_platform, arch)] = load_Packages(ROS_REPO, os_platform, arch)
             except:
-                main_repo["%s-%s"%(os_platform, arch)] = []    
+                main_repo["%s-%s"%(os_platform, arch)] = []
+
+    fixed_repo = {}
+    arches = ['amd64', 'i386']
+    for os_platform in os_platforms:
+        for arch in arches:
+            try:
+                fixed_repo["%s-%s"%(os_platform, arch)] = load_Packages(SHADOW_FIXED_REPO, os_platform, arch)
+            except:
+                fixed_repo["%s-%s"%(os_platform, arch)] = []
+
     missing_primary = None
     missing_dep = None
 
@@ -418,10 +428,12 @@ def generate_allhtml_report(output, distro_name, os_platforms):
                     # compute version in actual repo
                     version_str = ''
                     try:
-                        match = get_stack_version(main_repo[key], distro_name, stack)
-                        if match != shadow_version:
-                            match = match or '0'
-                            version_str = '<em>'+str(match)+'</em>'
+                        main_match = get_stack_version(main_repo[key], distro_name, stack)
+                        fixed_match = get_stack_version(fixed_repo[key], distro_name, stack)
+                        if main_match != shadow_version or fixed_match != shadow_version:
+                            main_match = main_match or '0'
+                            fixed_match = fixed_match or '0'
+                            version_str = '<em>'+str(fixed_match)+', '+str(main_match)+'</em>'
                     except Exception, e:
                         print str(e)
                     

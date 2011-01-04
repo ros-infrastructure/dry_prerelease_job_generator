@@ -134,7 +134,7 @@ def get_depends(repo_url, deb_name, os_platform, arch):
     while queue:
         next  = queue[0]
         queue = queue[1:]
-        for package, _, deps in package_deps:
+        for package, _, deps, _ in package_deps:
             if package not in depends and next in deps:
                 queue.append(package)
                 depends.add(package)
@@ -145,7 +145,7 @@ def get_stack_version(packageslist, distro_name, stack_name):
     Get the ROS version number of the stack in the repository
     """
     deb_name = "ros-%s-%s"%(distro_name, debianize_name(stack_name))
-    match = [vm for sm, vm, _ in packageslist if sm == deb_name]
+    match = [vm for sm, vm, _, _ in packageslist if sm == deb_name]
     if match:
         return match[0].split('-')[0]
     else:
