@@ -49,6 +49,7 @@ import urllib
 import urllib2
 import stat
 import tempfile
+import time
 
 import rosdeb
 from rosdeb.rosutil import checkout_svn_to_tmp
@@ -298,6 +299,12 @@ def get_html_table_header(h, distro_name, os_platforms, arches, counts, job):
     
     return b.getvalue()
     
+def rev_to_time(rev):
+    if rev[0] == 's':
+        return '%s'%(time.strftime("%b %d %H:%M:%S %Y",time.localtime(int(rev[1:]))))
+    else:
+        return ""
+
 def get_html_repository_status(distro, os_platforms, arches):
     b = cStringIO.StringIO()
     b.write("""<h2>Repository Status</h2>
@@ -320,7 +327,7 @@ def get_html_repository_status(distro, os_platforms, arches):
                 fixed_version = get_repo_version(SHADOW_FIXED_REPO, distro, os_platform, arch)
             except BadRepo:
                 fixed_version = "[no repo]"
-            b.write("<tr><td>%s-%s</td><td>%s</td><td>%s</td><td>%s</td></tr>\n"%(os_platform, arch, shadow_version, fixed_version, main_version))
+            b.write("<tr valign=top><td>%s-%s</td><td>%s<br><i>%s</i></td><td>%s<br><i>%s</i></td><td>%s<br><i>%s</i></td></tr>\n"%(os_platform, arch, shadow_version, rev_to_time(shadow_version), fixed_version, rev_to_time(fixed_version), main_version, rev_to_time(main_version)))
     b.write("</table>")
     return b.getvalue()
 
@@ -328,6 +335,7 @@ def sourcedeb_job_url(h, distro_name, stack, stack_version):
     params = {'STACK_NAME': stack, 'DISTRO_NAME': distro_name,'STACK_VERSION': stack_version}
     return h.build_job_url('debbuild-sourcedeb', parameters=params)                            
     
+
 def generate_allhtml_report(output, distro_name, os_platforms):
     import hudson
     h = hudson.Hudson(HUDSON)
