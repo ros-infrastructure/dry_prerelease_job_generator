@@ -73,7 +73,10 @@ class BZRClient(vcs_base.VCSClientBase):
             print >>sys.stderr, "Error: cannnot checkout into existing directory"
             return False
             
-        cmd = "bzr branch %s %s %s"%(version, url, self._path)
+        if version:
+            cmd = "bzr branch -r %s %s %s"%(version, url, self._path)
+        else:
+            cmd = "bzr branch %s %s"%(url, self._path)
         if subprocess.check_call(cmd, shell=True) == 0:
             return True
         return False
