@@ -110,7 +110,7 @@ class VCSConfigElement(ConfigElement):
     else:
       error_message = None
       if not self.vcsc.detect_presence():
-        error_message = "Failed to detect %s presence at %s."%(sefl.vcsc.type, self.path)
+        error_message = "Failed to detect %s presence at %s."%(self.vcsc.type, self.path)
       elif self.vcsc.get_url() != self.uri:
         error_message = "url %s does not match %s requested."%(self.vcsc.get_url(), self.uri)
       elif (self.vcsc.get_vcs_type_name() == 'git' \
