@@ -123,7 +123,6 @@ def get_depends(repo_url, deb_name, os_platform, arch):
     # more robust to any bad state we may have caused to the shadow
     # repo.
     package_deps = load_Packages(repo_url, os_platform, arch)
-
     done = False
     queue = [deb_name]
     depends = set()
@@ -135,6 +134,8 @@ def get_depends(repo_url, deb_name, os_platform, arch):
         next  = queue[0]
         queue = queue[1:]
         for package, _, deps, _ in package_deps:
+            #strip of version specifications from deps
+            deps = [d.split()[0] for d in deps]
             if package not in depends and next in deps:
                 queue.append(package)
                 depends.add(package)
