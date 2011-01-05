@@ -69,8 +69,11 @@ class GITClient(vcs_base.VCSClientBase):
         """
         vcs_base.VCSClientBase.__init__(self, path)
         with open(os.devnull, 'w') as fnull:
-            if subprocess.call("git help".split(), stdout=fnull, stderr=fnull) != 0:
+            try:
+                subprocess.call("git help".split(), stdout=fnull, stderr=fnull)
+            except:
                 raise LookupError("git not installed, cannnot create a git vcs client")
+
         self.submodule_exists = check_git_submodules()
 
     def get_url(self):

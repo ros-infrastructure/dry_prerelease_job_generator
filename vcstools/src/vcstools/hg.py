@@ -49,7 +49,9 @@ class HGClient(vcs_base.VCSClientBase):
         """
         vcs_base.VCSClientBase.__init__(self, path)
         with open(os.devnull, 'w') as fnull:
-            if subprocess.call("hg help".split(), stdout=fnull, stderr=fnull) != 0:
+            try:
+                subprocess.call("hg help".split(), stdout=fnull, stderr=fnull)
+            except:
                 raise LookupError("hg not installed, cannnot create a hg vcs client")
 
     def get_url(self):

@@ -47,7 +47,9 @@ class SVNClient(vcs_base.VCSClientBase):
         """
         vcs_base.VCSClientBase.__init__(self, path)
         with open(os.devnull, 'w') as fnull:
-            if subprocess.call("svn help".split(), stdout=fnull, stderr=fnull) != 0:
+            try:
+                subprocess.call("svn help".split(), stdout=fnull, stderr=fnull)
+            except:
                 raise LookupError("svn not installed, cannnot create an svn vcs client")
  
     def get_url(self):
