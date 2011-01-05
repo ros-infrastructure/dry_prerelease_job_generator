@@ -97,4 +97,4 @@ class BZRClient(vcs_base.VCSClientBase):
 
     def get_version(self):
         output = subprocess.Popen(['bzr', 'revno'], cwd= self._path, stdout=subprocess.PIPE).communicate()[0]
-        return "-r"+output.strip()
+        return output.strip()
