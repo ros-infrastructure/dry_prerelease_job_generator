@@ -303,7 +303,7 @@ class Config:
     text += "export PYTHONPATH=$ROS_ROOT/core/roslib/src:$PYTHONPATH\n"
     text += "if [ ! \"$ROS_MASTER_URI\" ] ; then export ROS_MASTER_URI=http://localhost:11311 ; fi\n"
     text += "export ROS_PACKAGE_PATH=%s\n" % ros_package_path
-    text += "source $ROS_ROOT/tools/rosbash/rosbash\n"
+    text += "source $ROS_ROOT/tools/rosbash/ros$(basename $0)\n"
     return text
     
 
