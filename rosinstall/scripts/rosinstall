@@ -295,15 +295,39 @@ class Config:
     return rpp
     
   
-  def generate_full_setup_text(self, ros_root, ros_package_path):
+  def generate_setup_sh_text(self, ros_root, ros_package_path):
     # overlay or standard
-    text = ""
+    text =  "#!/bin/sh\n"
     text += "export ROS_ROOT=%s\n" % ros_root
     text += "export PATH=$ROS_ROOT/bin:$PATH\n" # might include it twice
     text += "export PYTHONPATH=$ROS_ROOT/core/roslib/src:$PYTHONPATH\n"
     text += "if [ ! \"$ROS_MASTER_URI\" ] ; then export ROS_MASTER_URI=http://localhost:11311 ; fi\n"
     text += "export ROS_PACKAGE_PATH=%s\n" % ros_package_path
-    text += "source $ROS_ROOT/tools/rosbash/ros$(basename $0)\n"
+    return text
+
+  def generate_setup_bash_text(self):
+    text =  """#!/bin/bash
+# IT IS UNLIKELY YOU WANT TO EDIT THIS FILE BY HAND
+# IF YOU WANT TO CHANGE THE ROS ENVIRONMENT VARIABLES
+# EDIT "setup.sh" IN THIS DIRECTORY.
+
+# Load the path of this particular setup.bash                                                                                                                  
+SCRIPT_PATH="${BASH_SOURCE[0]}";
+if([ -h "${SCRIPT_PATH}" ]) then
+  while([ -h "${SCRIPT_PATH}" ]) do SCRIPT_PATH=`readlink "${SCRIPT_PATH}"`; done
+fi
+pushd . > /dev/null
+cd `dirname ${SCRIPT_PATH}` > /dev/null
+SCRIPT_PATH=`pwd`;
+popd  > /dev/null
+
+
+. $SCRIPT_PATH/setup.sh
+
+if [ -e ${ROS_ROOT}/tools/rosbash/rosbash ]; then
+  . ${ROS_ROOT}/tools/rosbash/rosbash
+fi
+"""
     return text
     
 
@@ -314,12 +338,16 @@ class Config:
       raise ROSInstallException("No 'ros' stack detected.  The 'ros' stack is required in all rosinstall directories. Please add a definition of the 'ros' stack either manually in .rosinstall and then call 'rosinstall .' in the directory. Or add one on the command line 'rosinstall . http://www.ros.org/rosinstalls/boxturtle_ros.rosinstall'. Or reference an existing install like in /opt/ros/boxturtle with 'rosinstall . /opt/ros/boxturtle'.  Note: the above suggestions assume you are using boxturtle, if you are using latest or another distro please change the urls." )
     rpp = self.get_ros_package_path()
 
-    text = self.generate_full_setup_text(ros_root, rpp)
-
+    
+    text = self.generate_setup_sh_text(ros_root, rpp)
     setup_path = os.path.join(self.base_path, 'setup.sh')
     with open(setup_path, 'w') as f:
       f.write(text)
 
+    text = self.generate_setup_bash_text()
+    setup_path = os.path.join(self.base_path, 'setup.bash')
+    with open(setup_path, 'w') as f:
+      f.write(text)
 
 ## legacy for breadcrumb which will be removed shortly.
 def installed_uri(path):
