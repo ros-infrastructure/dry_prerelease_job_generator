@@ -14,8 +14,7 @@ distro: setup clean_dist
 	python setup.py sdist
 
 clean: clean_dist
-	rm -rf src/rosinstall
-	svn up src/rosinstall
+	rm -rf src/rosinstall/vcs
 
 install: distro
 	sudo checkinstall python setup.py install
