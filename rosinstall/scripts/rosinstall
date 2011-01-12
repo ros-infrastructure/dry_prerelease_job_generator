@@ -305,21 +305,32 @@ class Config:
     text += "export ROS_PACKAGE_PATH=%s\n" % ros_package_path
     return text
 
-  def generate_setup_bash_text(self, shell ="bash"):
+  def generate_setup_bash_text(self, shell):
+    if shell == 'bash':
+      script_path = """
+SCRIPT_PATH="${BASH_SOURCE[0]}";
+if([ -h "${SCRIPT_PATH}" ]) then
+  while([ -h "${SCRIPT_PATH}" ]) do SCRIPT_PATH=`readlink "${SCRIPT_PATH}"`; done
+fi
+pushd . > /dev/null
+cd `dirname ${SCRIPT_PATH}` > /dev/null
+SCRIPT_PATH=`pwd`;
+popd  > /dev/null
+"""
+    elif shell == 'zsh':
+      script_path = "SCRIPT_PATH=\"$(dirname $0)\";"
+    else:
+      raise ROSInstallException("%s shell unsupported."%shell);
+
     text =  """#!/bin/%(shell)s
 # IT IS UNLIKELY YOU WANT TO EDIT THIS FILE BY HAND
 # IF YOU WANT TO CHANGE THE ROS ENVIRONMENT VARIABLES
 # EDIT "setup.sh" IN THIS DIRECTORY.
 
-# Load the path of this particular setup.%(shell)s 
-SCRIPT_PATH=$(dirname $0)
-SCRIPT_NAME=$SCRIPT_PATH/setup.sh
+# Load the path of this particular setup.%(shell)s                                                                                                                  
+%(script_path)s
 
-if [ ! -e $SCRIPT_NAME ] ; then
-  echo "Could not find $SCRIPT_NAME to get environment variables. Please make sure this file exists and sets the ROS environment variables."
-fi
-
-. $SCRIPT_NAME
+. $SCRIPT_PATH/setup.sh
 
 if [ -e ${ROS_ROOT}/tools/rosbash/ros%(shell)s ]; then
   . ${ROS_ROOT}/tools/rosbash/ros%(shell)s
@@ -406,7 +417,7 @@ def rosinstall_main(argv):
   if len(argv) < 2:
     usage()
   args = argv[1:]
-  parser = OptionParser(usage="usage: %prog PATH [URI] [options]", version="%prog 0.5.11")
+  parser = OptionParser(usage="usage: %prog PATH [URI] [options]", version="%prog 0.5.12")
   parser.add_option("-n", "--nobuild", dest="nobuild", default=False,
                     help="skip the build step for the ROS stack",
                     action="store_true")
