@@ -15,8 +15,7 @@ install: ${ROS_DISTRO_DIR}/ros
 ifeq (${ROS_DISTRO_NAME}, unstable)
 	bash -c ". setup_deb.sh && ./purge_build.py ${ROS_DISTRO_DIR}"
 endif
-	cp setup.sh ${ROS_DISTRO_DIR}/
-	cp .rosinstall ${ROS_DISTRO_DIR}/
+	cp setup.sh setup.bash setup.zsh .rosinstall ${ROS_DISTRO_DIR}/
 	mkdir -p ${ROS_DISTRO_DIR}/stacks
 	-python -mcompileall ${ROS_DISTRO_DIR}/ros
 	./fixrpath.py ${ROS_DISTRO_DIR}/ros ${ROS_DISTRO_DIR} ${ROS_DISTRO_DIR_FINAL}
