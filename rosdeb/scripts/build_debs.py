@@ -606,13 +606,14 @@ def gen_metapkgs(distro, os_platform, arch, staging_dir, force=False):
     for (v,d) in distro.variants.iteritems():
 
         deb_name = "ros-%s-%s"%(distro_name, debianize_name(v))
-        
+
         # If the metapkg is in the packagelist AND already has the right deps, we leave it:
         if deb_name in packagelist:
             list_deps = set([x.split()[0].strip() for x in packagelist[deb_name]['Depends'].split(',')])
             mp_deps = set(["ros-%s-%s"%(distro_name, debianize_name(x)) for x in set(d.stack_names) - missing_ok])
             if list_deps == mp_deps:
-                pass
+                print "Metapackage %s already has correct deps"%deb_name
+                continue
 
         # Else, we create the new metapkg
         mp = create_meta_pkg(packagelist, distro, distro_name, v, set(d.stack_names) - missing_ok, os_platform, arch, staging_dir)
