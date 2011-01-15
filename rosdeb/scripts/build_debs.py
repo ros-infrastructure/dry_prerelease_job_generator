@@ -606,7 +606,6 @@ def gen_metapkgs(distro, os_platform, arch, staging_dir, force=False):
     for (v,d) in distro.variants.iteritems():
 
         deb_name = "ros-%s-%s"%(distro_name, debianize_name(v))
-        deb_version = "\w*"%(distro.version, os_platform)
         
         # If the metapkg is in the packagelist AND already has the right deps, we leave it:
         if deb_name in packagelist:
