@@ -609,8 +609,8 @@ def gen_metapkgs(distro, os_platform, arch, staging_dir, force=False):
         
         # If the metapkg is in the packagelist AND already has the right deps, we leave it:
         if deb_name in packagelist:
-            list_deps = set([x.split()[0].strip() for x in packagelist['ros-cturtle-pr2-doors']['Depends'].split(',')])
-            mp_deps = set(["ros-%s-%s"%('cturtle', debianize_name(x)) for x in set(d.stack_names) - missing_ok])
+            list_deps = set([x.split()[0].strip() for x in packagelist[deb_name]['Depends'].split(',')])
+            mp_deps = set(["ros-%s-%s"%(distro_name, debianize_name(x)) for x in set(d.stack_names) - missing_ok])
             if list_deps == mp_deps:
                 pass
 
