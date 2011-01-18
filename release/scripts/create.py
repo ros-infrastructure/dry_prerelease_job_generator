@@ -38,7 +38,7 @@ from __future__ import with_statement
 PKG = 'release'
 NAME="create.py"
 
-VERSION=2
+VERSION=3
 
 import roslib; roslib.load_manifest(PKG)
 
@@ -193,10 +193,11 @@ def copy_to_server(name, version, tarball, control, control_only=False):
     # multi-distro releases. It's best to reuse the existing tarball.
     tarball_url = url + '/' + tarball_name
     if svn_url_exists(tarball_url):
-        print_bold("Tarball of %s-%s has already been uploaded to server, reuse?\nRecommendation: y"%(stack_name, stack_version))
-        if yes_or_no():
-            print "reusing existing %s"%(tarball_url)
-            return
+        # no longer ask user to reuse, always reuse b/c people answer
+        # this wrong and it breaks things.  the correct way to
+        # invalidate is to delete the tarball manually with SVN from
+        # now on.
+        return
 
     # checkout tarball tree so we can add new tarball
     dir_name = "%s-%s"%(name, version)

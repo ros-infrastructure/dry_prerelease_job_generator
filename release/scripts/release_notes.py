@@ -66,7 +66,8 @@ def rn_main():
     arch = 'amd64'
     
     released = load_additional()
-    compute_diff(distro_name, os_platform, arch, released)
+    if 0:
+        compute_diff(distro_name, os_platform, arch, released)
     notes = create_notes(released)
     print notes
 
