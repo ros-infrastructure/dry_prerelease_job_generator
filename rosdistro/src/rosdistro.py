@@ -86,6 +86,9 @@ def load_vcs_config(rules, rule_eval):
         if 'svn' in rules:
             r = rules['svn']
 
+            for k in ['dev', 'distro-tag', 'release-tag']:
+                if not k in r:
+                    raise KeyError("svn rules missing required %s key: %s"%(k, r))
             vcs_config.dev     = rule_eval(r['dev'])
             vcs_config.distro_tag  = rule_eval(r['distro-tag'])
             vcs_config.release_tag = rule_eval(r['release-tag'])
@@ -162,9 +165,27 @@ def get_variants(distro, stack_name):
             variant = variant_d.keys()[0]
             variant_props = variant_d[variant]
             if stack_name in variant_props['stacks']:
-                retval.append(variant)
-            elif 'extends' in variant_props and variant_props['extends'] in retval:
-                retval.append(variant)                
+                if variant not in retval:
+                    retval.append(variant)
+        except:
+            pass
+
+    # process extends
+    for variant_d in variants:
+        try:
+            variant = variant_d.keys()[0]
+            variant_props = variant_d[variant]        
+            if 'extends' in variant_props:
+                extends = variant_props['extends']
+                if type(extends) in (str, unicode):
+                    # single variant: backwards compat
+                    if extends in retval and variant not in retval:
+                        retval.append(variant)
+
+                else:
+                    # list of variants
+                    if set(extends) ^ set(retval) and variant not in retval:
+                        retval.append(variant)
         except:
             pass
     return retval
@@ -314,17 +335,15 @@ class Variant(object):
     another variant.
     """
 
-    def __init__(self, variant_name, source_uri, variants_props):
+    def __init__(self, variant_name, variants_props):
         """
         @param variant_name: name of variant to load from distro file
         @type  variant_name: str
-        @param source_uri: source URI of distro file
-        @type  source_uri: str
         @param variants_props: dictionary mapping variant names to the rosdistro map for that variant
         """
         self.name = variant_name
-        self.source_uri = source_uri
-
+        self.parents = []
+        
         # save the properties for our particular variant
         try:
             props = variants_props[variant_name]
@@ -332,16 +351,25 @@ class Variant(object):
             raise DistroException("distro does not define a '%s' variant"%variant_name)
 
         # load in variant properties from distro spec
-        if not 'stacks' in props:
-            raise DistroException("variant properties must define 'stacks':\n%s"%props[n])
-        self.stack_names = list(props['stacks'])
+        if not 'stacks' in props and not 'extends' in props:
+            raise DistroException("variant properties must define 'stacks' or 'extends':\n%s"%(props))
 
+        # stack_names accumulates the full expanded list
+        self.stack_names = list(props.get('stacks', []))
+        # stack_names_explicit is only the stack names directly specified
+        self.stack_names_explicit = self.stack_names
+        
         # check to see if we extend another distro, in which case we prepend their props
         if 'extends' in props:
-            self.parent = props['extends']
-            self.parent_uri = props.get('extends-uri', source_uri)
-            parent_variant = Variant(self.parent, self.parent_uri, variants_props)
-            self.stack_names = parent_variant.stack_names + self.stack_names
+            extends = props['extends']
+            if type(extends) == str:
+                extends = [extends]
+            # store parents property for debian metapackages
+            self.parents = extends
+
+            for e in extends:
+                parent_variant = Variant(e, variants_props)
+                self.stack_names = parent_variant.stack_names + self.stack_names
         self.props = props
       
 class Distro(object):
@@ -408,7 +436,7 @@ class Distro(object):
 
         # load variants
         for v in variants.iterkeys():
-            self.variants[v] = Variant(v, source_uri, variants)
+            self.variants[v] = Variant(v, variants)
 
         if not 'ros' in stack_props:
             raise DistroException("this program assumes that ros is in your variant")
