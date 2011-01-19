@@ -197,6 +197,7 @@ def copy_to_server(name, version, tarball, control, control_only=False):
         # this wrong and it breaks things.  the correct way to
         # invalidate is to delete the tarball manually with SVN from
         # now on.
+        print "reusing existing tarball of release for this distribution"
         return
 
     # checkout tarball tree so we can add new tarball
