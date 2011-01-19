@@ -436,13 +436,17 @@ def main():
             sys.exit(1)
 
 
-        # ask for prerelease
-        print 'Did you trigger the prerelease builds on <http://code.ros.org/prerelease/>?'
+        # ask if stack got tested
+        print 'Did you run prerelease tests on your stack?'
         if not yes_or_no():
-            print 'You can only release a stack once all the prerelease tests pass.'
-            print 'Please trigger prerelease builds for your stack on <http://code.ros.org/prerelease/>'
+            print 'Before releasing a stack, you should make sure your stack works well,'
+            print ' and that the new release does not break any already released stacks'
+            print ' that depend on your stack.'
+            print 'Willow Garage offers a pre-release test set that tests your stack and all'
+            print ' released stacks that depend on your stack, on all distributions and architectures'
+            print ' supported by Willow Garage. '
+            print 'You can trigger pre-release builds for your stack on <http://code.ros.org/prerelease/>'
             return
-
 
         # make sure distro_file is up-to-date
         print "Retrieving up-to-date %s"%(distro_file)
