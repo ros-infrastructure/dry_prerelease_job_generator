@@ -72,7 +72,7 @@ class GITClient(vcs_base.VCSClientBase):
             try:
                 subprocess.call("git help".split(), stdout=fnull, stderr=fnull)
             except:
-                raise LookupError("git not installed, cannnot create a git vcs client")
+                raise LookupError("git not installed, cannot create a git vcs client")
 
         self.submodule_exists = check_git_submodules()
 
@@ -91,7 +91,7 @@ class GITClient(vcs_base.VCSClientBase):
 
     def checkout(self, url, version='master'):
         if self.path_exists():
-            print >>sys.stderr, "Error: cannnot checkout into existing directory"
+            print >>sys.stderr, "Error: cannot checkout into existing directory"
             return False
             
         cmd = "git clone %s %s"%(url, self._path)

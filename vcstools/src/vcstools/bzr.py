@@ -51,7 +51,7 @@ class BZRClient(vcs_base.VCSClientBase):
             try:
                 subprocess.call("bzr help".split(), stdout=fnull, stderr=fnull)
             except:
-                raise LookupError("bzr not installed, cannnot create a bzr vcs client")
+                raise LookupError("bzr not installed, cannot create a bzr vcs client")
 
     def get_url(self):
         """
@@ -70,7 +70,7 @@ class BZRClient(vcs_base.VCSClientBase):
 
     def checkout(self, url, version=''):
         if self.path_exists():
-            print >>sys.stderr, "Error: cannnot checkout into existing directory"
+            print >>sys.stderr, "Error: cannot checkout into existing directory"
             return False
             
         if version:
