@@ -379,8 +379,9 @@ def insert_source_yaml(source_yaml, source, observed_paths, aggregate_source_yam
       for element in source_yaml:
         #print "element", element
         for k in element:
-          #print "k", k
           #print "element[k]", element[k]
+          if not element[k]:
+              raise ROSInstallException("Malformed rosinstall source: %s  An \"%s\" entry is present without any information.  This can be caused by improper indentation of fields like 'local-name'. "%(source, k))
           if 'local-name' in element[k]:
             path = element[k]['local-name']
             if path in observed_paths:
