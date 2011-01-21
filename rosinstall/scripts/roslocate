@@ -69,6 +69,28 @@ def get_manifest(arg):
 # well implement the command-line.
         
 def get_rosinstall(name, data, type_, options=None):
+    if not 'rosinstall' in data:
+        sys.stderr.write("rosinstall control information for %s %s\n"%(type_, name))
+        return ''
+
+    ri_entry = data['rosinstall']
+    if len(ri_entry) != 1:
+        sys.stderr.write("rosinstall malformed for %s %s\n"%(type_, name))
+        return ''
+
+    for k, v in ri_entry.iteritems():
+        if 'local-name' in v:
+            name = v['local-name']
+            # compute path: we can't use os.path.join because rosinstall paths
+            # are always Unix-style.
+            prefix = options.prefix if options is not None and options.prefix else ''
+            paths = [x for x in (prefix, name) if x]
+            path = '/'.join(paths)
+            v['local-name'] = path
+
+    return yaml.dump([ri_entry])
+
+def get_info(name, data, type_, options=None):
     if not 'vcs' in data or not 'vcs_uri' in data:
         sys.stderr.write("No version control information for %s %s\n"%(type_, name))
         return ''
@@ -118,14 +140,15 @@ def _fullusage():
 \twww\tGet web page of resource
 \trepo\tGet repository name of resource
 \tdescribe\tGet description of resource
+\trosinstall\tGet the rosinstall rule for the development branch
 """%(NAME))
     sys.exit(os.EX_USAGE)
     
 from operator import getitem
 from functools import partial
 _cmds = {
-    'info': get_rosinstall,
-    'rosinstall': get_rosinstall, #alias
+    'info': get_info,
+    'rosinstall': get_rosinstall,
     'vcs': get_vcs,
     'type': get_type,
     'uri': get_vcs_uri,
@@ -148,7 +171,7 @@ def roslocate_main():
         _fullusage()
 
     parser = OptionParser(usage="usage: %%prog %s <resource>"%(cmd), prog=NAME)
-    if cmd == 'info':
+    if cmd == 'info' or cmd == 'rosinstall':
          parser.add_option("--prefix",
                            dest="prefix", default=False,
                            metavar="PATH",
