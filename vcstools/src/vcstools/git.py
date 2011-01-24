@@ -97,6 +97,11 @@ class GITClient(vcs_base.VCSClientBase):
         cmd = "git clone %s %s"%(url, self._path)
         if not subprocess.call(cmd, shell=True) == 0:
             return False
+
+        # update submodules early to work around what appears to be a git bug noted in #3251
+        if not self.update_submodules():
+            return False
+
         if self.get_branch_parent() == version:
             # If already at the right version update submodules and return
             return self.update_submodules()
