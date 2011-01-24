@@ -98,8 +98,8 @@ class GITClient(vcs_base.VCSClientBase):
         if not subprocess.call(cmd, shell=True) == 0:
             return False
         if self.get_branch_parent() == version:
-            # short circuit in default case
-            return True
+            # If already at the right version update submodules and return
+            return self.update_submodules()
         elif self.is_remote_branch(version):  # remote branch
             cmd = "git checkout remotes/origin/%s -b %s"%(version, version)
         else:  # tag or hash
@@ -109,8 +109,15 @@ class GITClient(vcs_base.VCSClientBase):
         #print "Git Installing: %s"%cmd
         if not subprocess.call(cmd, cwd=self._path, shell=True) == 0:
             return False
+        
+        # update submodules if present and available
+        return self.update_submodules()
+        
+    def update_submodules(self):
+    
         # update and or init submodules too
         if self.submodule_exists:
+            print "submodule updating"
             cmd = "git submodule update --init --recursive"
             if not subprocess.call(cmd, cwd=self._path, shell=True) == 0:
                 return False
@@ -123,7 +130,7 @@ class GITClient(vcs_base.VCSClientBase):
         # shortcut if version is the same as requested
         if self.is_hash(version) :
             if self.get_version() == version:
-                return True
+                return self.update_submodules()
 
             cmd = "git checkout -f -b rosinstall_temp" 
             if not subprocess.call(cmd, cwd=self._path, shell=True) == 0:
@@ -152,7 +159,7 @@ class GITClient(vcs_base.VCSClientBase):
                 cmd = "git submodule update --init --recursive"
                 if not subprocess.call(cmd, cwd=self._path, shell=True) == 0:
                     return False
-        return True
+        return self.update_submodules()
         
     def get_vcs_type_name(self):
         return 'git'
