@@ -117,7 +117,6 @@ class GITClient(vcs_base.VCSClientBase):
     
         # update and or init submodules too
         if self.submodule_exists:
-            print "submodule updating"
             cmd = "git submodule update --init --recursive"
             if not subprocess.call(cmd, cwd=self._path, shell=True) == 0:
                 return False
