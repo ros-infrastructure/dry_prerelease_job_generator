@@ -1,10 +1,13 @@
 
-import rosinstall.helpers
+import subprocess
 
 from distutils.core import setup
 
+po = subprocess.Popen('scripts/version.py')
+(stdout, stderr) = po.communicate()
+
 setup(name='rosinstall',
-      version=rosinstall.helpers.version(),
+      version= stdout,
       packages=['rosinstall', 'rosinstall.vcs'],
       package_dir = {'':'src'},
       scripts = ["scripts/rosinstall", "scripts/roslocate"],
