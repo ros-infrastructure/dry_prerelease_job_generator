@@ -1,12 +1,15 @@
 .PHONY: all setup clean_dist distro clean install dsc source_deb upload
 
+VERSION=`scripts/version.py`
+
+
 all:
 	echo "noop for debbuild"
 
 setup:
 	mkdir -p src/rosinstall/vcs
 	svn export --force $(shell rospack find vcstools)/src/vcstools src/rosinstall/vcs
-
+	echo "building version ${VERSION}"
 
 clean_dist:
 	-rm -f MANIFEST
@@ -28,7 +31,7 @@ dsc: distro
 
 source_deb: dsc
 	# need to convert unstable to each distro and repeat
-	cd deb_dist/rosin* && dpkg-buildpackage -sa -S -k84C5CECD
+	cd deb_dist/rosinstall_${VERSION} && dpkg-buildpackage -sa -S -k84C5CECD
 
 upload: source_deb
-	cd deb_dist && dput ppa:tully.foote/tully-test-ppa ../rosinstall_0.5.12-3_source.changes 
+	cd deb_dist && dput ppa:tully.foote/tully-test-ppa ../rosinstall_${VERSION}-1_source.changes 
