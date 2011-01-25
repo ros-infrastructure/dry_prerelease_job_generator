@@ -3,11 +3,13 @@ import subprocess
 
 from distutils.core import setup
 
-po = subprocess.Popen('scripts/version.py')
-(stdout, stderr) = po.communicate()
+po = subprocess.Popen('scripts/version.py', stdout=subprocess.PIPE)
+(stout, sterr) = po.communicate()
+print "version is %s asdf"%stout
+stout = stout.strip()
 
 setup(name='rosinstall',
-      version= stdout,
+      version= stout,
       packages=['rosinstall', 'rosinstall.vcs'],
       package_dir = {'':'src'},
       scripts = ["scripts/rosinstall", "scripts/roslocate"],
@@ -19,7 +21,9 @@ setup(name='rosinstall',
       classifiers = [
         "Programming Language :: Python", 
         "License :: OSI Approved :: BSD License" ],
+      description = "The installer for ROS", 
       long_description = """\
 The installer for ROS
-"""
+""",
+      license = "BSD"
       )
