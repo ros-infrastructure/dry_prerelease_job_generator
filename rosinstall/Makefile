@@ -1,6 +1,7 @@
 .PHONY: all setup clean_dist distro clean install dsc source_deb upload
 
-VERSION=`scripts/version.py`
+VERSION='0.5.14'
+
 
 
 all:
@@ -9,6 +10,9 @@ all:
 setup:
 	mkdir -p src/rosinstall/vcs
 	svn export --force $(shell rospack find vcstools)/src/vcstools src/rosinstall/vcs
+	echo "confirming version numbers are all consistent"
+	grep ${VERSION} scripts/rosinstall
+	grep ${VERSION} setup.py
 	echo "building version ${VERSION}"
 
 clean_dist:

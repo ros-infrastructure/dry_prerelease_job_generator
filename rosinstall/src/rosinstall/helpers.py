@@ -5,9 +5,6 @@ import yaml
 import subprocess
 import sys
 
-def version():
-  return "0.5.14"
-
 def conditional_abspath(uri):
   """
   @param uri: The uri to check
