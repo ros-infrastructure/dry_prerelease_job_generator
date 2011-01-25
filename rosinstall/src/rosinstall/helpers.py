@@ -6,7 +6,7 @@ import subprocess
 import sys
 
 def version():
-  return "0.5.13"
+  return "0.5.14"
 
 def conditional_abspath(uri):
   """
