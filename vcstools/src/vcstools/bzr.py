@@ -86,9 +86,10 @@ class BZRClient(vcs_base.VCSClientBase):
             return False
         if not subprocess.check_call("bzr pull", cwd=self._path, shell=True) == 0:
             return False
-        cmd = "bzr uncommit %s --force"%(version)
-        if subprocess.check_call(cmd, cwd=self._path, shell=True) == 0:
-            return True
+        if version != '':
+            cmd = "bzr uncommit %s --force"%(version)
+            if subprocess.check_call(cmd, cwd=self._path, shell=True) == 0:
+                return True
         return False
         
     def get_vcs_type_name(self):
