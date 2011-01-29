@@ -15,7 +15,7 @@ import roslib.packages
 def main():
     d = roslib.packages.get_pkg_dir('release_resources')
     unstable_f = os.path.join(d, '..', 'distros', 'unstable.rosdistro')
-    dback_f = os.path.join(d, '..', 'distros', 'diamondback2.rosdistro')
+    dback_f = os.path.join(d, '..', 'distros', 'diamondback.rosdistro')
     with open(unstable_f) as f:
         print "loading rosdistro [%s]"%(unstable_f)
         data = yaml.load(f)
