@@ -730,7 +730,7 @@ def build_debs_main():
             if options.smtp and stack_name != 'ALL' and distro is not None:
                 stack_version = distro.stacks[stack_name].version
                 control = download_control(stack_name, stack_version)
-                if  'contact' in control:
+                if  'contact' in control and distro_name != 'diamondback':
                     to_addr = control['contact']
                     subject = 'debian build [%s-%s-%s-%s] failed'%(distro_name, stack_name, os_platform, arch)
                     send_email(options.smtp, EMAIL_FROM_ADDR, to_addr, subject, failure_message)
