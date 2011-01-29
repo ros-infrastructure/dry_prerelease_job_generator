@@ -126,8 +126,7 @@ def compute_deps(distro, stack_name):
 class ExclusionList(object):
     def __init__(self, uri, distro_name, os_platform, arch):
         try:
-            self.excludes = yaml.load(urllib2.urlopen(uri).read()) or {}
-        except urllib2.HTTPError:
+            self.excludes = yaml.load(urllib2.urlopen(uri).read()) or {}        except urllib2.HTTPError:
             self.excludes = {}
         self.key = "%s-%s"%(os_platform,arch)
 

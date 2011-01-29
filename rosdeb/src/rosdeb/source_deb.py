@@ -120,11 +120,8 @@ def make_source_deb(distro_name, stack_name, stack_version, os_platform_name, st
     with open(os.path.join(debian_d, 'changelog'), 'w') as f:
         f.write(changelog_file(metadata, os_platform_name))
 
-    # For cturtle, and unstable we must use a build-version starting with a letter greater than r
-    if distro_name in ['cturtle','unstable']:
-        build_version='s$BUILD_VERSION'
-    else:
-        build_version='$BUILD_VERSION'
+    # We must use a build-version starting with a letter greater than r
+    build_version='s$BUILD_VERSION'
 
     with open(os.path.join(debian_d, 'changelog.tmp'), 'w') as f:
         f.write(changelog_file(metadata, os_platform_name, build_version))
