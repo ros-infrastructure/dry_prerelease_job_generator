@@ -66,6 +66,7 @@ from release import ReleaseException, update_rosdistro_yaml, make_dist, \
 from rosdistro import Distro
 
 pkg_dir = roslib.packages.get_pkg_dir('release_resources')
+distros_dir = os.path.join(pkg_dir, '..', 'distros')
     
 TARBALL_DIR_URL = 'https://code.ros.org/svn/release/download/stacks/%(stack_name)s/%(stack_name)s-%(stack_version)s'
 ROSORG_URL = 'http://ros.org/download/stacks/%(stack_name)s/%(stack_name)s-%(stack_version)s.tar.bz2'
@@ -130,7 +131,7 @@ def load_sys_args():
  * version (e.g. 1.0.1)
  * distro release name (e.g. cturtle)""")
     name, version, release_name = args
-    distro_file = os.path.join(pkg_dir, '..', 'distros', '%s.rosdistro'%(release_name))
+    distro_file = os.path.join(distros_dir, '%s.rosdistro'%(release_name))
     distro_file = os.path.abspath(distro_file)
     if not os.path.isfile(distro_file):
         parser.error("Could not find rosdistro file for [%s].\nExpected it in %s"%(release_name, distro_file))
@@ -519,7 +520,7 @@ def main_rebuild_repo():
             print >> sys.stderr, "usage: create.py _rebuild <distro-name>"
             sys.exit(1)
             
-        distro_file = os.path.join(pkg_dir, 'distros', '%s.rosdistro'%(args[2]))
+        distro_file = os.path.join(distros_dir, '%s.rosdistro'%(args[2]))
         distro_file = os.path.abspath(distro_file)
         if not os.path.isfile(distro_file):
             print >> sys.stderr, "cannot locate distro file, expected in [%s]"%(distro_file)
@@ -535,6 +536,8 @@ def main_rebuild_repo():
             distro_stack = distro.stacks[stack_name]
 
             stack_version = distro_stack.version
+            if stack_version is None:
+                continue # not released
             tarball_url = ROSORG_URL%locals()
             tarball_name = '%s-%s.tar.bz2'%(stack_name, stack_version)
             
@@ -579,7 +582,7 @@ def main_trigger_sourcedebs():
             print >> sys.stderr, "usage: create.py _trigger <distro-name>"
             sys.exit(1)
             
-        distro_file = os.path.join(pkg_dir, '..', '..', 'distros', '%s.rosdistro'%(args[2]))
+        distro_file = os.path.join(distros_dir, '%s.rosdistro'%(args[2]))
         distro_file = os.path.abspath(distro_file)
         if not os.path.isfile(distro_file):
             print >> sys.stderr, "cannot locate distro file, expected in [%s]"%(distro_file)
