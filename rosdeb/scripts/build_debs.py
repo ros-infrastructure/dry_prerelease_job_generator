@@ -379,6 +379,9 @@ reprepro -b /var/packages/ros-shadow/ubuntu -V processincoming %(os_platform)s
         if res != 0:
             raise InternalBuildFailure("Could not run upload script:\n%s\n%s"%(o, e))
 
+        # The cache is no longer valid, we clear it so that we won't skip debs that have been invalidated
+        rosdeb.repo._Packages_cache = {}
+
 def lock_debs(distro, os_platform, arch):
 
         remote_cmd = "TMPFILE=`mktemp` || exit 1 && cat > ${TMPFILE} && chmod +x ${TMPFILE} && ${TMPFILE}; ret=${?}; rm ${TMPFILE}; exit ${ret}"
