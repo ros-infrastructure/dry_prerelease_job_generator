@@ -21,11 +21,11 @@ def main():
         if not k in form.keys():
             print 'Missing parameters: %s'%k
             return
-    if form['rosdistro'] not in ['boxturtle', 'cturtle', 'diamondback', 'unstable', 'electric', 'fuerte']:
+    if form['rosdistro'].value not in ['boxturtle', 'cturtle', 'diamondback', 'unstable', 'electric', 'fuerte']:
          # needs to send httperror instead
          print 'invalid rosdistro parameter'
          return
-    if form['overlay'] not in ['yes', 'no']:
+    if form['overlay'].value not in ['yes', 'no']:
          # needs to send httperror instead
          print 'invalid overlay parameter'
          return
