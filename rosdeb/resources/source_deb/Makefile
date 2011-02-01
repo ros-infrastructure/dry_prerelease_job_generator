@@ -11,7 +11,7 @@ install: ${ROS_DISTRO_DIR}/${ROS_STACK_NAME}
 	bash -c ". setup_deb.sh && ./gen_versioned_debs.py ${ROS_DISTRO_NAME} ${ROS_STACK_NAME}" >> ${SUBSTFILE}
 	bash -c ". setup_deb.sh && rosmake ${ROS_STACK_NAME} -V --status-rate=0"
 	bash -c ". setup_deb.sh && rosmake ${ROS_STACK_NAME} -i -V --status-rate=0"
-ifeq (${ROS_DISTRO_NAME}, unstable)
+ifneq (${ROS_DISTRO_NAME}, cturtle)
 	bash -c ". setup_deb.sh && ./purge_build.py ${ROS_DISTRO_DIR}"
 endif
 	rm -rf ${ROS_STACK_DIR}/${ROS_STACK_NAME}/*/build/CMakeFiles

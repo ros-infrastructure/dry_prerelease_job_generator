@@ -12,7 +12,7 @@ install: ${ROS_DISTRO_DIR}/ros
         # Build the tests for now.  Eventually we will split this into a different deb target
 	bash -c ". setup_deb.sh && rosmake ros -i"
 	rm -rf ${ROS_DISTRO_DIR}/ros/*/build/CMakeFiles
-ifeq (${ROS_DISTRO_NAME}, unstable)
+ifneq (${ROS_DISTRO_NAME}, cturtle)
 	bash -c ". setup_deb.sh && ./purge_build.py ${ROS_DISTRO_DIR}"
 endif
 	cp setup.sh setup.bash setup.zsh .rosinstall ${ROS_DISTRO_DIR}/
