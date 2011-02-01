@@ -50,10 +50,12 @@ cd $WORKSPACE &amp;&amp; $WORKSPACE/run_chroot.py --distro=UBUNTUDISTRO --arch=A
 
 ROSDISTRO_FOLDER_MAP = {'unstable': 'https://code.ros.org/svn/release/trunk/distros',
                         'cturtle': 'https://code.ros.org/svn/release/trunk/distros',
+                        'diamondback': 'https://code.ros.org/svn/release/trunk/distros',
                         'boxturtle': 'http://www.ros.org/distros'}
 
 ROSDISTRO_MAP = {'unstable': 'https://code.ros.org/svn/release/trunk/distros/unstable.rosdistro',
                  'cturtle': 'https://code.ros.org/svn/release/trunk/distros//cturtle.rosdistro',
+                 'diamondback': 'https://code.ros.org/svn/release/trunk/distros//diamondback.rosdistro',
                  'boxturtle': 'http://www.ros.org/distros/boxturtle.rosdistro'}
 
 # the supported Ubuntu distro's for each ros distro
