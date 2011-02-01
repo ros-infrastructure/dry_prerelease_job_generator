@@ -1,6 +1,0 @@
-- svn: 
-    local-name: pr2_doors_gazebo_demo
-    uri: https://code.ros.org/svn/wg-ros-pkg/branches/trunk_cturtle/stacks/wg_robots_gazebo/pr2_doors_gazebo_demo
-- svn:
-    local-name: ros_epic_fail
-    uri: https://code.ros.org/svn/ros/stacks/ros_experimental/branches/cturtle/ros_epic_fail
