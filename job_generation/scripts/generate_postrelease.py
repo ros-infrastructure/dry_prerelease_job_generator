@@ -143,7 +143,7 @@ def main():
         return -1
 
     # Parse distro file
-    distro_obj = rosdistro.Distro(ROSDISTRO_MAP[options.rosdistro])
+    distro_obj = rosdistro.Distro(get_rosdistro_file(options.rosdistro))
     print 'Operating on ROS distro %s'%distro_obj.release_name
 
     # generate hudson config files

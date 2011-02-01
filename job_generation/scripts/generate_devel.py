@@ -141,7 +141,7 @@ def main():
         return -1
 
     # generate hudson config files
-    distro_obj = rosdistro.Distro(ROSDISTRO_MAP[options.rosdistro])
+    distro_obj = rosdistro.Distro(get_rosdistro_file(options.rosdistro))
     if options.stack:
         stack_list = options.stack
     else:

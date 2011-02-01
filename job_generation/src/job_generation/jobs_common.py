@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
-from rosdeb import targets
 import roslib; roslib.load_manifest("job_generation")
+from rosdeb import targets
 import os
 import optparse
 import rosdistro
@@ -48,25 +48,12 @@ chmod +x $WORKSPACE/run_chroot.py
 cd $WORKSPACE &amp;&amp; $WORKSPACE/run_chroot.py --distro=UBUNTUDISTRO --arch=ARCH  --ramdisk --script=$WORKSPACE/script.sh --ssh-key-file=/home/rosbuild/rosbuild-ssh.tar
 """
 
-ROSDISTRO_FOLDER_MAP = {'unstable': 'https://code.ros.org/svn/release/trunk/distros',
-                        'cturtle': 'https://code.ros.org/svn/release/trunk/distros',
-                        'diamondback': 'https://code.ros.org/svn/release/trunk/distros',
-                        'boxturtle': 'http://www.ros.org/distros'}
-
-ROSDISTRO_MAP = {'unstable': 'https://code.ros.org/svn/release/trunk/distros/unstable.rosdistro',
-                 'cturtle': 'https://code.ros.org/svn/release/trunk/distros//cturtle.rosdistro',
-                 'diamondback': 'https://code.ros.org/svn/release/trunk/distros//diamondback.rosdistro',
-                 'boxturtle': 'http://www.ros.org/distros/boxturtle.rosdistro'}
 
 # the supported Ubuntu distro's for each ros distro
 ARCHES = ['amd64', 'i386']
 
 # ubuntu distro mapping to ros distro
 UBUNTU_DISTRO_MAP = targets.os_platform
-# UBUNTU_DISTRO_MAP = {'unstable': ['lucid', 'maverick'],
-#                      'cturtle':  ['lucid', 'karmic', 'jaunty', 'maverick'],
-#                      'boxturtle':['hardy','karmic', 'jaunty']}
-
 
 # Path to hudson server
 SERVER = 'http://build.willowgarage.com'
@@ -280,7 +267,7 @@ def get_options(required, optional):
 
     # check if stacks exist
     if 'stack' in ops and options.stack:
-        distro_obj = rosdistro.Distro(ROSDISTRO_MAP[options.rosdistro])
+        distro_obj = rosdistro.Distro(get_rosdistro_file(options.rosdistro))
         for s in options.stack:
             if not s in distro_obj.stacks:
                 print 'Stack "%s" does not exist in the %s disro file.'%(s, options.rosdistro)
@@ -289,7 +276,7 @@ def get_options(required, optional):
 
     # check if variant exists
     if 'variant' in ops and options.variant:
-        distro_obj = rosdistro.Distro(ROSDISTRO_MAP[options.rosdistro])
+        distro_obj = rosdistro.Distro(get_rosdistro_file(options.rosdistro))
         if not options.variant in distro_obj.variants:
                 print 'Variant "%s" does not exist in the %s disro file.'%(options.variant, options.rosdistro)
                 return (None, args)
@@ -344,6 +331,11 @@ def schedule_jobs(jobs, wait=False, delete=False, start=False, hudson_obj=None):
 
 
 
+def get_rosdistro_file(rosdistro):
+    return 'https://code.ros.org/svn/release/trunk/distros/%s.rosdistro'%rosdistro
+
+
+
 def get_email_triggers(when, send_devel=True):
     triggers = ''
     for w in when:
@@ -362,11 +354,6 @@ def get_job_name(jobtype, rosdistro, stack_name, ubuntu, arch):
         stack_name = stack_name[0:46]+'_...'
     return "_".join([jobtype, rosdistro, stack_name, ubuntu, arch])
 
-
-
-
-RESULT_XML = """<?xml version="1.0" encoding="utf-8"?><testsuite name="MESSAGE" tests="0" errors="0" failures="0" time="0.0">  <system-out><![CDATA[]]></system-out>  <system-err><![CDATA[]]></system-err></testsuite>
-"""
 
 def ensure_dir(f):
     d = os.path.dirname(f)

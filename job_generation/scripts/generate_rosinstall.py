@@ -19,7 +19,7 @@ def main():
         return -1
 
     # Parse distro file
-    distro_obj = rosdistro.Distro(ROSDISTRO_MAP[options.rosdistro])
+    distro_obj = rosdistro.Distro(get_rosdistro_file(options.rosdistro))
 
     # generate rosinstall file for variant
     if options.overlay == 'yes':

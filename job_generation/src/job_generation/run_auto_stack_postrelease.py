@@ -38,7 +38,7 @@ def main():
 
 
     # Parse distro file
-    rosdistro_obj = rosdistro.Distro(ROSDISTRO_MAP[options.rosdistro])
+    rosdistro_obj = rosdistro.Distro(get_rosdistro_file(options.rosdistro))
     print 'Operating on ROS distro %s'%rosdistro_obj.release_name
 
 
