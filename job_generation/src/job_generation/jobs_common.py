@@ -1,5 +1,6 @@
 #!/usr/bin/python
 
+from rosdeb import targets
 import roslib; roslib.load_manifest("job_generation")
 import os
 import optparse
@@ -59,11 +60,13 @@ ROSDISTRO_MAP = {'unstable': 'https://code.ros.org/svn/release/trunk/distros/uns
 ARCHES = ['amd64', 'i386']
 
 # ubuntu distro mapping to ros distro
-UBUNTU_DISTRO_MAP = {'unstable': ['lucid', 'maverick'],
-                     'cturtle':  ['lucid', 'karmic', 'jaunty', 'maverick'],
-                     'boxturtle':['hardy','karmic', 'jaunty']}
+UBUNTU_DISTRO_MAP = targets.os_platform
+# UBUNTU_DISTRO_MAP = {'unstable': ['lucid', 'maverick'],
+#                      'cturtle':  ['lucid', 'karmic', 'jaunty', 'maverick'],
+#                      'boxturtle':['hardy','karmic', 'jaunty']}
 
-# path to hudson server
+
+# Path to hudson server
 SERVER = 'http://build.willowgarage.com'
 
 # config path
