@@ -144,10 +144,10 @@ def get_missing(distro, os_platform, arch):
     # Find all the deps in the distro for this stack
     deps = compute_deps(distro, 'ALL')
 
-    # These stacks are not actually relased, and so it's ok that they're missing
+    # These stacks are not actually relased, so we treat them as implicitly excluded
     missing_primary = set(distro.stack_names) - set(distro.released_stacks.keys())
     missing_dep = set()
-    missing_excluded = set()
+    missing_excluded = set(distro.stack_names) - set(distro.released_stacks.keys())
     missing_excluded_dep = set()
 
     # Build the deps in order
