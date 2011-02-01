@@ -632,13 +632,10 @@ def gen_metapkgs(distro, os_platform, arch, staging_dir, force=False):
     else:
         missing = True
 
-    if not missing or force:
-        return upload_debs(debs, distro_name, os_platform, arch)
-    else:
-        print >> sys.stderr, "Missing debs expected from distro file.  Aborting"
-        print >> sys.stderr, "Missing: %s"%(missing)
-        return 1
+    upload_debs(debs, distro_name, os_platform, arch)
 
+    if missing:
+        raise BuildFailure("Could not generate all necessary metapkgs.")
 
 
 def build_debs_main():
@@ -712,6 +709,8 @@ def build_debs_main():
 
         try:
             gen_metapkgs(distro, os_platform, arch, staging_dir)
+        except BuildFailure, e:
+            failure_message = "Failure Message:\n"+"="*80+'\n'+str(e)
         except Exception, e:
             failure_message = "Internal failure in the release system. Please notify leibs and kwc @willowgarage.com:\n%s\n\n%s"%(e, traceback.format_exc(e))
         finally:
