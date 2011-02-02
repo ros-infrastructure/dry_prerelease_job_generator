@@ -473,7 +473,13 @@ def stack_to_rosinstall(stack, branch, anonymous=True):
     result = []
 
     uri = None
-    version = None
+    version = stack.version
+    if not version:
+        print "Stack %s at version null, skipping"%stack.name
+        return result
+
+    version_tag = None # to be conditionally filled later
+
 
     vcs = stack.vcs_config
     if not branch in ['devel', 'release', 'distro']:
@@ -506,15 +512,15 @@ def stack_to_rosinstall(stack, branch, anonymous=True):
         else:
             uri = vcs.repo_uri
         if branch == 'devel':
-            version = vcs.dev_branch
+            version_tag = vcs.dev_branch
         elif branch == 'distro':
-            version = vcs.distro_tag
+            version_tag = vcs.distro_tag
         elif branch == 'release':
-            version = vcs.release_tag
+            version_tag = vcs.release_tag
 
 
-    if version:
-        result.append({vcs.type: {"uri": uri, 'local-name': stack.name, 'version': version} } )
+    if version_tag:
+        result.append({vcs.type: {"uri": uri, 'local-name': stack.name, 'version': version_tag} } )
     else:
         result.append({vcs.type: {"uri": uri, 'local-name': stack.name} } )
     return result
