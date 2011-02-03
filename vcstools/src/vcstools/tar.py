@@ -126,7 +126,7 @@ class TARClient(vcs_base.VCSClientBase):
             return False
 
         if version != self.get_version():
-            print >> sys.stderr, "Tarball Client does not support updating"
+            print >> sys.stderr, "Tarball Client does not support updating with different version."
             return False
 
         return True
