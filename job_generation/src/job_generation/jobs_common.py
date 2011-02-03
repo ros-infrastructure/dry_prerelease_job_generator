@@ -159,11 +159,21 @@ def stacks_to_debs(stack_list, rosdistro):
         return ''
     return ' '.join([stack_to_deb(s, rosdistro) for s in stack_list])
 
+
+def get_tar(stack):
+    name = '%s-%s'%(stack.name, stack.version)
+    return 'https://code.ros.org/svn/release/download/stacks/%s/%s/%s.tar.bz2'%(stack.name, name, name)
+
+
 def stack_to_rosinstall(stack, branch):
     vcs = stack.vcs_config
-    if not branch in ['devel', 'release', 'distro']:
+    if not branch in ['devel', 'release', 'distro', 'release-tar']:
         print 'Unsupported branch type %s for stack %s'%(branch, stack.name)
         return ''
+
+    if branch == 'release-tar':
+        return "- tar: {uri: %s, local-name: %s}\n"%(get_tar(stack), stack.name)
+
     if not vcs.type in ['svn', 'hg', 'git']:
         print 'Unsupported vcs type %s for stack %s'%(vcs.type, stack.name)
         return ''
@@ -195,6 +205,7 @@ def stacks_to_rosinstall(stack_list, stack_map, branch):
         else:
             print 'Stack "%s" is not in stack list. Not adding this stack to rosinstall file'%s
     return res
+
     
 def get_environment():
     env = {}

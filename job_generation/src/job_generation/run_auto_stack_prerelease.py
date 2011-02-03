@@ -112,7 +112,7 @@ def main():
         print 'No stacks depends on %s, finishing test.'%options.stack        
         return 0
     print 'These stacks depend on the stacks we are testing: "%s"'%str(depends_on_keys)
-    rosinstall = stacks_to_rosinstall(depends_on_keys, rosdistro_obj.released_stacks, 'release')
+    rosinstall = stacks_to_rosinstall(depends_on_keys, rosdistro_obj.released_stacks, 'release-tar')
     rosinstall_file = '%s.rosinstall'%DEPENDS_ON_DIR
     with open(rosinstall_file, 'w') as f:
         f.write(rosinstall)
