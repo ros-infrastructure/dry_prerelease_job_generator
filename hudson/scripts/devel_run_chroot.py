@@ -333,6 +333,9 @@ class ChrootInstance:
         self.execute(cmd)
 
         # ssl cert for sourceforge due to it not being in default distro
+        cmd =("sudo apt-get update".split())
+        print cmd
+        self.execute(cmd)
         cmd =("sudo apt-get install ca-certificates".split())
         print cmd
         self.execute(cmd)
