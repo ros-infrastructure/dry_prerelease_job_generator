@@ -83,7 +83,7 @@ def main():
     if res == '':
         print 'No stack depends on %s, finishing test.'%options.stack
         return 0
-    rosinstall = stacks_to_rosinstall(res.split('\n'), rosdistro_obj.released_stacks, 'release')
+    rosinstall = stacks_to_rosinstall(res.split('\n'), rosdistro_obj.released_stacks, 'release-tar')
     print 'Running rosinstall on "%s"'%rosinstall
     rosinstall_file = '%s.rosinstall'%DEPENDS_ON_DIR
     with open(rosinstall_file, 'w') as f:
