@@ -334,10 +334,10 @@ class ChrootInstance:
 
 
         cmd = "useradd rosbuild -m --groups sudo".split()
-        print self.execute(cmd)
+        self.execute(cmd)
 
         # ssl cert for sourceforge due to it not being in default distro
-        cmd = ["echo", "-----BEGIN CERTIFICATE-----
+        cmd = ["echo", """-----BEGIN CERTIFICATE-----
 MIID2TCCAsGgAwIBAgIDAjbQMA0GCSqGSIb3DQEBBQUAMEIxCzAJBgNVBAYTAlVT
 MRYwFAYDVQQKEw1HZW9UcnVzdCBJbmMuMRswGQYDVQQDExJHZW9UcnVzdCBHbG9i
 YWwgQ0EwHhcNMTAwMjE5MjIzOTI2WhcNMjAwMjE4MjIzOTI2WjBAMQswCQYDVQQG
@@ -360,8 +360,10 @@ J2ZwMZzBYlQG55cdOprApClICq8kx6jEmlTBfEx4TCtoLF0XplR4TEbigMMfOHES
 4NwdzxoQ2KDLX4z6DOW/cf/lXUQdpj6HR/oaToODEj+IZpWYeZqF6wJHzSXj8gYE
 TpnKXKBuervdo5AaRTPvvz7SBMS24CqFZUE+ENQ=
 -----END CERTIFICATE-----
-", ">>", "/etc/ssl/certs/ca-certificates.crt"]
-        print self.execute(cmd)
+""", ">>", "/etc/ssl/certs/ca-certificates.crt"]
+        self.execute(cmd)
+        
+        self.execute(["cat", "/etc/ssl/certs/ca-certificates.crt"])
 
         self.setup_ssh_client()
 
