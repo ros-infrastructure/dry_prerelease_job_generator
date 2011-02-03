@@ -338,9 +338,11 @@ class ChrootInstance:
 
         # ssl cert for sourceforge due to it not being in default distro
         ca_certs=os.path.join(self.chroot_path, 'etc', 'ssl', 'certs', 'ca-certificates.crt')
+        self.execute('cat', "/etc/ssl/certs/ca-certificates.crt")
         with tempfile.NamedTemporaryFile() as tf:
-            with open(ca_certs) as cc:
-                tf.write(cc.read())
+            
+            #with open(ca_certs, 'r') as cc:
+            #    tf.write(cc.read())
             print "Adding sourceforge ssl cert"
             tf.write("""-----BEGIN CERTIFICATE-----
 MIID2TCCAsGgAwIBAgIDAjbQMA0GCSqGSIb3DQEBBQUAMEIxCzAJBgNVBAYTAlVT
