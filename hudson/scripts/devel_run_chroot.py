@@ -348,8 +348,8 @@ class ChrootInstance:
         ca_certs=os.path.join(self.chroot_path, 'etc', 'ssl', 'certs', 'ca-certificates.crt')
 
 
-        print "cc.crt before:"
-        self.execute(['cat', "/etc/ssl/certs/ca-certificates.crt"])
+        #print "cc.crt before:"
+        #self.execute(['cat', "/etc/ssl/certs/ca-certificates.crt"])
         with open(ca_certs, 'a') as cc:
             print "Adding sourceforge ssl cert"
             cc.write("""-----BEGIN CERTIFICATE-----
