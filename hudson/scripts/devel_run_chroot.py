@@ -351,10 +351,10 @@ class ChrootInstance:
         #print "cc.crt before:"
         #self.execute(['cat', "/etc/ssl/certs/ca-certificates.crt"])
 
-
-        with open(ca_certs, 'w') as cc:
-            print "Adding sourceforge ssl cert"
-            cc.write("""-----BEGIN CERTIFICATE-----
+        if 0:
+            with open(ca_certs, 'w') as cc:
+                print "Adding sourceforge ssl cert"
+                cc.write("""-----BEGIN CERTIFICATE-----
 MIID2TCCAsGgAwIBAgIDAjbQMA0GCSqGSIb3DQEBBQUAMEIxCzAJBgNVBAYTAlVT
 MRYwFAYDVQQKEw1HZW9UcnVzdCBJbmMuMRswGQYDVQQDExJHZW9UcnVzdCBHbG9i
 YWwgQ0EwHhcNMTAwMjE5MjIzOTI2WhcNMjAwMjE4MjIzOTI2WjBAMQswCQYDVQQG
@@ -378,10 +378,10 @@ J2ZwMZzBYlQG55cdOprApClICq8kx6jEmlTBfEx4TCtoLF0XplR4TEbigMMfOHES
 TpnKXKBuervdo5AaRTPvvz7SBMS24CqFZUE+ENQ=
 -----END CERTIFICATE-----
 """)
-            cc.flush()
+                cc.flush()
 
-        print "cc.crt after:"
-        self.execute(['cat', "/etc/ssl/certs/ca-certificates.crt"])
+            print "cc.crt after:"
+            self.execute(['cat', "/etc/ssl/certs/ca-certificates.crt"])
 
 
         self.setup_ssh_client()
