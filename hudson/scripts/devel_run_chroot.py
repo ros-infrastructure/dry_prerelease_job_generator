@@ -350,7 +350,9 @@ class ChrootInstance:
 
         #print "cc.crt before:"
         #self.execute(['cat', "/etc/ssl/certs/ca-certificates.crt"])
-        with open(ca_certs, 'a') as cc:
+
+
+        with open(ca_certs, 'w') as cc:
             print "Adding sourceforge ssl cert"
             cc.write("""-----BEGIN CERTIFICATE-----
 MIID2TCCAsGgAwIBAgIDAjbQMA0GCSqGSIb3DQEBBQUAMEIxCzAJBgNVBAYTAlVT
