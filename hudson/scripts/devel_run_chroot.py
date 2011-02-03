@@ -336,9 +336,9 @@ class ChrootInstance:
         cmd ="apt-get update".split()
         print cmd
         self.execute(cmd)
-        cmd ="apt-get install ca-certificates".split()
-        print cmd
-        self.execute(cmd)
+        #cmd ="apt-get install ca-certificates".split()
+        #print cmd
+        #self.execute(cmd)
         
 
         cmd =("mkdir -p %s"%os.path.join(self.chroot_path, 'etc', 'ssl', 'certs')).split()
