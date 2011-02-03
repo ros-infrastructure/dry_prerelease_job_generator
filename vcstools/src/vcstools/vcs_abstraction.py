@@ -44,6 +44,7 @@ class VCSClient:
       "bzr": bzr.BZRClient,
       "git": git.GITClient,
       "hg": hg.HGClient,
+      "tar": hg.TARlient,
       }
     if not vcs_type in self.vcs_types:
       raise LookupError("%s VCS type undefined"%vcs_type)
