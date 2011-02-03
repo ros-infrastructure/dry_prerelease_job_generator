@@ -172,7 +172,7 @@ def stack_to_rosinstall(stack, branch):
         return ''
 
     if branch == 'release-tar':
-        return "- tar: {uri: %s, local-name: %s}\n"%(get_tar(stack), stack.name)
+        return "- tar: {uri: %s, version: %s-%s, local-name: %s}\n"%(get_tar(stack), stack.name, stack.version, stack.name)
 
     if not vcs.type in ['svn', 'hg', 'git']:
         print 'Unsupported vcs type %s for stack %s'%(vcs.type, stack.name)
