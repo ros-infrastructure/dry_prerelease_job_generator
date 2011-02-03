@@ -329,9 +329,19 @@ class ChrootInstance:
 
 
         cmd = "useradd rosbuild -m --groups sudo".split()
-        print self.execute(cmd)
+        print cmd 
+        self.execute(cmd)
 
         # ssl cert for sourceforge due to it not being in default distro
+        cmd =("sudo apt-get install ca-certificates".split())
+        print cmd
+        self.execute(cmd)
+        
+
+        cmd =("mkdir -p %s"%os.path.join(self.chroot_path, 'etc', 'ssl', 'certs')).split()
+        print cmd
+        self.execute(cmd)
+        
         ca_certs=os.path.join(self.chroot_path, 'etc', 'ssl', 'certs', 'ca-certificates.crt')
 
 
