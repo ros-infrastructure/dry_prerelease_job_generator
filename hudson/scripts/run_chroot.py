@@ -337,7 +337,12 @@ class ChrootInstance:
         self.execute(cmd)
 
         # ssl cert for sourceforge due to it not being in default distro
-        cmd = ["echo", """-----BEGIN CERTIFICATE-----
+        ca_certs=os.path.join(self.chroot_path, 'etc', 'ssl', 'certs', 'ca-certificates.crt')
+        with tempfile.NamedTemporaryFile() as tf:
+            with open(ca_certs) as cc:
+                tf.write(cc.read())
+            print "Adding sourceforge ssl cert"
+            tf.write("""-----BEGIN CERTIFICATE-----
 MIID2TCCAsGgAwIBAgIDAjbQMA0GCSqGSIb3DQEBBQUAMEIxCzAJBgNVBAYTAlVT
 MRYwFAYDVQQKEw1HZW9UcnVzdCBJbmMuMRswGQYDVQQDExJHZW9UcnVzdCBHbG9i
 YWwgQ0EwHhcNMTAwMjE5MjIzOTI2WhcNMjAwMjE4MjIzOTI2WjBAMQswCQYDVQQG
@@ -360,8 +365,11 @@ J2ZwMZzBYlQG55cdOprApClICq8kx6jEmlTBfEx4TCtoLF0XplR4TEbigMMfOHES
 4NwdzxoQ2KDLX4z6DOW/cf/lXUQdpj6HR/oaToODEj+IZpWYeZqF6wJHzSXj8gYE
 TpnKXKBuervdo5AaRTPvvz7SBMS24CqFZUE+ENQ=
 -----END CERTIFICATE-----
-""", ">>", "/etc/ssl/certs/ca-certificates.crt"]
-        self.execute(cmd)
+""")
+            tf.flush()
+            cmd = ['sudo', 'cp', tf.name, ca_certs]
+            print "Runing cmd", cmd
+            self.check_call(cmd)
         
         self.execute(["cat", "/etc/ssl/certs/ca-certificates.crt"])
 
