@@ -77,8 +77,8 @@ class SourceDebTest(unittest.TestCase):
             print "TESTING", stack_name
 
             stack_xml = stack_file(stack_name)
-            d1 = control_data(stack_name, stack_version, stack_xml)
-            d2 = control_data(stack_name, stack_version)
+            d1 = control_data(stack_name, stack_version, 'fakemd5', stack_xml)
+            d2 = control_data(stack_name, stack_version, 'fakemd5')
 
             self.assertEquals(d1, d2)
 

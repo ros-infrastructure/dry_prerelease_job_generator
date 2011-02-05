@@ -234,7 +234,7 @@ Description: %(description-brief)s
 %(description-full)s
 """%data
     
-def control_data(stack_name, stack_version, stack_file=None):
+def control_data(stack_name, stack_version, md5sum, stack_file=None):
     """
     Generate metadata for control file. Cannot generate debian dependencies as these are platform specific.
     
@@ -252,6 +252,7 @@ def control_data(stack_name, stack_version, stack_file=None):
 
     metadata = {}
     
+    metadata['md5sum']     = md5sum #3301
     metadata['stack']      = stack_name
     metadata['package']    = debianize_name(stack_name)
     metadata['version']    = stack_version

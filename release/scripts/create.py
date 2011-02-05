@@ -38,7 +38,7 @@ from __future__ import with_statement
 PKG = 'release'
 NAME="create.py"
 
-VERSION=3
+VERSION=4
 
 import roslib; roslib.load_manifest(PKG)
 
@@ -514,6 +514,7 @@ Now:
 def main_rebuild_repo():
     # NOTE: does not trigger source deb jobs
     try:
+        print "running _rebuild job"
         simulate = '-s' in sys.argv
         args = [a for a in sys.argv if a != '-s']
         if len(args) < 3:
@@ -529,6 +530,7 @@ def main_rebuild_repo():
         distro = Distro(distro_file)
         stack_names = args[3:]
         stack_names = stack_names if stack_names else distro.stacks.keys()
+        print "stacks: ", stack_names
 
         import urllib, tempfile
         from rosdeb import control_data
@@ -546,29 +548,33 @@ def main_rebuild_repo():
             try:
                 f = urllib2.urlopen(upload_url)
                 f.close()
-                #print "%s-%s already exists, ignoring"%(stack_name, stack_version)
+                print "%s-%s already exists, ignoring"%(stack_name, stack_version)
                 continue
             except:
                 pass
 
             if simulate:
                 print "simulate", stack_name
-                control = control_data(stack_name, stack_version)
+                md5sum = 'FAKEMD5'
+                control = control_data(stack_name, stack_version, md5sum)
                 print '\t' + ', '.join(control['depends'])
                 #print control['rosdeps']
-                continue
-            tarball = os.path.join(tempfile.gettempdir(), tarball_name)
-            urllib.urlretrieve(tarball_url, tarball)
+            else:
+                tarball = os.path.join(tempfile.gettempdir(), tarball_name)
+                urllib.urlretrieve(tarball_url, tarball)
+                from release import md5sum_file
+                md5sum = md5sum_file(tarball)
 
-            # WARNING: this only works if our current checkout matches the distro above
-            control = control_data(stack_name, stack_version)
-    
-            copy_to_server(stack_name, stack_version, tarball, control, control_only=False)
+                # WARNING: this only works if our current checkout matches the distro above
+                control = control_data(stack_name, stack_version, md5sum)
 
-            os.remove(tarball)
-            
-            # trigger source deb system
-            trigger_hudson_source_deb(stack_name, stack_version, distro)
+                copy_to_server(stack_name, stack_version, tarball, control, control_only=False)
+
+                os.remove(tarball)
+
+                # trigger source deb system
+                print "triggering", stack_name
+                trigger_hudson_source_deb(stack_name, stack_version, distro)
 
     except ReleaseException, e:
         print >> sys.stderr, "ERROR: %s"%str(e)

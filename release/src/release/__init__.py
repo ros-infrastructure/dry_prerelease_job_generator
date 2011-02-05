@@ -174,6 +174,17 @@ def checkout_stack(name, distro_stack, repair):
         tmp_dir = checkout_tag_to_tmp(name, distro_stack)        
     return tmp_dir
 
+import hashlib
+
+def md5sum_file(filename):
+    m = hashlib.md5()
+    with open(filename, 'rb') as f:
+        data = f.read(4096)
+        while data:
+            m.update(data)
+            data = f.read(4096)
+    return m.hexdigest()
+
 def make_dist_of_dir(tmp_dir, name, version, distro_stack):
     """
     Create tarball in a temporary directory. 
@@ -191,7 +202,8 @@ def make_dist_of_dir(tmp_dir, name, version, distro_stack):
     tarball = "%s-%s.tar.bz2"%(name, version)
     src = os.path.join(tmp_source_dir, 'build', tarball)
 
-    control = control_data(name, version, stack_file=os.path.join(tmp_source_dir, 'stack.xml'))
+    md5sum = md5sum_file(src)
+    control = control_data(name, version, md5sum, stack_file=os.path.join(tmp_source_dir, 'stack.xml'))
     
     # move tarball outside tmp_dir so we can clean it up
     dst = os.path.join(tempfile.gettempdir(), tarball)
