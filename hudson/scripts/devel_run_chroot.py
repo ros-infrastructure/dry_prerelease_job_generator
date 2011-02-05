@@ -418,6 +418,9 @@ class ChrootInstance:
     def setup_svn_ssl_certs(self):
         print 'Setting up ssl certs'
 
+        cmd = "apt-get install subversion".split()
+        self.execute(cmd)
+        
         cmd = "svn co https://code.ros.org/svn/ros/stacks/rosorg/trunk/rosbrowse/certs /tmp".split()
         self.execute(cmd)
         print "successfully checked out certs"
