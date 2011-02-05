@@ -330,16 +330,7 @@ class ChrootInstance:
 
         cmd = "useradd rosbuild -m --groups sudo".split()
         print cmd 
-        self.execute(cmd)
-
-        # ssl cert for sourceforge due to it not being in default distro
-        cmd ="apt-get update".split()
-        print cmd
-        self.execute(cmd)
-        #cmd ="apt-get install ca-certificates".split()
-        #print cmd
-        #self.execute(cmd)
-        
+        self.execute(cmd)        
 
         self.setup_ssh_client()
         self.setup_svn_ssl_certs()
@@ -418,12 +409,11 @@ class ChrootInstance:
     def setup_svn_ssl_certs(self):
         print 'Setting up ssl certs'
 
-        cmd = "apt-get update".split()
-        self.execute(cmd)
+        self.execute(["apt-get", "update"])
         cmd = "apt-get install subversion".split()
         self.execute(cmd)
         
-        cmd = "svn co https://code.ros.org/svn/ros/stacks/rosorg/trunk/rosbrowse/certs /tmp".split()
+        cmd = "svn co https://code.ros.org/svn/ros/stacks/rosorg/trunk/rosbrowse/certs /tmp/certs".split()
         self.execute(cmd)
         print "successfully checked out certs"
 
