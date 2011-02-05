@@ -418,6 +418,8 @@ class ChrootInstance:
     def setup_svn_ssl_certs(self):
         print 'Setting up ssl certs'
 
+        cmd = "apt-get update".split()
+        self.execute(cmd)
         cmd = "apt-get install subversion".split()
         self.execute(cmd)
         
