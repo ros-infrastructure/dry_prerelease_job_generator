@@ -418,7 +418,7 @@ class ChrootInstance:
     def setup_svn_ssl_certs(self):
         print 'Setting up ssl certs'
 
-        cmd = "svn co https://code.ros.org/svn/ros/stacks/rosorg/trunk/rosbrowse/certs /tmp/certs".split()
+        cmd = "svn co https://code.ros.org/svn/ros/stacks/rosorg/trunk/rosbrowse/certs /tmp".split()
         self.execute(cmd)
         print "successfully checked out certs"
 
