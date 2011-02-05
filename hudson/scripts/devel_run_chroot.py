@@ -341,50 +341,8 @@ class ChrootInstance:
         #self.execute(cmd)
         
 
-        cmd =("mkdir -p %s"%os.path.join(self.chroot_path, 'etc', 'ssl', 'certs')).split()
-        print cmd
-        self.execute(cmd)
-        
-        ca_certs=os.path.join(self.chroot_path, 'etc', 'ssl', 'certs', 'ca-certificates.crt')
-
-
-        #print "cc.crt before:"
-        #self.execute(['cat', "/etc/ssl/certs/ca-certificates.crt"])
-
-        if 0:
-            with open(ca_certs, 'w') as cc:
-                print "Adding sourceforge ssl cert"
-                cc.write("""-----BEGIN CERTIFICATE-----
-MIID2TCCAsGgAwIBAgIDAjbQMA0GCSqGSIb3DQEBBQUAMEIxCzAJBgNVBAYTAlVT
-MRYwFAYDVQQKEw1HZW9UcnVzdCBJbmMuMRswGQYDVQQDExJHZW9UcnVzdCBHbG9i
-YWwgQ0EwHhcNMTAwMjE5MjIzOTI2WhcNMjAwMjE4MjIzOTI2WjBAMQswCQYDVQQG
-EwJVUzEXMBUGA1UEChMOR2VvVHJ1c3QsIEluYy4xGDAWBgNVBAMTD0dlb1RydXN0
-IFNTTCBDQTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAJCzgMHk5Uat
-cGA9uuUU3Z6KXot1WubKbUGlI+g5hSZ6p1V3mkihkn46HhrxJ6ujTDnMyz1Hr4Gu
-FmpcN+9FQf37mpc8oEOdxt8XIdGKolbCA0mEEoE+yQpUYGa5jFTk+eb5lPHgX3UR
-8im55IaisYmtph6DKWOy8FQchQt65+EuDa+kvc3nsVrXjAVaDktzKIt1XTTYdwvh
-dGLicTBi2LyKBeUxY0pUiWozeKdOVSQdl+8a5BLGDzAYtDRN4dgjOyFbLTAZJQ50
-96QhS6CkIMlszZhWwPKoXz4mdaAN+DaIiixafWcwqQ/RmXAueOFRJq9VeiS+jDkN
-d53eAsMMvR8CAwEAAaOB2TCB1jAOBgNVHQ8BAf8EBAMCAQYwHQYDVR0OBBYEFEJ5
-VBthzVUrPmPVPEhX9Z/7Rc5KMB8GA1UdIwQYMBaAFMB6mGiNifurBWQMEX2qfWW4
-ysxOMBIGA1UdEwEB/wQIMAYBAf8CAQAwOgYDVR0fBDMwMTAvoC2gK4YpaHR0cDov
-L2NybC5nZW90cnVzdC5jb20vY3Jscy9ndGdsb2JhbC5jcmwwNAYIKwYBBQUHAQEE
-KDAmMCQGCCsGAQUFBzABhhhodHRwOi8vb2NzcC5nZW90cnVzdC5jb20wDQYJKoZI
-hvcNAQEFBQADggEBANTvU4ToGr2hiwTAqfVfoRB4RV2yV2pOJMtlTjGXkZrUJPji
-J2ZwMZzBYlQG55cdOprApClICq8kx6jEmlTBfEx4TCtoLF0XplR4TEbigMMfOHES
-0tdT41SFULgCy+5jOvhWiU1Vuy7AyBh3hjELC3DwfjWDpCoTZFZnNF0WX3OsewYk
-2k9QbSqr0E1TQcKOu3EDSSmGGM8hQkx0YlEVxW+o78Qn5Rsz3VqI138S0adhJR/V
-4NwdzxoQ2KDLX4z6DOW/cf/lXUQdpj6HR/oaToODEj+IZpWYeZqF6wJHzSXj8gYE
-TpnKXKBuervdo5AaRTPvvz7SBMS24CqFZUE+ENQ=
------END CERTIFICATE-----
-""")
-                cc.flush()
-
-            print "cc.crt after:"
-            self.execute(['cat', "/etc/ssl/certs/ca-certificates.crt"])
-
-
         self.setup_ssh_client()
+        self.setup_svn_ssl_certs()
 
     def add_ros_sources(self):
         """
@@ -455,7 +413,24 @@ TpnKXKBuervdo5AaRTPvvz7SBMS24CqFZUE+ENQ=
         subprocess.check_call(['sudo', 'tar', 'xf', local_tmp], cwd=tardestdir)
         shutil.rmtree(local_tmp_dir)
 
-        self.execute(['chown', '-R', 'rosbuild:rosbuild', '/home/rosbuild'])
+        self.execute(['chown', '-R', 'rosbuild:rosbuild', '/home/rosbuild/.ssh'])
+
+    def setup_svn_ssl_certs(self):
+        print 'Setting up ssl certs'
+
+        cmd = "svn co https://code.ros.org/svn/ros/stacks/rosorg/trunk/rosbrowse/certs /tmp/certs".split()
+        print cmd
+        self.execute(cmd)
+
+        cmd = "mkdir -p ~/.subversion/auth/svn.ssl.server".split()
+        print cmd
+        self.execute(cmd)
+
+        cmd = "cp /tmp/certs/* ~/.subversion/auth/svn.ssl.server".split()
+        print cmd
+        self.execute(cmd)
+
+        self.execute(['chown', '-R', 'rosbuild:rosbuild', '/home/rosbuild/.subversion'])
 
     def replecate_workspace(self):
         print "Linking in workspace"
@@ -519,7 +494,7 @@ TpnKXKBuervdo5AaRTPvvz7SBMS24CqFZUE+ENQ=
         # contents of ~rosbuild/.ssh need to be updated.
         self.setup_ssh_client()
 
-
+        self.setup_svn_ssl_certs()
 
         
         self.replecate_workspace()
