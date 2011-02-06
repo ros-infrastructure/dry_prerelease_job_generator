@@ -9,6 +9,8 @@ import optparse
 import traceback
 import urllib
 
+ROSBUILD_SSH_URI = 'http://wgs24.willowgarage.com/hudson_slave_configuration_files/rosbuild-ssh.tar'
+
 # Valid options
 valid_archs = ['i386', 'i686', 'amd64']
 valid_ubuntu_distros = ['hardy', 'jaunty', 'karmic', 'lucid', 'maverick']
@@ -310,6 +312,9 @@ class ChrootInstance:
         if self.distro == 'lucid':
             # The --force-yes is necessary to accept the nvidia-current
             # package without a valid GPG signature.
+            self.execute(['apt-get', 'install', '-y', '--force-yes', 'linux-headers-2.6.32-23'])
+            self.execute(['apt-get', 'install', '-y', '--force-yes', 'linux-headers-2.6.32-23-generic'])
+            self.execute(['apt-get', 'install', '-y', '--force-yes', 'linux-image-2.6.32-23-generic'])
             self.execute(['apt-get', 'install', '-y', '--force-yes', 'nvidia-current'])
             self.execute(['mknod', '/dev/nvidia0', 'c', '195', '0'])
             self.execute(['mknod', '/dev/nvidiactl', 'c', '195', '255'])
@@ -329,11 +334,9 @@ class ChrootInstance:
 
 
         cmd = "useradd rosbuild -m --groups sudo".split()
-        print cmd 
-        self.execute(cmd)        
+        print self.execute(cmd)
 
         self.setup_ssh_client()
-        self.setup_svn_ssl_certs()
 
     def add_ros_sources(self):
         """
@@ -397,35 +400,19 @@ class ChrootInstance:
         if self.ssh_key_path:
             print "retrieving %s to %s"%(self.ssh_key_path, local_tmp)
             shutil.copy(self.ssh_key_path, local_tmp)
+        else:
+            print "retrieving %s to %s"%(ROSBUILD_SSH_URI, local_tmp)
+            urllib.urlretrieve(ROSBUILD_SSH_URI, local_tmp)
             
         if not os.path.exists(tardestdir):
             os.makedirs(tardestdir)
         print "untarring %s"%local_tmp
         subprocess.check_call(['sudo', 'tar', 'xf', local_tmp], cwd=tardestdir)
+        #subprocess.check_call(['sudo', 'rm', '-rf', local_tmp_dir])
         shutil.rmtree(local_tmp_dir)
 
+        #self.execute(['tar', 'xf', os.path.join('home', 'rosbuild', 'rosbuild-ssh.tar')], cwd=os.path.join('home', 'rosbuild'))
         self.execute(['chown', '-R', 'rosbuild:rosbuild', '/home/rosbuild'])
-
-    def setup_svn_ssl_certs(self):
-        print 'Setting up ssl certs'
-
-        self.execute(["apt-get", "update"])
-        cmd = "apt-get install subversion".split()
-        #self.execute(cmd)
-        
-        cmd = "svn co https://code.ros.org/svn/ros/stacks/rosorg/trunk/rosbrowse/certs /tmp/certs".split()
-        #self.execute(cmd)
-        print "successfully checked out certs"
-
-        cmd = "mkdir -p ~/.subversion/auth/svn.ssl.server".split()
-        #print cmd
-        self.execute(cmd)
-
-        cmd = "cp /tmp/certs/* ~/.subversion/auth/svn.ssl.server".split()
-        #print cmd
-        self.execute(cmd)
-
-        #self.execute(['chown', '-R', 'rosbuild:rosbuild', '/home/rosbuild/.subversion'])
 
     def replecate_workspace(self):
         print "Linking in workspace"
@@ -449,7 +436,9 @@ class ChrootInstance:
 
     def write_back_workspace(self):
         
-        print "unmounting workspace"
+        print "unmounting workspace %s"%self.ws_remote_path
+        self.call(['ls', self.ws_remote_path])
+
         self.call(['sudo', 'umount', '-f', self.ws_remote_path])
         #backwards compatability /tmp/ros
         self.call(['sudo', 'umount', '-f', os.path.join(self.ws_remote_path, "../ros")])       
@@ -489,7 +478,7 @@ class ChrootInstance:
         # contents of ~rosbuild/.ssh need to be updated.
         self.setup_ssh_client()
 
-        self.setup_svn_ssl_certs()
+
 
         
         self.replecate_workspace()
