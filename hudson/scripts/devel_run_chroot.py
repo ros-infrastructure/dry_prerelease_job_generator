@@ -415,7 +415,7 @@ class ChrootInstance:
 
         self.execute(["sudo", "apt-get", "update"])
         cmd = "sudo apt-get install subversion".split()
-        self.execute(cmd)
+        self.execute(cmd, display=True)
         
         cmd = "svn co https://code.ros.org/svn/ros/stacks/rosorg/trunk/rosbrowse/certs /tmp/certs".split()
         #self.execute(cmd)
