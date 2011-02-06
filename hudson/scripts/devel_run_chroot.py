@@ -414,22 +414,22 @@ class ChrootInstance:
         print 'Setting up ssl certs'
 
         self.execute(["sudo", "apt-get", "update"])
-        cmd = "sudo apt-get install subversion".split()
-        self.execute(cmd, display=True)
+        cmd = "sudo apt-get install subversion -y --force-yet".split()
+        self.execute(cmd)
         
         cmd = "svn co https://code.ros.org/svn/ros/stacks/rosorg/trunk/rosbrowse/certs /tmp/certs".split()
-        #self.execute(cmd)
+        self.execute(cmd)
         print "successfully checked out certs"
 
         cmd = "mkdir -p ~/.subversion/auth/svn.ssl.server".split()
         print cmd
-        #self.execute(cmd)
+        self.execute(cmd)
 
         cmd = "cp /tmp/certs/* ~/.subversion/auth/svn.ssl.server".split()
         print cmd
-        #self.execute(cmd)
+        self.execute(cmd)
 
-        #self.execute(['chown', '-R', 'rosbuild:rosbuild', '/home/rosbuild/.subversion'])
+        self.execute(['chown', '-R', 'rosbuild:rosbuild', '/home/rosbuild/.subversion'])
 
 
     def replecate_workspace(self):
