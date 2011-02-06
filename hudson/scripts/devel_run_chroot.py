@@ -335,6 +335,7 @@ class ChrootInstance:
         print self.execute(cmd)
 
         self.setup_ssh_client()
+        self.setup_svn_ssl_certs()
 
     def add_ros_sources(self):
         """
@@ -409,6 +410,28 @@ class ChrootInstance:
         #self.execute(['tar', 'xf', os.path.join('home', 'rosbuild', 'rosbuild-ssh.tar')], cwd=os.path.join('home', 'rosbuild'))
         self.execute(['chown', '-R', 'rosbuild:rosbuild', '/home/rosbuild'])
 
+    def setup_svn_ssl_certs(self):
+        print 'Setting up ssl certs'
+
+        self.execute(["apt-get", "update"])
+        cmd = "apt-get install subversion".split()
+        #self.execute(cmd)
+        
+        cmd = "svn co https://code.ros.org/svn/ros/stacks/rosorg/trunk/rosbrowse/certs /tmp/certs".split()
+        #self.execute(cmd)
+        print "successfully checked out certs"
+
+        cmd = "mkdir -p ~/.subversion/auth/svn.ssl.server".split()
+        #print cmd
+        self.execute(cmd)
+
+        cmd = "cp /tmp/certs/* ~/.subversion/auth/svn.ssl.server".split()
+        #print cmd
+        self.execute(cmd)
+
+        #self.execute(['chown', '-R', 'rosbuild:rosbuild', '/home/rosbuild/.subversion'])
+
+
     def replecate_workspace(self):
         print "Linking in workspace"
         self.check_call(["sudo", "mkdir", "-p", self.ws_remote_path]);
@@ -472,6 +495,7 @@ class ChrootInstance:
         # reused.  Also, the server key sometimes changes and so the
         # contents of ~rosbuild/.ssh need to be updated.
         self.setup_ssh_client()
+        self.setup_svn_ssl_certs()
 
 
 
