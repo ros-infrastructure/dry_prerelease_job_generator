@@ -404,7 +404,7 @@ class ChrootInstance:
         subprocess.check_call(['sudo', 'tar', 'xf', local_tmp], cwd=tardestdir)
         shutil.rmtree(local_tmp_dir)
 
-        self.execute(['chown', '-R', 'rosbuild:rosbuild', '/home/rosbuild/.ssh'])
+        self.execute(['chown', '-R', 'rosbuild:rosbuild', '/home/rosbuild'])
 
     def setup_svn_ssl_certs(self):
         print 'Setting up ssl certs'
