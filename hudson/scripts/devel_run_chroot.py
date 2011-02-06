@@ -418,6 +418,7 @@ class ChrootInstance:
         self.execute(cmd)
         
         cmd = "svn co https://code.ros.org/svn/ros/stacks/rosorg/trunk/rosbrowse/certs /tmp/certs".split()
+        self.execute(cmd)
         print "successfully checked out certs"
 
         cmd = "mkdir -p ~/.subversion/auth/svn.ssl.server".split()
