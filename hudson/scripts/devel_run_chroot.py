@@ -426,7 +426,7 @@ class ChrootInstance:
         self.execute(cmd, display=True)
 
 
-        cmd = "mkdir -p /home/rosbuild/.subversion/auth".split()
+        cmd = "mkdir -p /home/rosbuild/.subversion/auth/svn.ssl.server".split()
         self.execute(cmd)
 
         
