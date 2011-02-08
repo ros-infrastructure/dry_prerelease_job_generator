@@ -429,7 +429,7 @@ class ChrootInstance:
         cmd = "mv /tmp/certs ~/.subversion/auth/svn.ssl.server".split()
         self.execute(cmd, display=True)
 
-        cmd = "ls ~/.subversion/auth/svn.ssl.server".split()
+        cmd = "ls -l ~/.subversion/auth/svn.ssl.server".split()
         self.execute(cmd, display=True)
 
         self.execute(['chown', '-R', 'rosbuild:rosbuild', '/home/rosbuild/.subversion'])
