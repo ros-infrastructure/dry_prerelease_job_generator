@@ -12,7 +12,7 @@ import urllib
 # Valid options
 valid_archs = ['i386', 'i686', 'amd64']
 valid_ubuntu_distros = ['hardy', 'jaunty', 'karmic', 'lucid', 'maverick']
-valid_debian_distros = ['lenny']
+valid_debian_distros = ['lenny', 'squeeze']
 
 
 def local_check_call(cmd, display_output=False):
