@@ -422,14 +422,14 @@ class ChrootInstance:
         self.execute(cmd)
         print "successfully checked out certs"
 
-        cmd = "mkdir -p ~/.subversion/auth".split()
+        cmd = "mkdir -p /home/rosbuild/.subversion/auth".split()
         self.execute(cmd)
 
         
-        cmd = "mv /tmp/certs ~/.subversion/auth/svn.ssl.server".split()
+        cmd = "mv /tmp/certs /home/rosbuild/.subversion/auth/svn.ssl.server".split()
         self.execute(cmd, display=True)
 
-        cmd = "ls -l ~/.subversion/auth/svn.ssl.server".split()
+        cmd = "ls -l /home/rosbuild/.subversion/auth/svn.ssl.server".split()
         self.execute(cmd, display=True)
 
         self.execute(['chown', '-R', 'rosbuild:rosbuild', '/home/rosbuild/.subversion'])
