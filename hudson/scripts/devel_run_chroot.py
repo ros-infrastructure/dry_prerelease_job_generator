@@ -491,17 +491,6 @@ class ChrootInstance:
 
         # Even if we're reusing the chroot, we re-mount /proc and /sys.
         self.mount_proc_sys()
-
-        # We setup ~rosbuild/.ssh every time.  It
-        # should only be done during the bootstrap step, but it was added
-        # after a great many chroot were already bootstrapped, are being 
-        # reused.  Also, the server key sometimes changes and so the
-        # contents of ~rosbuild/.ssh need to be updated.
-        self.setup_ssh_client()
-        self.setup_svn_ssl_certs()
-
-
-
         
         self.replecate_workspace()
 
