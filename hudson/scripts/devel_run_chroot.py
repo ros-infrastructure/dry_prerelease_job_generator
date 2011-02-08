@@ -422,6 +422,10 @@ class ChrootInstance:
         self.execute(cmd)
         print "successfully checked out certs"
 
+        cmd = "ls -l /tmp/certs".split()
+        self.execute(cmd, display=True)
+
+
         cmd = "mkdir -p /home/rosbuild/.subversion/auth".split()
         self.execute(cmd)
 
