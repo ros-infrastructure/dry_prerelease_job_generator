@@ -122,7 +122,7 @@ def main():
     # Remove stacks that depend on this stack from Debians
     print 'Removing all stacks from Debian that depend on these stacks'
     for stack in options.stack:    
-        call('sudo apt-get remove %s --yes'%stack_to_deb(stack, options.rosdistro), env)
+        call('sudo apt-get remove %s --yes'%stack_to_deb(stack, options.rosdistro), env, ignore_fail=True)
 
     # Run hudson helper for all stacks
     print 'Running Hudson Helper'
