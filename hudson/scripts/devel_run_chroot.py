@@ -426,13 +426,12 @@ class ChrootInstance:
         self.execute(cmd, display=True)
 
 
-        cmd = "mkdir -p /home/rosbuild/.subversion/auth/".split()
+        cmd = "mkdir -p /home/rosbuild/.subversion/auth".split()
         self.execute(cmd)
 
         
-        tmp_certs_path = os.path.join(self.chroot_path,"tmp", "certs")
-        certs_path = os.path.join(self.chroot_path,"home/rosbuild/.subversion/auth/svn.ssl.server")
-        shutil.copytree(tmp_certs_path, certs_path)
+        cmd = ["bash", '-c', "cp /tmp/certs/* /home/rosbuild/.subversion/auth/svn.ssl.server/"]
+        self.execute(cmd, display=True)
 
         cmd = "ls -l /home/rosbuild/.subversion/auth/svn.ssl.server".split()
         self.execute(cmd, display=True)
