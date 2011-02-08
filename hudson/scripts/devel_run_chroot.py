@@ -390,22 +390,23 @@ class ChrootInstance:
         # Pull in ssh, and drop a private key that will allow the slave to
         # upload results of the build.
         self.execute(['apt-get', 'install', '-y', '--force-yes', 'openssh-client'])
-        # Pull down a tarball of rosbuild's .ssh directory
-        tardestdir = os.path.join(self.chroot_path, 'home', 'rosbuild',)
-        #tardestname = os.path.join(tardestdir, 'rosbuild-ssh.tar')
-        #if not os.path.exists(tardestname):
-        local_tmp_dir = tempfile.mkdtemp()
-        local_tmp = os.path.join(local_tmp_dir, "rosbuild_ssh.tar.gz")
+
         if self.ssh_key_path:
+            # Pull down a tarball of rosbuild's .ssh directory
+            tardestdir = os.path.join(self.chroot_path, 'home', 'rosbuild',)
+            #tardestname = os.path.join(tardestdir, 'rosbuild-ssh.tar')
+            #if not os.path.exists(tardestname):
+            local_tmp_dir = tempfile.mkdtemp()
+            local_tmp = os.path.join(local_tmp_dir, "rosbuild_ssh.tar.gz")
             print "retrieving %s to %s"%(self.ssh_key_path, local_tmp)
             shutil.copy(self.ssh_key_path, local_tmp)
             
-        if not os.path.exists(tardestdir):
-            os.makedirs(tardestdir)
-        print "untarring %s"%local_tmp
-        subprocess.check_call(['sudo', 'tar', 'xf', local_tmp], cwd=tardestdir)
-        #subprocess.check_call(['sudo', 'rm', '-rf', local_tmp_dir])
-        shutil.rmtree(local_tmp_dir)
+            if not os.path.exists(tardestdir):
+                os.makedirs(tardestdir)
+            print "untarring %s"%local_tmp
+            subprocess.check_call(['sudo', 'tar', 'xf', local_tmp], cwd=tardestdir)
+            #subprocess.check_call(['sudo', 'rm', '-rf', local_tmp_dir])
+            shutil.rmtree(local_tmp_dir)
 
         #self.execute(['tar', 'xf', os.path.join('home', 'rosbuild', 'rosbuild-ssh.tar')], cwd=os.path.join('home', 'rosbuild'))
         self.execute(['chown', '-R', 'rosbuild:rosbuild', '/home/rosbuild'])
@@ -424,10 +425,11 @@ class ChrootInstance:
         cmd = "mkdir -p ~/.subversion/auth".split()
         self.execute(cmd)
 
-        cmd = "ls /tmp/certs".split()
-        self.execute(cmd, display=True)
         
         cmd = "mv /tmp/certs ~/.subversion/auth/svn.ssl.server".split()
+        self.execute(cmd, display=True)
+
+        cmd = "ls ~/.subversion/auth/svn.ssl.server".split()
         self.execute(cmd, display=True)
 
         self.execute(['chown', '-R', 'rosbuild:rosbuild', '/home/rosbuild/.subversion'])
