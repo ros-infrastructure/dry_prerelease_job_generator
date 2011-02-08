@@ -10,7 +10,6 @@
   <url>http://ros.org/wiki/rosdistro</url>
 
   <depend package="vcstools" />
-  <depend package="job_generation" />
 
   <export>
     <rosdoc config="rosdoc.yaml"/>    

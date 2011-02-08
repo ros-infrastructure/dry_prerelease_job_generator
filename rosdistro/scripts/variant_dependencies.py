@@ -11,7 +11,6 @@ import subprocess
 import rosdistro 
 import urllib
 import yaml
-from job_generation import jobs_common
 
 def get_depends(stack):
     name = '%s-%s'%(stack.name, stack.version)
@@ -25,6 +24,8 @@ def get_depends(stack):
     else:
         return []
 
+def get_rosdistro_file(rosdistro):
+    return 'https://code.ros.org/svn/release/trunk/distros/%s.rosdistro'%rosdistro
 
 
 def main():
@@ -33,7 +34,7 @@ def main():
         return
 
     # parse rosdistro file
-    rosdistro_obj = rosdistro.Distro(jobs_common.get_rosdistro_file(sys.argv[1]))
+    rosdistro_obj = rosdistro.Distro(get_rosdistro_file(sys.argv[1]))
     print 'Operating on ROS distro %s'%rosdistro_obj.release_name
 
     # loop through all variants
