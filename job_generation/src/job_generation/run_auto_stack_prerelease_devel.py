@@ -48,6 +48,7 @@ def main():
     with open(rosinstall_file, 'w') as f:
         f.write(rosinstall)
     call('whoami', env)
+    call('ls -lR ~/.subversion', env)
     call('rosinstall %s /opt/ros/%s %s'%(STACK_DIR, options.rosdistro, rosinstall_file), env,
          'Install the stacks to test from source.')
 
