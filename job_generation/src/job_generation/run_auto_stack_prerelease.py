@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 STACK_DIR = 'stack_overlay'
+DEPENDS_DIR = 'depends_overlay'
 DEPENDS_ON_DIR = 'depends_on_overlay'
 
 
@@ -16,15 +17,16 @@ import subprocess
 
 def main():
     # parse command line options
-    (options, args) = get_options(['stack', 'rosdistro'], ['repeat'])
+    (options, args) = get_options(['stack', 'rosdistro'], ['repeat', 'source_only'])
     if not options:
         return -1
 
     # set environment
     env = get_environment()
-    env['ROS_PACKAGE_PATH'] = '%s:%s:/opt/ros/%s/stacks'%(env['INSTALL_DIR']+'/'+STACK_DIR,
-                                                          env['INSTALL_DIR']+'/'+DEPENDS_ON_DIR,
-                                                          options.rosdistro)
+    env['ROS_PACKAGE_PATH'] = '%s:%s:%s:/opt/ros/%s/stacks'%(env['INSTALL_DIR']+'/'+STACK_DIR,
+                                                             env['INSTALL_DIR']+'/'+DEPENDS_DIR,
+                                                             env['INSTALL_DIR']+'/'+DEPENDS_ON_DIR,
+                                                             options.rosdistro)
     if 'ros' in options.stack:
         env['ROS_ROOT'] = env['INSTALL_DIR']+'/'+STACK_DIR+'/ros'
         print "We're building ROS, so setting the ROS_ROOT to %s"%(env['ROS_ROOT'])
@@ -51,24 +53,35 @@ def main():
          'Install the stacks to test from source.')
 
 
-    # Install Debian packages of stack dependencies
-    print 'Installing debian packages of stack dependencies from stacks %s'%str(options.stack)
-    call('sudo apt-get update', env)
-    for stack in options.stack:
-        stack_xml = '%s/%s/stack.xml'%(STACK_DIR, stack)
-        call('ls %s'%stack_xml, env, 'Checking if stack %s contains "stack.xml" file'%stack)
-        with open(stack_xml) as stack_file:
-            depends = [str(d) for d in stack_manifest.parse(stack_file.read()).depends]  # convert to list
-        # remove stacks we are testing from dependency list, as debians might not yet exist
-        for s in options.stack:  
-            if s in depends:
-                depends.remove(s)
-        if len(depends) != 0:
+    # get all stack dependencies of stacks we're testing
+    depends = []
+    for stack in options.stack:    
+        get_depends_all(rosdistro_obj, stack, depends)
+    for s in options.stack:  
+        if s in depends:
+            depends.remove(s)
+    if 'ros' in depends:
+        depends.remove('ros')
+
+
+    if len(depends) > 0:
+        if not options.source_only:
+            # Install Debian packages  stack dependencies
+            print 'Installing debian packages of stack dependencies from stacks %s'%str(options.stack)
+            call('sudo apt-get update', env)
             print 'Installing debian packages of "%s" dependencies: %s'%(stack, str(depends))
             call('sudo apt-get install %s --yes'%(stacks_to_debs(depends, options.rosdistro)), env)
         else:
-            print 'Stack %s does not have any dependencies, not installing any other debian packages'%stack
-
+            # Install dependencies from source
+            print 'Installing stack dependencies from source'
+            rosinstall = stacks_to_rosinstall(depends, rosdistro_obj.released_stacks, 'release-tar')
+            rosinstall_file = '%s.rosinstall'%DEPENDS_DIR
+            with open(rosinstall_file, 'w') as f:
+                f.write(rosinstall)
+            call('rosinstall %s /opt/ros/%s %s'%(DEPENDS_DIR, options.rosdistro, rosinstall_file), env,
+                 'Install the stack dependencies from source.')
+    else:
+        print 'Stack(s) %s do(es) not have any dependencies, not installing anything now'%str(options.stack)
 
     # Install system dependencies
     print 'Installing system dependencies'
