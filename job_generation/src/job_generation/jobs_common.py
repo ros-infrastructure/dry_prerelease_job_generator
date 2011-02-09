@@ -210,7 +210,6 @@ def stacks_to_rosinstall(stack_list, stack_map, branch):
     
 
 def get_depends_one(stack):
-    print 'get_depends_one'
     name = '%s-%s'%(stack.name, stack.version)
     url = urllib.urlopen('https://code.ros.org/svn/release/download/stacks/%s/%s/%s.yaml'%(stack.name, name, name))
     conf = url.read()
@@ -223,7 +222,6 @@ def get_depends_one(stack):
         return []
 
 def get_depends_all(distro_obj, stack_name, depends_all):
-    print 'get_depends_all: %s'%str(depends_all)
     depends_one = get_depends_one(distro_obj.stacks[stack_name])
     for d in depends_one:
         if not d in depends_all:
