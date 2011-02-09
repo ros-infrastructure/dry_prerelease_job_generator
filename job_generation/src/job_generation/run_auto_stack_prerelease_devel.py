@@ -48,6 +48,7 @@ def main():
     with open(rosinstall_file, 'w') as f:
         f.write(rosinstall)
     call('whoami', env)
+    call('env', env)
     call('ls -lR /home/rosbuild/.subversion', env)
     call('ls -lR ~/.subversion', env)
     call('svn co https://bosch-ros-pkg.svn.sourceforge.net/svnroot/bosch-ros-pkg/trunk/stacks/bosch_drivers /tmp/bd', env)
