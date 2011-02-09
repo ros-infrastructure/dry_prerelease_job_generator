@@ -211,7 +211,7 @@ def get_environment():
     env = {}
     env['WORKSPACE'] = os.environ['WORKSPACE']
     env['INSTALL_DIR'] = os.environ['INSTALL_DIR']
-    env['HOME'] = os.environ['INSTALL_DIR']
+    env['HOME'] = '/home/rosbuild'#os.environ['INSTALL_DIR']
     env['JOB_NAME'] = os.environ['JOB_NAME']
     env['BUILD_NUMBER'] = os.environ['BUILD_NUMBER']
     env['ROS_TEST_RESULTS_DIR'] = os.environ['ROS_TEST_RESULTS_DIR']
