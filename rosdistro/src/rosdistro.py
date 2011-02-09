@@ -530,8 +530,10 @@ def variant_to_rosinstall(variant_name, distro, branch, anonymous=True):
     variant = distro.variants.get(variant_name, None)
     if not variant:
         return []
-    for s in variant.props['stacks']:
-        if s in distro.released_stacks:
+    done = []
+    for s in variant.stack_names_explicit:
+        if s in distro.released_stacks and not s in done:
+            done.append(s)
             rosinstall_dict.extend(stack_to_rosinstall(distro.stacks[s], branch, anonymous))
     return rosinstall_dict
 
@@ -540,8 +542,10 @@ def extended_variant_to_rosinstall(variant_name, distro, branch, anonymous=True)
     variant = distro.variants.get(variant_name, None)
     if not variant:
         return []
+    done = [] # avoid duplicates
     for s in variant.stack_names:
-        if s in distro.released_stacks:
+        if s in distro.released_stacks and not s in done:
+            done.append(s)
             rosinstall_dict.extend(stack_to_rosinstall(distro.stacks[s], branch, anonymous))
     return rosinstall_dict
 
