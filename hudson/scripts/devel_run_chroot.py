@@ -433,10 +433,11 @@ class ChrootInstance:
         cmd = ["bash", '-c', "cp /tmp/certs/* /home/rosbuild/.subversion/auth/svn.ssl.server/"]
         self.execute(cmd, display=True)
 
+        self.execute(['chown', '-R', 'rosbuild:rosbuild', '/home/rosbuild/.subversion'])
+
         cmd = "ls -l /home/rosbuild/.subversion/auth/svn.ssl.server".split()
         self.execute(cmd, display=True)
 
-        self.execute(['chown', '-R', 'rosbuild:rosbuild', '/home/rosbuild/.subversion'])
 
 
     def replecate_workspace(self):
