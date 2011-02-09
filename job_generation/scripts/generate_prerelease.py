@@ -26,7 +26,7 @@ HUDSON_PRERELEASE_CONFIG = """<?xml version='1.0' encoding='UTF-8'?>
     <hudson.tasks.Shell> 
       <command>
 BOOTSTRAP_SCRIPT
-rosrun job_generation run_auto_stack_prerelease.py STACKARGS --rosdistro ROSDISTRO --repeat REPEAT
+rosrun job_generation run_auto_stack_prerelease.py STACKARGS --rosdistro ROSDISTRO --repeat REPEAT SOURCE_ONLY
 SHUTDOWN_SCRIPT
      </command> 
     </hudson.tasks.Shell> 
@@ -75,7 +75,7 @@ def prerelease_job_name(rosdistro, stack_list, ubuntu, arch):
     return get_job_name('prerelease', rosdistro, '_'.join(stack_list), ubuntu, arch)
 
 
-def create_prerelease_configs(rosdistro, stack_list, email, repeat):
+def create_prerelease_configs(rosdistro, stack_list, email, repeat, source_only):
     # create hudson config files for each ubuntu distro
     configs = {}
     for ubuntudistro in UBUNTU_DISTRO_MAP[rosdistro]:
@@ -92,13 +92,17 @@ def create_prerelease_configs(rosdistro, stack_list, email, repeat):
             hudson_config = hudson_config.replace('STACKARGS', ' '.join(['--stack %s'%s for s in stack_list]))
             hudson_config = hudson_config.replace('EMAIL', email)
             hudson_config = hudson_config.replace('REPEAT', str(repeat))
+            if source_only:
+                hudson_config = hudson_config.replace('SOURCE_ONLY', '--source_only')
+            else:
+                hudson_config = hudson_config.replace('SOURCE_ONLY', '')                
             configs[name] = hudson_config
     return configs
     
     
 
 def main():
-    (options, args) = get_options(['stack', 'rosdistro', 'email'], ['repeat'])
+    (options, args) = get_options(['stack', 'rosdistro', 'email'], ['repeat', 'source_only'])
     if not options:
         return -1
 
@@ -108,7 +112,7 @@ def main():
     else:
         info = urllib.urlopen(CONFIG_PATH).read().split(',')
         hudson_instance = hudson.Hudson(SERVER, info[0], info[1])
-    prerelease_configs = create_prerelease_configs(options.rosdistro, options.stack, options.email, options.repeat)
+    prerelease_configs = create_prerelease_configs(options.rosdistro, options.stack, options.email, options.repeat, options.source_only)
 
     # check if jobs are not already running
     for job_name in prerelease_configs:
