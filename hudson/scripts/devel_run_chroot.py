@@ -418,7 +418,7 @@ class ChrootInstance:
         cmd = "sudo apt-get install subversion -y --force-yes".split()
         self.execute(cmd)
         
-        cmd = "svn co https://code.ros.org/svn/ros/stacks/rosorg/trunk/rosbrowse/certs /tmp/certs".split()
+        cmd = "svn co https://code.ros.org/svn/ros/stacks/rosorg/trunk/rosbrowse/certs /tmp/chroot_certs".split()
         self.execute(cmd)
         print "successfully checked out certs"
 
@@ -426,7 +426,7 @@ class ChrootInstance:
         self.execute(cmd)
 
         
-        cmd = ["bash", '-c', "cp /tmp/certs/* /home/rosbuild/.subversion/auth/svn.ssl.server/"]
+        cmd = ["bash", '-c', "cp /tmp/chroot_certs/* /home/rosbuild/.subversion/auth/svn.ssl.server/"]
         self.execute(cmd, display=True)
 
         self.execute(['chown', '-R', 'rosbuild:rosbuild', '/home/rosbuild/.subversion'])
