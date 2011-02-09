@@ -9,12 +9,10 @@ import optparse
 import traceback
 import urllib
 
-ROSBUILD_SSH_URI = 'http://wgs24.willowgarage.com/hudson_slave_configuration_files/rosbuild-ssh.tar'
-
 # Valid options
 valid_archs = ['i386', 'i686', 'amd64']
 valid_ubuntu_distros = ['hardy', 'jaunty', 'karmic', 'lucid', 'maverick']
-valid_debian_distros = ['lenny']
+valid_debian_distros = ['lenny', 'squeeze']
 
 
 def local_check_call(cmd, display_output=False):
@@ -337,6 +335,7 @@ class ChrootInstance:
         print self.execute(cmd)
 
         self.setup_ssh_client()
+        self.setup_svn_ssl_certs()
 
     def add_ros_sources(self):
         """
@@ -391,28 +390,47 @@ class ChrootInstance:
         # Pull in ssh, and drop a private key that will allow the slave to
         # upload results of the build.
         self.execute(['apt-get', 'install', '-y', '--force-yes', 'openssh-client'])
-        # Pull down a tarball of rosbuild's .ssh directory
-        tardestdir = os.path.join(self.chroot_path, 'home', 'rosbuild',)
-        #tardestname = os.path.join(tardestdir, 'rosbuild-ssh.tar')
-        #if not os.path.exists(tardestname):
-        local_tmp_dir = tempfile.mkdtemp()
-        local_tmp = os.path.join(local_tmp_dir, "rosbuild_ssh.tar.gz")
+
         if self.ssh_key_path:
+            # Pull down a tarball of rosbuild's .ssh directory
+            tardestdir = os.path.join(self.chroot_path, 'home', 'rosbuild',)
+            #tardestname = os.path.join(tardestdir, 'rosbuild-ssh.tar')
+            #if not os.path.exists(tardestname):
+            local_tmp_dir = tempfile.mkdtemp()
+            local_tmp = os.path.join(local_tmp_dir, "rosbuild_ssh.tar.gz")
             print "retrieving %s to %s"%(self.ssh_key_path, local_tmp)
             shutil.copy(self.ssh_key_path, local_tmp)
-        else:
-            print "retrieving %s to %s"%(ROSBUILD_SSH_URI, local_tmp)
-            urllib.urlretrieve(ROSBUILD_SSH_URI, local_tmp)
             
-        if not os.path.exists(tardestdir):
-            os.makedirs(tardestdir)
-        print "untarring %s"%local_tmp
-        subprocess.check_call(['sudo', 'tar', 'xf', local_tmp], cwd=tardestdir)
-        #subprocess.check_call(['sudo', 'rm', '-rf', local_tmp_dir])
-        shutil.rmtree(local_tmp_dir)
+            if not os.path.exists(tardestdir):
+                os.makedirs(tardestdir)
+            print "untarring %s"%local_tmp
+            subprocess.check_call(['sudo', 'tar', 'xf', local_tmp], cwd=tardestdir)
+            #subprocess.check_call(['sudo', 'rm', '-rf', local_tmp_dir])
+            shutil.rmtree(local_tmp_dir)
 
         #self.execute(['tar', 'xf', os.path.join('home', 'rosbuild', 'rosbuild-ssh.tar')], cwd=os.path.join('home', 'rosbuild'))
         self.execute(['chown', '-R', 'rosbuild:rosbuild', '/home/rosbuild'])
+
+    def setup_svn_ssl_certs(self):
+        print 'Setting up ssl certs'
+
+        self.execute(["sudo", "apt-get", "update"])
+        cmd = "sudo apt-get install subversion -y --force-yes".split()
+        self.execute(cmd)
+        
+        cmd = "svn co https://code.ros.org/svn/ros/stacks/rosorg/trunk/rosbrowse/certs /tmp/certs".split()
+        self.execute(cmd)
+        print "successfully checked out certs"
+
+        cmd = "mkdir -p /home/rosbuild/.subversion/auth/svn.ssl.server".split()
+        self.execute(cmd)
+
+        
+        cmd = ["bash", '-c', "cp /tmp/certs/* /home/rosbuild/.subversion/auth/svn.ssl.server/"]
+        self.execute(cmd, display=True)
+
+        self.execute(['chown', '-R', 'rosbuild:rosbuild', '/home/rosbuild/.subversion'])
+
 
     def replecate_workspace(self):
         print "Linking in workspace"
@@ -470,16 +488,6 @@ class ChrootInstance:
 
         # Even if we're reusing the chroot, we re-mount /proc and /sys.
         self.mount_proc_sys()
-
-        # We setup ~rosbuild/.ssh every time.  It
-        # should only be done during the bootstrap step, but it was added
-        # after a great many chroot were already bootstrapped, are being 
-        # reused.  Also, the server key sometimes changes and so the
-        # contents of ~rosbuild/.ssh need to be updated.
-        self.setup_ssh_client()
-
-
-
         
         self.replecate_workspace()
 
