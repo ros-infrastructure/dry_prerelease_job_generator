@@ -288,52 +288,51 @@ class ChrootInstance:
         if self.distro in valid_debian_distros:
             self.execute(['apt-get', 'install', 'sudo'])
 
-        if self.distro in valid_ubuntu_distros or True:
-            # Fix the sudoers file
-            sudoers_path = os.path.join(self.chroot_path, 'etc/sudoers')
-            self.check_call(['sudo', 'chown', '0.0', sudoers_path])
+        # Fix the sudoers file
+        sudoers_path = os.path.join(self.chroot_path, 'etc/sudoers')
+        self.check_call(['sudo', 'chown', '0.0', sudoers_path])
 
-            print "debconf executing"
-            chrootcmd = ['sudo', 'chroot', self.chroot_path]
-            subprocess.Popen(chrootcmd + ['debconf-set-selections'], stdin=subprocess.PIPE).communicate("""
-      hddtemp hddtemp/port string 7634
-      hddtemp hddtemp/interface string 127.0.0.1
-      hddtemp hddtemp/daemon boolean false
-      hddtemp hddtemp/syslog string 0
-      hddtemp hddtemp/SUID_bit boolean false
-      sun-java6-bin shared/accepted-sun-dlj-v1-1 boolean true
-      sun-java6-jdk shared/accepted-sun-dlj-v1-1 boolean true
-      sun-java6-jre shared/accepted-sun-dlj-v1-1 boolean true
-      grub-pc grub2/linux_cmdline string
-      grub-pc grub-pc/install_devices_empty boolean true
-      """);
-            print "debconf complete"
-
-
-            # If we're on lucid, pull in the nvidia drivers, in case we're
-            # going to run Gazebo-based tests, which need the GPU.
-            if self.distro == 'lucid':
-                # The --force-yes is necessary to accept the nvidia-current
-                # package without a valid GPG signature.
-                self.execute(['apt-get', 'install', '-y', '--force-yes', 'linux-headers-2.6.32-23'])
-                self.execute(['apt-get', 'install', '-y', '--force-yes', 'linux-headers-2.6.32-23-generic'])
-                self.execute(['apt-get', 'install', '-y', '--force-yes', 'linux-image-2.6.32-23-generic'])
-                self.execute(['apt-get', 'install', '-y', '--force-yes', 'nvidia-current'])
-                self.execute(['mknod', '/dev/nvidia0', 'c', '195', '0'])
-                self.execute(['mknod', '/dev/nvidiactl', 'c', '195', '255'])
-                self.execute(['chmod', '666', '/dev/nvidia0', '/dev/nvidiactl'])
-
-            cmd = ("sudo tee -a %s"%sudoers_path).split()
-            print "making rosbuild have no passwd", cmd
-            tempf = tempfile.TemporaryFile()
-            tempf.write("rosbuild ALL = NOPASSWD: ALL\n")
-            tempf.seek(0)
-            subprocess.check_call(cmd, stdin = tempf)
+        print "debconf executing"
+        chrootcmd = ['sudo', 'chroot', self.chroot_path]
+        subprocess.Popen(chrootcmd + ['debconf-set-selections'], stdin=subprocess.PIPE).communicate("""
+hddtemp hddtemp/port string 7634
+hddtemp hddtemp/interface string 127.0.0.1
+hddtemp hddtemp/daemon boolean false
+hddtemp hddtemp/syslog string 0
+hddtemp hddtemp/SUID_bit boolean false
+sun-java6-bin shared/accepted-sun-dlj-v1-1 boolean true
+sun-java6-jdk shared/accepted-sun-dlj-v1-1 boolean true
+sun-java6-jre shared/accepted-sun-dlj-v1-1 boolean true
+grub-pc grub2/linux_cmdline string
+grub-pc grub-pc/install_devices_empty boolean true
+""");
+        print "debconf complete"
 
 
-            #fix sudo permissions
-            self.execute(['chown', '-R', 'root:root', '/usr/bin/sudo'])
-            self.execute(['chmod', '4755', '-R', '/usr/bin/sudo'])
+        # If we're on lucid, pull in the nvidia drivers, in case we're
+        # going to run Gazebo-based tests, which need the GPU.
+        if self.distro == 'lucid':
+            # The --force-yes is necessary to accept the nvidia-current
+            # package without a valid GPG signature.
+            self.execute(['apt-get', 'install', '-y', '--force-yes', 'linux-headers-2.6.32-23'])
+            self.execute(['apt-get', 'install', '-y', '--force-yes', 'linux-headers-2.6.32-23-generic'])
+            self.execute(['apt-get', 'install', '-y', '--force-yes', 'linux-image-2.6.32-23-generic'])
+            self.execute(['apt-get', 'install', '-y', '--force-yes', 'nvidia-current'])
+            self.execute(['mknod', '/dev/nvidia0', 'c', '195', '0'])
+            self.execute(['mknod', '/dev/nvidiactl', 'c', '195', '255'])
+            self.execute(['chmod', '666', '/dev/nvidia0', '/dev/nvidiactl'])
+
+        cmd = ("sudo tee -a %s"%sudoers_path).split()
+        print "making rosbuild have no passwd", cmd
+        tempf = tempfile.TemporaryFile()
+        tempf.write("rosbuild ALL = NOPASSWD: ALL\n")
+        tempf.seek(0)
+        subprocess.check_call(cmd, stdin = tempf)
+
+
+        #fix sudo permissions
+        self.execute(['chown', '-R', 'root:root', '/usr/bin/sudo'])
+        self.execute(['chmod', '4755', '-R', '/usr/bin/sudo'])
 
 
         self.setup_rosbuild()
