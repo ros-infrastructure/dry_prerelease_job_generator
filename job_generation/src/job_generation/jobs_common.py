@@ -256,8 +256,8 @@ def get_options(required, optional):
     if 'repeat' in ops:
         parser.add_option('--repeat', dest = 'repeat', default=0, action='store',
                           help='How many times to repeat the test')
-    if 'source_only' in ops:
-        parser.add_option('--source_only', dest = 'source_only', default=False, action='store_true',
+    if 'source-only' in ops:
+        parser.add_option('--source-only', dest = 'source_only', default=False, action='store_true',
                           help="Build everything from source, don't use Debian packages")
     if 'delete' in ops:
         parser.add_option('--delete', dest = 'delete', default=False, action='store_true',

@@ -17,7 +17,7 @@ import subprocess
 
 def main():
     # parse command line options
-    (options, args) = get_options(['stack', 'rosdistro'], ['repeat', 'source_only'])
+    (options, args) = get_options(['stack', 'rosdistro'], ['repeat', 'source-only'])
     if not options:
         return -1
 

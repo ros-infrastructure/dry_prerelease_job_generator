@@ -93,7 +93,7 @@ def create_prerelease_configs(rosdistro, stack_list, email, repeat, source_only)
             hudson_config = hudson_config.replace('EMAIL', email)
             hudson_config = hudson_config.replace('REPEAT', str(repeat))
             if source_only:
-                hudson_config = hudson_config.replace('SOURCE_ONLY', '--source_only')
+                hudson_config = hudson_config.replace('SOURCE_ONLY', '--source-only')
             else:
                 hudson_config = hudson_config.replace('SOURCE_ONLY', '')                
             configs[name] = hudson_config
@@ -102,7 +102,7 @@ def create_prerelease_configs(rosdistro, stack_list, email, repeat, source_only)
     
 
 def main():
-    (options, args) = get_options(['stack', 'rosdistro', 'email'], ['repeat', 'source_only'])
+    (options, args) = get_options(['stack', 'rosdistro', 'email'], ['repeat', 'source-only'])
     if not options:
         return -1
 
