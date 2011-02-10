@@ -214,11 +214,13 @@ def get_depends_one(stack):
     url = urllib.urlopen('https://code.ros.org/svn/release/download/stacks/%s/%s/%s.yaml'%(stack.name, name, name))
     conf = url.read()
     if '404 Not Found' in conf:
+        print 'Could not get dependencies of stack %s'%stack.name
         return []
     depends = yaml.load(conf)['depends']
     if depends:
         return depends
     else:
+        print 'Stack %s does not have any dependencies'%stack.name
         return []
 
 def get_depends_all(distro_obj, stack_name, depends_all):
