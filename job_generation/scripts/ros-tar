@@ -18,15 +18,12 @@ def parse(arg):
     return (stack, distro)
     
 
-
 def get_version(stack, distro):
-    rosdistro = yaml.load(urllib.urlopen('https://code.ros.org/svn/release/trunk/distros/%s.rosdistro'%distro).read())
-    return rosdistro['stacks'][stack]['version']
+    return distro['stacks'][stack]['version']
     
 
-
-def get_depends_one(stack, distro):
-    name = '%s-%s'%(stack, get_version(stack, distro))
+def get_depends_one(stack, version):
+    name = '%s-%s'%(stack, version)
     url = urllib.urlopen('https://code.ros.org/svn/release/download/stacks/%s/%s/%s.yaml'%(stack, name, name))
     conf = url.read()
     if '404 Not Found' in conf:
@@ -39,11 +36,21 @@ def get_depends_one(stack, distro):
 
 
 def get_depends_all(stack, distro, depends_all):
-    depends_one = get_depends_one(stack, distro)
-    for d in depends_one:
-        if not d in depends_all:
-            depends_all.append(d)
-            get_depends_all(d, distro, depends_all)
+    if not stack in depends_all:
+        version = get_version(stack, distro)
+        depends_all[stack] = version
+        for d in get_depends_one(stack, version):
+            if not d in depends_all:
+                get_depends_all(d, distro, depends_all)
+
+
+def get_tar(stack, version):
+    name = '%s-%s'%(stack, version)
+    return 'https://code.ros.org/svn/release/download/stacks/%s/%s/%s.tar.bz2'%(stack, name, name)
+
+
+def get_rosinstall(stack, version):
+    return "- tar: {uri: '%s', version: '%s-%s', local-name: '%s'}"%(get_tar(stack, version), stack, version, stack)
 
 
 def main():
@@ -52,16 +59,19 @@ def main():
         print 'Usage: ros-tar ros-<distro>-<stack/variant>'
         return -1
 
-    depends = []
+    depends = {}
     for a in sys.argv:
         res = parse(a)
         if not res:
-            print 'Could not parse %s'%a
             return -1
-        get_depends_all(res[0], res[1], depends)
-    print depends
+        distro = yaml.load(urllib.urlopen('https://code.ros.org/svn/release/trunk/distros/%s.rosdistro'%res[1]).read())
+        get_depends_all(res[0], distro, depends)
+    filename = '/tmp/.rosinstall'
+    with open(filename, 'w') as f:
+        f.write('\n'.join([get_rosinstall(d, v) for d, v in depends.iteritems()]))
+        print filename
 
 
 
 if __name__ == '__main__':
-    sys.exit(main())
+    main()
