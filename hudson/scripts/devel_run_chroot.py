@@ -285,8 +285,10 @@ class ChrootInstance:
 
         self.execute(['apt-get', 'update'])
 
+        if self.distro in valid_debian_distros:
+            self.execute(['apt-get', 'install', 'sudo'])
 
-        if self.distro in valid_ubuntu_distros:
+        if self.distro in valid_ubuntu_distros or True:
             # Fix the sudoers file
             sudoers_path = os.path.join(self.chroot_path, 'etc/sudoers')
             self.check_call(['sudo', 'chown', '0.0', sudoers_path])
