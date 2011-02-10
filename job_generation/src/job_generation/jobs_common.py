@@ -224,10 +224,9 @@ def get_depends_one(stack):
         return []
 
 def get_depends_all(distro_obj, stack_name, depends_all):
-    depends_one = get_depends_one(distro_obj.stacks[stack_name])
-    for d in depends_one:
-        if not d in depends_all:
-            depends_all.append(d)
+    if not stack_name in depends_all:
+        depends_all.append(stack_name)
+        for d in get_depends_one(distro_obj.stacks[stack_name]):
             get_depends_all(distro_obj, d, depends_all)
 
 
