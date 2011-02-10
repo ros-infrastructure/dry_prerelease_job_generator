@@ -65,6 +65,7 @@ def main():
                 if not d in options.stack and not d in depends:
                     print 'Adding dependencies of stack %s'%d
                     get_depends_all(rosdistro_obj, stack, depends)
+                    print 'Resulting total dependencies: %s'%str(depends)
 
     if len(depends) > 0:
         if not options.source_only:
