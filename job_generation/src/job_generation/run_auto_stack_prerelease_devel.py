@@ -109,38 +109,58 @@ def main():
         return res
 
 
-    # Install Debian packages of ALL stacks in distro
-    print 'Installing all stacks of ros distro %s: %s'%(options.rosdistro, str(rosdistro_obj.released_stacks.keys()))
-    for stack in rosdistro_obj.released_stacks:
-        call('sudo apt-get install %s --yes'%(stack_to_deb(stack, options.rosdistro)), env, ignore_fail=True)
-    
+    if not options.source_only:
+        # Install Debian packages of ALL stacks in distro
+        print 'Installing all stacks of ros distro %s: %s'%(options.rosdistro, str(rosdistro_obj.released_stacks.keys()))
+        for stack in rosdistro_obj.released_stacks:
+            call('sudo apt-get install %s --yes'%(stack_to_deb(stack, options.rosdistro)), env, ignore_fail=True)
+        
 
-    # Install all stacks that depend on this stack
-    print 'Installing all stacks that depend on these stacks from source'
-    depends_on = {}
-    for stack in options.stack:
-        res = call('rosstack depends-on %s'%stack, env, 'Getting list of stacks that depend on stack %s'%stack)
-        if res != '':
-            for r in res.split('\n'):
-                if r != '':
-                    depends_on[r] = ''
-    print 'Removing the stacks we are testing from the depends_on list'
-    depends_on_keys = list(set(depends_on.keys()) - set(options.stack))
-    if len(depends_on_keys) == 0:
-        print 'No stacks depends on %s, finishing test.'%options.stack        
-        return 0
-    print 'These stacks depend on the stacks we are testing: "%s"'%str(depends_on_keys)
-    rosinstall = stacks_to_rosinstall(depends_on_keys, rosdistro_obj.released_stacks, 'release-tar')
-    rosinstall_file = '%s.rosinstall'%DEPENDS_ON_DIR
-    with open(rosinstall_file, 'w') as f:
-        f.write(rosinstall)
-    call('rosinstall %s /opt/ros/%s %s'%(DEPENDS_ON_DIR, options.rosdistro, rosinstall_file), env,
-         'Install the stacks that depend on the stacks that are getting tested from source.')
+        # Install all stacks that depend on this stack
+        print 'Installing all stacks that depend on these stacks from source'
+        depends_on = {}
+        for stack in options.stack:
+            res = call('rosstack depends-on %s'%stack, env, 'Getting list of stacks that depend on stack %s'%stack)
+            if res != '':
+                for r in res.split('\n'):
+                    if r != '':
+                        depends_on[r] = ''
+        print 'Removing the stacks we are testing from the depends_on list'
+        depends_on_keys = list(set(depends_on.keys()) - set(options.stack))
+        if len(depends_on_keys) == 0:
+            print 'No stacks depends on %s, finishing test.'%options.stack        
+            return 0
+        print 'These stacks depend on the stacks we are testing: "%s"'%str(depends_on_keys)
+        rosinstall = stacks_to_rosinstall(depends_on_keys, rosdistro_obj.released_stacks, 'release-tar')
+        rosinstall_file = '%s.rosinstall'%DEPENDS_ON_DIR
+        with open(rosinstall_file, 'w') as f:
+            f.write(rosinstall)
+        call('rosinstall %s /opt/ros/%s %s'%(DEPENDS_ON_DIR, options.rosdistro, rosinstall_file), env,
+             'Install the stacks that depend on the stacks that are getting tested from source.')
 
-    # Remove stacks that depend on this stack from Debians
-    print 'Removing all stacks from Debian that depend on these stacks'
-    for stack in options.stack:    
-        call('sudo apt-get remove %s --yes'%stack_to_deb(stack, options.rosdistro), env, ignore_fail=True)
+        # Remove stacks that depend on this stack from Debians
+        print 'Removing all stacks from Debian that depend on these stacks'
+        for stack in options.stack:    
+            call('sudo apt-get remove %s --yes'%stack_to_deb(stack, options.rosdistro), env, ignore_fail=True)
+
+    else:
+        # Install ALL from source
+        print 'Installing stack dependencies from source'
+        print 'Installing all stacks of ros distro %s FROM SOURCE: %s'%(options.rosdistro, str(rosdistro_obj.released_stacks.keys()))
+        rosinstall = stacks_to_rosinstall(rosdistro_obj.released_stacks.keys(), rosdistro_obj.released_stacks, 'release-tar')
+        rosinstall_file = '%s.rosinstall'%DEPENDS_DIR
+        with open(rosinstall_file, 'w') as f:
+            f.write(rosinstall)
+        call('rosinstall %s /opt/ros/%s %s'%(DEPENDS_DIR, options.rosdistro, rosinstall_file), env,
+             'Install the stack dependencies from source.')
+
+        # Install system dependencies
+        print 'Installing system dependencies'
+        call('rosmake rosdep', env)
+        for stack in options.stack:
+            call('rosdep install -ya', env,
+                 'Install system dependencies of stack %s'%stack)
+
 
     # Run hudson helper for all stacks
     print 'Running Hudson Helper'
