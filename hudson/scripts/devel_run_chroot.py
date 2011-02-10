@@ -174,6 +174,7 @@ class ChrootInstance:
         self.hdd_remote_mount = ""
         self.hdd_tmp_dir = hdd_tmp_dir
         self.scratch_dir = scratch_dir
+        self.local_scratch_dir = None
         self.debug_chroot = debug_chroot # if enabled print to screen during setup and teardown
 
 
@@ -451,11 +452,11 @@ grub-pc grub-pc/install_devices_empty boolean true
         self.execute(cmd)
 
         if self.scratch_dir:
-            self.temp_hdd_dir = tempfile.mkdtemp(dir=self.hdd_tmp_dir)
+            self.local_scratch_dir = tempfile.mkdtemp(dir=self.hdd_tmp_dir)
             self.hdd_remote_mount = os.path.join(self.chroot_path, self.scratch_dir.lstrip('/'))
-            print "created tempdir", self.temp_hdd_dir
+            print "created tempdir", self.local_scratch_dir
             self.check_call(['sudo', 'mkdir', '-p', self.hdd_remote_mount])
-            self.check_call(['sudo', 'mount', '--bind', self.temp_hdd_dir, self.hdd_remote_mount])
+            self.check_call(['sudo', 'mount', '--bind', self.local_scratch_dir, self.hdd_remote_mount])
             print "mounting tempdir to %s"%os.path.join(self.chroot_path, self.scratch_dir)
 
 
@@ -476,7 +477,10 @@ grub-pc grub-pc/install_devices_empty boolean true
             print "Cleaning up scratch mount %s"%self.hdd_remote_mount
             self.call(['sudo', 'umount', '-f', self.hdd_remote_mount])
             print "deleting tempdir", self.hdd_tmp_dir
-            shutil.rmtree(self.temp_hdd_dir)
+            if self.local_scratch_dir:
+                shutil.rmtree(self.local_scratch_dir)
+            else:
+                print >>sys.stderr, "self.local_scratch_dir should have existed if we get here."
 
     def manual_init(self):
         
