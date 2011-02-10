@@ -56,13 +56,15 @@ def main():
     # get all stack dependencies of stacks we're testing
     depends = []
     for stack in options.stack:    
-        get_depends_all(rosdistro_obj, stack, depends)
-    for s in options.stack:  
-        if s in depends:
-            depends.remove(s)
-    if 'ros' in depends:
-        depends.remove('ros')
-
+        stack_xml = '%s/%s/stack.xml'%(STACK_DIR, stack)
+        call('ls %s'%stack_xml, env, 'Checking if stack %s contains "stack.xml" file'%stack)
+        with open(stack_xml) as stack_file:
+            depends_one = [str(d) for d in stack_manifest.parse(stack_file.read()).depends]  # convert to list
+            print 'Dependencies of stack %s: %s'%(stack, str(depends_one))
+            for d in depends_one:
+                if not d in options.stack and not d in depends:
+                    print 'Adding dependencies of stack %s'%d
+                    get_depends_all(rosdistro_obj, stack, depends)
 
     if len(depends) > 0:
         if not options.source_only:
@@ -74,6 +76,8 @@ def main():
         else:
             # Install dependencies from source
             print 'Installing stack dependencies from source'
+            if 'ros' in depends:
+                depends.remove('ros')
             rosinstall = stacks_to_rosinstall(depends, rosdistro_obj.released_stacks, 'release-tar')
             rosinstall_file = '%s.rosinstall'%DEPENDS_DIR
             with open(rosinstall_file, 'w') as f:
