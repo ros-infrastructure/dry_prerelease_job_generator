@@ -40,7 +40,7 @@ dsc: distro
 
 source_deb: dsc
 	# need to convert unstable to each distro and repeat
-	cd deb_dist/rosinstall_${VERSION} && dpkg-buildpackage -sa -S -k84C5CECD
+	cd deb_dist/rosinstall-${VERSION} && dpkg-buildpackage -sa -S -k84C5CECD
 
 upload: source_deb
 	cd deb_dist && dput ppa:tully.foote/tully-test-ppa ../rosinstall_${VERSION}-1_source.changes 
