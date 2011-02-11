@@ -287,7 +287,7 @@ class ChrootInstance:
         self.execute(['apt-get', 'update'])
 
         if self.distro in valid_debian_distros:
-            self.execute(['apt-get', 'install', 'sudo', 'lsb-release'])
+            self.execute(['apt-get', 'install', 'sudo', 'lsb-release', '-y', '--force-yes'])
 
         # Fix the sudoers file
         sudoers_path = os.path.join(self.chroot_path, 'etc/sudoers')
