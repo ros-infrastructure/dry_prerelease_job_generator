@@ -59,7 +59,8 @@ def main():
         print 'Usage: ros-src update'
         return -1
 
-    folder = '/tmp/test'
+    folder, tmp = subprocess.Popen(['pwd'], stdout=subprocess.PIPE).communicate()
+    folder = folder[:len(folder)-1]
     if sys.argv[0] == 'install':
         sys.argv = sys.argv[1:]
         depends = {}
