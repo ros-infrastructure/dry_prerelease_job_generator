@@ -29,8 +29,8 @@ def get_rosdistro_file(rosdistro):
 
 
 def main():
-    if len(sys.argv) != 2:
-        print "Usage: variant_dependencies.py rosdistro"
+    if len(sys.argv) < 2:
+        print "Usage: variant_dependencies.py <rosdistro> [variants]..."
         return
 
     # parse rosdistro file
@@ -40,8 +40,18 @@ def main():
         rosdistro_obj = rosdistro.Distro(get_rosdistro_file(sys.argv[1]))
     print 'Operating on ROS distro %s'%rosdistro_obj.release_name
 
+    # use all variants or user-specified set
+    if len(sys.argv) > 2:
+        variants = sys.argv[2:]
+    else:
+        variants = rosdistro_obj.variants.keys()
     # loop through all variants
-    for variant_name, variant in rosdistro_obj.variants.iteritems():
+    for variant_name in variants:
+        try:
+            variant = rosdistro_obj.variants[variant_name]
+        except KeyError:
+            print >> sys.stderr, "No variant [%s]"%(variant_name)
+            continue
         header = True
         for stack_name in variant.stack_names_explicit:
             stack = rosdistro_obj.stacks[stack_name]
