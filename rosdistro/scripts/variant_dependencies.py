@@ -34,19 +34,24 @@ def main():
         return
 
     # parse rosdistro file
-    rosdistro_obj = rosdistro.Distro(get_rosdistro_file(sys.argv[1]))
+    if os.path.isfile(sys.argv[1]):
+        rosdistro_obj = rosdistro.Distro(sys.argv[1])
+    else:
+        rosdistro_obj = rosdistro.Distro(get_rosdistro_file(sys.argv[1]))
     print 'Operating on ROS distro %s'%rosdistro_obj.release_name
 
     # loop through all variants
     for variant_name, variant in rosdistro_obj.variants.iteritems():
-        print 'Variant %s'%variant_name
+        header = True
         for stack_name in variant.stack_names_explicit:
             stack = rosdistro_obj.stacks[stack_name]
             depends = get_depends(stack)
             for d in depends:
                 if not d in variant.stack_names:
+                    if header:
+                        print 'Variant %s'%variant_name
+                        header = False
                     print ' - Stack %s depends on %s, which is not part of the variant'%(stack.name, d)
-
 
 if __name__ == '__main__':
     main()
