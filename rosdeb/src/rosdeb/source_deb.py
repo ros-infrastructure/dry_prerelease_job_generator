@@ -75,7 +75,7 @@ def make_source_deb(distro_name, stack_name, stack_version, os_platform_name, st
         files.append( (os.path.join(tmpl_d, f), os.path.join(debian_d, f)) )
 
     # Files which go into stack dir
-    for f in ['fixpc.py', 'fixbinpath.py', 'fixrpath.py', 'Makefile', 'setup_deb.sh', 'purge_build.py']:
+    for f in ['fixpc.py', 'fixbinpath.py', 'fixrpath.py', 'Makefile', 'setup_deb.sh', 'purge_build.py', 'update_version.py', 'gen_versioned_debs.py']:
         files.append( (os.path.join(tmpl_d, f), os.path.join(stack_d, f)) )
         
     # Files which go into stack dir and are different for ros stack
@@ -86,7 +86,7 @@ def make_source_deb(distro_name, stack_name, stack_version, os_platform_name, st
                       
     # Files which go into stack dir and only exist for ros
     if stack_name == 'ros':
-        for f in ['setup.sh','.rosinstall']:
+        for f in ['setup.sh','setup.bash','setup.zsh','.rosinstall']:
             files.append( (os.path.join(tmpl_d, f), os.path.join(stack_d, f)))
 
     for src, dst in files:
@@ -111,12 +111,6 @@ def make_source_deb(distro_name, stack_name, stack_version, os_platform_name, st
     if not type(metadata) == dict:
         raise Exception("invalid control file: %s\nMetadata is [%s]"%(control_yaml, metadata))
 
-    # #3100: REMOVE THIS AROUND PHASE 3
-    if distro_name == 'unstable':
-        if stack_name not in ['ros', 'ros_comm', 'documentation'] and 'ros_comm' not in metadata['depends']:
-            metadata['depends'].append('ros_comm')
-    # END #3100
-    
     # make distro-specific
     metadata['package'] = debian_name
     with open(os.path.join(debian_d, 'control'), 'w') as f:
@@ -125,6 +119,12 @@ def make_source_deb(distro_name, stack_name, stack_version, os_platform_name, st
     # CHANGELOG
     with open(os.path.join(debian_d, 'changelog'), 'w') as f:
         f.write(changelog_file(metadata, os_platform_name))
+
+    # We must use a build-version starting with a letter greater than r
+    build_version='s$BUILD_VERSION'
+
+    with open(os.path.join(debian_d, 'changelog.tmp'), 'w') as f:
+        f.write(changelog_file(metadata, os_platform_name, build_version))
     
     # MD5Sum of original stack tar.bz2:
     with open(os.path.join(stack_d, '%s-%s.md5'%(stack_name, stack_version)),'w') as mf:
@@ -136,25 +136,28 @@ def make_source_deb(distro_name, stack_name, stack_version, os_platform_name, st
     # Note: this creates 3 files.  A .dsc, a .tar.gz, and a .changes
     check_call(['dpkg-buildpackage', '-S', '-uc', '-us'], cwd=stack_d)
 
+
     # SOURCE DEB: .dsc plus tarball of debian dir. Ignore the changes for now
     f_name  = "%s_%s-0~%s"%(debian_name, stack_version, os_platform_name)
     files = [os.path.join(staging_dir, f_name+ext) for ext in ('.dsc', '.tar.gz')]
     for f in files:
-        assert os.path.exists(f), f
+        assert os.path.exists(f), "File: %s does not exist"%f
+
     return files
     
 def supported_platforms(control):
     return [version for version in control['rosdeps'].keys()]
     
-def changelog_file(metadata, platform='lucid'):
+def changelog_file(metadata, platform='lucid', build_version='0'):
     #TODO: want to use BeautifulSoup to rip actual changelog
     data = metadata.copy()
     #day-of-week, dd month yyyy hh:mm:ss +zzzz
     data['date'] = time.strftime("%a, %d %b %Y %H:%M:%S +0000", time.gmtime())
     data['platform'] = platform
     data['supported'] = platform
+    data['build-version'] = build_version
     
-    return """%(package)s (%(version)s-0~%(platform)s) %(supported)s; urgency=low
+    return """%(package)s (%(version)s-%(build-version)s~%(platform)s) %(supported)s; urgency=low
 
   * Please see https://ros.org/wiki/%(stack)s/ChangeList
 \t
@@ -177,9 +180,18 @@ def deb_depends(metadata, distro_name, platform_name):
         else:
             return None      
     rosdeps = metadata['rosdeps'][platform_name]
+
+    return rosdeps
+
+def stack_depends(metadata, distro_name, platform_name):
+    """
+    @return: list of debian stack dependencies
+    @rtype: [str]
+    """
     stackdeps = metadata.get('depends', [])
     stackdeps = ['ros-%s-%s'%(distro_name, debianize_name(s)) for s in stackdeps]
-    return rosdeps + stackdeps
+
+    return stackdeps
         
 def download_control(stack_name, stack_version):
     url = 'https://code.ros.org/svn/release/download/stacks/%(stack_name)s/%(stack_name)s-%(stack_version)s/%(stack_name)s-%(stack_version)s.yaml'
@@ -193,13 +205,16 @@ def download_control(stack_name, stack_version):
 def control_file(metadata, distro_name, platform_name):
     data = metadata.copy()
     data['description-full'] = metadata['description-full'].rstrip()
+    data['distro_name'] = distro_name
     if data['maintainer'].startswith('Maintained by '):
         data['maintainer'] = data['maintainer'][len('Maintained by '):]
 
     try:
         depends = deb_depends(metadata, distro_name, platform_name)
+        stacks = stack_depends(metadata, distro_name, platform_name)
         if depends is None:
             raise Exception("stack [%s] does not have valid debian package dependencies for release [%s]"%(metadata['stack'], platform_name))
+        data['all-depends'] = ', '.join(depends + stacks)
         data['deb-depends'] = ', '.join(depends)
     except KeyError:
         raise Exception("stack [%s] does not have rosdeps for release [%s]"%(metadata['stack'], platform_name))
@@ -208,17 +223,18 @@ def control_file(metadata, distro_name, platform_name):
 Section: unknown
 Priority: %(priority)s
 Maintainer: %(maintainer)s
-Build-Depends: debhelper (>= 5), chrpath, %(deb-depends)s
+Build-Depends: debhelper (>= 5), chrpath, %(all-depends)s
 Standards-Version: 3.7.2
+XBC-WG-rosdistro: %(distro_name)s
 
 Package: %(package)s
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, %(deb-depends)s
+Depends: ${shlibs:Depends}, ${misc:Depends}, ${rosstack:Depends}, %(deb-depends)s
 Description: %(description-brief)s
 %(description-full)s
 """%data
     
-def control_data(stack_name, stack_version, stack_file=None):
+def control_data(stack_name, stack_version, md5sum, stack_file=None):
     """
     Generate metadata for control file. Cannot generate debian dependencies as these are platform specific.
     
@@ -236,6 +252,7 @@ def control_data(stack_name, stack_version, stack_file=None):
 
     metadata = {}
     
+    metadata['md5sum']     = md5sum #3301
     metadata['stack']      = stack_name
     metadata['package']    = debianize_name(stack_name)
     metadata['version']    = stack_version
@@ -265,12 +282,6 @@ def control_data(stack_name, stack_version, stack_file=None):
     # do deps in two parts as ros stack depends need to become version
     # locked later on due to lack of ABI compat
     metadata['depends'] = [d.stack for d in m.depends]
-
-    # #3100: REMOVE THIS AROUND PHASE 3
-    if stack_name not in ['ros', 'ros_comm'] and 'ros_comm' not in metadata['depends']:
-        metadata['depends'].append('ros_comm')
-    # END #3100
-    
     metadata['rosdeps'] = rosdeps = {}
     for platform in platforms():
         try:

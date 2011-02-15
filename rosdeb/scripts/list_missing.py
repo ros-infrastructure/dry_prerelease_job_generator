@@ -49,6 +49,7 @@ import urllib
 import urllib2
 import stat
 import tempfile
+import time
 
 import rosdeb
 from rosdeb.rosutil import checkout_svn_to_tmp
@@ -114,7 +115,7 @@ def compute_deps(distro, stack_name):
         ordered_deps.append((s,v))
 
     if stack_name == 'ALL':
-        for s in distro.stacks.keys():
+        for s in distro.released_stacks.keys():
             add_stack(s)
     else:
         add_stack(stack_name)
@@ -125,7 +126,7 @@ def compute_deps(distro, stack_name):
 class ExclusionList(object):
     def __init__(self, uri, distro_name, os_platform, arch):
         try:
-            self.excludes = yaml.load(urllib2.urlopen(uri).read())
+            self.excludes = yaml.load(urllib2.urlopen(uri).read()) or {}
         except urllib2.HTTPError:
             self.excludes = {}
         self.key = "%s-%s"%(os_platform,arch)
@@ -143,9 +144,10 @@ def get_missing(distro, os_platform, arch):
     # Find all the deps in the distro for this stack
     deps = compute_deps(distro, 'ALL')
 
-    missing_primary = set()
+    # These stacks are not actually relased, so we treat them as implicitly excluded
+    missing_primary = set(distro.stack_names) - set(distro.released_stacks.keys())
     missing_dep = set()
-    missing_excluded = set()
+    missing_excluded = set(distro.stack_names) - set(distro.released_stacks.keys())
     missing_excluded_dep = set()
 
     # Build the deps in order
@@ -154,8 +156,8 @@ def get_missing(distro, os_platform, arch):
             missing_primary.add(sn)
             continue
         deb_name = "ros-%s-%s"%(distro_name, debianize_name(sn))
-        deb_version = debianize_version(sv, '0', os_platform)
-        if not deb_in_repo(SHADOW_REPO, deb_name, deb_version, os_platform, arch):
+        deb_version = debianize_version(sv, '\w*', os_platform)
+        if not deb_in_repo(SHADOW_REPO, deb_name, deb_version, os_platform, arch, use_regex=True):
             try:
                 si = load_info(sn, sv)
                 depends = set(si['depends'])
@@ -298,6 +300,12 @@ def get_html_table_header(h, distro_name, os_platforms, arches, counts, job):
     
     return b.getvalue()
     
+def rev_to_time(rev):
+    if rev[0] == 's':
+        return '%s'%(time.strftime("%b %d %H:%M:%S %Y",time.localtime(int(rev[1:]))))
+    else:
+        return ""
+
 def get_html_repository_status(distro, os_platforms, arches):
     b = cStringIO.StringIO()
     b.write("""<h2>Repository Status</h2>
@@ -309,6 +317,10 @@ def get_html_repository_status(distro, os_platforms, arches):
     for os_platform in os_platforms:
         for arch in arches:
             try:
+                shadow_version = get_repo_version(SHADOW_REPO, distro, os_platform, arch)
+            except BadRepo:
+                shadow_version = "[no repo]"
+            try:
                 main_version = get_repo_version(ROS_REPO, distro, os_platform, arch)
             except BadRepo:
                 main_version = "[no repo]"
@@ -316,7 +328,7 @@ def get_html_repository_status(distro, os_platforms, arches):
                 fixed_version = get_repo_version(SHADOW_FIXED_REPO, distro, os_platform, arch)
             except BadRepo:
                 fixed_version = "[no repo]"
-            b.write("<tr><td>%s-%s</td><td>%s</td><td>%s</td><td>%s</td></tr>\n"%(os_platform, arch, distro.version, fixed_version, main_version))
+            b.write("<tr valign=top><td>%s-%s</td><td>%s<br><i>%s</i></td><td>%s<br><i>%s</i></td><td>%s<br><i>%s</i></td></tr>\n"%(os_platform, arch, shadow_version, rev_to_time(shadow_version), fixed_version, rev_to_time(fixed_version), main_version, rev_to_time(main_version)))
     b.write("</table>")
     return b.getvalue()
 
@@ -324,6 +336,7 @@ def sourcedeb_job_url(h, distro_name, stack, stack_version):
     params = {'STACK_NAME': stack, 'DISTRO_NAME': distro_name,'STACK_VERSION': stack_version}
     return h.build_job_url('debbuild-sourcedeb', parameters=params)                            
     
+
 def generate_allhtml_report(output, distro_name, os_platforms):
     import hudson
     h = hudson.Hudson(HUDSON)
@@ -336,7 +349,17 @@ def generate_allhtml_report(output, distro_name, os_platforms):
             try:
                 main_repo["%s-%s"%(os_platform, arch)] = load_Packages(ROS_REPO, os_platform, arch)
             except:
-                main_repo["%s-%s"%(os_platform, arch)] = []    
+                main_repo["%s-%s"%(os_platform, arch)] = []
+
+    fixed_repo = {}
+    arches = ['amd64', 'i386']
+    for os_platform in os_platforms:
+        for arch in arches:
+            try:
+                fixed_repo["%s-%s"%(os_platform, arch)] = load_Packages(SHADOW_FIXED_REPO, os_platform, arch)
+            except:
+                fixed_repo["%s-%s"%(os_platform, arch)] = []
+
     missing_primary = None
     missing_dep = None
 
@@ -414,10 +437,12 @@ def generate_allhtml_report(output, distro_name, os_platforms):
                     # compute version in actual repo
                     version_str = ''
                     try:
-                        match = get_stack_version(main_repo[key], distro_name, stack)
-                        if match != shadow_version:
-                            match = match or '0'
-                            version_str = '<em>'+str(match)+'</em>'
+                        main_match = get_stack_version(main_repo[key], distro_name, stack)
+                        fixed_match = get_stack_version(fixed_repo[key], distro_name, stack)
+                        if main_match != shadow_version or fixed_match != shadow_version:
+                            main_match = main_match or '0'
+                            fixed_match = fixed_match or '0'
+                            version_str = '<em>'+str(fixed_match)+', '+str(main_match)+'</em>'
                     except Exception, e:
                         print str(e)
                     

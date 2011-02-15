@@ -12,7 +12,7 @@ import sys
 import os
 import os.path
 import traceback
-
+import subprocess
 import rosdistro 
 
 try:
@@ -25,6 +25,8 @@ def main():
     try:
         from optparse import OptionParser
         parser = OptionParser(usage="usage: %prog <release>", prog=NAME)
+        parser.add_option('--yes', dest = 'yes', default=False, action='store_true',
+                          help='Answer yes to every question')    
         options, args = parser.parse_args()
         if len(args) != 1:
             parser.error("""You must specify: 
@@ -44,7 +46,7 @@ def main():
         for stack_name, stack in distro.stacks.iteritems():
             checkouts[stack_name] = stack.distro_svn
 
-        # create text for rosinstalls
+       # create text for rosinstalls
         variant_rosinstalls = []
 
         variant_stacks = {}
@@ -88,7 +90,7 @@ def main():
                 os.makedirs(d)
             with open(filename,'w') as f:
                 f.write(text)
-            copy_to_server(filename)
+            copy_to_server(filename, options.yes)
 
     except Exception, e:
         traceback.print_exc()
@@ -96,12 +98,32 @@ def main():
         sys.exit(1)
 
 
-def copy_to_server(filename):
+def yes_or_no():
+    print ("(y/n)")
+    while 1:
+        input = sys.stdin.readline().strip()
+        if input in ['y', 'n']:
+            break
+    return input == 'y'
+
+
+
+def copy_to_server(filename, yes=False):
+    def quote(s):
+        return '"%s"'%s if ' ' in s else s
+
     try:
         dest = os.path.join('wgs32.willowgarage.com:/var/www/www.ros.org/html/rosinstalls/%s'%os.path.basename(filename))
         cmds = [['scp', filename, dest]]
-        if not roslib.scriptutil.ask_and_call(cmds):    
+        
+        print "Okay to execute:\n\n%s?"%('\n'.join([' '.join([quote(s) for s in c]) for c in cmds]))
+        if yes or yes_or_no():
+            for c in cmds:
+                subprocess.check_call(c)
+        else:
             print "create_rosinstall will not copy the rosinstall to wgs32"
+
+
     except:
         traceback.print_exc()
         print >> sys.stderr, "COPY FAILED, please redo manually"

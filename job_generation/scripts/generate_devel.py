@@ -1,80 +1,5 @@
 #!/usr/bin/python
 
-
-hudson_scm_managers = {'svn':"""
-  <scm class="hudson.scm.SubversionSCM"> 
-    <locations> 
-      <hudson.scm.SubversionSCM_-ModuleLocation> 
-        <remote>STACKURI</remote> 
-        <local>STACKNAME</local> 
-      </hudson.scm.SubversionSCM_-ModuleLocation> 
-    </locations> 
-    <useUpdate>false</useUpdate> 
-    <doRevert>false</doRevert> 
-    <excludedRegions></excludedRegions> 
-    <includedRegions></includedRegions> 
-    <excludedUsers></excludedUsers> 
-    <excludedRevprop></excludedRevprop> 
-    <excludedCommitMessages></excludedCommitMessages> 
-  </scm> 
-""",
-                       'hg':"""
-  <scm class="hudson.plugins.mercurial.MercurialSCM">
-    <source>STACKURI</source>
-    <modules></modules>
-    <subdir>STACKNAME</subdir>
-    <clean>false</clean>
-    <forest>false</forest>
-    <branch>STACKBRANCH</branch>
-  </scm>
-""",
-                       'git':"""
-
-  <scm class="hudson.plugins.git.GitSCM">
-    <configVersion>1</configVersion>
-    <remoteRepositories>
-      <org.spearce.jgit.transport.RemoteConfig>
-        <string>origin</string>
-        <int>5</int>
-
-        <string>fetch</string>
-        <string>+refs/heads/*:refs/remotes/origin/*</string>
-        <string>receivepack</string>
-        <string>git-upload-pack</string>
-        <string>uploadpack</string>
-        <string>git-upload-pack</string>
-
-        <string>url</string>
-        <string>STACKURI</string>
-        <string>tagopt</string>
-        <string></string>
-      </org.spearce.jgit.transport.RemoteConfig>
-    </remoteRepositories>
-    <branches>
-
-      <hudson.plugins.git.BranchSpec>
-        <name>STACKBRANCH</name>
-      </hudson.plugins.git.BranchSpec>
-    </branches>
-    <localBranch></localBranch>
-    <mergeOptions/>
-    <recursiveSubmodules>false</recursiveSubmodules>
-    <doGenerateSubmoduleConfigurations>false</doGenerateSubmoduleConfigurations>
-
-    <authorOrCommitter>Hudson</authorOrCommitter>
-    <clean>false</clean>
-    <wipeOutWorkspace>false</wipeOutWorkspace>
-    <buildChooser class="hudson.plugins.git.util.DefaultBuildChooser"/>
-    <gitTool>Default</gitTool>
-    <submoduleCfg class="list"/>
-    <relativeTargetDir>STACKNAME</relativeTargetDir>
-
-    <excludedRegions></excludedRegions>
-    <excludedUsers></excludedUsers>
-  </scm>
-"""
-}
-
 # template to create develop hudscon configuration file
 HUDSON_DEVEL_CONFIG = """<?xml version='1.0' encoding='UTF-8'?>
 <project> 
@@ -102,39 +27,10 @@ HUDSON_DEVEL_CONFIG = """<?xml version='1.0' encoding='UTF-8'?>
   <concurrentBuild>false</concurrentBuild> 
   <builders> 
     <hudson.tasks.Shell> 
-      <command>cat &gt; $WORKSPACE/script.sh &lt;&lt;DELIM
-#!/usr/bin/env bash
-set -o errexit
-echo "_________________________________BEGIN SCRIPT______________________________________"
-export INSTALL_DIR=/tmp/install_dir
-export WORKSPACE=/tmp/ros
-export ROS_TEST_RESULTS_DIR=/tmp/ros/test_results
-export JOB_NAME=$JOB_NAME
-export BUILD_NUMBER=$BUILD_NUMBER
-export HUDSON_URL=$HUDSON_URL
-
-mkdir -p \$INSTALL_DIR
-cd \$INSTALL_DIR
-wget  --no-check-certificate http://code.ros.org/svn/ros/installers/trunk/hudson/hudson_helper
-wget  --no-check-certificate http://code.ros.org/svn/ros/stacks/ros_release/trunk/job_generation/src/job_generation/jobs_common.py 
-wget  --no-check-certificate http://code.ros.org/svn/ros/stacks/ros_release/trunk/job_generation/src/job_generation/run_auto_stack_devel.py 
-chmod +x hudson_helper  
-chmod +x run_auto_stack_devel.py
-
-sudo apt-get install ros-ROSDISTRO-ros --yes
-source /opt/ros/ROSDISTRO/setup.sh
-./run_auto_stack_devel.py --stack STACKNAME --rosdistro ROSDISTRO --repeat 0
-echo "_________________________________END SCRIPT_______________________________________"
-DELIM
-
-set -o errexit
-
-rm -rf $WORKSPACE/test_results
-rm -rf $WORKSPACE/test_output
-
-wget https://code.ros.org/svn/ros/stacks/ros_release/trunk/hudson/scripts/run_chroot.py --no-check-certificate -O $WORKSPACE/run_chroot.py
-chmod +x $WORKSPACE/run_chroot.py
-cd $WORKSPACE &amp;&amp; $WORKSPACE/run_chroot.py --distro=UBUNTUDISTRO --arch=ARCH  --ramdisk --ssh-key-file=/home/rosbuild/rosbuild-ssh.tar --script=$WORKSPACE/script.sh
+      <command>
+BOOTSTRAP_SCRIPT
+rosrun job_generation run_auto_stack_devel.py --stack STACKNAME --rosdistro ROSDISTRO --repeat 0
+SHUTDOWN_SCRIPT
      </command> 
     </hudson.tasks.Shell> 
   </builders> 
@@ -153,62 +49,7 @@ cd $WORKSPACE &amp;&amp; $WORKSPACE/run_chroot.py --distro=UBUNTUDISTRO --arch=A
     <hudson.plugins.emailext.ExtendedEmailPublisher> 
       <recipientList>EMAIL</recipientList> 
       <configuredTriggers> 
-        <hudson.plugins.emailext.plugins.trigger.UnstableTrigger> 
-          <email> 
-            <recipientList></recipientList> 
-            <subject>$PROJECT_DEFAULT_SUBJECT</subject> 
-            <body>$PROJECT_DEFAULT_CONTENT</body> 
-            <sendToDevelopers>true</sendToDevelopers> 
-            <sendToRecipientList>true</sendToRecipientList> 
-            <contentTypeHTML>false</contentTypeHTML> 
-            <script>true</script> 
-          </email> 
-        </hudson.plugins.emailext.plugins.trigger.UnstableTrigger> 
-        <hudson.plugins.emailext.plugins.trigger.FailureTrigger> 
-          <email> 
-            <recipientList></recipientList> 
-            <subject>$PROJECT_DEFAULT_SUBJECT</subject> 
-            <body>$PROJECT_DEFAULT_CONTENT</body> 
-            <sendToDevelopers>true</sendToDevelopers> 
-            <sendToRecipientList>true</sendToRecipientList> 
-            <contentTypeHTML>false</contentTypeHTML> 
-            <script>true</script> 
-          </email> 
-        </hudson.plugins.emailext.plugins.trigger.FailureTrigger> 
-        <hudson.plugins.emailext.plugins.trigger.StillFailingTrigger> 
-          <email> 
-            <recipientList></recipientList> 
-            <subject>$PROJECT_DEFAULT_SUBJECT</subject> 
-            <body>$PROJECT_DEFAULT_CONTENT</body> 
-            <sendToDevelopers>true</sendToDevelopers> 
-            <sendToRecipientList>true</sendToRecipientList> 
-            <contentTypeHTML>false</contentTypeHTML> 
-            <script>true</script> 
-          </email> 
-        </hudson.plugins.emailext.plugins.trigger.StillFailingTrigger> 
-        <hudson.plugins.emailext.plugins.trigger.FixedTrigger> 
-          <email> 
-            <recipientList></recipientList> 
-            <subject>$PROJECT_DEFAULT_SUBJECT</subject> 
-            <body>$PROJECT_DEFAULT_CONTENT</body> 
-            <sendToDevelopers>true</sendToDevelopers> 
-            <sendToRecipientList>true</sendToRecipientList> 
-            <contentTypeHTML>false</contentTypeHTML> 
-            <script>true</script> 
-
-          </email> 
-        </hudson.plugins.emailext.plugins.trigger.FixedTrigger> 
-        <hudson.plugins.emailext.plugins.trigger.StillUnstableTrigger> 
-          <email> 
-            <recipientList></recipientList> 
-            <subject>$PROJECT_DEFAULT_SUBJECT</subject> 
-            <body>$PROJECT_DEFAULT_CONTENT</body> 
-            <sendToDevelopers>true</sendToDevelopers> 
-            <sendToRecipientList>true</sendToRecipientList> 
-            <contentTypeHTML>false</contentTypeHTML> 
-            <script>true</script> 
-          </email> 
-        </hudson.plugins.emailext.plugins.trigger.StillUnstableTrigger> 
+        EMAIL_TRIGGERS
       </configuredTriggers> 
       <defaultSubject>$DEFAULT_SUBJECT</defaultSubject> 
       <defaultContent>$DEFAULT_CONTENT&#xd;
@@ -235,15 +76,10 @@ println &quot;${build_failures_context}&quot;&#xd;
 import roslib; roslib.load_manifest("job_generation")
 import rosdistro
 from job_generation.jobs_common import *
-import hudson
-import sys
-import re
-import urllib
-import optparse 
 
 
 def devel_job_name(rosdistro, stack_name, ubuntu, arch):
-    return "_".join(['devel', rosdistro, stack_name, ubuntu, arch])
+    return get_job_name('devel', rosdistro, stack_name, ubuntu, arch)
 
 
 def create_devel_configs(rosdistro, stack):
@@ -271,7 +107,7 @@ def create_devel_configs(rosdistro, stack):
                 hudson_vcs = hudson_vcs.replace('STACKURI', stack.vcs_config.anon_dev)
             else: #dvcs
                 hudson_vcs = hudson_vcs.replace('STACKBRANCH', stack.vcs_config.dev_branch)
-                hudson_vcs = hudson_vcs.replace('STACKURI', stack.vcs_config.repo_uri)
+                hudson_vcs = hudson_vcs.replace('STACKURI', stack.vcs_config.anon_repo_uri)
                 hudson_vcs = hudson_vcs.replace('STACKNAME', stack.name)
 
             # check if this is the 'gold' job
@@ -282,6 +118,9 @@ def create_devel_configs(rosdistro, stack):
                 job_children = ', '.join(gold_children)
 
             hudson_config = HUDSON_DEVEL_CONFIG
+            hudson_config = hudson_config.replace('BOOTSTRAP_SCRIPT', BOOTSTRAP_SCRIPT)
+            hudson_config = hudson_config.replace('SHUTDOWN_SCRIPT', SHUTDOWN_SCRIPT)
+            hudson_config = hudson_config.replace('EMAIL_TRIGGERS', get_email_triggers(['Unstable', 'Failure', 'Fixed']))
             hudson_config = hudson_config.replace('UBUNTUDISTRO', ubuntudistro)
             hudson_config = hudson_config.replace('ARCH', arch)
             hudson_config = hudson_config.replace('ROSDISTRO', rosdistro)
@@ -297,61 +136,23 @@ def create_devel_configs(rosdistro, stack):
     
 
 def main():
-    parser = optparse.OptionParser()
-    parser.add_option('--delete', dest = 'delete', default=False, action='store_true',
-                      help='Delete jobs from Hudson')    
-    parser.add_option('--stack', dest = 'stacks', action='append',
-                      help="Specify the stacks to operate on (defaults to all stacks)")
-    parser.add_option('--rosdistro', dest = 'rosdistro', action='store', default='cturtle',
-                      help="Specify the ros distro to operate on (defaults to cturtle)")
-    (options, args) = parser.parse_args()
-    if not options.rosdistro in UBUNTU_DISTRO_MAP.keys():
-        print 'You profided an invalid "--rosdistro %s" argument. Options are %s'%(options.rosdistro, UBUNTU_DISTRO_MAP.keys())
-        return
-
-
-    # Parse distro file
-    distro_obj = rosdistro.Distro(ROSDISTRO_MAP[options.rosdistro])
-    print 'Operating on ROS distro %s'%distro_obj.release_name
-
-
-    # create hudson instance
-    if len(args) == 2:
-        hudson_instance = hudson.Hudson(SERVER, args[0], args[1])        
-    else:
-        info = urllib.urlopen(CONFIG_PATH).read().split(',')
-        hudson_instance = hudson.Hudson(SERVER, info[0], info[1])
-
+    (options, args) = get_options(['rosdistro'], ['delete', 'wait', 'stack'])
+    if not options:
+        return -1
 
     # generate hudson config files
-    devel_configs = {}
-    if options.stacks:
-        stack_list = options.stacks
+    distro_obj = rosdistro.Distro(get_rosdistro_file(options.rosdistro))
+    if options.stack:
+        stack_list = options.stack
     else:
         stack_list = distro_obj.stacks
+    devel_configs = {}
     for stack_name in stack_list:
         devel_configs.update(create_devel_configs(distro_obj.release_name, distro_obj.stacks[stack_name]))
 
+    # schedule jobs
+    schedule_jobs(devel_configs, options.wait, options.delete)
 
-    # send devel tests to Hudson
-    for job_name in devel_configs:
-        exists = hudson_instance.job_exists(job_name)
-
-        # delete old job
-        if options.delete:
-            if exists:
-                hudson_instance.delete_job(job_name)
-                print "Deleting job %s"%job_name
-
-        # reconfigure job
-        elif exists:
-            hudson_instance.reconfig_job(job_name, devel_configs[job_name])
-            print "Reconfigure job %s"%job_name
-
-        # create job
-        elif not exists:
-            hudson_instance.create_job(job_name, devel_configs[job_name])
-            print "Creating new job %s"%job_name
 
 if __name__ == '__main__':
     main()

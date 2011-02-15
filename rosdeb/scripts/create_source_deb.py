@@ -120,7 +120,6 @@ def _source_deb_main(distro_name, stack_name, stack_version, os_platform, stagin
 
     # CREATE THE SOURCE DEB
     files = rosdeb.make_source_deb(distro_name, stack_name, stack_version, os_platform, staging_dir)
-
     upload_files(files, stack_name, stack_version)
 
     

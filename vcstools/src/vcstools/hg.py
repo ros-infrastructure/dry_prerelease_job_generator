@@ -49,8 +49,10 @@ class HGClient(vcs_base.VCSClientBase):
         """
         vcs_base.VCSClientBase.__init__(self, path)
         with open(os.devnull, 'w') as fnull:
-            if subprocess.call("hg help".split(), stdout=fnull, stderr=fnull) != 0:
-                raise LookupError("hg not installed, cannnot create a hg vcs client")
+            try:
+                subprocess.call("hg help".split(), stdout=fnull, stderr=fnull)
+            except:
+                raise LookupError("hg not installed, cannot create a hg vcs client")
 
     def get_url(self):
         """
@@ -67,7 +69,7 @@ class HGClient(vcs_base.VCSClientBase):
 
     def checkout(self, url, version=''):
         if self.path_exists():
-            print >>sys.stderr, "Error: cannnot checkout into existing directory"
+            print >>sys.stderr, "Error: cannot checkout into existing directory"
             return False
             
         cmd = "hg clone %s %s"%(url, self._path)

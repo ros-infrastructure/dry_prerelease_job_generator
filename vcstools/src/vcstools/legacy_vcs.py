@@ -43,47 +43,6 @@ from __future__ import with_statement
 
 import os
 
-def checkout(vcs, uri, dir_path):
-    """
-    @param vcs: vcs type (e.g. 'svn', 'git')
-    @type  vcs: str
-    @param uri: vcs repository URI
-    @type  uri: str
-    @param dir_path: path to checkout to
-    @type  dir_path: str
-    @raise CalledProcessError: if checkout command fails
-    @raise ValueError: if vcs type is unsupported/unknown
-    """
-    cmd = cwd = None
-    fresh_install = not os.path.exists(dir_path)
-    if vcs == 'svn':
-        cmd = ['svn', 'co', uri, dir_path]
-    elif vcs == 'git':
-        if fresh_install:
-            cmd = ['git', 'clone', uri, dir_path]
-        else:
-            cwd = dir_path
-            cmd = ['git', 'pull']
-    elif vcs == 'bzr':
-        if fresh_install:
-            cmd = ['bzr', 'checkout', uri, dir_path]
-        else:
-            cwd = dir_path
-            cmd = ['bzr', 'up']
-    elif vcs == 'hg':
-        if fresh_install:
-            cmd = ['hg', 'clone', uri, dir_path]
-        else:
-            cwd = dir_path
-            cmd = ['hg', 'pull']
-    else:
-        raise ValueError("unknown vcs: %s"%vcs)
-    import subprocess
-    if cwd:
-        subprocess.check_call(cmd, cwd=cwd)
-    else:
-        subprocess.check_call(cmd)
-        
 def get_svn_url(dir_path):
     """
     @return: SVN URL of the directory path (output of svn info command), or None if it cannot be determined

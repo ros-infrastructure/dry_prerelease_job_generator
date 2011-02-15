@@ -41,8 +41,26 @@ import os
 import vcs_base
 import base64 
 import sys
+from distutils.version import LooseVersion
 
 branch_name = "rosinstall_tagged_branch"
+
+def check_git_submodules():
+    """
+    @return: True if git version supports submodules, False otherwise,
+    including if version cannot be detected
+    """
+
+    try:
+        version = subprocess.Popen(['git', '--version'], stdout=subprocess.PIPE).communicate()[0]
+    except:
+        return False
+   # 'git version 1.7.0.4\n'
+    if version.startswith('git version '):
+        version = version[len('git version '):].strip()
+    else:
+        return False
+    return LooseVersion(version) > LooseVersion('1.7')
 
 class GITClient(vcs_base.VCSClientBase):
     def __init__(self, path):
@@ -51,8 +69,12 @@ class GITClient(vcs_base.VCSClientBase):
         """
         vcs_base.VCSClientBase.__init__(self, path)
         with open(os.devnull, 'w') as fnull:
-            if subprocess.call("git help".split(), stdout=fnull, stderr=fnull) != 0:
-                raise LookupError("git not installed, cannnot create a git vcs client")
+            try:
+                subprocess.call("git help".split(), stdout=fnull, stderr=fnull)
+            except:
+                raise LookupError("git not installed, cannot create a git vcs client")
+
+        self.submodule_exists = check_git_submodules()
 
     def get_url(self):
         """
@@ -69,15 +91,20 @@ class GITClient(vcs_base.VCSClientBase):
 
     def checkout(self, url, version='master'):
         if self.path_exists():
-            print >>sys.stderr, "Error: cannnot checkout into existing directory"
+            print >>sys.stderr, "Error: cannot checkout into existing directory"
             return False
             
         cmd = "git clone %s %s"%(url, self._path)
         if not subprocess.call(cmd, shell=True) == 0:
             return False
+
+        # update submodules early to work around what appears to be a git bug noted in #3251
+        if not self.update_submodules():
+            return False
+
         if self.get_branch_parent() == version:
-            # short circuit in default case
-            return True
+            # If already at the right version update submodules and return
+            return self.update_submodules()
         elif self.is_remote_branch(version):  # remote branch
             cmd = "git checkout remotes/origin/%s -b %s"%(version, version)
         else:  # tag or hash
@@ -87,10 +114,17 @@ class GITClient(vcs_base.VCSClientBase):
         #print "Git Installing: %s"%cmd
         if not subprocess.call(cmd, cwd=self._path, shell=True) == 0:
             return False
-        # Ticket #3146
-        #cmd = "git submodule update --init --recursive"
-        #if not subprocess.call(cmd, cwd=self._path, shell=True) == 0:
-        #    return False
+        
+        # update submodules if present and available
+        return self.update_submodules()
+        
+    def update_submodules(self):
+    
+        # update and or init submodules too
+        if self.submodule_exists:
+            cmd = "git submodule update --init --recursive"
+            if not subprocess.call(cmd, cwd=self._path, shell=True) == 0:
+                return False
         return True
 
     def update(self, version='master'):
@@ -100,7 +134,7 @@ class GITClient(vcs_base.VCSClientBase):
         # shortcut if version is the same as requested
         if self.is_hash(version) :
             if self.get_version() == version:
-                return True
+                return self.update_submodules()
 
             cmd = "git checkout -f -b rosinstall_temp" 
             if not subprocess.call(cmd, cwd=self._path, shell=True) == 0:
@@ -124,11 +158,12 @@ class GITClient(vcs_base.VCSClientBase):
             cmd = "git pull"
             if not subprocess.call(cmd, cwd=self._path, shell=True) == 0:
                 return False
-            # #3146 commented 
-            #cmd = "git submodule update --init --recursive"
-            #if not subprocess.call(cmd, cwd=self._path, shell=True) == 0:
-            #    return False
-        return True
+            # update submodules too
+            if self.submodule_exists:
+                cmd = "git submodule update --init --recursive"
+                if not subprocess.call(cmd, cwd=self._path, shell=True) == 0:
+                    return False
+        return self.update_submodules()
         
     def get_vcs_type_name(self):
         return 'git'

@@ -1,6 +1,7 @@
 os_platform = {
     'testing': ['lucid', 'maverick'],
     'unstable': ['lucid', 'maverick'],
-    'cturtle': ['maverick', 'lucid', 'karmic', 'jaunty'],
+    'diamondback': ['lucid', 'maverick'],
+    'cturtle': ['lucid', 'maverick', 'karmic', 'jaunty'],
     'boxturtle': ['hardy', 'intrepid', 'jaunty', 'karmic'],    
 }

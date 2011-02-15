@@ -38,7 +38,7 @@ from __future__ import with_statement
 PKG = 'release'
 NAME="create.py"
 
-VERSION=2
+VERSION=4
 
 import roslib; roslib.load_manifest(PKG)
 
@@ -66,6 +66,7 @@ from release import ReleaseException, update_rosdistro_yaml, make_dist, \
 from rosdistro import Distro
 
 pkg_dir = roslib.packages.get_pkg_dir('release_resources')
+distros_dir = os.path.join(pkg_dir, '..', 'distros')
     
 TARBALL_DIR_URL = 'https://code.ros.org/svn/release/download/stacks/%(stack_name)s/%(stack_name)s-%(stack_version)s'
 ROSORG_URL = 'http://ros.org/download/stacks/%(stack_name)s/%(stack_name)s-%(stack_version)s.tar.bz2'
@@ -130,7 +131,7 @@ def load_sys_args():
  * version (e.g. 1.0.1)
  * distro release name (e.g. cturtle)""")
     name, version, release_name = args
-    distro_file = os.path.join(pkg_dir, '..', 'distros', '%s.rosdistro'%(release_name))
+    distro_file = os.path.join(distros_dir, '%s.rosdistro'%(release_name))
     distro_file = os.path.abspath(distro_file)
     if not os.path.isfile(distro_file):
         parser.error("Could not find rosdistro file for [%s].\nExpected it in %s"%(release_name, distro_file))
@@ -193,10 +194,12 @@ def copy_to_server(name, version, tarball, control, control_only=False):
     # multi-distro releases. It's best to reuse the existing tarball.
     tarball_url = url + '/' + tarball_name
     if svn_url_exists(tarball_url):
-        print_bold("Tarball of %s-%s has already been uploaded to server, reuse?\nRecommendation: y"%(stack_name, stack_version))
-        if yes_or_no():
-            print "reusing existing %s"%(tarball_url)
-            return
+        # no longer ask user to reuse, always reuse b/c people answer
+        # this wrong and it breaks things.  the correct way to
+        # invalidate is to delete the tarball manually with SVN from
+        # now on.
+        print "reusing existing tarball of release for this distribution"
+        return
 
     # checkout tarball tree so we can add new tarball
     dir_name = "%s-%s"%(name, version)
@@ -320,7 +323,7 @@ def tag_git(distro_stack):
     # branches can be force-updated by fetch.
     make_tag = False
     while True:
-        branch_name = config.distro_tag+"_released"
+        branch_name = config.distro_tag
         prompt = raw_input("Would you like to create the branch %s as %s in %s, [y/n]"%(config.dev_branch, branch_name, from_url))
         if prompt == 'y':
             make_tag = True
@@ -434,13 +437,17 @@ def main():
             sys.exit(1)
 
 
-        # ask for prerelease
-        print 'Did you trigger the prerelease builds on <http://code.ros.org/prerelease/>?'
+        # ask if stack got tested
+        print 'Did you run prerelease tests on your stack?'
         if not yes_or_no():
-            print 'You can only release a stack once all the prerelease tests pass.'
-            print 'Please trigger prerelease builds for your stack on <http://code.ros.org/prerelease/>'
+            print 'Before releasing a stack, you should make sure your stack works well,'
+            print ' and that the new release does not break any already released stacks'
+            print ' that depend on your stack.'
+            print 'Willow Garage offers a pre-release test set that tests your stack and all'
+            print ' released stacks that depend on your stack, on all distributions and architectures'
+            print ' supported by Willow Garage. '
+            print 'You can trigger pre-release builds for your stack on <http://code.ros.org/prerelease/>'
             return
-
 
         # make sure distro_file is up-to-date
         print "Retrieving up-to-date %s"%(distro_file)
@@ -465,8 +472,8 @@ def main():
         #tarball, control = make_dist(name, version, distro_stack, repair=repair)
         if not control['rosdeps']:
             print >> sys.stderr, """Misconfiguration: control rosdeps are empty.\n
-In order to run create.py, the stack you are releasing must be on your current
-ROS_PACKAGE_PATH. This is so create.py can access the stack's rosdeps."""
+    In order to run create.py, the stack you are releasing must be on your current
+    ROS_PACKAGE_PATH. This is so create.py can access the stack's rosdeps."""
             sys.exit(1)
             
         print_bold("Release should be in %s"%(tarball))
@@ -507,13 +514,14 @@ Now:
 def main_rebuild_repo():
     # NOTE: does not trigger source deb jobs
     try:
+        print "running _rebuild job"
         simulate = '-s' in sys.argv
         args = [a for a in sys.argv if a != '-s']
         if len(args) < 3:
             print >> sys.stderr, "usage: create.py _rebuild <distro-name>"
             sys.exit(1)
             
-        distro_file = os.path.join(pkg_dir, 'distros', '%s.rosdistro'%(args[2]))
+        distro_file = os.path.join(distros_dir, '%s.rosdistro'%(args[2]))
         distro_file = os.path.abspath(distro_file)
         if not os.path.isfile(distro_file):
             print >> sys.stderr, "cannot locate distro file, expected in [%s]"%(distro_file)
@@ -522,6 +530,7 @@ def main_rebuild_repo():
         distro = Distro(distro_file)
         stack_names = args[3:]
         stack_names = stack_names if stack_names else distro.stacks.keys()
+        print "stacks: ", stack_names
 
         import urllib, tempfile
         from rosdeb import control_data
@@ -529,6 +538,8 @@ def main_rebuild_repo():
             distro_stack = distro.stacks[stack_name]
 
             stack_version = distro_stack.version
+            if stack_version is None:
+                continue # not released
             tarball_url = ROSORG_URL%locals()
             tarball_name = '%s-%s.tar.bz2'%(stack_name, stack_version)
             
@@ -537,29 +548,33 @@ def main_rebuild_repo():
             try:
                 f = urllib2.urlopen(upload_url)
                 f.close()
-                #print "%s-%s already exists, ignoring"%(stack_name, stack_version)
+                print "%s-%s already exists, ignoring"%(stack_name, stack_version)
                 continue
             except:
                 pass
 
             if simulate:
                 print "simulate", stack_name
-                control = control_data(stack_name, stack_version)
+                md5sum = 'FAKEMD5'
+                control = control_data(stack_name, stack_version, md5sum)
                 print '\t' + ', '.join(control['depends'])
                 #print control['rosdeps']
-                continue
-            tarball = os.path.join(tempfile.gettempdir(), tarball_name)
-            urllib.urlretrieve(tarball_url, tarball)
+            else:
+                tarball = os.path.join(tempfile.gettempdir(), tarball_name)
+                urllib.urlretrieve(tarball_url, tarball)
+                from release import md5sum_file
+                md5sum = md5sum_file(tarball)
 
-            # WARNING: this only works if our current checkout matches the distro above
-            control = control_data(stack_name, stack_version)
-    
-            copy_to_server(stack_name, stack_version, tarball, control, control_only=False)
+                # WARNING: this only works if our current checkout matches the distro above
+                control = control_data(stack_name, stack_version, md5sum)
 
-            os.remove(tarball)
-            
-            # trigger source deb system
-            trigger_hudson_source_deb(stack_name, stack_version, distro)
+                copy_to_server(stack_name, stack_version, tarball, control, control_only=False)
+
+                os.remove(tarball)
+
+                # trigger source deb system
+                print "triggering", stack_name
+                trigger_hudson_source_deb(stack_name, stack_version, distro)
 
     except ReleaseException, e:
         print >> sys.stderr, "ERROR: %s"%str(e)
@@ -573,7 +588,7 @@ def main_trigger_sourcedebs():
             print >> sys.stderr, "usage: create.py _trigger <distro-name>"
             sys.exit(1)
             
-        distro_file = os.path.join(pkg_dir, '..', '..', 'distros', '%s.rosdistro'%(args[2]))
+        distro_file = os.path.join(distros_dir, '%s.rosdistro'%(args[2]))
         distro_file = os.path.abspath(distro_file)
         if not os.path.isfile(distro_file):
             print >> sys.stderr, "cannot locate distro file, expected in [%s]"%(distro_file)

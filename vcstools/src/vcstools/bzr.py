@@ -48,8 +48,10 @@ class BZRClient(vcs_base.VCSClientBase):
         """
         vcs_base.VCSClientBase.__init__(self, path)
         with open(os.devnull, 'w') as fnull:
-            if subprocess.call("bzr help".split(), stdout=fnull, stderr=fnull) != 0:
-                raise LookupError("bzr not installed, cannnot create a bzr vcs client")
+            try:
+                subprocess.call("bzr help".split(), stdout=fnull, stderr=fnull)
+            except:
+                raise LookupError("bzr not installed, cannot create a bzr vcs client")
 
     def get_url(self):
         """
@@ -68,10 +70,13 @@ class BZRClient(vcs_base.VCSClientBase):
 
     def checkout(self, url, version=''):
         if self.path_exists():
-            print >>sys.stderr, "Error: cannnot checkout into existing directory"
+            print >>sys.stderr, "Error: cannot checkout into existing directory"
             return False
             
-        cmd = "bzr branch %s %s %s"%(version, url, self._path)
+        if version:
+            cmd = "bzr branch -r %s %s %s"%(version, url, self._path)
+        else:
+            cmd = "bzr branch %s %s"%(url, self._path)
         if subprocess.check_call(cmd, shell=True) == 0:
             return True
         return False
@@ -81,9 +86,10 @@ class BZRClient(vcs_base.VCSClientBase):
             return False
         if not subprocess.check_call("bzr pull", cwd=self._path, shell=True) == 0:
             return False
-        cmd = "bzr uncommit %s --force"%(version)
-        if subprocess.check_call(cmd, cwd=self._path, shell=True) == 0:
-            return True
+        if version != '':
+            cmd = "bzr uncommit %s --force"%(version)
+            if subprocess.check_call(cmd, cwd=self._path, shell=True) == 0:
+                return True
         return False
         
     def get_vcs_type_name(self):
@@ -92,4 +98,4 @@ class BZRClient(vcs_base.VCSClientBase):
 
     def get_version(self):
         output = subprocess.Popen(['bzr', 'revno'], cwd= self._path, stdout=subprocess.PIPE).communicate()[0]
-        return "-r"+output.strip()
+        return output.strip()

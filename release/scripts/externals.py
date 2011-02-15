@@ -105,7 +105,8 @@ def main():
             sys.exit(1)
 
         if rosdoc_external:
-            rosdoc_all['wg-ros-pkg'] += """wg-ros-pkg-trunk https://code.ros.org/svn/wg-ros-pkg/trunk
+            rosdoc_all['wg-ros-pkg'] += """wg-ros-pkg-diamondback https://code.ros.org/svn/wg-ros-pkg/branches/trunk_diamondback
+wg-ros-pkg-electric https://code.ros.org/svn/wg-ros-pkg/branches/trunk_electric
 wg-ros-pkg-cturtle https://code.ros.org/svn/wg-ros-pkg/branches/trunk_cturtle
 """
             rosdoc_all['ros-pkg'] += """ros-pkg-trunk https://code.ros.org/svn/ros-pkg/trunk

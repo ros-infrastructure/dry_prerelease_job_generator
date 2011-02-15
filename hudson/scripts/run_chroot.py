@@ -9,12 +9,10 @@ import optparse
 import traceback
 import urllib
 
-ROSBUILD_SSH_URI = 'http://wgs24.willowgarage.com/hudson_slave_configuration_files/rosbuild-ssh.tar'
-
 # Valid options
 valid_archs = ['i386', 'i686', 'amd64']
 valid_ubuntu_distros = ['hardy', 'jaunty', 'karmic', 'lucid', 'maverick']
-valid_debian_distros = ['lenny']
+valid_debian_distros = ['lenny', 'squeeze']
 
 
 def local_check_call(cmd, display_output=False):
@@ -31,7 +29,7 @@ def local_check_call(cmd, display_output=False):
         print l, ##extra comma because lines already have \n.  I"m assuming this is lower overhead than l.strip()
 
     if p.returncode == None:
-        print "stdout finished but process not exited!!!"
+        #print "stdout finished but process not exited!!!"
         p.communicate()
     if p.returncode != 0:
         raise subprocess.CalledProcessError(p.returncode, cmd)
@@ -176,7 +174,8 @@ class ChrootInstance:
         self.hdd_remote_mount = ""
         self.hdd_tmp_dir = hdd_tmp_dir
         self.scratch_dir = scratch_dir
-        self.debug_chroot = False # if enabled print to screen during setup and teardown
+        self.local_scratch_dir = None
+        self.debug_chroot = debug_chroot # if enabled print to screen during setup and teardown
 
 
     def clean(self):
@@ -239,22 +238,24 @@ class ChrootInstance:
         print "Runing cmd", cmd
         self.check_call(cmd)
 
-        # Move sources.list to apt-proxy
-        sources=os.path.join(self.chroot_path, 'etc', 'apt', 'sources.list.d', 'aptproxy.list')
-
-        with tempfile.NamedTemporaryFile() as tf:
-            print "Setting sources to aptproxy.willowgarage.com", sources
-            tf.write("deb http://aptproxy.willowgarage.com/us.archive.ubuntu.com/ubuntu %s main restricted universe multiverse\n" % self.distro)
-            tf.write("deb http://aptproxy.willowgarage.com/us.archive.ubuntu.com/ubuntu %s-updates main restricted universe multiverse\n" % self.distro)
-            tf.write("deb http://aptproxy.willowgarage.com/us.archive.ubuntu.com/ubuntu %s-security main restricted universe multiverse\n" % self.distro)
-
-            tf.flush()
-            cmd = ['sudo', 'cp', tf.name, sources]
-            print "Runing cmd", cmd
-            self.check_call(cmd)
-
         
-        self.add_ros_sources()
+        if self.distro in valid_ubuntu_distros:
+            # Move sources.list to apt-proxy
+            sources=os.path.join(self.chroot_path, 'etc', 'apt', 'sources.list.d', 'aptproxy.list')
+
+            with tempfile.NamedTemporaryFile() as tf:
+                print "Setting sources to aptproxy.willowgarage.com", sources
+                tf.write("deb http://aptproxy.willowgarage.com/us.archive.ubuntu.com/ubuntu %s main restricted universe multiverse\n" % self.distro)
+                tf.write("deb http://aptproxy.willowgarage.com/us.archive.ubuntu.com/ubuntu %s-updates main restricted universe multiverse\n" % self.distro)
+                tf.write("deb http://aptproxy.willowgarage.com/us.archive.ubuntu.com/ubuntu %s-security main restricted universe multiverse\n" % self.distro)
+
+                tf.flush()
+                cmd = ['sudo', 'cp', tf.name, sources]
+                print "Runing cmd", cmd
+                self.check_call(cmd)
+
+
+            self.add_ros_sources()
 
         # This extra source is to pull in the very latest
         # nvidia-current package from our mirror.  It's only guaranteed
@@ -285,25 +286,27 @@ class ChrootInstance:
 
         self.execute(['apt-get', 'update'])
 
+        if self.distro in valid_debian_distros:
+            self.execute(['apt-get', 'install', 'sudo', 'lsb-release', '-y', '--force-yes'])
 
-          # Fix the sudoers file
+        # Fix the sudoers file
         sudoers_path = os.path.join(self.chroot_path, 'etc/sudoers')
         self.check_call(['sudo', 'chown', '0.0', sudoers_path])
 
         print "debconf executing"
         chrootcmd = ['sudo', 'chroot', self.chroot_path]
         subprocess.Popen(chrootcmd + ['debconf-set-selections'], stdin=subprocess.PIPE).communicate("""
-  hddtemp hddtemp/port string 7634
-  hddtemp hddtemp/interface string 127.0.0.1
-  hddtemp hddtemp/daemon boolean false
-  hddtemp hddtemp/syslog string 0
-  hddtemp hddtemp/SUID_bit boolean false
-  sun-java6-bin shared/accepted-sun-dlj-v1-1 boolean true
-  sun-java6-jdk shared/accepted-sun-dlj-v1-1 boolean true
-  sun-java6-jre shared/accepted-sun-dlj-v1-1 boolean true
-  grub-pc grub2/linux_cmdline string
-  grub-pc grub-pc/install_devices_empty boolean true
-  """);
+hddtemp hddtemp/port string 7634
+hddtemp hddtemp/interface string 127.0.0.1
+hddtemp hddtemp/daemon boolean false
+hddtemp hddtemp/syslog string 0
+hddtemp hddtemp/SUID_bit boolean false
+sun-java6-bin shared/accepted-sun-dlj-v1-1 boolean true
+sun-java6-jdk shared/accepted-sun-dlj-v1-1 boolean true
+sun-java6-jre shared/accepted-sun-dlj-v1-1 boolean true
+grub-pc grub2/linux_cmdline string
+grub-pc grub-pc/install_devices_empty boolean true
+""");
         print "debconf complete"
 
 
@@ -312,6 +315,9 @@ class ChrootInstance:
         if self.distro == 'lucid':
             # The --force-yes is necessary to accept the nvidia-current
             # package without a valid GPG signature.
+            self.execute(['apt-get', 'install', '-y', '--force-yes', 'linux-headers-2.6.32-23'])
+            self.execute(['apt-get', 'install', '-y', '--force-yes', 'linux-headers-2.6.32-23-generic'])
+            self.execute(['apt-get', 'install', '-y', '--force-yes', 'linux-image-2.6.32-23-generic'])
             self.execute(['apt-get', 'install', '-y', '--force-yes', 'nvidia-current'])
             self.execute(['mknod', '/dev/nvidia0', 'c', '195', '0'])
             self.execute(['mknod', '/dev/nvidiactl', 'c', '195', '255'])
@@ -330,10 +336,14 @@ class ChrootInstance:
         self.execute(['chmod', '4755', '-R', '/usr/bin/sudo'])
 
 
+        self.setup_rosbuild()
+
+    def setup_rosbuild(self):
         cmd = "useradd rosbuild -m --groups sudo".split()
         print self.execute(cmd)
 
         self.setup_ssh_client()
+        self.setup_svn_ssl_certs()
 
     def add_ros_sources(self):
         """
@@ -341,7 +351,7 @@ class ChrootInstance:
         """
         ros_source=os.path.join(self.chroot_path, 'etc', 'apt', 'sources.list.d', 'ros-latest.list')
         with tempfile.NamedTemporaryFile() as tf:
-            print "Adding code.ros.org as source"
+            print "Adding packages.ros.org as source"
             #tf.write("deb http://code.ros.org/packages/ros/ubuntu %s main\n" % self.distro)
             tf.write("deb http://packages.ros.org/ros-shadow-fixed/ubuntu %s main\n" % self.distro)
             tf.flush()
@@ -388,28 +398,47 @@ class ChrootInstance:
         # Pull in ssh, and drop a private key that will allow the slave to
         # upload results of the build.
         self.execute(['apt-get', 'install', '-y', '--force-yes', 'openssh-client'])
-        # Pull down a tarball of rosbuild's .ssh directory
-        tardestdir = os.path.join(self.chroot_path, 'home', 'rosbuild',)
-        #tardestname = os.path.join(tardestdir, 'rosbuild-ssh.tar')
-        #if not os.path.exists(tardestname):
-        local_tmp_dir = tempfile.mkdtemp()
-        local_tmp = os.path.join(local_tmp_dir, "rosbuild_ssh.tar.gz")
+
         if self.ssh_key_path:
+            # Pull down a tarball of rosbuild's .ssh directory
+            tardestdir = os.path.join(self.chroot_path, 'home', 'rosbuild',)
+            #tardestname = os.path.join(tardestdir, 'rosbuild-ssh.tar')
+            #if not os.path.exists(tardestname):
+            local_tmp_dir = tempfile.mkdtemp()
+            local_tmp = os.path.join(local_tmp_dir, "rosbuild_ssh.tar.gz")
             print "retrieving %s to %s"%(self.ssh_key_path, local_tmp)
             shutil.copy(self.ssh_key_path, local_tmp)
-        else:
-            print "retrieving %s to %s"%(ROSBUILD_SSH_URI, local_tmp)
-            urllib.urlretrieve(ROSBUILD_SSH_URI, local_tmp)
             
-        if not os.path.exists(tardestdir):
-            os.makedirs(tardestdir)
-        print "untarring %s"%local_tmp
-        subprocess.check_call(['sudo', 'tar', 'xf', local_tmp], cwd=tardestdir)
-        #subprocess.check_call(['sudo', 'rm', '-rf', local_tmp_dir])
-        shutil.rmtree(local_tmp_dir)
+            if not os.path.exists(tardestdir):
+                os.makedirs(tardestdir)
+            print "untarring %s"%local_tmp
+            subprocess.check_call(['sudo', 'tar', 'xf', local_tmp], cwd=tardestdir)
+            #subprocess.check_call(['sudo', 'rm', '-rf', local_tmp_dir])
+            shutil.rmtree(local_tmp_dir)
 
         #self.execute(['tar', 'xf', os.path.join('home', 'rosbuild', 'rosbuild-ssh.tar')], cwd=os.path.join('home', 'rosbuild'))
         self.execute(['chown', '-R', 'rosbuild:rosbuild', '/home/rosbuild'])
+
+    def setup_svn_ssl_certs(self):
+        print 'Setting up ssl certs'
+
+        self.execute(["apt-get", "update"])
+        cmd = "apt-get install subversion -y --force-yes".split()
+        self.execute(cmd)
+        
+        cmd = "svn co https://code.ros.org/svn/ros/stacks/rosorg/trunk/rosbrowse/certs /tmp/chroot_certs".split()
+        self.execute(cmd)
+        print "successfully checked out certs"
+
+        cmd = "mkdir -p /home/rosbuild/.subversion/auth/svn.ssl.server".split()
+        self.execute(cmd)
+
+        
+        cmd = ["bash", '-c', "cp /tmp/chroot_certs/* /home/rosbuild/.subversion/auth/svn.ssl.server/"]
+        self.execute(cmd, display=True)
+
+        self.execute(['chown', '-R', 'rosbuild:rosbuild', '/home/rosbuild/.subversion'])
+
 
     def replecate_workspace(self):
         print "Linking in workspace"
@@ -423,11 +452,11 @@ class ChrootInstance:
         self.execute(cmd)
 
         if self.scratch_dir:
-            self.temp_hdd_dir = tempfile.mkdtemp(dir=self.hdd_tmp_dir)
+            self.local_scratch_dir = tempfile.mkdtemp(dir=self.hdd_tmp_dir)
             self.hdd_remote_mount = os.path.join(self.chroot_path, self.scratch_dir.lstrip('/'))
-            print "created tempdir", self.temp_hdd_dir
+            print "created tempdir", self.local_scratch_dir
             self.check_call(['sudo', 'mkdir', '-p', self.hdd_remote_mount])
-            self.check_call(['sudo', 'mount', '--bind', self.temp_hdd_dir, self.hdd_remote_mount])
+            self.check_call(['sudo', 'mount', '--bind', self.local_scratch_dir, self.hdd_remote_mount])
             print "mounting tempdir to %s"%os.path.join(self.chroot_path, self.scratch_dir)
 
 
@@ -448,7 +477,10 @@ class ChrootInstance:
             print "Cleaning up scratch mount %s"%self.hdd_remote_mount
             self.call(['sudo', 'umount', '-f', self.hdd_remote_mount])
             print "deleting tempdir", self.hdd_tmp_dir
-            shutil.rmtree(self.temp_hdd_dir)
+            if self.local_scratch_dir:
+                shutil.rmtree(self.local_scratch_dir)
+            else:
+                print >>sys.stderr, "self.local_scratch_dir should have existed if we get here."
 
     def manual_init(self):
         
@@ -467,16 +499,6 @@ class ChrootInstance:
 
         # Even if we're reusing the chroot, we re-mount /proc and /sys.
         self.mount_proc_sys()
-
-        # We setup ~rosbuild/.ssh every time.  It
-        # should only be done during the bootstrap step, but it was added
-        # after a great many chroot were already bootstrapped, are being 
-        # reused.  Also, the server key sometimes changes and so the
-        # contents of ~rosbuild/.ssh need to be updated.
-        self.setup_ssh_client()
-
-
-
         
         self.replecate_workspace()
 
@@ -554,7 +576,7 @@ def run_chroot(options, path, workspace, hdd_tmp_dir):
         cmd = "apt-get install -y --force-yes build-essential python-yaml cmake subversion mercurial git-core wget python-setuptools".split()
         chrti.execute(cmd)
 
-        cmd = "sudo easy_install -U rosinstall".split()
+        cmd = "easy_install -U rosinstall".split()
         chrti.execute(cmd)
 
         if options.arch in ['i386', 'i686']:
@@ -566,7 +588,7 @@ def run_chroot(options, path, workspace, hdd_tmp_dir):
 
         if options.script:
             remote_script_name = os.path.join("/tmp", os.path.basename(options.script))
-            cmd = ["sudo", "cp", options.script, os.path.join(chrti.chroot_path, "tmp")]
+            cmd = ["cp", options.script, os.path.join(chrti.chroot_path, "tmp")]
             print "Executing", cmd
             local_check_call(cmd);
             cmd = ("chown rosbuild:rosbuild %s"%remote_script_name).split()

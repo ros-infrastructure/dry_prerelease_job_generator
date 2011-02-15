@@ -10,32 +10,16 @@ import subprocess
 
 def main():
     # parse command line options
-    parser = optparse.OptionParser()
-    
-    parser.add_option('--stack', dest = 'stack', default=False, action='store',
-                      help='Stack name')
-    parser.add_option('--rosdistro', dest = 'rosdistro', default=False, action='store',
-                      help='Ros distro name')
-    parser.add_option('--repeat', dest = 'repeat', default=0, action='store',
-                      help='How many times to repeat the test')
-    (options, args) = parser.parse_args()
-    if not options.stack or not options.rosdistro:
-        print 'You did not specify all options to run this script.'
-        return
-    options.repeat = int(options.repeat)
-    if options.repeat < 0:
-        options.repeat = 0
-        print 'Setting repeat from %d to 0'%options.repeat 
+    (options, args) = get_options(['stack', 'rosdistro'], ['repeat'])
+    if not options:
+        return -1
+    if len(options.stack) > 1:
+        print "You can only provide one stack at a time"
+        return -1
+    options.stack = options.stack[0]
 
     # set environment
-    env = {}
-    env['WORKSPACE'] = os.environ['WORKSPACE']
-    env['INSTALL_DIR'] = os.environ['INSTALL_DIR']
-    env['HOME'] = os.environ['INSTALL_DIR']
-    env['JOB_NAME'] = os.environ['JOB_NAME']
-    env['BUILD_NUMBER'] = os.environ['BUILD_NUMBER']
-    env['ROS_TEST_RESULTS_DIR'] = os.environ['ROS_TEST_RESULTS_DIR']
-    env['PWD'] = os.environ['WORKSPACE']
+    env = get_environment()
     env['ROS_PACKAGE_PATH'] = '%s:/opt/ros/%s/stacks'%(os.environ['WORKSPACE'], options.rosdistro)
     if options.stack == 'ros':
         env['ROS_ROOT'] = env['WORKSPACE']+'/ros'
@@ -49,21 +33,20 @@ def main():
 
 
     # Install Debian packages of stack dependencies
-    subprocess.Popen('sudo apt-get update'.split(' ')).communicate()
+    call('sudo apt-get update', env)
     with open('%s/stack.xml'%stack_dir) as stack_file:
         depends = stack_manifest.parse(stack_file.read()).depends
     if len(depends) != 0:
         print 'Installing debian packages of stack dependencies: %s'%str(depends)        
-        res = subprocess.call(('sudo apt-get install %s --yes'%(stacks_to_debs(depends, options.rosdistro))).split(' '))
-        if res != 0:
-            return res
-    else:
-        print 'Stack does not have any dependencies, not installing any other debian packages'
+        call('sudo apt-get install %s --yes'%(stacks_to_debs(depends, options.rosdistro)), env,
+             'Installing dependencies of stack "%s": %s'%(options.stack, str(depends)))
 
     # Install system dependencies
     print 'Installing system dependencies'
-    subprocess.Popen(('rosmake -V --status-rate=0 --rosdep-install --rosdep-yes %s'%options.stack).split(' '), env=env).communicate()
-
+    call('rosmake rosdep', env)
+    call('rosdep install -y %s'%options.stack, env,
+         'Installing system dependencies of stack %s'%options.stack)
+    
 
     # Start Hudson Helper
     print 'Running Hudson Helper'
@@ -77,7 +60,11 @@ def main():
 
 
 if __name__ == '__main__':
-    sys.exit( main() )
+    try:
+        res = main()
+        sys.exit( res )
+    except Exception:
+        sys.exit(-1)
 
 
 

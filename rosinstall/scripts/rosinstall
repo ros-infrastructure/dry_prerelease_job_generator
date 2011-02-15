@@ -64,6 +64,8 @@ def prompt_del_abort_retry(prompt):
         mode = 'delete'            
     elif mode_input == 'a' or mode_input =='abort':
         mode = 'abort'
+    elif mode_input == 's' or mode_input =='skip':
+        mode = 'skip'
     else:
         print "Failed to get valid prompt from user, aborting"
         mode = 'abort'
@@ -110,8 +112,8 @@ class VCSConfigElement(ConfigElement):
     else:
       error_message = None
       if not self.vcsc.detect_presence():
-        error_message = "Failed to detect %s presence at %s."%(sefl.vcsc.type, self.path)
-      elif self.vcsc.get_url() != self.uri:
+        error_message = "Failed to detect %s presence at %s."%(self.vcsc.type, self.path)
+      elif self.vcsc.get_url().rstrip('/') != self.uri.rstrip('/'):  #strip trailing slashes for #3269
         error_message = "url %s does not match %s requested."%(self.vcsc.get_url(), self.uri)
       elif (self.vcsc.get_vcs_type_name() == 'git' \
               and (self.vcsc.get_version() != self.version \
@@ -119,7 +121,7 @@ class VCSConfigElement(ConfigElement):
         error_message = "The version %s of repo %s requested to be checked out into %s is not the current branch or commit and cannot be blindly updated in place."%(self.version, self.uri, self.path)
       if error_message:
         if mode == 'prompt':
-            valid_modes = ['(d)elete', '(a)bort', '(b)ackup']
+            valid_modes = ['(d)elete', '(a)bort', '(b)ackup', '(s)kip']
             mode = prompt_del_abort_retry("%s %s: "%(error_message, ", ".join(valid_modes)))
             if mode == 'backup':
               backup_path = get_backup_path()
@@ -129,7 +131,9 @@ class VCSConfigElement(ConfigElement):
           self.backup(backup_path)
         elif mode == 'delete':
           shutil.rmtree(self.path)
-          
+        elif mode == 'skip':
+          return True
+
         if not self.vcsc.checkout(self.uri, self.version):
             if arg_mode == 'prompt':
                 valid_modes = ['(d)elete', '(a)bort', '(b)ackup']
@@ -295,15 +299,47 @@ class Config:
     return rpp
     
   
-  def generate_full_setup_text(self, ros_root, ros_package_path):
+  def generate_setup_sh_text(self, ros_root, ros_package_path):
     # overlay or standard
-    text = ""
+    text =  "#!/bin/sh\n"
     text += "export ROS_ROOT=%s\n" % ros_root
     text += "export PATH=$ROS_ROOT/bin:$PATH\n" # might include it twice
     text += "export PYTHONPATH=$ROS_ROOT/core/roslib/src:$PYTHONPATH\n"
     text += "if [ ! \"$ROS_MASTER_URI\" ] ; then export ROS_MASTER_URI=http://localhost:11311 ; fi\n"
     text += "export ROS_PACKAGE_PATH=%s\n" % ros_package_path
-    text += "source $ROS_ROOT/tools/rosbash/rosbash\n"
+    return text
+
+  def generate_setup_bash_text(self, shell):
+    if shell == 'bash':
+      script_path = """
+SCRIPT_PATH="${BASH_SOURCE[0]}";
+if([ -h "${SCRIPT_PATH}" ]) then
+  while([ -h "${SCRIPT_PATH}" ]) do SCRIPT_PATH=`readlink "${SCRIPT_PATH}"`; done
+fi
+pushd . > /dev/null
+cd `dirname ${SCRIPT_PATH}` > /dev/null
+SCRIPT_PATH=`pwd`;
+popd  > /dev/null
+"""
+    elif shell == 'zsh':
+      script_path = "SCRIPT_PATH=\"$(dirname $0)\";"
+    else:
+      raise ROSInstallException("%s shell unsupported."%shell);
+
+    text =  """#!/bin/%(shell)s
+# IT IS UNLIKELY YOU WANT TO EDIT THIS FILE BY HAND
+# IF YOU WANT TO CHANGE THE ROS ENVIRONMENT VARIABLES
+# EDIT "setup.sh" IN THIS DIRECTORY.
+
+# Load the path of this particular setup.%(shell)s                                                                                                                  
+%(script_path)s
+
+. $SCRIPT_PATH/setup.sh
+
+if [ -e ${ROS_ROOT}/tools/rosbash/ros%(shell)s ]; then
+  . ${ROS_ROOT}/tools/rosbash/ros%(shell)s
+fi
+"""%locals()
     return text
     
 
@@ -314,12 +350,18 @@ class Config:
       raise ROSInstallException("No 'ros' stack detected.  The 'ros' stack is required in all rosinstall directories. Please add a definition of the 'ros' stack either manually in .rosinstall and then call 'rosinstall .' in the directory. Or add one on the command line 'rosinstall . http://www.ros.org/rosinstalls/boxturtle_ros.rosinstall'. Or reference an existing install like in /opt/ros/boxturtle with 'rosinstall . /opt/ros/boxturtle'.  Note: the above suggestions assume you are using boxturtle, if you are using latest or another distro please change the urls." )
     rpp = self.get_ros_package_path()
 
-    text = self.generate_full_setup_text(ros_root, rpp)
-
+    
+    text = self.generate_setup_sh_text(ros_root, rpp)
     setup_path = os.path.join(self.base_path, 'setup.sh')
     with open(setup_path, 'w') as f:
       f.write(text)
 
+    for shell in ['bash', 'zsh']:
+
+      text = self.generate_setup_bash_text(shell)
+      setup_path = os.path.join(self.base_path, 'setup.%s'%shell)
+      with open(setup_path, 'w') as f:
+        f.write(text)
 
 ## legacy for breadcrumb which will be removed shortly.
 def installed_uri(path):
@@ -337,8 +379,9 @@ def insert_source_yaml(source_yaml, source, observed_paths, aggregate_source_yam
       for element in source_yaml:
         #print "element", element
         for k in element:
-          #print "k", k
           #print "element[k]", element[k]
+          if not element[k]:
+              raise ROSInstallException("Malformed rosinstall source: %s  An \"%s\" entry is present without any information.  This can be caused by improper indentation of fields like 'local-name'. "%(source, k))
           if 'local-name' in element[k]:
             path = element[k]['local-name']
             if path in observed_paths:
@@ -364,14 +407,14 @@ def insert_source_yaml(source_yaml, source, observed_paths, aggregate_source_yam
 
 def rewrite_included_source(source_yaml, source_path):
   #print "before", source_yaml
-  for dir in source_yaml:
+  for entry in source_yaml:
     types = ['svn', 'bzr', 'hg', 'git', 'other']
     for t in types:
-      if t in dir.keys():
-        local_path = os.path.join(source_path, dir[t]['local-name'])
-        del dir[t]
-        dir['other'] = {}
-        dir['other']['local-name'] = local_path
+      if t in entry.keys():
+        local_path = os.path.join(source_path, entry[t]['local-name'])
+        del entry[t]
+        entry['other'] = {}
+        entry['other']['local-name'] = local_path
   #print "after", source_yaml  
   return source_yaml
 
@@ -379,7 +422,7 @@ def rosinstall_main(argv):
   if len(argv) < 2:
     usage()
   args = argv[1:]
-  parser = OptionParser(usage="usage: %prog PATH [URI] [options]", version="%prog 0.5.9")
+  parser = OptionParser(usage="usage: %prog PATH [URI] [options]", version="%prog 0.5.14")
   parser.add_option("-n", "--nobuild", dest="nobuild", default=False,
                     help="skip the build step for the ROS stack",
                     action="store_true")
@@ -495,7 +538,7 @@ def rosinstall_main(argv):
       subprocess.check_call("source %s && rosmake ros --rosdep-install --rosdep-yes" % (os.path.join(options.path, 'setup.sh')), shell=True, executable='/bin/bash')
     else:
       subprocess.check_call("source %s && rosmake ros --rosdep-install" % (os.path.join(options.path, 'setup.sh')), shell=True, executable='/bin/bash')
-  print "\ndone. Now, type 'source %s/setup.sh' to set up your environment.\nAdd that to the bottom of your ~/.bashrc to set it up every time.\n\n" % options.path
+  print "\nrosinstall update complete.\n\nNow, type 'source %s/setup.bash' to set up your environment.\nAdd that to the bottom of your ~/.bashrc to set it up every time.\n\nIf you are not using bash please see http://www.ros.org/wiki/rosinstall/NonBashShells " % options.path
 
   if not install_success:
      print "Warning: installation encountered errors, but --continue-on-error was requested.  Look above for warnings."

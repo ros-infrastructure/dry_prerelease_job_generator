@@ -50,40 +50,10 @@ HUDSON_UNRELEASED_CONFIG = """<?xml version='1.0' encoding='UTF-8'?>
   <concurrentBuild>false</concurrentBuild> 
   <builders> 
     <hudson.tasks.Shell> 
-      <command>cat &gt; $WORKSPACE/script.sh &lt;&lt;DELIM
-#!/usr/bin/env bash
-set -o errexit
-echo "_________________________________BEGIN SCRIPT______________________________________"
-sudo apt-get install ros-ROSDISTRO-ros --yes
-source /opt/ros/ROSDISTRO/setup.sh
-
-export INSTALL_DIR=/tmp/install_dir
-export WORKSPACE=/tmp/ros
-export ROS_TEST_RESULTS_DIR=/tmp/ros/test_results
-export JOB_NAME=$JOB_NAME
-export BUILD_NUMBER=$BUILD_NUMBER
-export HUDSON_URL=$HUDSON_URL
-export ROS_PACKAGE_PATH=\$INSTALL_DIR/ros_release:/opt/ros/ROSDISTRO/stacks
-
-mkdir -p \$INSTALL_DIR
-cd \$INSTALL_DIR
-
-wget --no-check-certificate http://code.ros.org/svn/ros/installers/trunk/hudson/hudson_helper 
-chmod +x hudson_helper
-svn co https://code.ros.org/svn/ros/stacks/ros_release/trunk ros_release
-./ros_release/job_generation/src/job_generation/run_auto_stack_unreleased.py --rosdistro ROSDISTRO
-
-echo "_________________________________END SCRIPT_______________________________________"
-DELIM
-
-set -o errexit
-
-rm -rf $WORKSPACE/test_results
-rm -rf $WORKSPACE/test_output
-
-wget  --no-check-certificate https://code.ros.org/svn/ros/stacks/ros_release/trunk/hudson/scripts/run_chroot.py -O $WORKSPACE/run_chroot.py
-chmod +x $WORKSPACE/run_chroot.py
-cd $WORKSPACE &amp;&amp; $WORKSPACE/run_chroot.py --distro=UBUNTUDISTRO --arch=ARCH  --ramdisk --script=$WORKSPACE/script.sh
+      <command>
+BOOTSTRAP_SCRIPT
+rosrun job_generation run_auto_stack_unreleased.py --rosdistro ROSDISTRO
+SHUTDOWN_SCRIPT
      </command> 
     </hudson.tasks.Shell> 
   </builders> 
@@ -102,62 +72,7 @@ cd $WORKSPACE &amp;&amp; $WORKSPACE/run_chroot.py --distro=UBUNTUDISTRO --arch=A
     <hudson.plugins.emailext.ExtendedEmailPublisher> 
       <recipientList>EMAIL</recipientList> 
       <configuredTriggers> 
-        <hudson.plugins.emailext.plugins.trigger.UnstableTrigger> 
-          <email> 
-            <recipientList></recipientList> 
-            <subject>$PROJECT_DEFAULT_SUBJECT</subject> 
-            <body>$PROJECT_DEFAULT_CONTENT</body> 
-            <sendToDevelopers>true</sendToDevelopers> 
-            <sendToRecipientList>true</sendToRecipientList> 
-            <contentTypeHTML>false</contentTypeHTML> 
-            <script>true</script> 
-          </email> 
-        </hudson.plugins.emailext.plugins.trigger.UnstableTrigger> 
-        <hudson.plugins.emailext.plugins.trigger.FailureTrigger> 
-          <email> 
-            <recipientList></recipientList> 
-            <subject>$PROJECT_DEFAULT_SUBJECT</subject> 
-            <body>$PROJECT_DEFAULT_CONTENT</body> 
-            <sendToDevelopers>true</sendToDevelopers> 
-            <sendToRecipientList>true</sendToRecipientList> 
-            <contentTypeHTML>false</contentTypeHTML> 
-            <script>true</script> 
-          </email> 
-        </hudson.plugins.emailext.plugins.trigger.FailureTrigger> 
-        <hudson.plugins.emailext.plugins.trigger.StillFailingTrigger> 
-          <email> 
-            <recipientList></recipientList> 
-            <subject>$PROJECT_DEFAULT_SUBJECT</subject> 
-            <body>$PROJECT_DEFAULT_CONTENT</body> 
-            <sendToDevelopers>true</sendToDevelopers> 
-            <sendToRecipientList>true</sendToRecipientList> 
-            <contentTypeHTML>false</contentTypeHTML> 
-            <script>true</script> 
-          </email> 
-        </hudson.plugins.emailext.plugins.trigger.StillFailingTrigger> 
-        <hudson.plugins.emailext.plugins.trigger.FixedTrigger> 
-          <email> 
-            <recipientList></recipientList> 
-            <subject>$PROJECT_DEFAULT_SUBJECT</subject> 
-            <body>$PROJECT_DEFAULT_CONTENT</body> 
-            <sendToDevelopers>true</sendToDevelopers> 
-            <sendToRecipientList>true</sendToRecipientList> 
-            <contentTypeHTML>false</contentTypeHTML> 
-            <script>true</script> 
-
-          </email> 
-        </hudson.plugins.emailext.plugins.trigger.FixedTrigger> 
-        <hudson.plugins.emailext.plugins.trigger.StillUnstableTrigger> 
-          <email> 
-            <recipientList></recipientList> 
-            <subject>$PROJECT_DEFAULT_SUBJECT</subject> 
-            <body>$PROJECT_DEFAULT_CONTENT</body> 
-            <sendToDevelopers>true</sendToDevelopers> 
-            <sendToRecipientList>true</sendToRecipientList> 
-            <contentTypeHTML>false</contentTypeHTML> 
-            <script>true</script> 
-          </email> 
-        </hudson.plugins.emailext.plugins.trigger.StillUnstableTrigger> 
+        EMAIL_TRIGGERS
       </configuredTriggers> 
       <defaultSubject>$DEFAULT_SUBJECT</defaultSubject> 
       <defaultContent>$DEFAULT_CONTENT&#xd;
@@ -182,14 +97,11 @@ println &quot;${build_failures_context}&quot;&#xd;
 
 import roslib; roslib.load_manifest("job_generation")
 from job_generation.jobs_common import *
-import hudson
-import urllib
-import optparse 
 import yaml
 
 
-def unreleased_job_name(rosdistro, rosinstall, ubuntudistro, arch):
-    return "_".join(['unreleased', rosdistro, rosinstall.split('/')[-1].split('.')[0], ubuntudistro, arch])
+def unreleased_job_name(rosdistro, rosinstall, ubuntu, arch):
+    return get_job_name('unreleased', rosdistro, rosinstall.split('/')[-1].split('.')[0], ubuntu, arch)
 
 
 def rosinstall_to_vcs(rosinstall):
@@ -226,6 +138,9 @@ def create_unreleased_configs(rosdistro, rosinstall):
                 job_children = ', '.join(gold_children)
 
             hudson_config = HUDSON_UNRELEASED_CONFIG
+            hudson_config = hudson_config.replace('BOOTSTRAP_SCRIPT', BOOTSTRAP_SCRIPT)
+            hudson_config = hudson_config.replace('SHUTDOWN_SCRIPT', SHUTDOWN_SCRIPT)
+            hudson_config = hudson_config.replace('EMAIL_TRIGGERS', get_email_triggers(['Unstable', 'Failure', 'StillFailing', 'Fixed', 'StillUnstable']))
             hudson_config = hudson_config.replace('UBUNTUDISTRO', ubuntudistro)
             hudson_config = hudson_config.replace('ARCH', arch)
             hudson_config = hudson_config.replace('ROSDISTRO', rosdistro)
@@ -239,51 +154,14 @@ def create_unreleased_configs(rosdistro, rosinstall):
     
 
 def main():
-    parser = optparse.OptionParser()
-    parser.add_option('--delete', dest = 'delete', default=False, action='store_true',
-                      help='Delete jobs from Hudson')    
-    parser.add_option('--rosinstall', dest = 'rosinstall', action='store',
-                      help="Specify the rosinstall file that refers to unreleased code.")
-    parser.add_option('--rosdistro', dest = 'rosdistro', action='store',
-                      help="Specify the ros distro to operate on (defaults to cturtle)")
-    (options, args) = parser.parse_args()
-    if not options.rosdistro:
-        print 'Please provide the ros distro you want to test: --rosdistro cturtle'
-        return
-    if not options.rosdistro in UBUNTU_DISTRO_MAP.keys():
-        print 'You profided an invalid "--rosdistro %s" argument. Options are %s'%(options.rosdistro, UBUNTU_DISTRO_MAP.keys())
-        return
-    if not options.rosinstall:
-        print 'Please provide the rosinstall of unreleased code to test: --rosinstall foo.rosinstall'
-        return
-        
-
-    # hudson instance
-    info = urllib.urlopen(CONFIG_PATH).read().split(',')
-    hudson_instance = hudson.Hudson(SERVER, info[0], info[1])
+    (options, args) = get_options(['rosdistro', 'rosinstall'], ['delete', 'wait'])
+    if not options:
+        return -1
 
     # send unreleased tests to Hudson
     print 'Creating unreleased Hudson jobs:'
     unreleased_configs = create_unreleased_configs(options.rosdistro, options.rosinstall)
-
-    for job_name in unreleased_configs:
-        exists = hudson_instance.job_exists(job_name)
-
-        # delete job
-        if options.delete and exists:
-            print "Deleting job %s"%job_name
-            hudson_instance.delete_job(job_name)
-
-        # reconfigure job
-        elif exists:
-            print "  - %s"%job_name
-            hudson_instance.reconfig_job(job_name, unreleased_configs[job_name])
-
-        # create job
-        elif not exists:
-            print "  - %s"%job_name
-            hudson_instance.create_job(job_name, unreleased_configs[job_name])
-
+    schedule_jobs(unreleased_configs, options.wait, options.delete)
 
 
 if __name__ == '__main__':

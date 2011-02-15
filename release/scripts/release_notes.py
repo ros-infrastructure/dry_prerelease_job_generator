@@ -39,9 +39,11 @@ def create_notes(released):
 def load_additional():
     d = roslib.packages.get_pkg_dir(PKG)
     released = []
-    if not os.path.exists(os.path.join(d, 'scripts', 'additional.txt')): 
+    fname = os.path.join(d, 'scripts', 'additional.txt')
+    if not os.path.exists(fname):
         return {}
-    with open(os.path.join(d, 'scripts', 'additional.txt')) as f:
+    print "loading %s"%(fname)
+    with open(fname) as f:
         for l in f:
             if l.strip():
                 released.append(l.split())
@@ -66,7 +68,8 @@ def rn_main():
     arch = 'amd64'
     
     released = load_additional()
-    compute_diff(distro_name, os_platform, arch, released)
+    if 0:
+        compute_diff(distro_name, os_platform, arch, released)
     notes = create_notes(released)
     print notes
 

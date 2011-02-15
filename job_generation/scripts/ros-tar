@@ -1,0 +1,77 @@
+#!/usr/bin/env python
+
+from __future__ import with_statement
+
+import sys
+import urllib
+import yaml
+
+
+
+def parse(arg):
+    if arg[0:4] != 'ros-':
+        return None
+    distro = arg[4:].split('-')[0]
+    if not distro in ['cturtle', 'diamondback', 'unstable']:
+        return None
+    stack = '_'.join(arg[4:].split('-')[1:])
+    return (stack, distro)
+    
+
+def get_version(stack, distro):
+    return distro['stacks'][stack]['version']
+    
+
+def get_depends_one(stack, version):
+    name = '%s-%s'%(stack, version)
+    url = urllib.urlopen('https://code.ros.org/svn/release/download/stacks/%s/%s/%s.yaml'%(stack, name, name))
+    conf = url.read()
+    if '404 Not Found' in conf:
+        return []
+    depends = yaml.load(conf)['depends']
+    if depends:
+        return depends
+    else:
+        return []
+
+
+def get_depends_all(stack, distro, depends_all):
+    if not stack in depends_all:
+        version = get_version(stack, distro)
+        depends_all[stack] = version
+        for d in get_depends_one(stack, version):
+            if not d in depends_all:
+                get_depends_all(d, distro, depends_all)
+
+
+def get_tar(stack, version):
+    name = '%s-%s'%(stack, version)
+    return 'https://code.ros.org/svn/release/download/stacks/%s/%s/%s.tar.bz2'%(stack, name, name)
+
+
+def get_rosinstall(stack, version):
+    return "- tar: {uri: '%s', version: '%s-%s', local-name: '%s'}"%(get_tar(stack, version), stack, version, stack)
+
+
+def main():
+    sys.argv = sys.argv[1:]
+    if len(sys.argv) == 0:
+        print 'Usage: ros-tar ros-<distro>-<stack/variant>'
+        return -1
+
+    depends = {}
+    for a in sys.argv:
+        res = parse(a)
+        if not res:
+            return -1
+        distro = yaml.load(urllib.urlopen('https://code.ros.org/svn/release/trunk/distros/%s.rosdistro'%res[1]).read())
+        get_depends_all(res[0], distro, depends)
+    filename = '/tmp/.rosinstall'
+    with open(filename, 'w') as f:
+        f.write('\n'.join([get_rosinstall(d, v) for d, v in depends.iteritems()]))
+        print filename
+
+
+
+if __name__ == '__main__':
+    main()

@@ -32,7 +32,7 @@
 #
 
 
-import svn, bzr, hg, git
+import svn, bzr, hg, git, tar
 import os
 
 
@@ -44,6 +44,7 @@ class VCSClient:
       "bzr": bzr.BZRClient,
       "git": git.GITClient,
       "hg": hg.HGClient,
+      "tar": tar.TARClient,
       }
     if not vcs_type in self.vcs_types:
       raise LookupError("%s VCS type undefined"%vcs_type)

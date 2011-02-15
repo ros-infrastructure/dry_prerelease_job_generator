@@ -1,0 +1,202 @@
+#!/usr/bin/env python
+# Software License Agreement (BSD License)
+#
+# Copyright (c) 2010, Willow Garage, Inc.
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+#
+#  * Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+#  * Redistributions in binary form must reproduce the above
+#    copyright notice, this list of conditions and the following
+#    disclaimer in the documentation and/or other materials provided
+#    with the distribution.
+#  * Neither the name of Willow Garage, Inc. nor the names of its
+#    contributors may be used to endorse or promote products derived
+#    from this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+# COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+# ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+#
+# Revision $Id: roslogging.py 11745 2010-10-25 02:23:13Z kwc $
+# $Author: kwc $
+
+"""
+Library for locating ROS packages and stacks using the centralized
+index at ROS.org.
+"""
+
+NAME='roslocate'
+
+import os
+import sys
+import yaml
+import urllib2
+
+def get_manifest(arg):
+    """
+    Get the manifest data and type of arg.
+
+    @return: (manifest data, 'package'|'stack'). 
+    @rtype: ({str: str}, str)
+    @raise IOError: if data cannot be loaded
+    """
+    try:
+        r = urllib2.urlopen('http://ros.org/doc/api/%s/stack.yaml'%(arg))
+        return yaml.load(r), 'stack'
+    except:
+        try:
+            r = urllib2.urlopen('http://ros.org/doc/api/%s/manifest.yaml'%(arg))
+            return yaml.load(r), 'package'
+        except:
+            raise IOError(arg)
+        
+# kwc: I could be far more pythonic about this, given how repetitive
+# this is, but I want to keep the API clean to use as a library as
+# well implement the command-line.
+        
+def get_rosinstall(name, data, type_, options=None):
+    if not 'rosinstall' in data:
+        sys.stderr.write("rosinstall control information for %s %s\n"%(type_, name))
+        return ''
+
+    ri_entry = data['rosinstall']
+    if len(ri_entry) != 1:
+        sys.stderr.write("rosinstall malformed for %s %s\n"%(type_, name))
+        return ''
+
+    for k, v in ri_entry.iteritems():
+        if 'local-name' in v:
+            name = v['local-name']
+            # compute path: we can't use os.path.join because rosinstall paths
+            # are always Unix-style.
+            prefix = options.prefix if options is not None and options.prefix else ''
+            paths = [x for x in (prefix, name) if x]
+            path = '/'.join(paths)
+            v['local-name'] = path
+
+    return yaml.dump([ri_entry])
+
+def get_info(name, data, type_, options=None):
+    if not 'vcs' in data or not 'vcs_uri' in data:
+        sys.stderr.write("No version control information for %s %s\n"%(type_, name))
+        return ''
+
+    # compute path: we can't use os.path.join because rosinstall paths
+    # are always Unix-style.
+    prefix = options.prefix if options is not None and options.prefix else ''
+    paths = [x for x in (prefix, name) if x]
+    path = '/'.join(paths)
+
+    return """- %s:
+        local-name: %s
+        uri: %s\n"""%(data['vcs'], os.path.join(prefix, name), data['vcs_uri'])
+
+def get_type(name, data, type_, options=None):
+    return type_
+def get_vcs(name, data, type_, options=None):
+    return data.get('vcs', '')
+def get_vcs_uri(name, data, type_, options=None):
+    return data.get('vcs_uri', '')
+# for backwards compatibility
+def get_svn_uri(name, data, type_, options=None):
+    if data.get('vcs', '') == 'svn':
+        return data.get('vcs_uri', '')
+    else:
+        sys.stderr.write("version control is not svn\n")
+        return ''
+def get_www(name, data, type_, options=None):
+    return data.get('url', '')
+def get_description(name, data, type_, options=None):
+    return data.get('url', '')
+def get_repo(name, data, type_, options=None):
+    return data.get('repository', '')
+
+
+################################################################################
+
+# Bind library to commandline implementation
+
+def _fullusage():
+    sys.stderr.write("""
+%s
+\tinfo\tGet rosinstall info of resource
+\tvcs\tGet name of source control system
+\ttype\tPackage or stack
+\turi\tGet source control URI of resource
+\twww\tGet web page of resource
+\trepo\tGet repository name of resource
+\tdescribe\tGet description of resource
+\trosinstall\tGet the rosinstall rule for the development branch
+"""%(NAME))
+    sys.exit(os.EX_USAGE)
+    
+from operator import getitem
+from functools import partial
+_cmds = {
+    'info': get_info,
+    'rosinstall': get_rosinstall,
+    'vcs': get_vcs,
+    'type': get_type,
+    'uri': get_vcs_uri,
+    'svn': get_svn_uri,
+    'repo': get_repo,
+    'www': get_www,
+    'describe': get_description,
+    'description': get_description, #alias
+    }
+
+def roslocate_main():
+    from optparse import OptionParser
+    args = sys.argv
+
+    # parse command
+    if len(args) < 2:
+        _fullusage()
+    cmd = args[1]
+    if not cmd in _cmds.keys():
+        _fullusage()
+
+    parser = OptionParser(usage="usage: %%prog %s <resource>"%(cmd), prog=NAME)
+    if cmd == 'info' or cmd == 'rosinstall':
+         parser.add_option("--prefix",
+                           dest="prefix", default=False,
+                           metavar="PATH",
+                           help="path prefix for rosinstall")
+        
+    # TODO: distro-specific return values
+    # parser.add_option("--distro",
+    #                   dest="list_uri", default=False,
+    #                   action="store_true",
+    #                   help="list XML-RPC URIs")
+
+    # noop parse for now.  Will matter once we can pass in --distro
+    options, args = parser.parse_args()
+
+    if len(args) != 2:
+        parser.error("please provide a resource name (package or stack)")
+    name = args[1]
+    try:
+        data, type_ = get_manifest(name)
+    except IOError:
+        sys.stderr.write('cannot locate information about %s\n'%(name))
+        sys.exit(1)
+
+    print _cmds[cmd](name, data, type_, options)
+    
+
+if __name__ == '__main__':
+    roslocate_main()

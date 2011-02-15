@@ -57,6 +57,8 @@ import urllib2
 import urllib
 import base64
 import traceback
+import json
+import string
 
 JOB_INFO     = 'job/%(name)s/api/python?depth=0'
 Q_INFO       = 'queue/api/python?depth=0'
@@ -68,6 +70,11 @@ DISABLE_JOB  = 'job/%(name)s/disable'
 COPY_JOB     = 'createItem?name=%(to_name)s&mode=copy&from=%(from_name)s'
 BUILD_JOB    = 'job/%(name)s/build'
 BUILD_WITH_PARAMS_JOB = 'job/%(name)s/buildWithParameters'
+
+SLAVE_STATUS    = 'computer/%(name)s/api/json'
+SLAVE_CONFIGURE = 'computer/%(name)s/configSubmit'
+SLAVE_ENABLE    = 'computer/%(name)s/toggleOffline'
+SLAVE_LAUNCH    = 'computer/%(name)s/launchSlaveAgent'
 
 #for testing only
 EMPTY_CONFIG_XML = """<?xml version='1.0' encoding='UTF-8'?>
@@ -275,4 +282,66 @@ class Hudson(object):
         if not self.job_exists(name):
             raise HudsonException("no such job[%s]"%(name))
         return self.hudson_open(urllib2.Request(self.build_job_url(name, parameters, token), ''))        
+
+    def job_is_running(self, name):
+        """
+        Test if a job is running
+        @param name The job name
+        """
+        info = self.get_job_info(name)
+        if 'color' in info:
+            if string.find(info['color'], "_anime") > 0:
+                return True
+        return False
     
+
+    def configure_slave(self, name, ip):
+        """
+        @param name The name of the slave
+        @param ip The ip or hostname of the slave
+        """
+        url = self.server + SLAVE_CONFIGURE%locals()
+        ## Todo expose more of these settings.
+        values = {'json': 
+                  {"name": name, "nodeDescription": "64-bit Ubuntu 10.04 (runs changeroot builds)", "numExecutors": "1", "remoteFS": "/home/rosbuild/hudson", "labelString": "storm-test devel large prerelease released", "mode": "EXCLUSIVE", "": ["hudson.plugins.sshslaves.SSHLauncher", "hudson.slaves.RetentionStrategy$Always"], "launcher": {"stapler-class": "hudson.plugins.sshslaves.SSHLauncher", "host": ip, "username": "", "password": "", "privatekey": "", "port": "22", "jvmOptions": ""}, "retentionStrategy": {"stapler-class": "hudson.slaves.RetentionStrategy$Always"}, "nodeProperties": {"stapler-class-bag": "true"}
+                   }
+                  } 
+        return self.hudson_open(urllib2.Request(url, urllib.urlencode(values)))
+
+    def enable_slave(self, name):
+        if self.slave_is_offline(name):
+            values = {'offlineMessage': 'Automatically set offline'}
+            url = self.server + SLAVE_ENABLE%locals()
+            return self.hudson_open(urllib2.Request(url, urllib.urlencode(values)))
+        else:
+            return True
+
+    def disable_slave(self, name):
+        if not self.slave_is_offline(name):
+            values = {'offlineMessage': 'Automatically set offline'}
+            url = self.server + SLAVE_ENABLE%locals()
+            return self.hudson_open(urllib2.Request(url, urllib.urlencode(values)))
+        else:
+            return True
+
+    def _get_slave_status(self, name):
+        url = self.server + SLAVE_STATUS%locals()
+        return json.loads(self.hudson_open(urllib2.Request(url)))
+
+    def slave_is_idle(self, name):
+        status = self._get_slave_status(name)
+        if 'idle' in status:
+            return status['idle']
+        return False ## Should I throw??
+
+    def slave_is_offline(self, name):
+        status = self._get_slave_status(name)
+        if 'offline' in status:
+            return status['offline']
+        return False ## Should I throw??
+
+
+    def slave_launch_agent(self, name):
+        value = {'Submit': 'Launch slave agent'}
+        url = self.server + SLAVE_LAUNCH%locals()
+        return self.hudson_open(urllib2.Request(url, urllib.urlencode(value)))
