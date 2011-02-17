@@ -114,11 +114,11 @@ def make_source_deb(distro_name, stack_name, stack_version, os_platform_name, st
     # make distro-specific
     metadata['package'] = debian_name
     with open(os.path.join(debian_d, 'control'), 'w') as f:
-        f.write(control_file(metadata, distro_name, os_platform_name))
+        f.write(control_file(metadata, distro_name, os_platform_name).encode('utf-8'))
 
     # CHANGELOG
     with open(os.path.join(debian_d, 'changelog'), 'w') as f:
-        f.write(changelog_file(metadata, os_platform_name))
+        f.write(changelog_file(metadata, os_platform_name).encode('utf-8'))
 
     # We must use a build-version starting with a letter greater than r
     build_version='s$BUILD_VERSION'
