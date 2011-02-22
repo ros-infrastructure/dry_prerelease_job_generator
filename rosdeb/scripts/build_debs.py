@@ -389,6 +389,10 @@ def lock_debs(distro, os_platform, arch):
 
         platform_upper = os_platform.upper()
 
+        # This script:
+        #  * Sets up the update to pull the os/distro/arch set that we want
+        #  * Purges all of the existing os/distro/arch debs from the repo
+        #  * Invokes the update to pull down the new debs
         script_content = """
 #!/bin/bash
 set -o errexit
@@ -396,6 +400,7 @@ set -o errexit
 flock 200
 export %(platform_upper)s_UPDATE=ros-%(os_platform)s-%(distro)s-%(arch)s
 /var/packages/ros-shadow-fixed/ubuntu/conf/gen_distributions.sh > /var/packages/ros-shadow-fixed/ubuntu/conf/distributions
+reprepro -V -b /var/packages/ros-shadow-fixed/ubuntu -A %(arch)s removefilter %(os_platform)s 'WG-rosdistro(==%(distro)s)'
 reprepro -V -b /var/packages/ros-shadow-fixed/ubuntu --noskipold update %(os_platform)s
 ) 200>/var/lock/ros-shadow.lock
 """%locals()
@@ -654,6 +659,8 @@ def build_debs_main():
                       dest="ramdisk", default=True, action="store_false")
     parser.add_option("--interactive",
                       dest="interactive", default=False, action="store_true")
+    parser.add_option("--besteffort",
+                      dest="besteffort", default=False, action="store_true")
     parser.add_option('--smtp', dest="smtp", default='pub1.willowgarage.com', metavar="SMTP_SERVER")
 
     (options, args) = parser.parse_args()
@@ -718,7 +725,7 @@ def build_debs_main():
                 shutil.rmtree(staging_dir)
 
 
-    if not failure_message and stack_name == 'ALL':
+    if stack_name == 'ALL' and (options.besteffort or not failure_message):
         try:
             lock_debs(distro.release_name, os_platform, arch)
         except Exception, e:
