@@ -135,7 +135,7 @@ class ExclusionList(object):
         return stack in self.excludes and self.key in self.excludes[stack]
 
 
-def get_missing(distro, os_platform, arch, repo=SHADOW_REPO):
+def get_missing(distro, os_platform, arch, repo=SHADOW_REPO, lock_version=True):
     distro_name = distro.release_name
     # Load the list of exclusions
     excludes_uri = "https://code.ros.org/svn/release/trunk/distros/%s.excludes"%(distro_name)
@@ -156,7 +156,10 @@ def get_missing(distro, os_platform, arch, repo=SHADOW_REPO):
             missing_primary.add(sn)
             continue
         deb_name = "ros-%s-%s"%(distro_name, debianize_name(sn))
-        deb_version = debianize_version(sv, '\w*', os_platform)
+        if lock_version:
+            deb_version = debianize_version(sv, '\w*', os_platform)
+        else:
+            deb_version = '[0-9.]*-[st][0-9]+~[a-z]+'
         if not deb_in_repo(repo, deb_name, deb_version, os_platform, arch, use_regex=True):
             try:
                 si = load_info(sn, sv)
@@ -224,7 +227,7 @@ COLORS = {
     MISSING_SOURCEDEB: 'yellow',
     MISSING_DEP: 'lightblue',
     MISSING_BROKEN: 'red',
-    MISSING_BROKEN_DEP: 'lightred',
+    MISSING_BROKEN_DEP: 'pink',
     MISSING_EXCLUDED: 'grey',
     MISSING_EXCLUDED_DEP: 'lightgrey',
     }
@@ -388,7 +391,7 @@ def generate_allhtml_report(output, distro_name, os_platforms):
                 continue
             
             args = get_missing(distro, os_platform, arch)
-            args_fixed = get_missing(distro, os_platform, arch, repo=SHADOW_FIXED_REPO)
+            args_fixed = get_missing(distro, os_platform, arch, repo=SHADOW_FIXED_REPO, lock_version=False)
             counts[key] = ','.join([str(len(x)) for x in args])
             missing_primary, missing_dep, missing_excluded, missing_excluded_dep = args
             missing_primary_fixed, missing_dep_fixed, missing_excluded_fixed, missing_excluded_dep_fixed = args_fixed
