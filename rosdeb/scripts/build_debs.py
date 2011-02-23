@@ -71,6 +71,13 @@ DEST_REPO_URL=REPO_URL%DEST_REPO
 
 import traceback
 
+class StackBuildFailure(Exception):
+
+    def __init__(self, message):
+        self._message = message
+    def __str__(self):
+        return self._message
+
 class BuildFailure(Exception):
 
     def __init__(self, message):
@@ -455,7 +462,7 @@ def build_debs(distro, stack_name, os_platform, arch, staging_dir, force, nouplo
 
 
     if broken.union(skipped):
-        raise BuildFailure("debbuild did not complete successfully. A list of broken and skipped stacks are below. Broken means the stack itself did not build. Skipped stacks means that the stack's dependencies could not be built.\n\nBroken stacks: %s.  Skipped stacks: %s"%(broken, skipped))
+        raise StackBuildFailure("debbuild did not complete successfully. A list of broken and skipped stacks are below. Broken means the stack itself did not build. Skipped stacks means that the stack's dependencies could not be built.\n\nBroken stacks: %s.  Skipped stacks: %s"%(broken, skipped))
 
 EMAIL_FROM_ADDR = 'ROS debian build system <noreply@willowgarage.com>'
 
@@ -669,7 +676,7 @@ def build_debs_main():
         parser.error('invalid args')
         
     (distro_name, stack_name, os_platform, arch) = args
-    distro = failure_message = None
+    distro = failure_message = warning_message = None
 
     if options.staging_dir is not None:
         staging_dir    = options.staging_dir
@@ -695,6 +702,8 @@ def build_debs_main():
         else:
             build_debs(distro, stack_name, os_platform, arch, staging_dir, options.force, options.noupload, options.interactive)
 
+    except StackBuildFailure, e:
+        warning_message = "Warning Message:\n"+"="*80+'\n'+str(e)
     except BuildFailure, e:
         failure_message = "Failure Message:\n"+"="*80+'\n'+str(e)
     except Exception, e:
@@ -704,8 +713,8 @@ def build_debs_main():
         if options.staging_dir is None:
             shutil.rmtree(staging_dir)
             
-    # If there was no failure and we did a build of ALL, so we go ahead and stamp the debs now
-    
+
+    # Try to create metapkgs as necessary
     if not failure_message and stack_name == 'ALL':
 
         if options.staging_dir is not None:
@@ -724,18 +733,19 @@ def build_debs_main():
             if options.staging_dir is None:
                 shutil.rmtree(staging_dir)
 
-
-    if stack_name == 'ALL' and (options.besteffort or not failure_message):
+    # If there was no failure and we did a build of ALL, so we go ahead and stamp the debs now
+    if not failure_message and stack_name == 'ALL' and (options.besteffort or not warning_message):
         try:
             lock_debs(distro.release_name, os_platform, arch)
         except Exception, e:
             failure_message = "Internal failure in the release system. Please notify leibs and kwc @willowgarage.com:\n%s\n\n%s"%(e, traceback.format_exc(e))
 
-    if failure_message:
+    if failure_message or warning_message:
         print >> sys.stderr, failure_message
+        print >> sys.stderr, warning_message
 
         if not options.interactive:
-            failure_message = "%s\n\n%s"%(failure_message, os.environ.get('BUILD_URL', ''))
+            failure_message = "%s\n%s\n%s"%(failure_message, warning_messageos.environ.get('BUILD_URL', ''))
             if options.smtp and stack_name != 'ALL' and distro is not None:
                 stack_version = distro.stacks[stack_name].version
                 control = download_control(stack_name, stack_version)
