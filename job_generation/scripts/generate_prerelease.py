@@ -130,7 +130,7 @@ def main():
         print 'You can follow the progress of these jobs on <%s/view/pre-release>'%(SERVER)
 
     # catch all exceptions
-    except Exception e:
+    except Exception, e:
         print 'ERROR: Failed to communicate with Hudson server. Try again later.'
 
 
