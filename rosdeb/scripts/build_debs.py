@@ -745,7 +745,7 @@ def build_debs_main():
         print >> sys.stderr, warning_message
 
         if not options.interactive:
-            failure_message = "%s\n%s\n%s"%(failure_message, warning_messageos.environ.get('BUILD_URL', ''))
+            failure_message = "%s\n%s\n%s"%(failure_message, warning_message, os.environ.get('BUILD_URL', ''))
             if options.smtp and stack_name != 'ALL' and distro is not None:
                 stack_version = distro.stacks[stack_name].version
                 control = download_control(stack_name, stack_version)
