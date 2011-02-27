@@ -45,7 +45,7 @@ import roslib
 import rostest
 
 import rosinstall
-
+import rosinstall.helpers
 
 class RosinstallCommandlineTest(unittest.TestCase):
 
