@@ -422,7 +422,7 @@ def rosinstall_main(argv):
   if len(argv) < 2:
     usage()
   args = argv[1:]
-  parser = OptionParser(usage="usage: %prog PATH [URI] [options]", version="%prog 0.5.14")
+  parser = OptionParser(usage="usage: %prog PATH [URI] [options]", version="%prog 0.5.15")
   parser.add_option("-n", "--nobuild", dest="nobuild", default=False,
                     help="skip the build step for the ROS stack",
                     action="store_true")
@@ -525,6 +525,14 @@ def rosinstall_main(argv):
     print "Saved versioned rosinstall of current directory %s to %s"%(options.path, filename)
     return 0
 
+
+  if 'ros_comm' in [os.path.basename(tree.path) for tree in config.trees]:
+    print 'roscomm present'
+  else:
+    print 'roscomm not present'
+  return -1
+
+
   ## Save .rosinstall 
   config.write_source()
   ## install or update each element
@@ -534,10 +542,14 @@ def rosinstall_main(argv):
   ## bootstrap the build if installing ros
   if config.ros_path() and not options.nobuild:
     print "Bootstrapping ROS build"
+    rosdep_yes_insert = ""
     if options.rosdep_yes:
-      subprocess.check_call("source %s && rosmake ros --rosdep-install --rosdep-yes" % (os.path.join(options.path, 'setup.sh')), shell=True, executable='/bin/bash')
-    else:
-      subprocess.check_call("source %s && rosmake ros --rosdep-install" % (os.path.join(options.path, 'setup.sh')), shell=True, executable='/bin/bash')
+      rosdep_yes_insert = " --rosdep-yes"
+    ros_comm_insert = ""
+    if 'ros_comm' in [os.path.basename(tree.path) for tree in config.trees]:
+      print "Detected ros_comm bootstrapping it too."
+      ros_comm_insert = " ros_comm"
+    subprocess.check_call("source %s && rosmake ros%s --rosdep-install%s" % (os.path.join(options.path, 'setup.sh'), ros_comm_insert, rosdep_yes_insert), shell=True, executable='/bin/bash')
   print "\nrosinstall update complete.\n\nNow, type 'source %s/setup.bash' to set up your environment.\nAdd that to the bottom of your ~/.bashrc to set it up every time.\n\nIf you are not using bash please see http://www.ros.org/wiki/rosinstall/NonBashShells " % options.path
 
   if not install_success:
