@@ -422,7 +422,7 @@ def rosinstall_main(argv):
   if len(argv) < 2:
     usage()
   args = argv[1:]
-  parser = OptionParser(usage="usage: %prog PATH [URI] [options]", version="%prog 0.5.15")
+  parser = OptionParser(usage="usage: %prog PATH [<options> ...] [URI]... ", version="%prog 0.5.15")
   parser.add_option("-n", "--nobuild", dest="nobuild", default=False,
                     help="skip the build step for the ROS stack",
                     action="store_true")
@@ -526,11 +526,6 @@ def rosinstall_main(argv):
     return 0
 
 
-  if 'ros_comm' in [os.path.basename(tree.path) for tree in config.trees]:
-    print 'roscomm present'
-  else:
-    print 'roscomm not present'
-  return -1
 
 
   ## Save .rosinstall 
