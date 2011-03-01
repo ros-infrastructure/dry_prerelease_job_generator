@@ -588,7 +588,7 @@ def run_chroot(options, path, workspace, hdd_tmp_dir):
 
         if options.script:
             remote_script_name = os.path.join("/tmp", os.path.basename(options.script))
-            cmd = ["cp", options.script, os.path.join(chrti.chroot_path, "tmp")]
+            cmd = ["sudo", "cp", options.script, os.path.join(chrti.chroot_path, "tmp")]
             print "Executing", cmd
             local_check_call(cmd);
             cmd = ("chown rosbuild:rosbuild %s"%remote_script_name).split()
