@@ -49,7 +49,7 @@ def main():
     rosinstall_file = '%s.rosinstall'%STACK_DIR
     with open(rosinstall_file, 'w') as f:
         f.write(rosinstall)
-    call('rosinstall %s /opt/ros/%s %s'%(STACK_DIR, options.rosdistro, rosinstall_file), env,
+    call('rosinstall --rosdep-yes %s /opt/ros/%s %s'%(STACK_DIR, options.rosdistro, rosinstall_file), env,
          'Install the stacks to test from source.')
 
 
@@ -83,7 +83,7 @@ def main():
             rosinstall_file = '%s.rosinstall'%DEPENDS_DIR
             with open(rosinstall_file, 'w') as f:
                 f.write(rosinstall)
-            call('rosinstall %s /opt/ros/%s %s'%(DEPENDS_DIR, options.rosdistro, rosinstall_file), env,
+            call('rosinstall --rosdep-yes %s /opt/ros/%s %s'%(DEPENDS_DIR, options.rosdistro, rosinstall_file), env,
                  'Install the stack dependencies from source.')
     else:
         print 'Stack(s) %s do(es) not have any dependencies, not installing anything now'%str(options.stack)
@@ -134,7 +134,7 @@ def main():
     rosinstall_file = '%s.rosinstall'%DEPENDS_ON_DIR
     with open(rosinstall_file, 'w') as f:
         f.write(rosinstall)
-    call('rosinstall %s /opt/ros/%s %s'%(DEPENDS_ON_DIR, options.rosdistro, rosinstall_file), env,
+    call('rosinstall --rosdep-yes %s /opt/ros/%s %s'%(DEPENDS_ON_DIR, options.rosdistro, rosinstall_file), env,
          'Install the stacks that depend on the stacks that are getting tested from source.')
 
     # Remove stacks that depend on this stack from Debians
