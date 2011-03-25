@@ -2,9 +2,9 @@
 
 
 if [ "x$1" == "xyes" ] ; then
-    sudo umount /tmp/livecd
-    sudo rm -rf /tmp/livecd
-    sudo rm -rf cd squashfs custom
+    umount livecd
+    rm -rf livecd
+    rm -rf cd squashfs custom
 else
     echo "This script will delete all the temporary files used for"
     echo "editing the cd. This is a bad idea if the files have been"

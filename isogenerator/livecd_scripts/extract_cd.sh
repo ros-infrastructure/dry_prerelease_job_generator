@@ -9,24 +9,24 @@ if [ "x$FILE" == "x" ] ; then
     exit 1
 fi
 
-mkdir -p /tmp/livecd
-sudo umount /tmp/livecd
-sudo mount -o loop $FILE /tmp/livecd 
+mkdir -p livecd
+sudo umount livecd
+sudo mount -o loop $FILE livecd 
 
 sudo rm -rf cd custom squashfs
 
 mkdir cd
-rsync --exclude=/casper/filesystem.squashfs -a /tmp/livecd/ cd
+rsync --exclude=/casper/filesystem.squashfs -a livecd/ cd
 
 
 mkdir squashfs
 mkdir custom
 sudo modprobe squashfs
-sudo mount -t squashfs -o loop /tmp/livecd/casper/filesystem.squashfs squashfs
+sudo mount -t squashfs -o loop livecd/casper/filesystem.squashfs squashfs
 sudo cp -a squashfs/* custom 
 sudo umount squashfs
 sudo rm -rf squashfs
 
-sudo umount /tmp/livecd
-sudo rm -r /tmp/livecd
+sudo umount livecd
+sudo rm -r livecd
 
