@@ -93,7 +93,7 @@ def checkout_tag_to_tmp(name, distro_stack):
         if key == 'svn':
             uri = distro_stack.expand_rule(distro_stack._rules[key]['release-tag'])
             version = ''
-        elif key == 'hg' or key == 'git':
+        elif key in ['hg', 'git', 'bzr']:
             uri = distro_stack.expand_rule(distro_stack._rules[key]['uri'])
             version = distro_stack.expand_rule(distro_stack._rules[key]['release-tag'])
         else:
@@ -113,7 +113,7 @@ def checkout_dev_to_tmp(name, distro_stack):
     """
     Checkout an VCS-based 'dev' code tree to the tmp dir.
     
-    Utility routine -- need to replace with vcs
+    Utility routine -- need to replace with vcstools
     
     @return: temporary directory that contains checkout of SVN tree in
     directory 'name'. temporary directory will be a subdirectory of
@@ -130,7 +130,7 @@ def checkout_dev_to_tmp(name, distro_stack):
         if key == 'svn':
             uri = distro_stack.expand_rule(distro_stack._rules[key]['dev'])
             version = ''
-        elif key == 'hg' or key == 'git':
+        elif key in ['hg', 'git', 'bzr']:
             uri = distro_stack.expand_rule(distro_stack._rules[key]['uri'])
             version = distro_stack.expand_rule(distro_stack._rules[key]['dev-branch'])
         else:
