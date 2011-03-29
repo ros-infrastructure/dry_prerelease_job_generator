@@ -58,6 +58,7 @@ import roslib.stacks
 from vcstools import svn_url_exists
 from vcstools.hg import HGClient
 from vcstools.git import GITClient
+from vcstools.bzr import BZRClient
 
 from release import ReleaseException, update_rosdistro_yaml, make_dist, \
     compute_stack_depends, get_stack_version, \
@@ -234,7 +235,7 @@ def tag_release(distro_stack):
     elif 'hg' in distro_stack._rules:
         tag_mercurial(distro_stack)
     elif 'bzr' in distro_stack._rules:
-        raise Exception("TODO: implement tagging for bzr")
+        tag_bzr(distro_stack)
     else:
         raise Exception("unsupported VCS")
     
@@ -283,6 +284,43 @@ def tag_mercurial(distro_stack):
         hgc = HGClient(temp_repo)
         hgc.checkout(from_url, config.dev_branch)
 
+        subprocess.check_call(['hg', 'tag', '-f', tag_name], cwd=temp_repo)
+        subprocess.check_call(['hg', 'push'], cwd=temp_repo)
+    #if not ask_and_call(cmds):    
+    #    print "create_release will not create this tag in subversion"
+    #else:
+    urls.append(tag_name)
+    return urls
+
+def tag_bzr(distro_stack):
+    urls = []
+    cmds = []
+
+    config = distro_stack.vcs_config
+
+    raise Exception("TODO: implement tagging for bzr")
+
+    for tag_name in [config.release_tag, config.distro_tag]:
+        from_url = config.repo_uri
+
+        make_tag = False
+        while True:
+            prompt = raw_input("Would you like to tag %s as %s in %s, [y/n]"%(config.dev_branch, tag_name, from_url))
+            if prompt == 'y':
+                make_tag = True
+                break
+            elif prompt == 'n':
+                break
+            
+        if make_tag == False:
+            continue
+
+        tempdir = tempfile.mkdtemp()
+        temp_repo = os.path.join(tempdir, distro_stack.name)
+        bzc = BZRClient(temp_repo)
+        bzc.checkout(from_url, config.dev_branch)
+
+        # TODO: change these to correct bzr commands
         subprocess.check_call(['hg', 'tag', '-f', tag_name], cwd=temp_repo)
         subprocess.check_call(['hg', 'push'], cwd=temp_repo)
     #if not ask_and_call(cmds):    
