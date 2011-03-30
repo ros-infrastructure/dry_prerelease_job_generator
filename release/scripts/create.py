@@ -298,35 +298,51 @@ def tag_bzr(distro_stack):
 
     config = distro_stack.vcs_config
 
-    raise Exception("TODO: implement tagging for bzr")
+    from_url = config.repo_uri
 
-    for tag_name in [config.release_tag, config.distro_tag]:
-        from_url = config.repo_uri
+    # First create a release tag in the bzr repository.
+    make_tag = False
+    while True:
+        prompt = raw_input("Would you like to tag %s as %s in %s, [y/n]"%(config.dev_branch, config.release_tag, from_url))
+        if prompt == 'y':
+            make_tag = True
+            break
+        elif prompt == 'n':
+            break
 
-        make_tag = False
-        while True:
-            prompt = raw_input("Would you like to tag %s as %s in %s, [y/n]"%(config.dev_branch, tag_name, from_url))
-            if prompt == 'y':
-                make_tag = True
-                break
-            elif prompt == 'n':
-                break
-            
-        if make_tag == False:
-            continue
-
+    if make_tag == True:
         tempdir = tempfile.mkdtemp()
         temp_repo = os.path.join(tempdir, distro_stack.name)
-        bzc = BZRClient(temp_repo)
-        bzc.checkout(from_url, config.dev_branch)
+        bzr_client = BZRClient(temp_repo)
+        bzr_client.checkout(from_url, config.dev_branch)
 
-        # TODO: change these to correct bzr commands
-        subprocess.check_call(['hg', 'tag', '-f', tag_name], cwd=temp_repo)
-        subprocess.check_call(['hg', 'push'], cwd=temp_repo)
-    #if not ask_and_call(cmds):    
-    #    print "create_release will not create this tag in subversion"
-    #else:
-    urls.append(tag_name)
+        #bzr tag -d lp:sr-ros-interface --force tes
+        #directly create and push the tag to the repo
+        subprocess.check_call(['bzr', 'tag', '-d', config.dev_branch,'--force',config.release_tag], cwd=temp_repo)
+
+    # Now create a distro branch.
+    # In bzr a branch is a much better solution since
+    # branches can be force-updated by fetch.
+    make_tag = False
+    while True:
+        branch_name = config.release_tag
+        prompt = raw_input("Would you like to create the branch %s as %s in %s, [y/n]"%(config.dev_branch, branch_name, from_url))
+        if prompt == 'y':
+            make_tag = True
+            break
+        elif prompt == 'n':
+            break
+
+    if make_tag == True:
+        tempdir = tempfile.mkdtemp()
+        temp_repo = os.path.join(tempdir, distro_stack.name)
+        bzr_client = BZRClient(temp_repo)
+        bzr_client.checkout(from_url, config.dev_branch)
+
+        #subprocess.check_call(['bzr', 'branch', '-f', branch_name, config.dev_branch], cwd=temp_repo)
+        subprocess.check_call(['bzr', 'push', '--create-prefix', from_url+"/"+branch_name], cwd=temp_repo)
+
+    urls.append(config.distro_tag)
     return urls
 
 def tag_git(distro_stack):
