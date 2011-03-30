@@ -14,11 +14,14 @@ def main():
     # parse command line options
     print "Parsing command line options"
     (options, args) = get_options(['stack', 'rosdistro'], ['repeat'])
+    print "Checking options 1"
     if not options:
         return -1
+    print "Checking options 2"
     if len(options.stack) > 1:
         print "You can only provide one stack at a time"
         return -1
+    print "Checking options 3"
     options.stack = options.stack[0]
 
     # set environment
