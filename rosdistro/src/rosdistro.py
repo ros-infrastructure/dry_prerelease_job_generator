@@ -116,7 +116,7 @@ def load_vcs_config(rules, rule_eval):
             vcs_config.anon_release_tag = vcs_config.release_tag
             
             
-    elif 'hg' in rules or 'git' in rules:
+    elif 'hg' in rules or 'git' in rules or 'bzr' in rules:
         r = None
         if 'hg' in rules:
             import vcstools.hg
@@ -127,6 +127,11 @@ def load_vcs_config(rules, rule_eval):
             import vcstools.git
             vcs_config = vcstools.git.GITConfig()
             r = rules['git']
+
+        elif 'bzr' in rules:
+            import vcstools.bzr
+            vcs_config = vcstools.bzr.BZRConfig()
+            r = rules['bzr']
 
         if not r:
             raise NotImplementedError("Rules %s not implemented"%rules)
