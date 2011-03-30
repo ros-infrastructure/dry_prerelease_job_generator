@@ -573,7 +573,7 @@ def run_chroot(options, path, workspace, hdd_tmp_dir):
         cmd = "apt-get update".split()
         chrti.execute(cmd)
 
-        cmd = "apt-get install -y --force-yes build-essential python-yaml cmake subversion mercurial git-core wget python-setuptools".split()
+        cmd = "apt-get install -y --force-yes build-essential python-yaml cmake subversion mercurial bzr git-core wget python-setuptools".split()
         chrti.execute(cmd)
 
         cmd = "easy_install -U rosinstall".split()
@@ -588,7 +588,7 @@ def run_chroot(options, path, workspace, hdd_tmp_dir):
 
         if options.script:
             remote_script_name = os.path.join("/tmp", os.path.basename(options.script))
-            cmd = ["cp", options.script, os.path.join(chrti.chroot_path, "tmp")]
+            cmd = ["sudo", "cp", options.script, os.path.join(chrti.chroot_path, "tmp")]
             print "Executing", cmd
             local_check_call(cmd);
             cmd = ("chown rosbuild:rosbuild %s"%remote_script_name).split()
