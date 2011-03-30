@@ -308,7 +308,9 @@ def get_options(required, optional):
     # check if stacks exist
     print "Check if stack exists"
     if 'stack' in ops and options.stack:
+        print "parsing rosdistro file %s"%get_rosdistro_file(options.rosdistro)
         distro_obj = rosdistro.Distro(get_rosdistro_file(options.rosdistro))
+        print "parsing rosdistro file finished"
         for s in options.stack:
             if not s in distro_obj.stacks:
                 print 'Stack "%s" does not exist in the %s disro file.'%(s, options.rosdistro)
