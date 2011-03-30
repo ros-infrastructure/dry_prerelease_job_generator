@@ -510,7 +510,7 @@ grub-pc grub-pc/install_devices_empty boolean true
     def __exit__(self, mtype, value, tb):
         if tb:
             if isinstance(value, subprocess.CalledProcessError):
-                print "Command \"%s\" failed, shutting down chroot"%tb
+                print "Command failed, shutting down chroot:\n-------------------------------------------\n%s\n------------------------------------------\n"%traceback.extract_tb(tb)
             else:
                 print "Exception in chroot, shutting down chroot"
             
@@ -527,7 +527,7 @@ grub-pc grub-pc/install_devices_empty boolean true
 
 
     def shutdown(self):
-        print "Shutting down"
+        print "Shutting down chroot"
         self.unmount_proc_sys()
         self.write_back_workspace()
 
