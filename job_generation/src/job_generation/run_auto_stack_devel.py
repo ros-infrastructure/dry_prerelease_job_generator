@@ -9,6 +9,8 @@ import subprocess
     
 
 def main():
+    print "Starting run_auto_stack_devel script"
+
     # parse command line options
     (options, args) = get_options(['stack', 'rosdistro'], ['repeat'])
     if not options:
