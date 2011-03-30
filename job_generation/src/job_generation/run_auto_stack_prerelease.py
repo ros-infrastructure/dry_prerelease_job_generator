@@ -47,8 +47,11 @@ def main():
     for stack in options.stack:
         rosinstall += stack_to_rosinstall(rosdistro_obj.stacks[stack], 'devel')
     rosinstall_file = '%s.rosinstall'%STACK_DIR
+    print 'Generating rosinstall file [%s]'%(rosinstall_file)
+    print 'Contents:\n\n'+rosinstall_file+'\n\n'
     with open(rosinstall_file, 'w') as f:
         f.write(rosinstall)
+    print 'rosinstall file [%s] generated'%(rosinstall_file)
     call('rosinstall --rosdep-yes %s /opt/ros/%s %s'%(STACK_DIR, options.rosdistro, rosinstall_file), env,
          'Install the stacks to test from source.')
 
