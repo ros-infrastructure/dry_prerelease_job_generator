@@ -79,16 +79,31 @@ def expand_rule(rule, stack_name, stack_ver, release_name, revision=None):
 
 def load_vcs_config(rules, rule_eval):
     vcs_config = None
-    if 'svn' in rules or 'dev-svn' in rules:
-        import vcstools.svn
-        vcs_config = vcstools.svn.SVNConfig()
-        
-        if 'svn' in rules:
-            r = rules['svn']
+    if 'svn' in rules or 'dev-svn' in rules or 'bzr' in rules:
+        #legacy support
+        if 'dev-svn' in rules:
+            import vcstools.svn
+            vcs_config = vcstools.svn.SVNConfig()
+            vcs_config.dev         = rule_eval(rules['dev-svn'])
+            vcs_config.distro_tag  = rule_eval(rules['distro-svn'])
+            vcs_config.release_tag = rule_eval(rules['release-svn'])
+            vcs_config.anon_dev = vcs_config.dev
+            vcs_config.anon_distro_tag = vcs_config.distro_tag
+            vcs_config.anon_release_tag = vcs_config.release_tag
+
+        elif 'svn' in rules or 'bzr' in rules:
+            if 'svn' in rules:
+                import vcstools.svn
+                vcs_config = vcstools.svn.SVNConfig()
+                r = rules['svn']
+            elif 'bzr' in rules:
+                import vcstools.bzr
+                vcs_config = vcstools.bzr.BZRConfig()
+                r = rules['bzr']
 
             for k in ['dev', 'distro-tag', 'release-tag']:
                 if not k in r:
-                    raise KeyError("svn rules missing required %s key: %s"%(k, r))
+                    raise KeyError("svn/bzr rules missing required %s key: %s"%(k, r))
             vcs_config.dev     = rule_eval(r['dev'])
             vcs_config.distro_tag  = rule_eval(r['distro-tag'])
             vcs_config.release_tag = rule_eval(r['release-tag'])
@@ -106,17 +121,10 @@ def load_vcs_config(rules, rule_eval):
                 vcs_config.anon_distro_tag = vcs_config.distro_tag
                 vcs_config.anon_release_tag = vcs_config.release_tag
 
-        else:
-            #legacy support
-            vcs_config.dev         = rule_eval(rules['dev-svn'])
-            vcs_config.distro_tag  = rule_eval(rules['distro-svn'])
-            vcs_config.release_tag = rule_eval(rules['release-svn'])
-            vcs_config.anon_dev = vcs_config.dev
-            vcs_config.anon_distro_tag = vcs_config.distro_tag
-            vcs_config.anon_release_tag = vcs_config.release_tag
+
             
             
-    elif 'hg' in rules or 'git' in rules or 'bzr' in rules:
+    elif 'hg' in rules or 'git' in rules:
         r = None
         if 'hg' in rules:
             import vcstools.hg
@@ -127,11 +135,6 @@ def load_vcs_config(rules, rule_eval):
             import vcstools.git
             vcs_config = vcstools.git.GITConfig()
             r = rules['git']
-
-        elif 'bzr' in rules:
-            import vcstools.bzr
-            vcs_config = vcstools.bzr.BZRConfig()
-            r = rules['bzr']
 
         if not r:
             raise NotImplementedError("Rules %s not implemented"%rules)
