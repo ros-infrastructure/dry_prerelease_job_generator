@@ -11,7 +11,7 @@ import urllib
 
 # Valid options
 valid_archs = ['i386', 'i686', 'amd64']
-valid_ubuntu_distros = ['hardy', 'jaunty', 'karmic', 'lucid', 'maverick']
+valid_ubuntu_distros = ['hardy', 'jaunty', 'karmic', 'lucid', 'maverick', 'natty']
 valid_debian_distros = ['lenny', 'squeeze']
 
 
@@ -510,7 +510,7 @@ grub-pc grub-pc/install_devices_empty boolean true
     def __exit__(self, mtype, value, tb):
         if tb:
             if isinstance(value, subprocess.CalledProcessError):
-                print "Command failed, shutting down chroot"
+                print "Command failed, shutting down chroot:\n-------------------------------------------\n%s\n------------------------------------------\n"%traceback.extract_tb(tb)
             else:
                 print "Exception in chroot, shutting down chroot"
             
@@ -527,7 +527,7 @@ grub-pc grub-pc/install_devices_empty boolean true
 
 
     def shutdown(self):
-        print "Shutting down"
+        print "Shutting down chroot"
         self.unmount_proc_sys()
         self.write_back_workspace()
 
@@ -573,7 +573,7 @@ def run_chroot(options, path, workspace, hdd_tmp_dir):
         cmd = "apt-get update".split()
         chrti.execute(cmd)
 
-        cmd = "apt-get install -y --force-yes build-essential python-yaml cmake subversion mercurial git-core wget python-setuptools".split()
+        cmd = "apt-get install -y --force-yes build-essential python-yaml cmake subversion mercurial bzr git-core wget python-setuptools".split()
         chrti.execute(cmd)
 
         cmd = "easy_install -U rosinstall".split()
@@ -588,7 +588,7 @@ def run_chroot(options, path, workspace, hdd_tmp_dir):
 
         if options.script:
             remote_script_name = os.path.join("/tmp", os.path.basename(options.script))
-            cmd = ["sudo", "cp", options.script, os.path.join(chrti.chroot_path, "tmp")]
+            cmd = ["cp", options.script, os.path.join(chrti.chroot_path, "tmp")]
             print "Executing", cmd
             local_check_call(cmd);
             cmd = ("chown rosbuild:rosbuild %s"%remote_script_name).split()
