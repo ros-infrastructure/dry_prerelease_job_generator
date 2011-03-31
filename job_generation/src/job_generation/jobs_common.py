@@ -180,7 +180,7 @@ def stack_to_rosinstall(stack, branch):
         print 'Unsupported vcs type %s for stack %s'%(vcs.type, stack.name)
         return ''
         
-    if vcs.type == 'svn', 'bzr':
+    if vcs.type in ['svn', 'bzr']:
         if branch == 'devel':
             return "- svn: {uri: '%s', local-name: '%s'}\n"%(vcs.anon_dev, stack.name)
         elif branch == 'distro':
