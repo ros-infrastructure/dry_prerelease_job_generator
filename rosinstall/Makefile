@@ -1,6 +1,6 @@
 .PHONY: all setup clean_dist distro clean install dsc source_deb upload
 
-VERSION='0.5.15'
+VERSION='0.5.16'
 
 
 
@@ -40,7 +40,11 @@ dsc: distro
 
 source_deb: dsc
 	# need to convert unstable to each distro and repeat
-	cd deb_dist/rosinstall-${VERSION} && dpkg-buildpackage -sa -S -k84C5CECD
+	cd deb_dist/rosinstall-${VERSION} && dpkg-buildpackage -sa -k84C5CECD
+
+binary_deb: dsc
+	# need to convert unstable to each distro and repeat
+	cd deb_dist/rosinstall-${VERSION} && dpkg-buildpackage -sa -k84C5CECD
 
 upload: source_deb
 	cd deb_dist && dput ppa:tully.foote/tully-test-ppa ../rosinstall_${VERSION}-1_source.changes 

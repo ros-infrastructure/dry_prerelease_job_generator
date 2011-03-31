@@ -35,6 +35,8 @@ def usage():
 class ROSInstallException(Exception): pass
 
 class ConfigElement:
+  """ Base class for Config provides methods with not implemented
+  exceptions.  Also a few shared methods."""
   def __init__(self, path):
     self.path = path
   def get_path(self):
@@ -422,7 +424,7 @@ def rosinstall_main(argv):
   if len(argv) < 2:
     usage()
   args = argv[1:]
-  parser = OptionParser(usage="usage: %prog PATH [<options> ...] [URI]... ", version="%prog 0.5.15")
+  parser = OptionParser(usage="usage: %prog PATH [<options> ...] [URI]... ", version="%prog 0.5.16")
   parser.add_option("-n", "--nobuild", dest="nobuild", default=False,
                     help="skip the build step for the ROS stack",
                     action="store_true")
