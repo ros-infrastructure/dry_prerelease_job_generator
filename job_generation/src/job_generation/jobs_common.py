@@ -182,12 +182,12 @@ def stack_to_rosinstall(stack, branch):
         
     if vcs.type in ['svn', 'bzr']:
         if branch == 'devel':
-            return "- svn: {uri: '%s', local-name: '%s'}\n"%(vcs.anon_dev, stack.name)
+            return "- %s: {uri: '%s', local-name: '%s'}\n"%(vcs.type, vcs.anon_dev, stack.name)
         elif branch == 'distro':
-            return "- svn: {uri: '%s', local-name: '%s'}\n"%(vcs.anon_distro_tag, stack.name)            
+            return "- %s: {uri: '%s', local-name: '%s'}\n"%(vcs.type, vcs.anon_distro_tag, stack.name)            
 
         elif branch == 'release':
-            return "- svn: {uri: '%s', local-name: '%s'}\n"%(vcs.anon_release_tag, stack.name)  
+            return "- %s: {uri: '%s', local-name: '%s'}\n"%(vcs.type, vcs.anon_release_tag, stack.name)  
 
     elif vcs.type in ['hg', 'git']:
         if branch == 'devel':
