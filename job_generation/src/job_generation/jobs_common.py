@@ -287,7 +287,6 @@ def get_options(required, optional):
         parser.add_option('--database', dest = 'database', default=None, action='store',
                           help="Specify database file")
 
-    print "Do the parsing"
     (options, args) = parser.parse_args()
     
 
@@ -307,13 +306,11 @@ def get_options(required, optional):
 
 
     # check if rosdistro exists
-    print "Check if rosdistro exists"
     if 'rosdistro' in ops and (not options.rosdistro or not options.rosdistro in UBUNTU_DISTRO_MAP.keys()):
         print 'You provided an invalid "--rosdistro %s" argument. Options are %s'%(options.rosdistro, UBUNTU_DISTRO_MAP.keys())
         return (None, args)
 
     # check if stacks exist
-    print "Check if stack exists"
     if 'stack' in ops and options.stack:
         distro_obj = rosdistro.Distro(get_rosdistro_file(options.rosdistro))
         for s in options.stack:
@@ -323,7 +320,6 @@ def get_options(required, optional):
                 return (None, args)
 
     # check if variant exists
-    print "Check if variant exists"
     if 'variant' in ops and options.variant:
         distro_obj = rosdistro.Distro(get_rosdistro_file(options.rosdistro))
         if not options.variant in distro_obj.variants:
