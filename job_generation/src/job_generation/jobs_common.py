@@ -59,6 +59,7 @@ UBUNTU_DISTRO_MAP = targets.os_platform
 
 # Path to hudson server
 SERVER = 'http://build.willowgarage.com'
+#SERVER = 'http://hudson.willowgarage.com:8080'
 
 # config path
 CONFIG_PATH = 'http://wgs24.willowgarage.com/hudson-html/hds.xml'
@@ -105,6 +106,12 @@ hudson_scm_managers = {'svn':"""
     <forest>false</forest>
     <branch>STACKBRANCH</branch>
   </scm>
+""",
+                       'bzr':"""
+  <scm class="hudson.plugins.bazaar.BazaarSCM"> 
+    <source>STACKURI</source> 
+    <clean>false</clean> 
+  </scm> 
 """,
                        'git':"""
 

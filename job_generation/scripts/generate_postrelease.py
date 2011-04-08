@@ -105,13 +105,17 @@ def create_post_release_configs(rosdistro, stack):
             else:
                 raise NotImplementedError("vcs type %s not implemented as hudson scm manager"%stack.vcs_config.type)
 
-            if stack.vcs_config.type == 'svn':
+            
+            if stack.vcs_config.type in ['svn', 'bzr']:
                 hudson_vcs = hudson_vcs.replace('STACKNAME', stack.name)
-                hudson_vcs = hudson_vcs.replace('STACKURI', stack.vcs_config.anon_distro_tag)
-            else: #dvcs
-                hudson_vcs = hudson_vcs.replace('STACKBRANCH', stack.vcs_config.distro_tag)
+                hudson_vcs = hudson_vcs.replace('STACKURI', stack.vcs_config.anon_dev)
+            elif stack.vcs_config.type in ['git', 'hg']:
+                hudson_vcs = hudson_vcs.replace('STACKBRANCH', stack.vcs_config.dev_branch)
                 hudson_vcs = hudson_vcs.replace('STACKURI', stack.vcs_config.anon_repo_uri)
                 hudson_vcs = hudson_vcs.replace('STACKNAME', stack.name)
+            else:
+                print "UNSUPPORTED VCS TYPE"
+                raise
 
             # check if this is the 'gold' job
             time_trigger = ''
