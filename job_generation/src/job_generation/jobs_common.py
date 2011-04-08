@@ -109,7 +109,7 @@ hudson_scm_managers = {'svn':"""
 """,
                        'bzr':"""
   <scm class="hudson.plugins.bazaar.BazaarSCM"> 
-    <source>STACKURI</source> 
+    <source>STACKURI STACKNAME</source> 
     <clean>false</clean> 
   </scm> 
 """,
