@@ -75,11 +75,16 @@ def prerelease_job_name(rosdistro, stack_list, ubuntu, arch):
     return get_job_name('prerelease', rosdistro, '_'.join(stack_list), ubuntu, arch)
 
 
-def create_prerelease_configs(rosdistro, stack_list, email, repeat, source_only):
+def create_prerelease_configs(rosdistro, stack_list, email, repeat, source_only, arches=None, ubuntudistros=None):
+    if not arches:
+        arches = ARCHES
+    if not ubuntudistros:
+        ubuntudistros = UBUNTU_DISTRO_MAP[rosdistro]
+
     # create hudson config files for each ubuntu distro
     configs = {}
-    for ubuntudistro in UBUNTU_DISTRO_MAP[rosdistro]:
-        for arch in ARCHES:
+    for ubuntudistro in ubuntudistros:
+        for arch in arches:
             name = prerelease_job_name(rosdistro, stack_list, ubuntudistro, arch)
             hudson_config = HUDSON_PRERELEASE_CONFIG
             hudson_config = hudson_config.replace('BOOTSTRAP_SCRIPT', BOOTSTRAP_SCRIPT)
@@ -102,7 +107,7 @@ def create_prerelease_configs(rosdistro, stack_list, email, repeat, source_only)
     
 
 def main():
-    (options, args) = get_options(['stack', 'rosdistro', 'email'], ['repeat', 'source-only'])
+    (options, args) = get_options(['stack', 'rosdistro', 'email'], ['repeat', 'source-only', 'arch', 'ubuntu'])
     if not options:
         return -1
 
@@ -113,7 +118,7 @@ def main():
         else:
             info = urllib.urlopen(CONFIG_PATH).read().split(',')
             hudson_instance = hudson.Hudson(SERVER, info[0], info[1])
-        prerelease_configs = create_prerelease_configs(options.rosdistro, options.stack, options.email, options.repeat, options.source_only)
+        prerelease_configs = create_prerelease_configs(options.rosdistro, options.stack, options.email, options.repeat, options.source_only, options.arch, options.ubuntu)
 
         # check if jobs are not already running
         for job_name in prerelease_configs:

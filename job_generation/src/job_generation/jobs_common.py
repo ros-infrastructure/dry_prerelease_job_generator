@@ -262,6 +262,12 @@ def get_options(required, optional):
     if 'email' in ops:
         parser.add_option('--email', dest = 'email', default=None, action='store',
                           help='Email address to send results to')
+    if 'arch' in ops:
+        parser.add_option('--arch', dest = 'arch', default=None, action='append',
+                          help='Architecture to test')
+    if 'ubuntu' in ops:
+        parser.add_option('--ubuntu', dest = 'ubuntu', default=None, action='append',
+                          help='Ubuntu distribution to test')
     if 'repeat' in ops:
         parser.add_option('--repeat', dest = 'repeat', default=0, action='store',
                           help='How many times to repeat the test')
