@@ -256,6 +256,8 @@ chmod a+r /etc/gconf/gconf.xml.defaults/%gconf-tree.xml
 
 echo "Installing rosinstall"
 easy_install rosinstall
+echo "Installing netifaces"
+easy_install netifaces
 
 echo "Installing turtlebot"
 yes | apt-get install ros-diamondback-turtlebot-robot
