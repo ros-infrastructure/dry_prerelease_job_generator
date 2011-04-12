@@ -5,6 +5,8 @@ echo "Updating apt-get"
 yes | apt-get update
 echo "installing ssh and ntp"
 yes | apt-get install ssh ntp
+echo "installing setuptools and daemontools"
+yes | apt-get install python-setuptools daemontools
 echo "removing openoffice"
 yes | apt-get remove openoffice.org*
 
@@ -251,6 +253,9 @@ cat > /etc/gconf/gconf.xml.defaults/%gconf-tree.xml <<EOF
 EOF
 chown root:root /etc/gconf/gconf.xml.defaults/%gconf-tree.xml
 chmod a+r /etc/gconf/gconf.xml.defaults/%gconf-tree.xml
+
+echo "Installing rosinstall"
+easy_install rosinstall
 
 echo "Installing turtlebot"
 yes | apt-get install ros-diamondback-turtlebot-robot
