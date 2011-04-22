@@ -3,12 +3,17 @@
 
 echo "Updating apt-get"
 yes | apt-get update
-echo "installing ssh and ntp"
+echo "Installing ssh and ntp"
 yes | apt-get install ssh ntp
-echo "installing setuptools and daemontools"
+echo "Installing setuptools and daemontools"
 yes | apt-get install python-setuptools daemontools
-echo "removing openoffice"
+echo "Removing openoffice"
 yes | apt-get remove openoffice.org*
+
+echo "Installing rosinstall"
+yes | sudo easy_install -U rosinstall
+echo "Installing netifaces"
+yes | sudo easy_install netifaces
 
 echo "Adding ROS to the apt-get sources"
 echo "deb http://packages.ros.org/ros/ubuntu lucid main" > /etc/apt/sources.list.d/ros-latest.list
@@ -254,12 +259,66 @@ EOF
 chown root:root /etc/gconf/gconf.xml.defaults/%gconf-tree.xml
 chmod a+r /etc/gconf/gconf.xml.defaults/%gconf-tree.xml
 
-echo "Installing rosinstall"
-easy_install rosinstall
-echo "Installing netifaces"
-easy_install netifaces
+echo "Adding ps3joy.conf"
+cat > /etc/init/ps3joy.conf <<EOF
+start on runlevel [2345]
 
-echo "Installing turtlebot"
+respawn
+
+exec /opt/ros/diamondback/stacks/joystick_drivers/ps3joy/ps3joy.py
+EOF
+chown root:root /etc/init/ps3joy.conf
+chmod a+r /etc/init/ps3joy.conf
+
+echo "Adding turtlebot bringup"
+cat > /etc/init/turtlebot.conf <<EOF
+description	"bringup turtlebot"
+
+start on net-device-up IFACE=wlan0
+stop on net-device-down IFACE=wlan0
+
+console output
+respawn
+
+exec turtlebot-start
+pre-stop exec turtlebot-stop
+EOF
+chown root:root /etc/init/turtlebot.conf
+
+echo "Adding turtlebot start"
+cat > /usr/sbin/turtlebot-start <<EOF
+#!/bin/bash
+
+source /opt/ros/diamondback/setup.bash
+#source /home/turtlebot/dev/setup.bash
+# public address is wlan0
+export ROBOT=turtlebot2
+export ROS_IP=`rosrun turtlebot_bringup turtlebot_addr.py`
+setuidgid turtlebot roslaunch turtlebot_bringup minimal.launch
+EOF
+chown root:root /usr/sbin/turtlebot-start
+chmod a+wrx /usr/sbin/turtlebot-start
+
+echo "Adding turtlebot stop"
+cat > /usr/sbin/turtlebot-stop <<EOF
+#!/bin/bash
+
+source /opt/ros/diamondback/setup.bash
+
+killall roslaunch
+EOF
+chown root:root /usr/sbin/turtlebot-stop
+chmod a+wrx /usr/sbin/turtlebot-stop
+
+echo "Installing turtlebot debs"
 yes | apt-get install ros-diamondback-turtlebot-robot
 
+echo "Fix bluetooth rules"
+cat > /etc/udev/rules.d/97-bluetooth.rules <<EOF
+# Run helper every time a Bluetooth device appears
+# On remove actions, bluetoothd should go away by itself
+#ACTION=="add", SUBSYSTEM=="bluetooth", RUN+="/usr/sbin/bluetoothd --udev"
+EOF
+chown root:turtlebot /etc/udev/rules.d/97-bluetooth.rules
+chmod a+r /etc/udev/rules.d/97-bluetooth.rules
 
