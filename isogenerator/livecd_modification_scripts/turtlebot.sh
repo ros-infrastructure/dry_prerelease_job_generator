@@ -9,8 +9,8 @@ echo "Updating apt-get"
 yes | apt-get update
 echo "Installing ssh and ntp"
 yes | apt-get install ssh ntp
-echo "Installing setuptools and daemontools"
-yes | apt-get install python-setuptools daemontools
+echo "Installing python-dev, setuptools and daemontools"
+yes | apt-get install python-dev python-setuptools daemontools
 echo "Removing openoffice"
 yes | apt-get remove openoffice.org*
 
