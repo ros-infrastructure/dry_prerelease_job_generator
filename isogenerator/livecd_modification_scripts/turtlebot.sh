@@ -1,6 +1,10 @@
 #!/bin/bash
 #WARNING: this script is run under a chroot, so it cannot access files on the file system in general.
 
+echo "Updating apt sources file, so that all packages can be read"
+cat /etc/apt/sources.list | sed "s/# deb/deb/g" > /tmp/new_sources.list
+cp /tmp/new_sources.list /etc/apt/sources.list
+
 echo "Updating apt-get"
 yes | apt-get update
 echo "Installing ssh and ntp"
@@ -20,10 +24,6 @@ echo "deb http://packages.ros.org/ros/ubuntu lucid main" > /etc/apt/sources.list
 wget http://packages.ros.org/ros.key -O - | sudo apt-key add -
 sudo apt-get update
 
-echo "Updating apt sources file, so that all packages can be read"
-cat /etc/apt/sources.list | sed "s/# deb/deb/g" > /tmp/new_sources.list
-cp /tmp/new_sources.list /etc/apt/sources.list
-sudo apt-get update
 
 #Turtlebot specific operations
 echo "Adding turtlebot user and group"
@@ -293,7 +293,7 @@ source /opt/ros/diamondback/setup.bash
 #source /home/turtlebot/dev/setup.bash
 # public address is wlan0
 export ROBOT=turtlebot2
-export ROS_IP=`rosrun turtlebot_bringup turtlebot_addr.py`
+export ROS_IP=\`rosrun turtlebot_bringup turtlebot_addr.py\`
 setuidgid turtlebot roslaunch turtlebot_bringup minimal.launch
 EOF
 chown root:root /usr/sbin/turtlebot-start
@@ -314,11 +314,11 @@ echo "Installing turtlebot debs"
 yes | apt-get install ros-diamondback-turtlebot-robot
 
 echo "Fix bluetooth rules"
-cat > /etc/udev/rules.d/97-bluetooth.rules <<EOF
+cat > /lib/udev/rules.d/97-bluetooth.rules <<EOF
 # Run helper every time a Bluetooth device appears
 # On remove actions, bluetoothd should go away by itself
 #ACTION=="add", SUBSYSTEM=="bluetooth", RUN+="/usr/sbin/bluetoothd --udev"
 EOF
-chown root:turtlebot /etc/udev/rules.d/97-bluetooth.rules
-chmod a+r /etc/udev/rules.d/97-bluetooth.rules
+chown root:turtlebot /lib/udev/rules.d/97-bluetooth.rules
+chmod a+r /lib/udev/rules.d/97-bluetooth.rules
 
