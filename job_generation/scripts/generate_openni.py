@@ -5,7 +5,7 @@
 # template to create openni hudson configuration file
 HUDSON_OPENNI_CONFIG = """<?xml version='1.0' encoding='UTF-8'?>
 <project> 
-  <description>Openni build of NAME for ROSDISTRO on UBUNTUDISTRO, ARCH</description> 
+  <description>Openni build of NAME on UBUNTUDISTRO, ARCH</description> 
  <logRotator> 
     <daysToKeep>5</daysToKeep> 
     <numToKeep>-1</numToKeep> 
@@ -153,22 +153,26 @@ import optparse
 import yaml
 
 
-def openni_job_name(rosdistro, ubuntudistro, arch):
-    return "_".join(['openni', rosdistro, ubuntudistro, arch])
+def openni_job_name(ubuntudistro, arch):
+    return "_".join(['openni_driver_debs', ubuntudistro, arch])
 
 
-def create_openni_configs(rosdistro):
+def create_openni_configs():
     # create gold distro
-    gold_job = openni_job_name(rosdistro, UBUNTU_DISTRO_MAP[rosdistro][0], ARCHES[0])
-    gold_children = [openni_job_name(rosdistro, u, a)
-                     for a in ARCHES for u in UBUNTU_DISTRO_MAP[rosdistro]]
+    gold_job = openni_job_name(UBUNTU_DISTRO_MAP['diamondback'][0], ARCHES[0])
+    # distros for diamondback and unstable
+    distros = set(UBUNTU_DISTRO_MAP['diamondback'])
+    distros.update(UBUNTU_DISTRO_MAP['unstable'])
+
+    gold_children = [openni_job_name(u, a)
+                     for a in ARCHES for u in distros]
     gold_children.remove(gold_job)
 
     # create hudson config files for each ubuntu distro
     configs = {}
-    for ubuntudistro in UBUNTU_DISTRO_MAP[rosdistro]:
+    for ubuntudistro in distros:
         for arch in ARCHES:
-            name = openni_job_name(rosdistro, ubuntudistro, arch)
+            name = openni_job_name(ubuntudistro, arch)
 
             # check if this is the 'gold' job
             time_trigger = ''
@@ -180,7 +184,6 @@ def create_openni_configs(rosdistro):
             hudson_config = HUDSON_OPENNI_CONFIG
             hudson_config = hudson_config.replace('UBUNTUDISTRO', ubuntudistro)
             hudson_config = hudson_config.replace('ARCH', arch)
-            hudson_config = hudson_config.replace('ROSDISTRO', rosdistro)
             hudson_config = hudson_config.replace('TIME_TRIGGER', time_trigger)
             hudson_config = hudson_config.replace('JOB_CHILDREN', job_children)
             hudson_config = hudson_config.replace('EMAIL', 'tfoote+openni_debs@willowgarage.com')
@@ -194,13 +197,7 @@ def main():
     parser = optparse.OptionParser()
     parser.add_option('--delete', dest = 'delete', default=False, action='store_true',
                       help='Delete jobs from Hudson')    
-    parser.add_option('--rosdistro', dest = 'rosdistro', action='store',
-                      help="Specify the ros distro to operate on (defaults to cturtle)")
     (options, args) = parser.parse_args()
-    if not options.rosdistro:
-        parser.error( 'Please provide the ros distro you want to test: --rosdistro cturtle')
-    if not options.rosdistro in UBUNTU_DISTRO_MAP.keys():
-        parser.error( 'You profided an invalid "--rosdistro %s" argument. Options are %s'%(options.rosdistro, UBUNTU_DISTRO_MAP.keys()))
         
 
     # hudson instance
@@ -209,7 +206,7 @@ def main():
 
     # send openni tests to Hudson
     print 'Creating openni Hudson jobs:'
-    openni_configs = create_openni_configs(options.rosdistro)
+    openni_configs = create_openni_configs()
 
     for job_name in openni_configs:
         exists = hudson_instance.job_exists(job_name)
