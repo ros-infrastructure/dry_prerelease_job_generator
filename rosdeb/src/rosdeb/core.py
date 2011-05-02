@@ -37,7 +37,15 @@ import sys
 
 import rosdistro
 
-ubuntu_map = { '10.10': 'maverick', '10.04': 'lucid', '9.10': 'karmic', '9.04': 'jaunty', '8.10': 'intrepid', '8.04': 'hardy'}
+ubuntu_map = {
+    '11.04': 'natty',
+    '10.10': 'maverick',
+    '10.04': 'lucid',
+    '9.10': 'karmic',
+    '9.04': 'jaunty',
+    '8.10': 'intrepid',
+    '8.04': 'hardy'}
+
 def get_ubuntu_map():
     return ubuntu_map
 def ubuntu_release():
