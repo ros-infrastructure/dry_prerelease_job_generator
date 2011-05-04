@@ -554,6 +554,9 @@ Description: Meta package for %(metapackage)s variant of ROS.
 
 def upload_debs(files,distro_name,os_platform,arch):
 
+    if len(files) == 0:
+        return 1 # no files to upload
+
     subprocess.check_call(['scp'] + files + ['rosbuild@pub8:/var/packages/%s/ubuntu/incoming/%s'%(SHADOW_REPO,os_platform)])
 
     base_files = [x.split('/')[-1] for x in files]
