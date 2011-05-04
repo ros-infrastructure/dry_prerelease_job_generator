@@ -391,7 +391,13 @@ def generate_allhtml_report(output, distro_name, os_platforms):
                 continue
             
             args = get_missing(distro, os_platform, arch)
-            args_fixed = get_missing(distro, os_platform, arch, repo=SHADOW_FIXED_REPO, lock_version=False)
+            try:
+                args_fixed = get_missing(distro, os_platform, arch, repo=SHADOW_FIXED_REPO, lock_version=False)
+            except BadRepo:
+                for s in distro.stacks.iterkeys():
+                    stacks[s][key] = MISSING_REPO
+                counts[key] = "!"
+                continue
             counts[key] = ','.join([str(len(x)) for x in args])
             missing_primary, missing_dep, missing_excluded, missing_excluded_dep = args
             missing_primary_fixed, missing_dep_fixed, missing_excluded_fixed, missing_excluded_dep_fixed = args_fixed
