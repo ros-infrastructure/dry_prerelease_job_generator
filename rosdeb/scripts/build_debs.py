@@ -182,7 +182,7 @@ def create_chroot(distro, distro_name, os_platform, arch):
     distro_tgz = os.path.join('/var/cache/pbuilder', "%s-%s.tgz"%(os_platform, arch))
     cache_dir = '/home/rosbuild/aptcache/%s-%s'%(os_platform, arch)
 
-    if os.path.exists(distro_tgz):
+    if os.path.exists(distro_tgz) and os.path.getsize(distro_tgz) > 0:  # Zero sized file left in place if last build crashed
         return
 
     if not os.path.exists(cache_dir):
