@@ -611,7 +611,7 @@ def gen_metapkgs(distro, os_platform, arch, staging_dir, force=False):
 
     debs = []
 
-    missing = False
+    missing = []
 
     missing_primary, missing_dep, missing_excluded, missing_excluded_dep = list_missing.get_missing(distro, os_platform, arch)
 
@@ -639,19 +639,19 @@ def gen_metapkgs(distro, os_platform, arch, staging_dir, force=False):
         if mp:
             debs.append(mp)
         else:
-            missing = True
+            missing.append(v)
 
     # We should always need to build the special "all" metapackage
     mp = create_meta_pkg(packagelist, distro, distro_name, "all", set(distro.released_stacks.keys()) - missing_ok, os_platform, arch, staging_dir)
     if mp:
         debs.append(mp)
     else:
-        missing = True
+        missing.append('all')
 
     upload_debs(debs, distro_name, os_platform, arch)
 
     if missing:
-        raise BuildFailure("Could not generate all necessary metapkgs.")
+        raise StackBuildFailure("Did not generate all metapkgs: %s."%missing)
 
 
 def build_debs_main():
