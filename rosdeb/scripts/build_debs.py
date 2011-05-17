@@ -731,6 +731,8 @@ def build_debs_main():
             gen_metapkgs(distro, os_platform, arch, staging_dir)
         except BuildFailure, e:
             failure_message = "Failure Message:\n"+"="*80+'\n'+str(e)
+        except StackBuildFailure, e:
+            warning_message = "Warning Message:\n"+"="*80+'\n'+str(e)
         except Exception, e:
             failure_message = "Internal failure in the release system. Please notify leibs and kwc @willowgarage.com:\n%s\n\n%s"%(e, traceback.format_exc(e))
         finally:
