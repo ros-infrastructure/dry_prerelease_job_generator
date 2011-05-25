@@ -39,11 +39,15 @@ import os
 import subprocess
 import tempfile
 import re
+import tarfile
+import shutil
 
 import yaml
 
 import roslib.packages
 import roslib.stacks
+import roslib.stack_manifest
+
 from rosdistro import Distro
 from rosdeb import control_data
 # we export this symbol to create.py as well
@@ -190,25 +194,19 @@ def make_dist_of_dir(tmp_dir, name, version, distro_stack):
     Create tarball in a temporary directory. 
     It is expected the tempdir has a fresh checkout of the stack.
 
+    @param name: stack name
+    @param version: stack version
     @return: tarball file path, control data. 
     """
     tmp_source_dir = os.path.join(tmp_dir, name)
     print 'Building a distribution for %s in %s'%(name, tmp_source_dir)
-    cmd = ['make', 'package_source']
-    try:
-        subprocess.check_call(cmd, cwd=tmp_source_dir)
-    except:
-        raise ReleaseException("unable to 'make package_source' in package. Most likely the Makefile and CMakeLists.txt files have not been checked in")
-    tarball = "%s-%s.tar.bz2"%(name, version)
-    src = os.path.join(tmp_source_dir, 'build', tarball)
-
-    md5sum = md5sum_file(src)
+    tarball = create_stack_tarball(tmp_source_dir, name, version)
+    md5sum = md5sum_file(tarball)
     control = control_data(name, version, md5sum, stack_file=os.path.join(tmp_source_dir, 'stack.xml'))
     
     # move tarball outside tmp_dir so we can clean it up
-    dst = os.path.join(tempfile.gettempdir(), tarball)
-    import shutil
-    shutil.copyfile(src, dst)
+    dst = os.path.join(tempfile.gettempdir(), os.path.basename(tarball))
+    shutil.copyfile(tarball, dst)
     shutil.rmtree(tmp_dir)
     return dst, control
 
@@ -221,3 +219,55 @@ def svn_url_exists(url):
             return False            
     except:
         return False
+
+
+TAR_IGNORE_TOP=['build']
+TAR_IGNORE_ALL=['.svn', '.git', '.hg']
+
+def tar_exclude(name):
+    if name.split('/')[-1] in TAR_IGNORE_ALL:
+        return True
+    else:
+        return False
+
+def create_stack_tarball(path, stack_name, stack_version):
+    """
+    Create a source tarball from a stack at a particular path.
+  
+    @param name: name of stack
+    @param stack_version: version number of stack
+    @param path: the path of the stack to package up
+    @return: the path of the resulting tarball, or else None
+    """
+
+    # Verify that the stack has both a stack.xml and CMakeLists.txt file
+    stack_xml_path = os.path.join(path, roslib.stack_manifest.STACK_FILE)
+    cmake_lists_path = os.path.join(path, 'CMakeLists.txt')
+
+    if not os.path.exists(stack_xml_path):
+        raise ReleaseException("Could not find stack manifest, expected [%s]."%(stack_xml_path))
+    if not os.path.exists(cmake_lists_path):
+        raise ReleaseException("Could not find CMakeLists.txt file, expected [%s]."%(cmake_lists_path))
+
+    # Create the build directory
+    build_dir = os.path.join(path, 'build')
+    if not os.path.exists(build_dir):
+        os.makedirs(build_dir)
+
+    tarfile_name = os.path.join(build_dir,'%s-%s.tar.bz2'%(stack_name, stack_version))
+    archive_dir = '%s-%s'%(stack_name, stack_version)
+
+    tar = tarfile.open(tarfile_name, 'w:bz2')
+  
+    for x in os.listdir(path):
+        if x not in TAR_IGNORE_TOP + TAR_IGNORE_ALL:
+            # path of item
+            p = os.path.join(path,x)
+            # tar path of item
+            tp = os.path.join(archive_dir, x)
+            
+            tar.add(p, tp, exclude=tar_exclude)
+            
+    tar.close()
+    return tarfile_name
+
