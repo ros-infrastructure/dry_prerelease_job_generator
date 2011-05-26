@@ -162,9 +162,9 @@ def confirm_stack_version(local_path, checkout_path, stack_name, version):
     vcs_version = get_stack_version(checkout_path, stack_name)
     local_version = get_stack_version(local_path, stack_name)
     if vcs_version != version:
-        raise ReleaseException("The version number in %s/CMakeLists.txt stored in version control does not match specified release version:\n\n%s"%(stack_name, vcs_version))
+        raise ReleaseException("The version number of stack %s stored in version control does not match specified release version:\n\n%s"%(stack_name, vcs_version))
     if local_version != version:
-        raise ReleaseException("The version number in %s/CMakeLists.txt on your ROS_PACKAGE_PATH does not match specified release version:\n\n%s"%(stack_name, local_version))
+        raise ReleaseException("The version number of stack %s on your ROS_PACKAGE_PATH does not match specified release version:\n\n%s"%(stack_name, local_version))
     
 
 def copy_to_server(name, version, tarball, control, control_only=False):
