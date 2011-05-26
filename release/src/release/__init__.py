@@ -153,8 +153,12 @@ def get_stack_version_by_dir(stack_dir):
     manifest_filename = os.path.join(stack_dir, roslib.stacks.STACK_FILE)
     if os.path.isfile(manifest_filename):
         m = roslib.stack_manifest.parse_file(manifest_filename)
-        if m.version:
-            return m.version
+        try:
+            # version attribute only available in ROS 1.5.1+
+            if m.version:
+                return m.version
+        except AttributeError:
+            pass
     
     cmake_filename = os.path.join(stack_dir, 'CMakeLists.txt')
     if os.path.isfile(cmake_filename):
