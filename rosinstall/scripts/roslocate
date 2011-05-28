@@ -80,7 +80,7 @@ def get_rosinstall(name, data, type_, options=None):
 
     for k, v in ri_entry.iteritems():
         if 'local-name' in v:
-            name = v['local-name']
+            # 3513
             # compute path: we can't use os.path.join because rosinstall paths
             # are always Unix-style.
             prefix = options.prefix if options is not None and options.prefix else ''
