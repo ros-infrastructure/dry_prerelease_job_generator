@@ -39,11 +39,15 @@ import os
 import subprocess
 import tempfile
 import re
+import tarfile
+import shutil
 
 import yaml
 
 import roslib.packages
 import roslib.stacks
+import roslib.stack_manifest
+
 from rosdistro import Distro
 from rosdeb import control_data
 # we export this symbol to create.py as well
@@ -54,14 +58,36 @@ class ReleaseException(Exception): pass
 def get_source_version(distro, stack_name):
     import urllib2
     import re
-    source_url = distro.stacks[stack_name].dev_svn + '/CMakeLists.txt'
-    print "Reading version number from %s"%source_url
+    dev_svn = distro.stacks[stack_name].dev_svn 
+    print "Reading version number from %s"%(dev_svn)
+
+    source_url = dev_svn + '/stack.xml'
     try:
         f = urllib2.urlopen(source_url)
         text = f.read()
         f.close()
     except urllib2.HTTPError:
-        raise ReleaseException("failed to fetch CMakeLists.txt for stack.\nA common cause is the '_rules' are not set correctly for this stack.\nThe URL was %s"%source_url)
+        raise ReleaseException("failed to fetch stack.xml for stack.\nA common cause is the '_rules' are not set correctly for this stack.\nThe URL was %s"%(source_url))
+
+    try:
+        m = roslib.stack_manifest.parse(text)
+        if m.version:
+            return m.version
+    except:
+        raise ReleaseException("stack.xml failed validation. Read from URL [%s]"%(source_url))        
+    
+    version = get_stack_manifest_version(text)
+    if version:
+        return version
+
+    # fallback on CMakeLists.txt version
+    source_url = dev_svn + '/CMakeLists.txt'
+    try:
+        f = urllib2.urlopen(source_url)
+        text = f.read()
+        f.close()
+    except urllib2.HTTPError:
+        raise ReleaseException("failed to fetch CMakeLists.txt for stack.\nA common cause is the '_rules' are not set correctly for this stack.\nThe URL was %s"%(source_url))
     
     return get_cmake_version(text)
 
@@ -107,10 +133,39 @@ def _compute_stack_depends_and_licenses(stack, packages):
         stack_depends[st].append(pkg)
     return stack_depends
 
-def get_stack_version(directory, stack_name):
-    with open(os.path.join(directory, 'CMakeLists.txt')) as f:
-        text = f.read()
-        return get_cmake_version(text)
+
+def get_stack_version(stack_dir, stack_name):
+    return get_stack_version_by_dir(stack_dir)
+
+# NOTE: this is a copy of roslib.stacks.get_stack_version_by_dir().  We copy
+# it here for compatibility with cturtle/diamondback
+def get_stack_version_by_dir(stack_dir):
+    """
+    Get stack version where stack_dir points to root directory of stack.
+    
+    @param env: override environment variables
+    @type  env: {str: str}
+
+    @return: version number of stack, or None if stack is unversioned.
+    @rtype: str
+    """
+    # REP 109: check for <version> tag first, then CMakeLists.txt
+    manifest_filename = os.path.join(stack_dir, roslib.stacks.STACK_FILE)
+    if os.path.isfile(manifest_filename):
+        m = roslib.stack_manifest.parse_file(manifest_filename)
+        try:
+            # version attribute only available in ROS 1.5.1+
+            if m.version:
+                return m.version
+        except AttributeError:
+            pass
+    
+    cmake_filename = os.path.join(stack_dir, 'CMakeLists.txt')
+    if os.path.isfile(cmake_filename):
+        with open(cmake_filename) as f:
+            return get_cmake_version(f.read())
+    else:
+        return None
 
 def get_cmake_version(text):
     for l in text.split('\n'):
@@ -120,7 +175,6 @@ def get_cmake_version(text):
             if len(lsplit) < 2:
                 raise ReleaseException("couldn't find version number in CMakeLists.txt:\n\n%s"%l)
             return lsplit[1]
-    
 
 def update_rosdistro_yaml(stack_name, version, distro_file):
     """
@@ -190,25 +244,19 @@ def make_dist_of_dir(tmp_dir, name, version, distro_stack):
     Create tarball in a temporary directory. 
     It is expected the tempdir has a fresh checkout of the stack.
 
+    @param name: stack name
+    @param version: stack version
     @return: tarball file path, control data. 
     """
     tmp_source_dir = os.path.join(tmp_dir, name)
     print 'Building a distribution for %s in %s'%(name, tmp_source_dir)
-    cmd = ['make', 'package_source']
-    try:
-        subprocess.check_call(cmd, cwd=tmp_source_dir)
-    except:
-        raise ReleaseException("unable to 'make package_source' in package. Most likely the Makefile and CMakeLists.txt files have not been checked in")
-    tarball = "%s-%s.tar.bz2"%(name, version)
-    src = os.path.join(tmp_source_dir, 'build', tarball)
-
-    md5sum = md5sum_file(src)
+    tarball = create_stack_tarball(tmp_source_dir, name, version)
+    md5sum = md5sum_file(tarball)
     control = control_data(name, version, md5sum, stack_file=os.path.join(tmp_source_dir, 'stack.xml'))
     
     # move tarball outside tmp_dir so we can clean it up
-    dst = os.path.join(tempfile.gettempdir(), tarball)
-    import shutil
-    shutil.copyfile(src, dst)
+    dst = os.path.join(tempfile.gettempdir(), os.path.basename(tarball))
+    shutil.copyfile(tarball, dst)
     shutil.rmtree(tmp_dir)
     return dst, control
 
@@ -221,3 +269,55 @@ def svn_url_exists(url):
             return False            
     except:
         return False
+
+
+TAR_IGNORE_TOP=['build']
+TAR_IGNORE_ALL=['.svn', '.git', '.hg']
+
+def tar_exclude(name):
+    if name.split('/')[-1] in TAR_IGNORE_ALL:
+        return True
+    else:
+        return False
+
+def create_stack_tarball(path, stack_name, stack_version):
+    """
+    Create a source tarball from a stack at a particular path.
+  
+    @param name: name of stack
+    @param stack_version: version number of stack
+    @param path: the path of the stack to package up
+    @return: the path of the resulting tarball, or else None
+    """
+
+    # Verify that the stack has both a stack.xml and CMakeLists.txt file
+    stack_xml_path = os.path.join(path, roslib.stack_manifest.STACK_FILE)
+    cmake_lists_path = os.path.join(path, 'CMakeLists.txt')
+
+    if not os.path.exists(stack_xml_path):
+        raise ReleaseException("Could not find stack manifest, expected [%s]."%(stack_xml_path))
+    if not os.path.exists(cmake_lists_path):
+        raise ReleaseException("Could not find CMakeLists.txt file, expected [%s]."%(cmake_lists_path))
+
+    # Create the build directory
+    build_dir = os.path.join(path, 'build')
+    if not os.path.exists(build_dir):
+        os.makedirs(build_dir)
+
+    tarfile_name = os.path.join(build_dir,'%s-%s.tar.bz2'%(stack_name, stack_version))
+    archive_dir = '%s-%s'%(stack_name, stack_version)
+
+    tar = tarfile.open(tarfile_name, 'w:bz2')
+  
+    for x in os.listdir(path):
+        if x not in TAR_IGNORE_TOP + TAR_IGNORE_ALL:
+            # path of item
+            p = os.path.join(path,x)
+            # tar path of item
+            tp = os.path.join(archive_dir, x)
+            
+            tar.add(p, tp, exclude=tar_exclude)
+            
+    tar.close()
+    return tarfile_name
+

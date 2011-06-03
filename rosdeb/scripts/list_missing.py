@@ -135,7 +135,7 @@ class ExclusionList(object):
         return stack in self.excludes and self.key in self.excludes[stack]
 
 
-def get_missing(distro, os_platform, arch):
+def get_missing(distro, os_platform, arch, repo=SHADOW_REPO, lock_version=True):
     distro_name = distro.release_name
     # Load the list of exclusions
     excludes_uri = "https://code.ros.org/svn/release/trunk/distros/%s.excludes"%(distro_name)
@@ -156,8 +156,11 @@ def get_missing(distro, os_platform, arch):
             missing_primary.add(sn)
             continue
         deb_name = "ros-%s-%s"%(distro_name, debianize_name(sn))
-        deb_version = debianize_version(sv, '\w*', os_platform)
-        if not deb_in_repo(SHADOW_REPO, deb_name, deb_version, os_platform, arch, use_regex=True):
+        if lock_version:
+            deb_version = debianize_version(sv, '\w*', os_platform)
+        else:
+            deb_version = '[0-9.]*-[st][0-9]+~[a-z]+'
+        if not deb_in_repo(repo, deb_name, deb_version, os_platform, arch, use_regex=True):
             try:
                 si = load_info(sn, sv)
                 depends = set(si['depends'])
@@ -214,13 +217,17 @@ MISSING_REPO = '*'
 MISSING_SOURCEDEB = '!'
 MISSING_PRIMARY = '-'
 MISSING_DEP = '&lt;-'
+MISSING_BROKEN = '--'
+MISSING_BROKEN_DEP = '&lt;--'
 MISSING_EXCLUDED = 'X'
 MISSING_EXCLUDED_DEP = '&lt;X'
 COLORS = {
     MISSING_REPO: 'black',
-    MISSING_PRIMARY: 'red',
+    MISSING_PRIMARY: 'blue',
     MISSING_SOURCEDEB: 'yellow',
-    MISSING_DEP: 'pink',
+    MISSING_DEP: 'lightblue',
+    MISSING_BROKEN: 'red',
+    MISSING_BROKEN_DEP: 'pink',
     MISSING_EXCLUDED: 'grey',
     MISSING_EXCLUDED_DEP: 'lightgrey',
     }
@@ -236,14 +243,18 @@ def get_html_legend():
     return """<h2>Stack Debbuild Status</h2>
 <h3>Legend</h3>
 <ul>
-<li>Missing (deb): <span style="background-color: %s;">&nbsp;%s&nbsp;</span></li>
 <li>Missing (sourcedeb): <span style="background-color: %s;">&nbsp;%s&nbsp;</span></li>
+<li>Missing (deb): <span style="background-color: %s;">&nbsp;%s&nbsp;</span></li>
 <li>Depends Missing: <span style="background-color: %s;">&nbsp;%s&nbsp;</span></li>
+<li>Broken (deb): <span style="background-color: %s;">&nbsp;%s&nbsp;</span></li>
+<li>Depends Broken (deb): <span style="background-color: %s;">&nbsp;%s&nbsp;</span></li>
 <li>Excluded: <span style="background-color: %s;">&nbsp;%s&nbsp;</span></li>
 <li>Depends Excluded: <span style="background-color: %s;">&nbsp;%s&nbsp;</span></li> 
-</ul>"""%(COLORS[MISSING_PRIMARY], MISSING_PRIMARY, 
-          COLORS[MISSING_SOURCEDEB], MISSING_SOURCEDEB, 
-          COLORS[MISSING_DEP], MISSING_DEP, 
+</ul>"""%(COLORS[MISSING_SOURCEDEB], MISSING_SOURCEDEB, 
+          COLORS[MISSING_PRIMARY], MISSING_PRIMARY, 
+          COLORS[MISSING_DEP], MISSING_DEP,
+          COLORS[MISSING_BROKEN], MISSING_BROKEN, 
+          COLORS[MISSING_BROKEN_DEP], MISSING_BROKEN_DEP, 
           COLORS[MISSING_EXCLUDED], MISSING_EXCLUDED, 
           COLORS[MISSING_EXCLUDED_DEP], MISSING_EXCLUDED_DEP
           )
@@ -380,9 +391,16 @@ def generate_allhtml_report(output, distro_name, os_platforms):
                 continue
             
             args = get_missing(distro, os_platform, arch)
+            try:
+                args_fixed = get_missing(distro, os_platform, arch, repo=SHADOW_FIXED_REPO, lock_version=False)
+            except BadRepo:
+                for s in distro.stacks.iterkeys():
+                    stacks[s][key] = MISSING_REPO
+                counts[key] = "!"
+                continue
             counts[key] = ','.join([str(len(x)) for x in args])
             missing_primary, missing_dep, missing_excluded, missing_excluded_dep = args
-
+            missing_primary_fixed, missing_dep_fixed, missing_excluded_fixed, missing_excluded_dep_fixed = args_fixed
             for s in missing_primary:
                 if svn_url_exists(sourcedeb_url(distro, s, os_platform)):
                     stacks[s][key] = MISSING_PRIMARY
@@ -393,6 +411,17 @@ def generate_allhtml_report(output, distro_name, os_platforms):
                     stacks[s][key] = MISSING_DEP
                 else:
                     stacks[s][key] = MISSING_SOURCEDEB
+            for s in missing_primary_fixed:
+                if svn_url_exists(sourcedeb_url(distro, s, os_platform)):
+                    stacks[s][key] = MISSING_BROKEN
+                else:
+                    stacks[s][key] = MISSING_SOURCEDEB
+            for s in missing_dep_fixed:
+                if svn_url_exists(sourcedeb_url(distro, s, os_platform)):
+                    stacks[s][key] = MISSING_BROKEN_DEP
+                else:
+                    stacks[s][key] = MISSING_SOURCEDEB
+
             for s in missing_excluded:
                 stacks[s][key] = MISSING_EXCLUDED
             for s in missing_excluded_dep:
