@@ -99,3 +99,40 @@ class BZRClient(vcs_base.VCSClientBase):
     def get_version(self):
         output = subprocess.Popen(['bzr', 'revno'], cwd= self._path, stdout=subprocess.PIPE).communicate()[0]
         return output.strip()
+
+
+class BZRConfig(object):
+    """
+    Configuration information about an BZR repository for a component
+    of code. The configuration we maintain is specific to ROS
+    toolchain concepts and is not a general notion of BZR configuration.
+
+     * dev: where the code is developed
+     * distro_tag: a tag of the code for a specific ROS distribution
+     * release_tag: a tag of the code for a specific release
+    """
+    
+    def __init__(self):
+        self.type = 'bzr'
+        self.dev = None
+        self.distro_tag = None
+        self.release_tag = None
+
+        # anonymously readable version of URLs above. Some repos have
+        # separate URLs for read-only vs. writable versions of repo
+        # and many tools need to be able to read repos without
+        # providing credentials.
+        self.anon_dev         = None
+        self.anon_distro_tag  = None
+        self.anon_release_tag = None
+
+    def __eq__(self, other):
+        return self.dev == other.dev and \
+            self.distro_tag == other.distro_tag and \
+            self.release_tag == other.release_tag and \
+            self.anon_dev == other.anon_dev and \
+            self.anon_distro_tag == other.anon_distro_tag and \
+            self.anon_release_tag == other.anon_release_tag
+
+    def __repr__(self):
+        return "{dev: '%s', distro-tag: '%s', 'release-tag': '%s', anon-dev: '%s', anon-distro-tag: '%s', anon-release-tag: '%s'}"%(self.dev, self.distro_tag, self.release_tag, self.anon_dev, self.anon_distro_tag, self.anon_release_tag)

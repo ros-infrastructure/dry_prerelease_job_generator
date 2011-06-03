@@ -38,7 +38,7 @@ from __future__ import with_statement
 PKG = 'release'
 NAME="create.py"
 
-VERSION=4
+VERSION=5
 
 import roslib; roslib.load_manifest(PKG)
 
@@ -58,6 +58,7 @@ import roslib.stacks
 from vcstools import svn_url_exists
 from vcstools.hg import HGClient
 from vcstools.git import GITClient
+from vcstools.bzr import BZRClient
 
 from release import ReleaseException, update_rosdistro_yaml, make_dist, \
     compute_stack_depends, get_stack_version, \
@@ -161,9 +162,9 @@ def confirm_stack_version(local_path, checkout_path, stack_name, version):
     vcs_version = get_stack_version(checkout_path, stack_name)
     local_version = get_stack_version(local_path, stack_name)
     if vcs_version != version:
-        raise ReleaseException("The version number in %s/CMakeLists.txt stored in version control does not match specified release version:\n\n%s"%(stack_name, vcs_version))
+        raise ReleaseException("The version number of stack %s stored in version control does not match specified release version:\n\n%s"%(stack_name, vcs_version))
     if local_version != version:
-        raise ReleaseException("The version number in %s/CMakeLists.txt on your ROS_PACKAGE_PATH does not match specified release version:\n\n%s"%(stack_name, local_version))
+        raise ReleaseException("The version number of stack %s on your ROS_PACKAGE_PATH does not match specified release version:\n\n%s"%(stack_name, local_version))
     
 
 def copy_to_server(name, version, tarball, control, control_only=False):
@@ -234,7 +235,7 @@ def tag_release(distro_stack):
     elif 'hg' in distro_stack._rules:
         tag_mercurial(distro_stack)
     elif 'bzr' in distro_stack._rules:
-        raise Exception("TODO: implement tagging for bzr")
+        tag_bzr(distro_stack)
     else:
         raise Exception("unsupported VCS")
     
@@ -289,6 +290,59 @@ def tag_mercurial(distro_stack):
     #    print "create_release will not create this tag in subversion"
     #else:
     urls.append(tag_name)
+    return urls
+
+def tag_bzr(distro_stack):
+    urls = []
+    cmds = []
+
+    config = distro_stack.vcs_config
+
+    from_url = config.repo_uri
+
+    # First create a release tag in the bzr repository.
+    make_tag = False
+    while True:
+        prompt = raw_input("Would you like to tag %s as %s in %s, [y/n]"%(config.dev_branch, config.release_tag, from_url))
+        if prompt == 'y':
+            make_tag = True
+            break
+        elif prompt == 'n':
+            break
+
+    if make_tag == True:
+        tempdir = tempfile.mkdtemp()
+        temp_repo = os.path.join(tempdir, distro_stack.name)
+        bzr_client = BZRClient(temp_repo)
+        bzr_client.checkout(from_url, config.dev_branch)
+
+        #bzr tag -d lp:sr-ros-interface --force tes
+        #directly create and push the tag to the repo
+        subprocess.check_call(['bzr', 'tag', '-d', config.dev_branch,'--force',config.release_tag], cwd=temp_repo)
+
+    # Now create a distro branch.
+    # In bzr a branch is a much better solution since
+    # branches can be force-updated by fetch.
+    make_tag = False
+    while True:
+        branch_name = config.release_tag
+        prompt = raw_input("Would you like to create the branch %s as %s in %s, [y/n]"%(config.dev_branch, branch_name, from_url))
+        if prompt == 'y':
+            make_tag = True
+            break
+        elif prompt == 'n':
+            break
+
+    if make_tag == True:
+        tempdir = tempfile.mkdtemp()
+        temp_repo = os.path.join(tempdir, distro_stack.name)
+        bzr_client = BZRClient(temp_repo)
+        bzr_client.checkout(from_url, config.dev_branch)
+
+        #subprocess.check_call(['bzr', 'branch', '-f', branch_name, config.dev_branch], cwd=temp_repo)
+        subprocess.check_call(['bzr', 'push', '--create-prefix', from_url+"/"+branch_name], cwd=temp_repo)
+
+    urls.append(config.distro_tag)
     return urls
 
 def tag_git(distro_stack):
@@ -470,7 +524,7 @@ def main():
         # create the tarball
         tarball, control = make_dist_of_dir(tmp_dir, name, version, distro_stack)
         #tarball, control = make_dist(name, version, distro_stack, repair=repair)
-        if not control['rosdeps']:
+        if 0 and not control['rosdeps']:
             print >> sys.stderr, """Misconfiguration: control rosdeps are empty.\n
     In order to run create.py, the stack you are releasing must be on your current
     ROS_PACKAGE_PATH. This is so create.py can access the stack's rosdeps."""

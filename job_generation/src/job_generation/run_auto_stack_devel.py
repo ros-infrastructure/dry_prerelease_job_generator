@@ -9,7 +9,10 @@ import subprocess
     
 
 def main():
+    print "Starting run_auto_stack_devel script"
+
     # parse command line options
+    print "Parsing command line options"
     (options, args) = get_options(['stack', 'rosdistro'], ['repeat'])
     if not options:
         return -1
@@ -19,6 +22,7 @@ def main():
     options.stack = options.stack[0]
 
     # set environment
+    print "Setting up environment"
     env = get_environment()
     env['ROS_PACKAGE_PATH'] = '%s:/opt/ros/%s/stacks'%(os.environ['WORKSPACE'], options.rosdistro)
     if options.stack == 'ros':
@@ -33,6 +37,7 @@ def main():
 
 
     # Install Debian packages of stack dependencies
+    print "Installing Debian packages of stack dependencies"
     call('sudo apt-get update', env)
     with open('%s/stack.xml'%stack_dir) as stack_file:
         depends = stack_manifest.parse(stack_file.read()).depends

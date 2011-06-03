@@ -13,7 +13,10 @@ def main():
 
     # parse rosdistro file
     rosdistro_obj = rosdistro.Distro(sys.argv[1])
+    for name, s in rosdistro_obj.stacks.iteritems():
+        tmp = s.vcs_config.type
     print 'Rosdistro file for %s parses succesfully'%rosdistro_obj.release_name
+    
 
 if __name__ == '__main__':
     main()

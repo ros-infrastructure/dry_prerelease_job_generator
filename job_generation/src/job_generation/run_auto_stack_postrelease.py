@@ -88,7 +88,7 @@ def main():
     rosinstall_file = '%s.rosinstall'%DEPENDS_ON_DIR
     with open(rosinstall_file, 'w') as f:
         f.write(rosinstall)
-    call('rosinstall %s /opt/ros/%s %s'%(DEPENDS_ON_DIR, options.rosdistro, rosinstall_file), env,
+    call('rosinstall --rosdep-yes %s /opt/ros/%s %s/%s %s'%(DEPENDS_ON_DIR, options.rosdistro, os.environ['WORKSPACE'], options.stack, rosinstall_file), env,
          'Install of stacks that depend on %s from source'%options.stack)
 
     # Remove stacks that depend on this stack from Debians
