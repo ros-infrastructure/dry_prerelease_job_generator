@@ -205,6 +205,11 @@ def package_manifests_of(stack_dir):
       dir. These will be returned as a list of (name, path) pairs.
     @rtype: [(str, str)]
     """
+    # Unary stack check
+    m_file = os.path.join(stack_dir, 'manifest.xml')
+    if os.path.isfile(m_file):
+        return [(os.path.basename(os.path.abspath(stack_dir)), m_file),]
+    
     l = [os.path.join(stack_dir, d) for d in os.listdir(stack_dir)]
     manifests = []
     packages = []
