@@ -1,5 +1,5 @@
 #!/usr/bin/python
-
+import random
 
 # template to create post-release hudscon configuration file
 HUDSON_POST_RELEASE_CONFIG = """<?xml version='1.0' encoding='UTF-8'?>
@@ -121,7 +121,8 @@ def create_post_release_configs(rosdistro, stack):
             time_trigger = ''
             job_children = ''
             if name == gold_job:
-                time_trigger = '0 3 * * *'
+                # random time between 0:00 and 4:50
+                time_trigger = '%d %d * * *'%(int(50*random.random()), int(4*random.random()))
                 job_children = ', '.join(gold_children)
             hudson_config = HUDSON_POST_RELEASE_CONFIG
             hudson_config = hudson_config.replace('BOOTSTRAP_SCRIPT', BOOTSTRAP_SCRIPT)
