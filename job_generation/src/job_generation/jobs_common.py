@@ -442,6 +442,7 @@ def call(command, env, message='', ignore_fail=False):
             message += "ROS_ROOT = %s\n"%env['ROS_ROOT']
             message += "PYTHONPATH = %s\n"%env['PYTHONPATH']
             message += "\n=========================================\n"
+            print message
             write_file(env['WORKSPACE']+'/build_output/buildfailures.txt', message)
             write_file(env['WORKSPACE']+'/test_output/testfailures.txt', '')
             write_file(env['WORKSPACE']+'/build_output/buildfailures-with-context.txt', '')
