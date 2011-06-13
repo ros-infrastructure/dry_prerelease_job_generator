@@ -42,11 +42,10 @@ def main():
     try:
         with open('%s/stack.xml'%stack_dir) as stack_file:
             depends = stack_manifest.parse(stack_file.read()).depends
-    except:
-        print "Exception in user code:"
-        print '-'*60
+    except Exception, ex:
+        print "Exception while opening stack.xml of stack %s"%options.stack
         traceback.print_exc(file=sys.stdout)
-        print '-'*60
+        raise ex
 
     if len(depends) != 0:
         print 'Installing debian packages of stack dependencies: %s'%str(depends)        
