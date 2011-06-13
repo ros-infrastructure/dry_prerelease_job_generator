@@ -38,13 +38,12 @@ def main():
 
     # Install Debian packages of stack dependencies
     print "Installing Debian packages of stack dependencies"
+    call('sudo apt-get update', env)
     try:
-        call('sudo apt-get update', env)
-        print "successfully updated asdf"
+        with open('%s/stack.xml'%stack_dir) as stack_file:
+            depends = stack_manifest.parse(stack_file.read()).depends
     except Exception, ex:
-        print "excepted in apt-get update"
-    with open('%s/stack.xml'%stack_dir) as stack_file:
-        depends = stack_manifest.parse(stack_file.read()).depends
+        print "Got exception" ex
     if len(depends) != 0:
         print 'Installing debian packages of stack dependencies: %s'%str(depends)        
         call('sudo apt-get install %s --yes'%(stacks_to_debs(depends, options.rosdistro)), env,
