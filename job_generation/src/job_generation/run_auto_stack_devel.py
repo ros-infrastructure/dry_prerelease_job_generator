@@ -6,7 +6,7 @@ import sys
 import os
 import optparse 
 import subprocess
-    
+import traceback
 
 def main():
     print "Starting run_auto_stack_devel script"
