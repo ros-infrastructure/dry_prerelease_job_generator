@@ -42,8 +42,12 @@ def main():
     try:
         with open('%s/stack.xml'%stack_dir) as stack_file:
             depends = stack_manifest.parse(stack_file.read()).depends
-    except Exception, ex:
-        print "Got exception", ex
+    except:
+        print "Exception in user code:"
+        print '-'*60
+        traceback.print_exc(file=sys.stdout)
+        print '-'*60
+
     if len(depends) != 0:
         print 'Installing debian packages of stack dependencies: %s'%str(depends)        
         call('sudo apt-get install %s --yes'%(stacks_to_debs(depends, options.rosdistro)), env,
