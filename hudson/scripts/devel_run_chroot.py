@@ -434,7 +434,7 @@ grub-pc grub-pc/install_devices_empty boolean true
     def setup_svn_ssl_certs(self):
         print 'Setting up ssl certs'
 
-        self.execute(["apt-get", "update"])
+        self.execute(["apt-get", "update"], robust=True)
         cmd = "apt-get install subversion -y --force-yes".split()
         self.execute(cmd)
         
