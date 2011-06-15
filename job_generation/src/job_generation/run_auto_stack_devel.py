@@ -78,7 +78,7 @@ if __name__ == '__main__':
     try:
         res = main()
         sys.exit( res )
-    except:
+    except Exception, ex:
         sys.exit(-1)
 
 
