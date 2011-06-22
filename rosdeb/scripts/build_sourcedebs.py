@@ -215,7 +215,7 @@ def do_deb_build(distro_name, stack_name, stack_version, os_platform, arch, stag
     print "Actually trying to build %s-%s..."%(stack_name, stack_version)
 
     co_cmd = "svn co https://kforge.ros.org/rosrelease/sourcedebs/%(stack_name)s %(staging_dir)s"%locals()
-    subprocess.check_call(co_cmd)    
+    subprocess.check_call(co_cmd.split())    
 
     distro_tgz = os.path.join('/var/cache/pbuilder', "%s-%s.tgz"%(os_platform, arch))
     cache_dir = '/home/rosbuild/aptcache/%s-%s'%(os_platform, arch)
