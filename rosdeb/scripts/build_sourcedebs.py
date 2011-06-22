@@ -332,7 +332,7 @@ def build_debs(distro, sourcedeb_name, os_platform, arch, staging_dir, force, no
     create_chroot(distro, distro_name, os_platform, arch)
 
     try:
-        do_deb_build(distro_name, sn, sv, os_platform, arch, staging_dir, noupload, interactive and sn == sourcedeb_name)
+        do_deb_build(distro_name, sourcedep_name, "undefined", os_platform, arch, staging_dir, noupload, interactive)
     except:
         raise StackBuildFailure("source debbuild did not complete successfully when building %s"%sourcedeb_name)
     return
@@ -591,17 +591,6 @@ def build_debs_main():
             shutil.rmtree(staging_dir)
             
 
-    # Try to create metapkgs as necessary
-    if not failure_message and stack_name == 'ALL':
-
-        if options.staging_dir is not None:
-            staging_dir    = options.staging_dir
-            staging_dir = os.path.abspath(staging_dir)
-        else:
-            staging_dir = tempfile.mkdtemp()
-
-        if options.staging_dir is None:
-            shutil.rmtree(staging_dir)
 
 
     #TODO COPY INTO SHADOW FIXED  equivilant of lock_deps in build_debs.py
