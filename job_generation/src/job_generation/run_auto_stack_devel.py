@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 from roslib import stack_manifest
+import roslib.stacks
 from jobs_common import *
 import sys
 import os
@@ -35,7 +36,7 @@ def main():
         env['PYTHONPATH'] = env['ROS_ROOT']+'/core/roslib/src'
 
         env['PATH'] = '/opt/ros/%s/ros/bin:%s'%(options.rosdistro, os.environ['PATH'])
-        stack_dir = env['WORKSPACE']+'/'+options.stack
+        stack_dir = roslib.stacks.get_stack_dir(options.stack, env=env)
 
 
         # Install Debian packages of stack dependencies
