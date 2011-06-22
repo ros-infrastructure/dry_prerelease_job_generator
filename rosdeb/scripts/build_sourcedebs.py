@@ -214,6 +214,9 @@ def create_chroot(distro, distro_name, os_platform, arch):
 def do_deb_build(distro_name, stack_name, stack_version, os_platform, arch, staging_dir, noupload, interactive):
     print "Actually trying to build %s-%s..."%(stack_name, stack_version)
 
+    co_cmd = "svn co https://kforge.ros.org/rosrelease/sourcedebs/%(stack_name)s %(staging_dir)"%locals()
+    subprocess.check_call(co_cmd)    
+
     distro_tgz = os.path.join('/var/cache/pbuilder', "%s-%s.tgz"%(os_platform, arch))
     cache_dir = '/home/rosbuild/aptcache/%s-%s'%(os_platform, arch)
 
@@ -228,11 +231,12 @@ def do_deb_build(distro_name, stack_name, stack_version, os_platform, arch, stag
     if not os.path.exists(distro_tgz):
         raise InternalBuildFailure("%s does not exist."%(distro_tgz))
 
-    # Download deb and tar.gz files:
-    dsc_name = '%s.dsc'%(deb_file)
-    tar_gz_name = '%s.tar.gz'%(deb_file)
 
-    (dsc_file, tar_gz_file) = download_files(stack_name, stack_version, staging_dir, [dsc_name, tar_gz_name])
+    staging_dir_contents = os.listdir(staging_dir)
+    dsc_files = [f for f in staging_dir_contents if ".dsc" in f]
+    if len(dsc_files) != 1:
+        raise InternalBuildFailure("Too many dsc files found %s"%dsc_files)
+    dsc_file = dsc_files[0]
 
     # Create hook and results directories
     hook_dir = os.path.join(staging_dir, 'hooks')
@@ -251,14 +255,6 @@ def do_deb_build(distro_name, stack_name, stack_version, os_platform, arch, stag
     if not os.path.exists(build_dir):
         os.makedirs(build_dir)
 
-    # Hook script which will download our tar.bz2 into environment
-    p = os.path.join(hook_dir, 'A50fetch')
-    with open(p, 'w') as f:
-        f.write("""#!/bin/sh
-set -o errexit
-wget https://code.ros.org/svn/release/download/stacks/%(stack_name)s/%(stack_name)s-%(stack_version)s/%(stack_name)s-%(stack_version)s.tar.bz2 -O /tmp/buildd/%(stack_name)s-%(stack_version)s.tar.bz2"""%locals())
-        os.chmod(p, stat.S_IRWXU)
-
 
     # Hook script which makes sure we have updated our apt cache
     p = os.path.join(hook_dir, 'D50update')
@@ -268,33 +264,6 @@ set -o errexit
 apt-get update"""%locals())
         os.chmod(p, stat.S_IRWXU)
 
-    if interactive:
-
-        # Hook scripts to make us interactive:
-        p = os.path.join(hook_dir, 'B50interactive')
-        with open(p, 'w') as f:
-            f.write("""#!/bin/sh
-echo "Entering interactive environment.  Exit when done to continue pbuilder operation."
-export ROS_DESTDIR=/tmp/buildd/%(deb_name)s-%(stack_version)s/debian/%(deb_name)s
-source /tmp/buildd/%(deb_name)s-%(stack_version)s/setup_deb.sh
-roscd %(stack_name)s
-bash </dev/tty
-echo "Resuming pbuilder"
-"""%locals())
-            os.chmod(p, stat.S_IRWXU)
-
-        # Hook scripts to make us interactive:
-        p = os.path.join(hook_dir, 'C50interactive')
-        with open(p, 'w') as f:
-            f.write("""#!/bin/sh
-echo "Entering interactive environment.  Exit when done to continue pbuilder operation."
-export ROS_DESTDIR=/tmp/buildd/%(deb_name)s-%(stack_version)s/debian/%(deb_name)s
-source /tmp/buildd/%(deb_name)s-%(stack_version)s/setup_deb.sh
-roscd %(stack_name)s
-bash </dev/tty
-echo "Resuming pbuilder"
-"""%locals())
-            os.chmod(p, stat.S_IRWXU)
 
 
     if arch == 'amd64':
@@ -306,52 +275,49 @@ echo "Resuming pbuilder"
     print "starting pbuilder build of %s-%s"%(stack_name, stack_version)
     subprocess.check_call(archcmd+ ['sudo', 'pbuilder', '--build', '--basetgz', distro_tgz, '--configfile', conf_file, '--hookdir', hook_dir, '--buildresult', results_dir, '--binary-arch', '--buildplace', build_dir, '--aptcache', cache_dir, dsc_file])
 
-    # Set up an RE to look for the debian file and find the build_version
-    deb_version_wild = debianize_version(stack_version, '(\w*)', os_platform)
-    deb_file_wild = "%s_%s_%s\.deb"%(deb_name, deb_version_wild, arch)
-    build_version = None
+
 
     # Extract the version number we just built:
     files = os.listdir(results_dir)
 
-    for f in files:
-        M = re.match(deb_file_wild, f)
-        if M:
-            build_version = M.group(1)
+    # Find debian file outputs
+    deb_files_detected = [f for f in files if '.deb' in f]
+    deb_names = [d.split('_')[0] for d in deb_files_detected]
 
-    if not build_version:
-        raise InternalBuildFailure("No deb-file generated matching template: %s"%deb_file_wild)
 
-    deb_version_final = debianize_version(stack_version, build_version, os_platform)
-    deb_file_final = "%s_%s"%(deb_name, deb_version_final)
+    if len(deb_files_detected) < 1:
+        raise InternalBuildFailure("No deb-file generated")
 
     # Build a package db if we have to
     print "starting package db build of %s-%s"%(stack_name, stack_version)
     subprocess.check_call(['bash', '-c', 'cd %(staging_dir)s && dpkg-scanpackages . > %(results_dir)s/Packages'%locals()])
 
-
-    # Script to execute for deb verification
-    # TODO: Add code to run all the unit-tests for the deb!
-    verify_script = os.path.join(staging_dir, 'verify_script.sh')
-    with open(verify_script, 'w') as f:
-        f.write("""#!/bin/sh
+    for d in deb_names:
+        # Script to execute for deb verification
+        # TODO: Add code to run all the unit-tests for the deb!
+        verify_script = os.path.join(staging_dir, 'verify_script.sh')
+        with open(verify_script, 'w') as f:
+            f.write("""#!/bin/sh
 set -o errexit
 echo "deb file:%(staging_dir)s results/" > /etc/apt/sources.list.d/pbuild.list
 apt-get update
-apt-get install %(deb_name)s=%(deb_version_final)s -y --force-yes
-dpkg -l %(deb_name)s
+apt-get install %(d)s -y --force-yes
+dpkg -l %(d)s
 """%locals())
-        os.chmod(verify_script, stat.S_IRWXU)
-            
+            os.chmod(verify_script, stat.S_IRWXU)
 
 
-    print "starting verify script for %s-%s"%(stack_name, stack_version)
-    subprocess.check_call(archcmd + ['sudo', 'pbuilder', '--execute', '--basetgz', distro_tgz, '--configfile', conf_file, '--bindmounts', results_dir, '--buildplace', build_dir, '--aptcache', cache_dir, verify_script])
+
+        print "starting verify script for %s-%s"%(stack_name, stack_version)
+        subprocess.check_call(archcmd + ['sudo', 'pbuilder', '--execute', '--basetgz', distro_tgz, '--configfile', conf_file, '--bindmounts', results_dir, '--buildplace', build_dir, '--aptcache', cache_dir, verify_script])
 
     if not noupload:
         # Upload the debs to the server
-        base_files = ['%s_%s.changes'%(deb_file, arch), "%s_%s.deb"%(deb_file_final, arch)]
-        files = [os.path.join(results_dir, x) for x in base_files]
+
+        # Detect changes files
+        changes_files_detected = [f for f in files if '.changes' in f]
+
+        files = [os.path.join(results_dir, x) for x in changes_files_detected + deb_files_detected]
     
         print "uploading debs for %s-%s to pub8"%(stack_name, stack_version)
         subprocess.check_call(['scp'] + files + ['rosbuild@pub8:/var/packages/ros-shadow/ubuntu/incoming/%s'%os_platform])
@@ -365,7 +331,7 @@ def build_debs(distro, sourcedeb_name, os_platform, arch, staging_dir, force, no
     # Create the environment where we build the debs, if necessary
     create_chroot(distro, distro_name, os_platform, arch)
 
-    try:
+   try:
         do_deb_build(distro_name, sn, sv, os_platform, arch, staging_dir, noupload, interactive and sn == sourcedeb_name)
     except:
         raise StackBuildFailure("source debbuild did not complete successfully when building %s"%sourcedeb_name)
@@ -634,17 +600,8 @@ def build_debs_main():
         else:
             staging_dir = tempfile.mkdtemp()
 
-        try:
-            gen_metapkgs(distro, os_platform, arch, staging_dir)
-        except BuildFailure, e:
-            failure_message = "Failure Message:\n"+"="*80+'\n'+str(e)
-        except StackBuildFailure, e:
-            warning_message = "Warning Message:\n"+"="*80+'\n'+str(e)
-        except Exception, e:
-            failure_message = "Internal failure in the release system. Please notify leibs and kwc @willowgarage.com:\n%s\n\n%s"%(e, traceback.format_exc(e))
-        finally:
-            if options.staging_dir is None:
-                shutil.rmtree(staging_dir)
+        if options.staging_dir is None:
+            shutil.rmtree(staging_dir)
 
 
     #TODO COPY INTO SHADOW FIXED  equivilant of lock_deps in build_debs.py
