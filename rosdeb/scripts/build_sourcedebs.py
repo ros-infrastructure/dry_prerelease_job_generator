@@ -214,7 +214,7 @@ def create_chroot(distro, distro_name, os_platform, arch):
 def do_deb_build(distro_name, stack_name, stack_version, os_platform, arch, staging_dir, noupload, interactive):
     print "Actually trying to build %s-%s..."%(stack_name, stack_version)
 
-    co_cmd = "svn co https://kforge.ros.org/rosrelease/sourcedebs/%(stack_name)s %(staging_dir)"%locals()
+    co_cmd = "svn co https://kforge.ros.org/rosrelease/sourcedebs/%(stack_name)s %(staging_dir)s"%locals()
     subprocess.check_call(co_cmd)    
 
     distro_tgz = os.path.join('/var/cache/pbuilder', "%s-%s.tgz"%(os_platform, arch))
