@@ -333,8 +333,8 @@ def build_debs(distro, sourcedeb_name, os_platform, arch, staging_dir, force, no
 
     try:
         do_deb_build(distro_name, sourcedep_name, "undefined", os_platform, arch, staging_dir, noupload, interactive)
-    except:
-        raise StackBuildFailure("source debbuild did not complete successfully when building %s"%sourcedeb_name)
+    except Exception, ex:
+        raise StackBuildFailure("source debbuild did not complete successfully when building %s %s"%(sourcedeb_name, ex))
     return
 
 
