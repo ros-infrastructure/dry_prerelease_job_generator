@@ -331,7 +331,7 @@ def build_debs(distro, sourcedeb_name, os_platform, arch, staging_dir, force, no
     # Create the environment where we build the debs, if necessary
     create_chroot(distro, distro_name, os_platform, arch)
 
-   try:
+    try:
         do_deb_build(distro_name, sn, sv, os_platform, arch, staging_dir, noupload, interactive and sn == sourcedeb_name)
     except:
         raise StackBuildFailure("source debbuild did not complete successfully when building %s"%sourcedeb_name)
