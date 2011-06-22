@@ -236,7 +236,7 @@ def do_deb_build(distro_name, stack_name, stack_version, os_platform, arch, stag
     dsc_files = [f for f in staging_dir_contents if ".dsc" in f]
     if len(dsc_files) != 1:
         raise InternalBuildFailure("Too many dsc files found %s"%dsc_files)
-    dsc_file = dsc_files[0]
+    dsc_file = os.path.join(staging_dir, dsc_files[0])
 
     # Create hook and results directories
     hook_dir = os.path.join(staging_dir, 'hooks')
