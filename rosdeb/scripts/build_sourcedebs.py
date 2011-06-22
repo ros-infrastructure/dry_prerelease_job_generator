@@ -311,18 +311,22 @@ dpkg -l %(d)s
         print "starting verify script for %s-%s"%(stack_name, stack_version)
         subprocess.check_call(archcmd + ['sudo', 'pbuilder', '--execute', '--basetgz', distro_tgz, '--configfile', conf_file, '--bindmounts', results_dir, '--buildplace', build_dir, '--aptcache', cache_dir, verify_script])
 
+
+    # Detect changes files
+    changes_files_detected = [f for f in files if '.changes' in f]
+    upload_files = [os.path.join(results_dir, x) for x in changes_files_detected + deb_files_detected]
+        
     if not noupload:
         # Upload the debs to the server
-
-        # Detect changes files
-        changes_files_detected = [f for f in files if '.changes' in f]
-
-        files = [os.path.join(results_dir, x) for x in changes_files_detected + deb_files_detected]
-    
         print "uploading debs for %s-%s to pub8"%(stack_name, stack_version)
-        subprocess.check_call(['scp'] + files + ['rosbuild@pub8:/var/packages/ros-shadow/ubuntu/incoming/%s'%os_platform])
+        subprocess.check_call(['scp'] + upload_files + ['rosbuild@pub8:/var/packages/ros-shadow/ubuntu/incoming/%s'%os_platform])
+
+        remote_cmd = ("reprepro -b /var/packages/ros-shadow/ubuntu -V processincoming %s"%os_platform)
+
+        cmd = ['ssh', 'rosbuild@pub8', remote_cmd]
+        subprocess.check_call(cmd)
     else:
-        print "No Upload option selected, I would have uploaded the files:", files 
+        print "No Upload option selected, I would have uploaded the files:", upload_files 
 
  
 def build_debs(distro, sourcedeb_name, os_platform, arch, staging_dir, force, noupload, interactive):
