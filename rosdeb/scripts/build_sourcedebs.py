@@ -120,62 +120,6 @@ class TempRamFS:
 def deb_in_repo(deb_name, deb_version, os_platform, arch):
     return rosdeb.deb_in_repo(SHADOW_REPO_URL, deb_name, deb_version, os_platform, arch, use_regex=True)
 
-def get_depends(deb_name, os_platform, arch):
-    return rosdeb.get_depends(SHADOW_REPO_URL, deb_name, os_platform, arch)
-    
-def download_files(stack_name, stack_version, staging_dir, files):
-    import urllib
-    
-    base_name = "%s-%s"%(stack_name, stack_version)
-
-    dl_files = []
-
-    for f_name in files:
-        dest = os.path.join(staging_dir, f_name)
-        url = TARBALL_URL%locals()
-        try:
-            urllib.urlretrieve(url, dest)
-        except Exception,e:
-            print e
-        dl_files.append(dest)
-
-    return dl_files
-
-def load_info(stack_name, stack_version):
-    try:
-        return download_control(stack_name, stack_version)
-    except:
-        traceback.print_exc()
-        raise BuildFailure("Problem fetching yaml info for %s %s.\nThis yaml info is usually created when a release is uploaded. If it is missing, either the stack version is wrong, or the release did not occur correctly."%(stack_name, stack_version))
-
-def compute_deps(distro, stack_name):
-
-    seen = set()
-    ordered_deps = []
-
-    def add_stack(s):
-        if s in seen:
-            return
-        if s not in distro.released_stacks:
-            raise BuildFailure("[%s] not found in distro."%(str(s)))
-        seen.add(s)
-        v = distro.released_stacks[s].version
-        if not v:
-            raise BuildFailure("[%s] has not been released (version-less)."%(s))
-        # version-less entries are ignored
-        si = load_info(s, v)
-        loaded_deps = si['depends']
-        for d in loaded_deps:
-            add_stack(d)
-        ordered_deps.append((s,v))
-
-    if stack_name == 'ALL':
-        for s in distro.released_stacks.keys():
-            add_stack(s)
-    else:
-        add_stack(stack_name)
-
-    return ordered_deps
 
 def create_chroot(distro, distro_name, os_platform, arch):
 
@@ -210,19 +154,19 @@ def create_chroot(distro, distro_name, os_platform, arch):
 
     subprocess.check_call(['sudo', 'pbuilder', '--create', '--distribution', os_platform, '--debootstrapopts', '--arch=%s'%arch, '--othermirror', 'deb http://packages.ros.org/ros-shadow/ubuntu %s main'%(os_platform), '--basetgz', distro_tgz, '--components', 'main restricted universe multiverse', '--extrapackages', deplist, '--aptcache', cache_dir])
 
-def push_built_deb(os_platform, repo_name, upload_files, change_files):
-    # Upload the debs to the server
-    print "uploading debs for %s-%s to pub8"%(stack_name, stack_version)
-    subprocess.check_call(['scp'] + upload_files + ['rosbuild@pub8:/var/packages/%s/ubuntu/queue/%s'%(repo_name,os_platform)])
-
-    for change_file in change_files:
-        #runs processing
-        remote_cmd = "reprepro -b /var/packages/%s/ubuntu -V processincoming %s %s"%(repo_name, os_platform, change_file)
-        print "running on pub8", remote_cmd
-        cmd = ['ssh', 'rosbuild@pub8', remote_cmd]
-        success = subprocess.call(cmd) == 0
-        if( not success ):
-            print "Failed to update package. Go fix it.", change_file
+#def push_built_deb(os_platform, repo_name, upload_files, change_files):
+#    # Upload the debs to the server
+#    print "uploading debs for %s-%s to pub8"%(stack_name, stack_version)
+#    subprocess.check_call(['scp'] + upload_files + ['rosbuild@pub8:/var/packages/%s/ubuntu/queue/%s'%(repo_name,os_platform)])
+#
+#    for change_file in change_files:
+#        #runs processing
+#        remote_cmd = "reprepro -b /var/packages/%s/ubuntu -V processincoming %s %s"%(repo_name, os_platform, change_file)
+#        print "running on pub8", remote_cmd
+#        cmd = ['ssh', 'rosbuild@pub8', remote_cmd]
+#        success = subprocess.call(cmd) == 0
+#        if( not success ):
+#            print "Failed to update package. Go fix it.", change_file
             
 def do_deb_build(distro_name, stack_name, stack_version, os_platform, arch, staging_dir, noupload, interactive):
     print "Actually trying to build %s-%s..."%(stack_name, stack_version)
@@ -330,10 +274,8 @@ dpkg -l %(d)s
     upload_files = [os.path.join(results_dir, x) for x in change_files + deb_files_detected]
         
     if not noupload:
-        # Upload the debs to the server
-        push_built_deb(os_platform, "ros-shadow", upload_files, change_files)
-        push_built_deb(os_platform, "ros-shadow-fixed", upload_files, change_files)
-    
+        upload_debs(upload_files, SHADOW_REPO, distro_name, os_platform, arch)
+        upload_debs(upload_files, DEST_REPO, distro_name, os_platform, arch) 
     else:
         print "No Upload option selected, I would have uploaded the files:", upload_files
 
@@ -440,22 +382,19 @@ Description: Meta package for %(metapackage)s variant of ROS.
     return dest_deb
 
 
-def upload_debs(files,distro_name,os_platform,arch):
-
+def upload_debs(files,repo_name, distro_name,os_platform,arch):
     if len(files) == 0:
         print >> sys.stderr, "No debs to upload."
         return 1 # no files to upload
 
-    subprocess.check_call(['scp'] + files + ['rosbuild@pub8:/var/packages/%s/ubuntu/incoming/%s'%(SHADOW_REPO,os_platform)])
+    subprocess.check_call(['scp'] + files + ['rosbuild@pub8:/var/packages/%s/ubuntu/incoming/%s'%(repo_name,os_platform)])
 
     base_files = [x.split('/')[-1] for x in files]
 
     # Assemble string for moving all files from incoming to queue (while lock is being held)
-    mvstr = '\n'.join(['mv '+os.path.join('/var/packages/%s/ubuntu/incoming'%(SHADOW_REPO),os_platform,x)+' '+os.path.join('/var/packages/%s/ubuntu/queue'%(SHADOW_REPO),os_platform,x) for x in base_files])
-    new_files = ' '.join(os.path.join('/var/packages/%s/ubuntu/queue'%(SHADOW_REPO),os_platform,x) for x in base_files)
+    mvstr = '\n'.join(['mv '+os.path.join('/var/packages/%s/ubuntu/incoming'%(repo_name),os_platform,x)+' '+os.path.join('/var/packages/%s/ubuntu/queue'%(repo_name),os_platform,x) for x in base_files])
+    new_files = ' '.join(os.path.join('/var/packages/%s/ubuntu/queue'%(repo_name),os_platform,x) for x in base_files)
 
-    # hacky
-    shadow_repo = SHADOW_REPO
 
     # This script moves files into queue directory, removes all dependent debs, removes the existing deb, and then processes the incoming files
     remote_cmd = "TMPFILE=`mktemp` || exit 1 && cat > ${TMPFILE} && chmod +x ${TMPFILE} && ${TMPFILE}; ret=${?}; rm ${TMPFILE}; exit ${ret}"
@@ -467,9 +406,9 @@ set -o errexit
 flock 200
 # Move from incoming to queue
 %(mvstr)s
-reprepro -V -b /var/packages/%(shadow_repo)s/ubuntu includedeb %(os_platform)s %(new_files)s
+reprepro -V -b /var/packages/%(repo_name)s/ubuntu includedeb %(os_platform)s %(new_files)s
 rm %(new_files)s
-) 200>/var/lock/ros-shadow.lock
+) 200>/var/lock/%(repo_name)s.lock
 """%locals()
 
     #Actually run script and check result
@@ -489,59 +428,6 @@ def load_distro(distro_name):
     distro_uri = "https://code.ros.org/svn/release/trunk/distros/%s.rosdistro"%distro_name
     return Distro(distro_uri)
     
-def gen_metapkgs(distro, os_platform, arch, staging_dir, force=False):
-    distro_name = distro.release_name
-
-    # Retrieve the package list from the shadow repo
-    packageurl="http://packages.ros.org/ros-shadow/ubuntu/dists/%(os_platform)s/main/binary-%(arch)s/Packages"%locals()
-    packagetxt = urllib2.urlopen(packageurl).read()
-    packagelist = parse_deb_packages(packagetxt)
-
-    debs = []
-
-    missing = []
-
-    missing_primary, missing_dep, missing_excluded, missing_excluded_dep = list_missing.get_missing(distro, os_platform, arch)
-
-    missing_ok = missing_excluded.union(missing_excluded_dep)
-
-    
-    # if (metapkg missing) or (metapkg missing deps), then create
-    # modify create to version-lock deps
-
-    # Build the new meta packages
-    for (v,d) in distro.variants.iteritems():
-
-        deb_name = "ros-%s-%s"%(distro_name, debianize_name(v))
-
-        # If the metapkg is in the packagelist AND already has the right deps, we leave it:
-        if deb_name in packagelist:
-            list_deps = set([x.split()[0].strip() for x in packagelist[deb_name]['Depends'].split(',')])
-            mp_deps = set(["ros-%s-%s"%(distro_name, debianize_name(x)) for x in set(d.stack_names) - missing_ok])
-            if list_deps == mp_deps:
-                print "Metapackage %s already has correct deps"%deb_name
-                continue
-
-        # Else, we create the new metapkg
-        mp = create_meta_pkg(packagelist, distro, distro_name, v, set(d.stack_names) - missing_ok, os_platform, arch, staging_dir)
-        if mp:
-            debs.append(mp)
-        else:
-            missing.append(v)
-
-    # We should always need to build the special "all" metapackage
-    mp = create_meta_pkg(packagelist, distro, distro_name, "all", set(distro.released_stacks.keys()) - missing_ok, os_platform, arch, staging_dir)
-    if mp:
-        debs.append(mp)
-    else:
-        missing.append('all')
-
-    upload_debs(debs, distro_name, os_platform, arch)
-
-    if missing:
-        raise StackBuildFailure("Did not generate all metapkgs: %s."%missing)
-
-
 def build_debs_main():
 
     from optparse import OptionParser
