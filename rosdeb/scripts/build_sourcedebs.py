@@ -321,11 +321,13 @@ dpkg -l %(d)s
         print "uploading debs for %s-%s to pub8"%(stack_name, stack_version)
         subprocess.check_call(['scp'] + upload_files + ['rosbuild@pub8:/var/packages/ros-shadow/ubuntu/queue/%s'%os_platform])
 
-        remote_cmd = ("reprepro -b /var/packages/ros-shadow/ubuntu -V processincoming %s"%os_platform)
-        print "running on pub8", remote_cmd
-                      
-        cmd = ['ssh', 'rosbuild@pub8', remote_cmd]
-        subprocess.check_call(cmd)
+        for change_file in changes_files_detected:
+            remote_cmd = "reprepro -b /var/packages/ros-shadow/ubuntu -V processincoming %s %s"%(os_platform,change_file)
+            print "running on pub8", remote_cmd
+            cmd = ['ssh', 'rosbuild@pub8', remote_cmd]
+            success = subprocess.call(cmd) == 0
+            if( not success ):
+                print "Failed to update package. Go fix it.", change_file
     else:
         print "No Upload option selected, I would have uploaded the files:", upload_files 
 
