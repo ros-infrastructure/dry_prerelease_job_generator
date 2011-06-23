@@ -274,8 +274,8 @@ dpkg -l %(d)s
     upload_files = [os.path.join(results_dir, x) for x in change_files + deb_files_detected]
         
     if not noupload:
-        upload_debs(upload_files, SHADOW_REPO, distro_name, os_platform, arch)
-        upload_debs(upload_files, DEST_REPO, distro_name, os_platform, arch) 
+        upload_debs(deb_files_detected, SHADOW_REPO, distro_name, os_platform, arch)
+        upload_debs(deb_files_detected, DEST_REPO, distro_name, os_platform, arch) 
     else:
         print "No Upload option selected, I would have uploaded the files:", upload_files
 
