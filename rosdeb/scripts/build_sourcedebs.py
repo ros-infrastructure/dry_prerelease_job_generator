@@ -171,7 +171,7 @@ def create_chroot(distro, distro_name, os_platform, arch):
 def do_deb_build(distro_name, stack_name, stack_version, os_platform, arch, staging_dir, noupload, interactive):
     print "Actually trying to build %s-%s..."%(stack_name, stack_version)
 
-    co_cmd = "sudo apt-get install git && git clone %(stack_name)s %(staging_dir)s"%locals()
+    co_cmd = "git clone %(stack_name)s %(staging_dir)s"%locals()
     print co_cmd
     subprocess.check_call(co_cmd.split())
     
