@@ -401,7 +401,6 @@ def upload_debs(files,repo_name, distro_name,os_platform,arch):
     run_script = subprocess.Popen(['ssh', 'rosbuild@pub8', remote_cmd], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     script_content = """
 #!/bin/bash
-set -o errexit
 (
 flock 200
 # Move from incoming to queue
