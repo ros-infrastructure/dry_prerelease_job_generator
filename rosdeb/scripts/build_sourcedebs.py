@@ -168,7 +168,7 @@ def create_chroot(distro, distro_name, os_platform, arch):
 #        if( not success ):
 #            print "Failed to update package. Go fix it.", change_file
             
-def do_deb_build(distro_name, git_repo, stack_name, stack_version, os_platform, arch, staging_dir, noupload, interactive):
+def do_deb_build(distro_name, stack_name, stack_version, os_platform, arch, staging_dir, noupload, interactive):
     print "Actually trying to build %s-%s..."%(stack_name, stack_version)
 
     co_cmd = "cd %(staging_dir)s && git clone %(stack_name)s co"%locals()
