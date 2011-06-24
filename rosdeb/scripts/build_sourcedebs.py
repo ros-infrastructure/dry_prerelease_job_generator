@@ -178,7 +178,7 @@ def do_deb_build(distro_name, stack_name, stack_version, os_platform, arch, stag
     co_cmd = "sudo apt-get install git-buildpackage"
     subprocess.check_call(co_cmd.split())
 
-    subprocess.check_call(["sh","-c",'"cd %(staging_dir)s; git-buildpackage -S --git-export-dir=%(staging_dir)s;"'%locals()])
+    subprocess.check_call(["/bin/sh","-c",'"cd %(staging_dir)s; git-buildpackage -S --git-export-dir=%(staging_dir)s;"'%locals()])
 
     distro_tgz = os.path.join('/var/cache/pbuilder', "%s-%s.tgz"%(os_platform, arch))
     cache_dir = '/home/rosbuild/aptcache/%s-%s'%(os_platform, arch)
