@@ -170,10 +170,11 @@ def create_chroot(distro, distro_name, os_platform, arch):
             
 def do_deb_build(distro_name, stack_name, stack_version, os_platform, arch, staging_dir, noupload, interactive):
     print "Actually trying to build %s-%s..." % (stack_name, stack_version)
-
+    project_name = stack_name.split('/')[-1].rstrip('.git')
     subprocess.check_call(['sudo', 'apt-get', 'install', 'git-core', 'git-buildpackage', '-y'])
-    subprocess.check_call(["gbp-clone","%(stack_name)s" % locals(), "%(staging_dir)s/co" % locals()])
-    subprocess.check_call(["/bin/sh", "-c", "'cd %(staging_dir)s/co && git-buildpackage -S'" % locals()])
+    subprocess.check_call(["/bin/sh", "-c", "'cd %(staging_dir)s && gbp-clone %(stack_name)s" % locals()])
+
+    subprocess.check_call(["/bin/sh", "-c", "'cd %(staging_dir)s/%(project_name)s && git-buildpackage -S'" % locals()])
 
     distro_tgz = os.path.join('/var/cache/pbuilder', "%s-%s.tgz" % (os_platform, arch))
     cache_dir = '/home/rosbuild/aptcache/%s-%s' % (os_platform, arch)
