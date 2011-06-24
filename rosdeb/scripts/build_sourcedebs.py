@@ -171,9 +171,11 @@ def create_chroot(distro, distro_name, os_platform, arch):
 def do_deb_build(distro_name, stack_name, stack_version, os_platform, arch, staging_dir, noupload, interactive):
     print "Actually trying to build %s-%s..."%(stack_name, stack_version)
 
-    co_cmd = "git clone %(stack_name)s %(staging_dir)s/co"%locals()
+    co_cmd = "sudo apt-get install git && mkdir %(staging_dir)s/co && git clone %(stack_name)s %(staging_dir)s/co"%locals()
+    print co_cmd 
     subprocess.check_call(co_cmd)
-    co_cmd = "cd %(staging_dir)s/co && git-buildpackage -S --git-export-dir=%(staging_dir)s"%locals()
+    
+    co_cmd = "sudo apt-get install git-buildpackage && cd %(staging_dir)s/co && git-buildpackage -S --git-export-dir=%(staging_dir)s"%locals()
     subprocess.check_call(co_cmd)
 
     distro_tgz = os.path.join('/var/cache/pbuilder', "%s-%s.tgz"%(os_platform, arch))
