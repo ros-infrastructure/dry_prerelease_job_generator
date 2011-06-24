@@ -126,13 +126,13 @@ def create_chroot(distro, distro_name, os_platform, arch):
     distro_tgz = os.path.join('/var/cache/pbuilder', "%s-%s.tgz"%(os_platform, arch))
     cache_dir = '/home/rosbuild/aptcache/%s-%s'%(os_platform, arch)
 
-    #if os.path.exists(distro_tgz) and os.path.getsize(distro_tgz) > 0:  # Zero sized file left in place if last build crashed
-    #    return
+    if os.path.exists(distro_tgz) and os.path.getsize(distro_tgz) > 0:  # Zero sized file left in place if last build crashed
+        return
 
     if not os.path.exists(cache_dir):
         os.makedirs(cache_dir)
 
-    ros_info = load_info('ros', distro.released_stacks['ros'].version)
+    #ros_info = load_info('ros', distro.released_stacks['ros'].version)
 
     # Things that this build infrastructure depends on
     basedeps = ['wget', 'lsb-release', 'debhelper']
@@ -143,14 +143,14 @@ def create_chroot(distro, distro_name, os_platform, arch):
     # For debugging
     basedeps += ['strace']
 
-    rosdeps = ros_info['rosdeps']
+    #rosdeps = ros_info['rosdeps']
     # hack due to bug in ubuntu_platform map
-    if os_platform == 'maverick' and 'mighty' in rosdeps:
-        rosdeps = rosdeps['mighty']
-    else:
-        rosdeps = rosdeps[os_platform]
+    #if os_platform == 'maverick' and 'mighty' in rosdeps:
+    #    rosdeps = rosdeps['mighty']
+    #else:
+    #    rosdeps = rosdeps[os_platform]
 
-    deplist = ' '.join(basedeps+rosdeps)
+    #deplist = ' '.join(basedeps+rosdeps)
 
     subprocess.check_call(['sudo', 'pbuilder', '--create', '--distribution', os_platform, '--debootstrapopts', '--arch=%s'%arch, '--othermirror', 'deb http://packages.ros.org/ros-shadow/ubuntu %s main'%(os_platform), '--basetgz', distro_tgz, '--components', 'main restricted universe multiverse', '--extrapackages', deplist, '--aptcache', cache_dir])
 
@@ -171,7 +171,9 @@ def create_chroot(distro, distro_name, os_platform, arch):
 def do_deb_build(distro_name, stack_name, stack_version, os_platform, arch, staging_dir, noupload, interactive):
     print "Actually trying to build %s-%s..."%(stack_name, stack_version)
 
-    subprocess.check_call(["/bin/sh","-c","'git clone %(stack_name)s %(staging_dir)s/co && cd %(staging_dir)s/co && git branch upsteam origin/upstream && git-buildpackage -S'"%locals()])
+    subprocess.ceck_call(['sudo','apt-get','install','git-core', 'git-buildpackage'])
+    subprocess.check_call(["/bin/sh","-c","'git clone %(stack_name)s %(staging_dir)s/co'"%locals()])
+    subprocess.check_call(["/bin/sh","-c", "'cd %(staging_dir)s/co && git branch upsteam origin/upstream && git-buildpackage -S'"%locals()])
 
     distro_tgz = os.path.join('/var/cache/pbuilder', "%s-%s.tgz"%(os_platform, arch))
     cache_dir = '/home/rosbuild/aptcache/%s-%s'%(os_platform, arch)
