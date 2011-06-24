@@ -137,7 +137,7 @@ def create_chroot(distro, distro_name, os_platform, arch):
     # Things that this build infrastructure depends on
     basedeps = ['wget', 'lsb-release', 'debhelper']
     # Deps we claimed to have needed for building ROS
-    basedeps += ['build-essential', 'python-yaml', 'cmake', 'subversion', 'python-setuptools']
+    basedeps += ['build-essential', 'python-yaml', 'cmake', 'subversion', 'python-setuptools', 'git-core', 'git-buildpackage']
     # Extra deps that some stacks seem to be missing
     basedeps += ['libxml2-dev', 'libtool', 'unzip']
     # For debugging
@@ -171,14 +171,11 @@ def create_chroot(distro, distro_name, os_platform, arch):
 def do_deb_build(distro_name, stack_name, stack_version, os_platform, arch, staging_dir, noupload, interactive):
     print "Actually trying to build %s-%s..."%(stack_name, stack_version)
 
-    co_cmd = "git clone %(stack_name)s %(staging_dir)s"%locals()
+    co_cmd = "git clone %(stack_name)s %(staging_dir)s/co"%locals()
     print co_cmd
     subprocess.check_call(co_cmd.split())
-    
-    co_cmd = "sudo apt-get install git-buildpackage -y"
-    subprocess.check_call(co_cmd.split())
 
-    subprocess.check_call(["/bin/sh","-c","'cd %(staging_dir)s && git-buildpackage -S --git-export-dir=%(staging_dir)s;'"%locals()])
+    subprocess.check_call(["/bin/sh","-c","'cd %(staging_dir)s/co && git branch upsteam origin/upstream && git-buildpackage -S'"%locals()])
 
     distro_tgz = os.path.join('/var/cache/pbuilder', "%s-%s.tgz"%(os_platform, arch))
     cache_dir = '/home/rosbuild/aptcache/%s-%s'%(os_platform, arch)
