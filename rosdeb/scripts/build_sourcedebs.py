@@ -171,10 +171,10 @@ def create_chroot(distro, distro_name, os_platform, arch):
 def do_deb_build(distro_name, stack_name, stack_version, os_platform, arch, staging_dir, noupload, interactive):
     print "Actually trying to build %s-%s..."%(stack_name, stack_version)
 
-    co_cmd = "mkdir %(staging_dir)s && cd %(staging_dir)s && git clone %(stack_name)s co"%locals()
-    subprocess.check_call(co_cmd.split())
+    co_cmd = "git clone %(stack_name)s %(staging_dir)s/co"%locals()
+    subprocess.check_call(co_cmd)
     co_cmd = "cd %(staging_dir)s/co && git-buildpackage -S --git-export-dir=%(staging_dir)s"%locals()
-    subprocess.check_call(co_cmd.split())
+    subprocess.check_call(co_cmd)
 
     distro_tgz = os.path.join('/var/cache/pbuilder', "%s-%s.tgz"%(os_platform, arch))
     cache_dir = '/home/rosbuild/aptcache/%s-%s'%(os_platform, arch)
