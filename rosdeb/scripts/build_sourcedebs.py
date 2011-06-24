@@ -175,7 +175,7 @@ def do_deb_build(distro_name, stack_name, stack_version, os_platform, arch, stag
     print co_cmd
     subprocess.check_call(co_cmd.split())
     
-    co_cmd = "sudo apt-get install git-buildpackage"
+    co_cmd = "sudo apt-get install git-buildpackage -y"
     subprocess.check_call(co_cmd.split())
 
     subprocess.check_call(["/bin/sh","-c",'"cd %(staging_dir)s; git-buildpackage -S --git-export-dir=%(staging_dir)s;"'%locals()])
