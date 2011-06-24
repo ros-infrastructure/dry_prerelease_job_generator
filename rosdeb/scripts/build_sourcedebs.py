@@ -172,7 +172,7 @@ def do_deb_build(distro_name, stack_name, stack_version, os_platform, arch, stag
     print "Actually trying to build %s-%s..." % (stack_name, stack_version)
 
     subprocess.check_call(['sudo', 'apt-get', 'install', 'git-core', 'git-buildpackage', '-y'])
-    subprocess.check_call(["git-buildpackage", "clone", "%(stack_name)s" % locals(), "%(staging_dir)s/co" % locals()])
+    subprocess.check_call(["gbp-clone","%(stack_name)s" % locals(), "%(staging_dir)s/co" % locals()])
     subprocess.check_call(["/bin/sh", "-c", "'cd %(staging_dir)s/co && git-buildpackage -S'" % locals()])
 
     distro_tgz = os.path.join('/var/cache/pbuilder', "%s-%s.tgz" % (os_platform, arch))
