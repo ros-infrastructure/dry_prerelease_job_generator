@@ -238,7 +238,7 @@ apt-get update"""%locals())
     files = os.listdir(results_dir)
 
     # Find debian file outputs
-    deb_files_detected = [f for f in files if '.deb' in f]
+    deb_files_detected = [f for f in files if f.endswith('.deb')]
     deb_names = [d.split('_')[0] for d in deb_files_detected]
 
 
