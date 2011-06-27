@@ -186,7 +186,7 @@ def do_deb_build(distro_name, stack_name, stack_version, os_platform, arch, stag
         middle += '~' + os_platform
         line = left + '(' + middle + ')' + right
         changelog.seek(0)
-        changelog.writeline(line)
+        changelog.write(line + '\n')
         changelog.write(rest)
     
     subprocess.check_call(["/bin/bash", "-c", "cd %(staging_dir)s/%(project_name)s && git commit -a -m 'change to platform specific'"% locals()])
