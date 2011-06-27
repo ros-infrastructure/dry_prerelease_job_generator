@@ -175,20 +175,19 @@ def do_deb_build(distro_name, stack_name, stack_version, os_platform, arch, stag
     #pull down the git repo using git-buildpackage clone, this gets all the right tags
     subprocess.check_call(["/bin/bash", "-c", "cd %(staging_dir)s && gbp-clone %(stack_name)s" % locals()])
     
-    with open(os.path.join(staging_dir,project_name,"debian","changelog"), 'rw') as changelog:
-        first_line = changelog.readline()
-        rest = changelog.read()
-        w = first_line.split('(')
-        left = w[0]
-        right = w[-1].split(')')
-        middle = right[0]
-        right = right[-1]
-        middle += '~' + os_platform
-        line = left + '(' + middle + ')' + right
-        changelog.seek(0)
-        changelog.write(line + '\n')
-        changelog.write(rest)
-    
+    lines = open(os.path.join(staging_dir,project_name,'debian/changelog'),'r').readlines()
+    first_line = lines[0]
+    w = first_line.split('(')
+    left = w[0]
+    right = w[-1].split(')')
+    middle = right[0]
+    right = right[-1]
+    middle += '~' + os_platform
+    line = left + '(' + middle + ')' + right
+    lines[0] = line
+    nchlog = open(os.path.join(staging_dir,project_name,'debian/changelog'),'w')
+    nchlog.writelines(lines)
+        
     subprocess.check_call(["/bin/bash", "-c", "cd %(staging_dir)s/%(project_name)s && git commit -a -m 'change to platform specific'"% locals()])
     subprocess.check_call(["/bin/bash", "-c", "cd %(staging_dir)s/%(project_name)s && git-buildpackage -S -uc -us" % locals()])
 
