@@ -171,9 +171,25 @@ def create_chroot(distro, distro_name, os_platform, arch):
 def do_deb_build(distro_name, stack_name, stack_version, os_platform, arch, staging_dir, noupload, interactive):
     print "Actually trying to build %s-%s..." % (stack_name, stack_version)
     project_name = stack_name.split('/')[-1].rstrip('.git')
-    subprocess.check_call(['sudo', 'apt-get', 'install', 'git-core', 'git-buildpackage','gnupg','-y'])
+    
+    #pull down the git repo using git-buildpackage clone, this gets all the right tags
     subprocess.check_call(["/bin/bash", "-c", "cd %(staging_dir)s && gbp-clone %(stack_name)s" % locals()])
-
+    
+    with open(os.path.join(staging_dir,"debian","changelog"), 'rw') as changelog:
+        first_line = changelog.readline()
+        rest = changelog.read()
+        w = first_line.split('(')
+        left = w[0]
+        right = w[-1].split(')')
+        middle = right[0]
+        right = right[-1]
+        middle += '~' + os_platform
+        line = left + '(' + middle + ')' + right
+        changelog.seek(0)
+        changelog.writeline(line)
+        changelog.write(rest)
+    
+    subprocess.check_call(["/bin/bash", "-c", "cd %(staging_dir)s && git commit -a -m 'change to platform specific'"% locals()])
     subprocess.check_call(["/bin/bash", "-c", "cd %(staging_dir)s/%(project_name)s && git-buildpackage -S -uc -us" % locals()])
 
     distro_tgz = os.path.join('/var/cache/pbuilder', "%s-%s.tgz" % (os_platform, arch))
