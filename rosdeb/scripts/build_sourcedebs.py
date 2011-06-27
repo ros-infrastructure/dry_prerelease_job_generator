@@ -173,9 +173,9 @@ def do_deb_build(distro_name, stack_name, stack_version, os_platform, arch, stag
     project_name = stack_name.split('/')[-1].rstrip('.git')
     
     #pull down the git repo using git-buildpackage clone, this gets all the right tags
-    subprocess.check_call(["/bin/bash", "-c", "cd %(staging_dir)s/%(project_name)s && gbp-clone %(stack_name)s" % locals()])
+    subprocess.check_call(["/bin/bash", "-c", "cd %(staging_dir)s && gbp-clone %(stack_name)s" % locals()])
     
-    with open(os.path.join(staging_dir,"debian","changelog"), 'rw') as changelog:
+    with open(os.path.join(staging_dir,project_name,"debian","changelog"), 'rw') as changelog:
         first_line = changelog.readline()
         rest = changelog.read()
         w = first_line.split('(')
