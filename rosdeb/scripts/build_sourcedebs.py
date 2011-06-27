@@ -173,7 +173,7 @@ def do_deb_build(distro_name, stack_name, stack_version, os_platform, arch, stag
     project_name = stack_name.split('/')[-1].rstrip('.git')
     
     #pull down the git repo using git-buildpackage clone, this gets all the right tags
-    subprocess.check_call(["/bin/bash", "-c", "cd %(staging_dir)s && gbp-clone %(stack_name)s" % locals()])
+    subprocess.check_call(["/bin/bash", "-c", "cd %(staging_dir)s/%(project_name)s && gbp-clone %(stack_name)s" % locals()])
     
     with open(os.path.join(staging_dir,"debian","changelog"), 'rw') as changelog:
         first_line = changelog.readline()
@@ -189,7 +189,7 @@ def do_deb_build(distro_name, stack_name, stack_version, os_platform, arch, stag
         changelog.writeline(line)
         changelog.write(rest)
     
-    subprocess.check_call(["/bin/bash", "-c", "cd %(staging_dir)s && git commit -a -m 'change to platform specific'"% locals()])
+    subprocess.check_call(["/bin/bash", "-c", "cd %(staging_dir)s/%(project_name)s && git commit -a -m 'change to platform specific'"% locals()])
     subprocess.check_call(["/bin/bash", "-c", "cd %(staging_dir)s/%(project_name)s && git-buildpackage -S -uc -us" % locals()])
 
     distro_tgz = os.path.join('/var/cache/pbuilder', "%s-%s.tgz" % (os_platform, arch))
