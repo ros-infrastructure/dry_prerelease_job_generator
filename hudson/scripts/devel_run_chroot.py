@@ -13,8 +13,13 @@ import urllib
 valid_archs = ['i386', 'i686', 'amd64', 'arm']
 valid_ubuntu_distros = ['hardy', 'jaunty', 'karmic', 'lucid', 'maverick', 'natty']
 valid_debian_distros = ['lenny', 'squeeze']
+valid_redhat_distros = ['fedora-15']
 
+# arm requires qemu > 0.13 for lucid and maverick, natty not working yet
 
+# mock requires patched version https://bugs.launchpad.net/ubuntu/+source/mock/+bug/600564
+# also you must be a member of mock group
+# usermod -a -G mock myusername 
 def local_check_call(cmd, display_output=False):
     if not display_output:
         with open(os.devnull, 'w') as fh:
@@ -216,6 +221,28 @@ class ChrootInstance:
         self.call(cmd)
 
     def bootstrap(self):
+        if self.distro in valid_debian_distros + valid_ubuntu_distros:
+            self.debian_bootstrap()
+        if self.distro in valid_redhat_distros:
+            self.redhat_bootstrap()
+
+    def redhat_bootstrap(self):
+        cmd = ['sudo', 'apt-get', 'install', 'mock']
+        print cmd
+        self.check_call(cmd)
+
+
+
+        print "ready to redhat chroot..."
+        
+        cmd = ['/usr/bin/mock', '--init','--resultdir', '/tmp/result', '--configdir', '/home/tfoote/rcom/ros_release/hudson/mock_configs']
+        print cmd
+        print "This will take a few minutes.  Please be patient."
+        self.check_call(cmd)
+        print "Finished mock initing"
+
+
+    def debian_bootstrap(self):
         cmd = ['sudo', 'apt-get', 'install', 'debootstrap']
         print cmd
         self.check_call(cmd)
@@ -350,11 +377,11 @@ grub-pc grub-pc/install_devices_empty boolean true
 
         self.setup_rosbuild()
 
-    def setup_rosbuild(self):
+    def debian_setup_rosbuild(self):
         cmd = "useradd rosbuild -m --groups sudo".split()
         print self.execute(cmd)
 
-        self.setup_ssh_client()
+        self.debian_setup_ssh_client()
         self.setup_svn_ssl_certs()
 
     def add_ros_sources(self):
@@ -405,7 +432,7 @@ grub-pc grub-pc/install_devices_empty boolean true
         cmd = ['apt-key', 'add', os.path.join('/', key_file)]
         self.execute(cmd) 
 
-    def setup_ssh_client(self):
+    def debian_setup_ssh_client(self):
         print 'Setting up ssh client'
         # Pull in ssh, and drop a private key that will allow the slave to
         # upload results of the build.
@@ -581,6 +608,8 @@ def run_chroot(options, path, workspace, hdd_tmp_dir):
 
         #initialization here so that if it throws the cleanup is called.  
         chrti.manual_init()
+        print "returning early for debug"
+
 
         cmd = "apt-get update".split()
         chrti.execute(cmd, robust=True) # continue 
@@ -671,7 +700,7 @@ parser.add_option("--distro", type="string", dest="distro",
 parser.add_option("--persist-chroot", action="store_true", dest="persist", default=False,
                   help="do not clear the chroot before running")
 parser.add_option("--chroot-dir", action="store", dest="chroot_dir", default="/home/rosbuild/chroot",
-                  type="string", help="prefix for ros_release")
+                  type="string", help="Where to put the chroot, + JOB_NAME")
 parser.add_option("--ramdisk-size", action="store", dest="ramdisk_size", default="20000M",
                   type="string", help="Ramdisk size string, default '20GB'")
 parser.add_option("--ramdisk", action="store_true", dest="ramdisk", default=False,
@@ -696,7 +725,7 @@ parser.add_option("--repo-url", action="store", dest="repo_url", default=None,
 
 (options, args) = parser.parse_args()
 
-if options.distro not in (valid_ubuntu_distros + valid_debian_distros):
+if options.distro not in (valid_ubuntu_distros + valid_debian_distros + valid_redhat_distros):
     parser.error("%s is not a valid distro: %s"%(options.distro, valid_ubuntu_distros+ valid_debian_distros))
 if options.arch not in valid_archs:
     parser.error("%s is not a valid arch: %s"%(options.arch, valid_archs))

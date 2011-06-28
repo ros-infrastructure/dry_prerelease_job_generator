@@ -303,7 +303,7 @@ class Hudson(object):
         url = self.server + SLAVE_CONFIGURE%locals()
         ## Todo expose more of these settings.
         values = {'json': 
-                  {"name": name, "nodeDescription": "64-bit Ubuntu 10.04 (runs changeroot builds)", "numExecutors": "1", "remoteFS": "/home/rosbuild/hudson", "labelString": "storm-test devel large prerelease released", "mode": "EXCLUSIVE", "": ["hudson.plugins.sshslaves.SSHLauncher", "hudson.slaves.RetentionStrategy$Always"], "launcher": {"stapler-class": "hudson.plugins.sshslaves.SSHLauncher", "host": ip, "username": "", "password": "", "privatekey": "", "port": "22", "jvmOptions": ""}, "retentionStrategy": {"stapler-class": "hudson.slaves.RetentionStrategy$Always"}, "nodeProperties": {"stapler-class-bag": "true"}
+                  {"name": name, "nodeDescription": "64-bit Ubuntu 10.04 (runs changeroot builds)", "numExecutors": "1", "remoteFS": "/home/rosbuild/hudson", "labelString": "storm-test devel large prerelease released hudson-devel", "mode": "EXCLUSIVE", "": ["hudson.plugins.sshslaves.SSHLauncher", "hudson.slaves.RetentionStrategy$Always"], "launcher": {"stapler-class": "hudson.plugins.sshslaves.SSHLauncher", "host": ip, "username": "", "password": "", "privatekey": "", "port": "22", "jvmOptions": ""}, "retentionStrategy": {"stapler-class": "hudson.slaves.RetentionStrategy$Always"}, "nodeProperties": {"stapler-class-bag": "true"}
                    }
                   } 
         return self.hudson_open(urllib2.Request(url, urllib.urlencode(values)))
