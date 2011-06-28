@@ -69,6 +69,10 @@ REPO_URL = 'http://packages.ros.org/%s/'
 SHADOW_REPO_URL = REPO_URL % SHADOW_REPO
 DEST_REPO_URL = REPO_URL % DEST_REPO
 
+REPO_USERNAME = 'rosbuild'
+REPO_HOSTNAME = 'packages.ros.org'
+REPO_LOGIN = '%s@%s'%(REPO_USERNAME, REPO_HOSTNAME)
+
 import traceback
 
 class StackBuildFailure(Exception):
@@ -404,7 +408,7 @@ def upload_debs(files, repo_name, distro_name, os_platform, arch):
         print >> sys.stderr, "No debs to upload."
         return 1 # no files to upload
 
-    subprocess.check_call(['scp'] + files + ['rosbuild@pub8:/var/packages/%s/ubuntu/incoming/%s' % (repo_name, os_platform)])
+    subprocess.check_call(['scp'] + files + ['%s:/var/packages/%s/ubuntu/incoming/%s' % (REPO_LOGIN, repo_name, os_platform)])
 
     base_files = [x.split('/')[-1] for x in files]
 
@@ -415,7 +419,7 @@ def upload_debs(files, repo_name, distro_name, os_platform, arch):
 
     # This script moves files into queue directory, removes all dependent debs, removes the existing deb, and then processes the incoming files
     remote_cmd = "TMPFILE=`mktemp` || exit 1 && cat > ${TMPFILE} && chmod +x ${TMPFILE} && ${TMPFILE}; ret=${?}; rm ${TMPFILE}; exit ${ret}"
-    run_script = subprocess.Popen(['ssh', 'rosbuild@pub8', remote_cmd], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    run_script = subprocess.Popen(['ssh', REPO_LOGIN, remote_cmd], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     script_content = """
 #!/bin/bash
 (
@@ -499,7 +503,7 @@ def build_debs_main():
     except BuildFailure, e:
         failure_message = "Failure Message:\n" + "=" * 80 + '\n' + str(e)
     except Exception, e:
-        failure_message = "Internal failure release system. Please notify leibs and kwc @willowgarage.com:\n%s\n\n%s" % (e, traceback.format_exc(e))
+        failure_message = "Internal failure release system. Please notify kwc @willowgarage.com:\n%s\n\n%s" % (e, traceback.format_exc(e))
     finally:
         # if we created our own staging dir, we are responsible for cleaning it up
         if options.staging_dir is None:

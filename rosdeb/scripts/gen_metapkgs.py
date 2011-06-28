@@ -62,6 +62,11 @@ NAME = 'stamp_versions.py'
 TARBALL_URL = "https://code.ros.org/svn/release/download/stacks/%(stack_name)s/%(base_name)s/%(f_name)s"
 SOURCE_REPO='ros-shadow'
 DEST_REPO='ros-shadow-fixed'
+
+REPO_HOSTNAME='packages.ros.org'
+REPO_USERNAME='rosbuild'
+REPO_LOGIN='%s@%s'%(REPO_USERNAME, REPO_HOSTNAME)
+
     
 def parse_deb_packages(text):
     parsed = {}
@@ -147,7 +152,7 @@ Description: Meta package for %(metapackage)s variant of ROS.
 
 def upload_debs(files,distro_name,os_platform,arch):
 
-    subprocess.check_call(['scp'] + files + ['rosbuild@pub8:/var/packages/%s/ubuntu/incoming/%s'%(DEST_REPO,os_platform)])
+    subprocess.check_call(['scp'] + files + ['%s:/var/packages/%s/ubuntu/incoming/%s'%(REPO_LOGIN, DEST_REPO,os_platform)])
 
     base_files = [x.split('/')[-1] for x in files]
 
@@ -160,7 +165,7 @@ def upload_debs(files,distro_name,os_platform,arch):
 
     # This script moves files into queue directory, removes all dependent debs, removes the existing deb, and then processes the incoming files
     remote_cmd = "TMPFILE=`mktemp` || exit 1 && cat > ${TMPFILE} && chmod +x ${TMPFILE} && ${TMPFILE}; ret=${?}; rm ${TMPFILE}; exit ${ret}"
-    run_script = subprocess.Popen(['ssh', 'rosbuild@pub8', remote_cmd], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    run_script = subprocess.Popen(['ssh', REPO_LOGIN, remote_cmd], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     script_content = """
 #!/bin/bash
 set -o errexit
