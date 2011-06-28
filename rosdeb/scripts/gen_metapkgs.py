@@ -63,7 +63,7 @@ TARBALL_URL = "https://code.ros.org/svn/release/download/stacks/%(stack_name)s/%
 SOURCE_REPO='ros-shadow'
 DEST_REPO='ros-shadow-fixed'
 
-REPO_HOSTNAME='packages.ros.org'
+REPO_HOSTNAME='pub8'
 REPO_USERNAME='rosbuild'
 REPO_LOGIN='%s@%s'%(REPO_USERNAME, REPO_HOSTNAME)
 
