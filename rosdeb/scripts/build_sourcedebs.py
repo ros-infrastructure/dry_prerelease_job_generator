@@ -292,8 +292,7 @@ dpkg -l %(d)s
     upload_files = [os.path.join(results_dir, x) for x in deb_files_detected]
         
     if not noupload:
-        upload_debs(upload_files, SHADOW_REPO, distro_name, os_platform, arch)
-        upload_debs(upload_files, DEST_REPO, distro_name, os_platform, arch) 
+        upload_debs(upload_files, 'ros-shadow-3rdparty', distro_name, os_platform, arch)
     else:
         print "No Upload option selected, I would have uploaded the files:", upload_files
 
