@@ -185,8 +185,9 @@ def do_deb_build(distro_name, stack_name, stack_version, os_platform, arch, stag
     middle += '~' + os_platform
     line = left + '(' + middle + ')' + right
     lines[0] = line
-    nchlog = open(os.path.join(staging_dir,project_name,'debian/changelog'),'w')
-    nchlog.writelines(lines)
+    with open(os.path.join(staging_dir,project_name,'debian/changelog'),'w') as nchlog:
+        nchlog.writelines(lines)
+    
         
     subprocess.check_call(["/bin/bash", "-c", "cd %(staging_dir)s/%(project_name)s && git commit -a -m 'change to platform specific'"% locals()])
     subprocess.check_call(["/bin/bash", "-c", "cd %(staging_dir)s/%(project_name)s && git-buildpackage -S -uc -us" % locals()])
