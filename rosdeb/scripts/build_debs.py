@@ -367,6 +367,7 @@ dpkg -l %(deb_name)s
         remote_cmd = "TMPFILE=`mktemp` || exit 1 && cat > ${TMPFILE} && chmod +x ${TMPFILE} && ${TMPFILE}; ret=${?}; rm ${TMPFILE}; exit ${ret}"
         run_script = subprocess.Popen(['ssh', REPO_LOGIN, remote_cmd], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         invalidate = [deb_name] + get_depends(deb_name, os_platform, arch)
+        print "invalidating pre-existing and downstream: %s"%(invalidate)
         invalidate_cmds = ["reprepro -b /var/packages/ros-shadow/ubuntu -V -A %(arch)s removefilter %(os_platform)s 'Package (==%(deb_name_x)s)'"%locals() for deb_name_x in  invalidate]
         invalidate_str = "\n".join(invalidate_cmds)
         script_content = """
