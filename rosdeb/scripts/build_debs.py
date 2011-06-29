@@ -418,6 +418,7 @@ reprepro -V -b /var/packages/ros-shadow-fixed/ubuntu --noskipold update %(os_pla
 """%locals()
 
         #Actually run script and check result
+        print "locking debs into fixed repo: \n[[[%s]]]"%(script_content)
         (o,e) = run_script.communicate(script_content)
         res = run_script.wait()
         print o
