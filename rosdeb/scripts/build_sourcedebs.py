@@ -154,9 +154,9 @@ def create_chroot(distro, distro_name, os_platform, arch):
     #else:
     #    rosdeps = rosdeps[os_platform]
 
-    deplist = ' '.join(basedeps+rosdeps)
+    #deplist = ' '.join(basedeps+rosdeps)
 
-    subprocess.check_call(['sudo', 'pbuilder', '--create', '--distribution', os_platform, '--debootstrapopts', '--arch=%s' % arch, '--othermirror', 'deb http://packages.ros.org/ros-shadow/ubuntu %s main' % (os_platform), '--basetgz', distro_tgz, '--components', 'main restricted universe multiverse', '--extrapackages', deplist, '--aptcache', cache_dir])
+    subprocess.check_call(['sudo', 'pbuilder', '--create', '--distribution', os_platform, '--debootstrapopts', '--arch=%s' % arch, '--othermirror', 'deb http://packages.ros.org/ros-shadow/ubuntu %s main' % (os_platform), '--basetgz', distro_tgz, '--components', 'main restricted universe multiverse', '--extrapackages', basedeps, '--aptcache', cache_dir])
 
 #def push_built_deb(os_platform, repo_name, upload_files, change_files):
 #    # Upload the debs to the server
