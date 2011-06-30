@@ -91,14 +91,15 @@ class BZRClient(vcs_base.VCSClientBase):
             if subprocess.check_call(cmd, cwd=self._path, shell=True) == 0:
                 return True
         return False
-        
+
     def get_vcs_type_name(self):
         return 'bzr'
 
 
     def get_version(self):
-        output = subprocess.Popen(['bzr', 'revno'], cwd= self._path, stdout=subprocess.PIPE).communicate()[0]
-        return output.strip()
+        if self.detect_presence():
+            output = subprocess.Popen(['bzr', 'revno'], cwd= self._path, stdout=subprocess.PIPE).communicate()[0]
+            return output.strip()
 
 
 class BZRConfig(object):

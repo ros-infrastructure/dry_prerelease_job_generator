@@ -164,56 +164,61 @@ class GITClient(vcs_base.VCSClientBase):
                 if not subprocess.call(cmd, cwd=self._path, shell=True) == 0:
                     return False
         return self.update_submodules()
-        
+
     def get_vcs_type_name(self):
         return 'git'
 
     def get_version(self):
-        output = subprocess.Popen(['git', 'log', "-1", "--format='%H'"], cwd= self._path, stdout=subprocess.PIPE).communicate()[0]
-        return output.strip().strip("'")
+        if self.detect_presence():
+            output = subprocess.Popen(['git', 'log', "-1", "--format='%H'"], cwd= self._path, stdout=subprocess.PIPE).communicate()[0]
+            return output.strip().strip("'")
 
 
     def is_remote_branch(self, branch_name):
-        output = subprocess.Popen(['git', "branch", '-r'], cwd= self._path, stdout=subprocess.PIPE).communicate()[0]
-        for l in output.split('\n'):
-            elems = l.split()
-            if len(elems) == 1:
-                br_names = elems[0].split('/')
-                if len(br_names) == 2 and br_names[0] == 'origin' and br_names[1] == branch_name:
-                    return True
-        return False
+        if self.path_exists():
+            output = subprocess.Popen(['git', "branch", '-r'], cwd= self._path, stdout=subprocess.PIPE).communicate()[0]
+            for l in output.split('\n'):
+                elems = l.split()
+                if len(elems) == 1:
+                    br_names = elems[0].split('/')
+                    if len(br_names) == 2 and br_names[0] == 'origin' and br_names[1] == branch_name:
+                        return True
+            return False
 
     def is_local_branch(self, branch_name):
-        output = subprocess.Popen(['git', "branch"], cwd= self._path, stdout=subprocess.PIPE).communicate()[0]
-        for l in output.split('\n'):
-            elems = l.split()
-            if len(elems) == 1:
-                if elems[0] == branch_name:
-                    return True
-            elif len(elems) == 2:
-                if elems[0] == '*' and elems[1] == branch_name:
-                    return True
-        return False
+        if self.path_exists():
+            output = subprocess.Popen(['git', "branch"], cwd= self._path, stdout=subprocess.PIPE).communicate()[0]
+            for l in output.split('\n'):
+                elems = l.split()
+                if len(elems) == 1:
+                    if elems[0] == branch_name:
+                        return True
+                elif len(elems) == 2:
+                    if elems[0] == '*' and elems[1] == branch_name:
+                        return True
+            return False
 
     def get_branch(self):
-        output = subprocess.Popen(['git', "branch"], cwd= self._path, stdout=subprocess.PIPE).communicate()[0]
-        for l in output.split('\n'):
-            elems = l.split()
-            if len(elems) == 2 and elems[0] == '*':
-                return elems[1]
-        return None
+        if self.path_exists():
+            output = subprocess.Popen(['git', "branch"], cwd= self._path, stdout=subprocess.PIPE).communicate()[0]
+            for l in output.split('\n'):
+                elems = l.split()
+                if len(elems) == 2 and elems[0] == '*':
+                    return elems[1]
+            return None
 
     def get_branch_parent(self):
-        output = subprocess.Popen(['git', "config", "--get", "branch.%s.merge"%self.get_branch()], cwd= self._path, stdout=subprocess.PIPE).communicate()[0].strip()
-        if not output:
-            print "No output of get branch.%s.merge"%self.get_branch()
-            return None
-        elems = output.split('/')
-        if len(elems) != 3 or elems[0] != 'refs' or elems[1] != 'heads':
-            print "elems improperly formatted", elems
-            return None
-        else:
-            return elems[2]
+        if self.path_exists():
+            output = subprocess.Popen(['git', "config", "--get", "branch.%s.merge"%self.get_branch()], cwd= self._path, stdout=subprocess.PIPE).communicate()[0].strip()
+            if not output:
+                print "No output of get branch.%s.merge"%self.get_branch()
+                return None
+            elems = output.split('/')
+            if len(elems) != 3 or elems[0] != 'refs' or elems[1] != 'heads':
+                print "elems improperly formatted", elems
+                return None
+            else:
+                return elems[2]
 
     def is_hash(self, hashstr):
         """
