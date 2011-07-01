@@ -90,13 +90,34 @@ class HGClient(vcs_base.VCSClientBase):
         if not subprocess.call(cmd, cwd=self._path, shell=True) == 0:
             return False
         return True
-        
+
     def get_vcs_type_name(self):
         return 'hg'
 
-    def get_version(self):
-        output = subprocess.Popen(['hg', 'identify', "-i", self._path], stdout=subprocess.PIPE).communicate()[0]
-        return output.strip()
+    def get_version(self, spec=None):
+        """
+        @param: (optional) token for identifying version. spec can be
+        a whatever is allowed by 'hg log -r', e.g. a tagname, sha-ID,
+        revision-number
+
+        @return the current SHA-ID of the repository. Or if spec is
+        provided, the SHA-ID of a revision specified by some
+        token.
+        """
+        # detect presence only if we need path for cwd in popen
+        if self.detect_presence() and spec != None:
+            command = ['hg', 'log', '-r', spec, '.']
+            output = subprocess.Popen(command, cwd= self._path, stdout=subprocess.PIPE).communicate()[0]
+            if output == None or output.strip() == '' or output.startswith("abort"):
+                return None
+            else:
+                 matches = [l for l in output.split('\n') if l.startswith('changeset: ')]
+                 if len(matches) == 1:
+                     return matches[0].split(':')[2]+"+"
+        else:
+            command = ['hg', 'identify', "-i", self._path]
+            output = subprocess.Popen(command, stdout=subprocess.PIPE).communicate()[0]
+            return output.strip()
 
 class HGConfig(object):
     """

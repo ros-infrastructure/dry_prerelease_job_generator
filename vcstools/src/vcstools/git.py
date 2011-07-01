@@ -168,10 +168,22 @@ class GITClient(vcs_base.VCSClientBase):
     def get_vcs_type_name(self):
         return 'git'
 
-    def get_version(self):
+    def get_version(self, spec=None):
+        """
+        @param spec: (optional) token to identify desired version. For
+        git, this may be anything accepted by git log, e.g. a tagname,
+        branchname, or sha-id.
+        
+        @return: current SHA-ID of the repository. Or if spec is
+        provided, the SHA-ID of a commit specified by some token.
+        """
         if self.detect_presence():
-            output = subprocess.Popen(['git', 'log', "-1", "--format='%H'"], cwd= self._path, stdout=subprocess.PIPE).communicate()[0]
-            return output.strip().strip("'")
+            command = ['git', 'log', "-1", "--format='%H'"]
+            if spec is not None:
+                command.insert(3, spec)
+            output = subprocess.Popen(command, cwd= self._path, stdout=subprocess.PIPE).communicate()[0]
+            output = output.strip().strip("'")
+            return output
 
 
     def is_remote_branch(self, branch_name):

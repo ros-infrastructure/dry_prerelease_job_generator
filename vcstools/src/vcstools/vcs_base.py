@@ -54,7 +54,17 @@ class VCSClientBase:
         """
         raise NotImplementedError, "Base class get_url method must be overridden"
 
-    def get_version(self):
+    def get_version(self, spec=None):
+        """
+        @param spec: token for identifying repository revision
+        desired.  Token might be a tagname, branchname, version-id, or
+        SHA-ID depending on the VCS implementation.
+
+        @return: current revision number of the repository.  Or if
+        spec is provided, the globally unique identifier
+        (e.g. revision number, or SHA-ID) of a revision specified by
+        some token.
+        """
         raise NotImplementedError, "Base class get_version method must be overridden"
 
     def checkout(self, url, version):
@@ -62,7 +72,7 @@ class VCSClientBase:
 
     def update(self, version):
         raise NotImplementedError, "Base class update method must be overridden"
-    
+
 
     def detect_presence(self):
         """For auto detection"""
