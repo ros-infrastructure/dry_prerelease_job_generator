@@ -57,8 +57,8 @@ class VCSClient:
       return self._path
 
   # pass through VCSClientBase API
-  def get_version(self):
-    return self.vcs.get_version()
+  def get_version(self, spec=None):
+    return self.vcs.get_version(spec)
   def checkout(self, url, version=''):
     return self.vcs.checkout(url, version)
   def update(self, version):

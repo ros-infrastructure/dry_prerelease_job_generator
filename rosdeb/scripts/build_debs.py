@@ -69,6 +69,10 @@ REPO_URL='http://packages.ros.org/%s/'
 SHADOW_REPO_URL=REPO_URL%SHADOW_REPO
 DEST_REPO_URL=REPO_URL%DEST_REPO
 
+REPO_HOSTNAME='pub8'
+REPO_USERNAME='rosbuild'
+REPO_LOGIN='%s@%s'%(REPO_USERNAME, REPO_HOSTNAME)
+
 import traceback
 
 class StackBuildFailure(Exception):
@@ -353,16 +357,17 @@ dpkg -l %(deb_name)s
         base_files = ['%s_%s.changes'%(deb_file, arch), "%s_%s.deb"%(deb_file_final, arch)]
         files = [os.path.join(results_dir, x) for x in base_files]
     
-        print "uploading debs for %s-%s to pub8"%(stack_name, stack_version)
-        subprocess.check_call(['scp'] + files + ['rosbuild@pub8:/var/packages/ros-shadow/ubuntu/incoming/%s'%os_platform])
+        print "uploading debs for %s-%s to %s"%(stack_name, stack_version, REPO_HOSTNAME)
+        subprocess.check_call(['scp'] + files + ['%s:/var/packages/ros-shadow/ubuntu/incoming/%s'%(REPO_LOGIN, os_platform)])
 
         # Assemble string for moving all files from incoming to queue (while lock is being held)
         move_str = '\n'.join(['mv '+os.path.join('/var/packages/ros-shadow/ubuntu/incoming',os_platform,x)+' '+os.path.join('/var/packages/ros-shadow/ubuntu/queue',os_platform,x) for x in base_files])
 
         # This script moves files into queue directory, removes all dependent debs, removes the existing deb, and then processes the incoming files
         remote_cmd = "TMPFILE=`mktemp` || exit 1 && cat > ${TMPFILE} && chmod +x ${TMPFILE} && ${TMPFILE}; ret=${?}; rm ${TMPFILE}; exit ${ret}"
-        run_script = subprocess.Popen(['ssh', 'rosbuild@pub8', remote_cmd], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        run_script = subprocess.Popen(['ssh', REPO_LOGIN, remote_cmd], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         invalidate = [deb_name] + get_depends(deb_name, os_platform, arch)
+        print "invalidating pre-existing and downstream: %s"%(invalidate)
         invalidate_cmds = ["reprepro -b /var/packages/ros-shadow/ubuntu -V -A %(arch)s removefilter %(os_platform)s 'Package (==%(deb_name_x)s)'"%locals() for deb_name_x in  invalidate]
         invalidate_str = "\n".join(invalidate_cmds)
         script_content = """
@@ -392,7 +397,7 @@ reprepro -b /var/packages/ros-shadow/ubuntu -V processincoming %(os_platform)s
 def lock_debs(distro, os_platform, arch):
 
         remote_cmd = "TMPFILE=`mktemp` || exit 1 && cat > ${TMPFILE} && chmod +x ${TMPFILE} && ${TMPFILE}; ret=${?}; rm ${TMPFILE}; exit ${ret}"
-        run_script = subprocess.Popen(['ssh', 'rosbuild@pub8', remote_cmd], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        run_script = subprocess.Popen(['ssh', REPO_LOGIN, remote_cmd], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 
         platform_upper = os_platform.upper()
 
@@ -413,6 +418,7 @@ reprepro -V -b /var/packages/ros-shadow-fixed/ubuntu --noskipold update %(os_pla
 """%locals()
 
         #Actually run script and check result
+        print "locking debs into fixed repo: \n[[[%s]]]"%(script_content)
         (o,e) = run_script.communicate(script_content)
         res = run_script.wait()
         print o
@@ -558,7 +564,7 @@ def upload_debs(files,distro_name,os_platform,arch):
         print >> sys.stderr, "No debs to upload."
         return 1 # no files to upload
 
-    subprocess.check_call(['scp'] + files + ['rosbuild@pub8:/var/packages/%s/ubuntu/incoming/%s'%(SHADOW_REPO,os_platform)])
+    subprocess.check_call(['scp'] + files + ['%s:/var/packages/%s/ubuntu/incoming/%s'%(REPO_LOGIN, SHADOW_REPO,os_platform)])
 
     base_files = [x.split('/')[-1] for x in files]
 
@@ -571,7 +577,7 @@ def upload_debs(files,distro_name,os_platform,arch):
 
     # This script moves files into queue directory, removes all dependent debs, removes the existing deb, and then processes the incoming files
     remote_cmd = "TMPFILE=`mktemp` || exit 1 && cat > ${TMPFILE} && chmod +x ${TMPFILE} && ${TMPFILE}; ret=${?}; rm ${TMPFILE}; exit ${ret}"
-    run_script = subprocess.Popen(['ssh', 'rosbuild@pub8', remote_cmd], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    run_script = subprocess.Popen(['ssh', REPO_LOGIN, remote_cmd], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     script_content = """
 #!/bin/bash
 set -o errexit

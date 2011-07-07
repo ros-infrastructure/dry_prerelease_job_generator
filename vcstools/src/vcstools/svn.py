@@ -91,18 +91,46 @@ class SVNClient(vcs_base.VCSClientBase):
         if subprocess.call(cmd, shell=True) == 0:
             return True
         return False
-        
+
     def get_vcs_type_name(self):
         return 'svn'
 
 
-    def get_version(self):
-        output = subprocess.Popen(['svn', 'info', self._path], stdout=subprocess.PIPE).communicate()[0]
-        matches = [l for l in output.split('\n') if l.startswith('Revision: ')]
-        if len(matches) == 1:
-            split_str = matches[0].split()
-            if len(split_str) == 2:
-                return '-r'+split_str[1]
+    def get_version(self, spec=None):
+        """
+        @param spec: (optional) spec can be what 'svn info --help
+        allows, meaning a revnumber, {date}, HEAD, BASE, PREV, or
+        COMMITTED'
+
+        @return: current revision number of the repository. Or if spec
+        provided, the number of a revision specified by some
+        token.
+        """
+        command = ['svn', 'info']
+        if spec != None:
+            if spec.isdigit():
+                # looking up svn with "-r" takes long, and if spec is
+                # a number, all we get from svn is the same number,
+                # unless we try to look at higher rev numbers (in
+                # which case either get the same number, or an error
+                # if the rev does not exist). So we first do a very
+                # quick svn info, and check revision numbers.
+                currentversion = self.get_version(spec = None)
+                # currentversion is '-r4711'
+                print int(currentversion[2:]), int(spec)
+                if currentversion != None and int(currentversion[2:]) > int(spec):
+                    # so if we know revision exist, just return the
+                    # number, avoid the long call to svn server
+                    return '-r'+spec
+            command.append('-r' + spec)
+        command.append(self._path)
+        output = subprocess.Popen(command, stdout=subprocess.PIPE).communicate()[0]
+        if output != None:
+            matches = [l for l in output.split('\n') if l.startswith('Revision: ')]
+            if len(matches) == 1:
+                split_str = matches[0].split()
+                if len(split_str) == 2:
+                    return '-r'+split_str[1]
         return None
 
 class SVNConfig(object):
