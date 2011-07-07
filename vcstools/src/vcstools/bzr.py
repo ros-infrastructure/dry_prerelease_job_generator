@@ -91,14 +91,34 @@ class BZRClient(vcs_base.VCSClientBase):
             if subprocess.check_call(cmd, cwd=self._path, shell=True) == 0:
                 return True
         return False
-        
+
     def get_vcs_type_name(self):
         return 'bzr'
 
 
-    def get_version(self):
-        output = subprocess.Popen(['bzr', 'revno'], cwd= self._path, stdout=subprocess.PIPE).communicate()[0]
-        return output.strip()
+    def get_version(self, spec=None):
+        """
+        @param spec: (optional) revisionspec of desired version.  May
+        be any revisionspec as returned by 'bzr help revisionspec',
+        e.g. a tagname or 'revno:<number>'
+        
+        @return: the current revision number of the repository. Or if
+        spec is provided, the number of a revision specified by some
+        token. 
+        """
+        if self.detect_presence():
+            if spec is not None:
+                command = ['bzr', 'log', '-r', spec, '.']
+                output = subprocess.Popen(command, cwd=self._path, stdout=subprocess.PIPE).communicate()[0]
+                if output is None or output.strip() == '' or output.startswith("bzr:"):
+                    return None
+                else:
+                    matches = [l for l in output.split('\n') if l.startswith('revno: ')]
+                    if len(matches) == 1:
+                        return matches[0].split()[1]
+            else:
+                output = subprocess.Popen(['bzr', 'revno'], cwd= self._path, stdout=subprocess.PIPE).communicate()[0]
+                return output.strip()
 
 
 class BZRConfig(object):

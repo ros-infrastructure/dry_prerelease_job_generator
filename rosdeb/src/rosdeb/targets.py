@@ -3,6 +3,6 @@ os_platform = {
     'unstable': ['lucid', 'maverick', 'natty'],
     'electric': ['lucid', 'maverick', 'natty', 'oneiric'],
     'diamondback': ['lucid', 'maverick', 'natty'],
-    'cturtle': ['lucid', 'maverick', 'karmic', 'jaunty'],
+    'cturtle': ['lucid', 'maverick', 'karmic'],
     'boxturtle': ['hardy', 'intrepid', 'jaunty', 'karmic'],    
 }

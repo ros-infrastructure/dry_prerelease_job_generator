@@ -52,6 +52,14 @@ import vcstools
 
 class DistroException(Exception): pass
 
+def distro_uri(distro_name):
+    """
+    @param distro_name: name of distro, e.g. 'diamondback'
+    @return: the SVN/HTTP URL of the specified distro.  This function should only be used
+    with the main distros.
+    """
+    return "https://code.ros.org/svn/release/trunk/distros/%s.rosdistro"%(distro_name)
+    
 def distro_version(version_val):
     """Parse distro version value, converting SVN revision to version value if necessary"""
     import re
@@ -473,10 +481,15 @@ class Distro(object):
 
 def stack_to_rosinstall(stack, branch, anonymous=True):
     """
-    Generate the rosinstall dictionary entry for a stack in the rosdistro
-    @param stack A DistroStack for a particular stack
-    @param branch Select the branch or tag from 'devel', 'release' or 'distro' of the stack to checkout
-    @param anonymous For svn use anonymous access url. ( It usually doesn't have write permissions. )
+    Generate the rosinstall dictionary entry for a stack in the
+    rosdistro.
+    
+    @param stack: A DistroStack for a particular stack
+    @type  stack: L{DistroStack}
+    @param branch: Select the branch or tag from 'devel', 'release' or 'distro' of the stack to checkout
+    @type  branch: str
+    @param anonymous: If True, use anonymous-access URLs if available (optional, default True).
+    @type  anonymous: bool
     """
     result = []
 
@@ -496,7 +509,7 @@ def stack_to_rosinstall(stack, branch, anonymous=True):
     if not vcs.type in ['svn', 'hg', 'bzr', 'git']:
         raise DistroException( 'Unsupported vcs type %s for stack %s'%(vcs.type, stack.name))
         
-    if vcs.type == 'svn':
+    if vcs.type in ['svn', 'bzr']:
         if branch == 'devel':
             if anonymous: 
                 uri = vcs.anon_dev
@@ -515,7 +528,7 @@ def stack_to_rosinstall(stack, branch, anonymous=True):
                 uri = vcs.release_tag
 
     else:#if vcs.type == 'hg' or vcs.type == 'git' or vcs.type == 'bzr':
-        if anonymous:
+        if anonymous and hasattr(vcs, 'anon_repo_uri'):
             uri = vcs.anon_repo_uri
         else:
             uri = vcs.repo_uri

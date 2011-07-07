@@ -272,7 +272,7 @@ def stack_rosdeps(stack_name, stack_dir, platform):
                 raise Exception("cannot generate rosdeps for stack [%s] on platform [%s]:\n\trosdep [%s] has a script binding"%(stack_name, os_version, r))
             deb_deps.extend([x for x in value.split(' ') if x.strip()])
 
-    return deb_deps
+    return list(set(deb_deps))
         
 def missing_stack_rosdeps(stack_name, stack_dir, platform):
     """

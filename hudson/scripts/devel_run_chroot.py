@@ -10,11 +10,16 @@ import traceback
 import urllib
 
 # Valid options
-valid_archs = ['i386', 'i686', 'amd64']
+valid_archs = ['i386', 'i686', 'amd64', 'arm']
 valid_ubuntu_distros = ['hardy', 'jaunty', 'karmic', 'lucid', 'maverick', 'natty']
 valid_debian_distros = ['lenny', 'squeeze']
+valid_redhat_distros = ['fedora-15']
 
+# arm requires qemu > 0.13 for lucid and maverick, natty not working yet
 
+# mock requires patched version https://bugs.launchpad.net/ubuntu/+source/mock/+bug/600564
+# also you must be a member of mock group
+# usermod -a -G mock myusername 
 def local_check_call(cmd, display_output=False):
     if not display_output:
         with open(os.devnull, 'w') as fh:
@@ -154,7 +159,7 @@ def clean_up_chroots():
 
 
 class ChrootInstance:
-    def __init__(self, distro, arch, path, host_workspace, clear_chroot = True, ssh_key_path = None, use_wg_sources = False, scratch_dir=None, hdd_tmp_dir=None, debug_chroot=False):
+    def __init__(self, distro, arch, path, host_workspace, clear_chroot = True, ssh_key_path = None, use_wg_sources = False, scratch_dir=None, hdd_tmp_dir=None, debug_chroot=False, repo_url=None):
         #logging
         self.profile = []
         self.chroot_path = path
@@ -176,6 +181,7 @@ class ChrootInstance:
         self.scratch_dir = scratch_dir
         self.local_scratch_dir = None
         self.debug_chroot = debug_chroot # if enabled print to screen during setup and teardown
+        self.repo_url = repo_url
 
 
     def clean(self):
@@ -215,15 +221,47 @@ class ChrootInstance:
         self.call(cmd)
 
     def bootstrap(self):
+        if self.distro in valid_debian_distros + valid_ubuntu_distros:
+            self.debian_bootstrap()
+        if self.distro in valid_redhat_distros:
+            self.redhat_bootstrap()
+
+    def redhat_bootstrap(self):
+        cmd = ['sudo', 'apt-get', 'install', 'mock']
+        print cmd
+        self.check_call(cmd)
+
+
+
+        print "ready to redhat chroot..."
+        
+        cmd = ['/usr/bin/mock', '--init','--resultdir', '/tmp/result', '--configdir', '/home/tfoote/rcom/ros_release/hudson/mock_configs']
+        print cmd
+        print "This will take a few minutes.  Please be patient."
+        self.check_call(cmd)
+        print "Finished mock initing"
+
+
+    def debian_bootstrap(self):
         cmd = ['sudo', 'apt-get', 'install', 'debootstrap']
         print cmd
         self.check_call(cmd)
         
-        deboot_url = 'http://aptproxy.willowgarage.com/us.archive.ubuntu.com/ubuntu'
+
+        deboot_url = 'us.archive.ubuntu.com/ubuntu'
         if self.distro in valid_debian_distros:
             deboot_url = 'http://ftp.us.debian.org/debian/'
+        if self.distro in valid_ubuntu_distros and self.arch == 'arm':
+            deboot_url = 'http://ports.ubuntu.com/ubuntu-ports/'
+        if self.repo_url:  # override if necessary
+            deboot_url = self.repo_url
 
-        cmd = ['sudo', 'debootstrap', '--arch', self.arch, self.distro, self.chroot_path, deboot_url]
+
+        cmd = []
+        if self.arch =='arm':
+            cmd = ['sudo', 'build-arm-chroot', self.distro, self.chroot_path] #aptproxy doesn't have armel yet, deboot_url]
+        else:
+            cmd = ['sudo', 'debootstrap', '--arch', self.arch, self.distro, self.chroot_path, deboot_url]
         print cmd
         print "This will take a few minutes.  Please be patient."
         self.check_call(cmd)
@@ -238,16 +276,17 @@ class ChrootInstance:
         print "Runing cmd", cmd
         self.check_call(cmd)
 
+
         
         if self.distro in valid_ubuntu_distros:
             # Move sources.list to apt-proxy
-            sources=os.path.join(self.chroot_path, 'etc', 'apt', 'sources.list.d', 'aptproxy.list')
+            sources=os.path.join(self.chroot_path, 'etc', 'apt', 'sources.list.d', 'bootstrap.list')
 
             with tempfile.NamedTemporaryFile() as tf:
-                print "Setting sources to aptproxy.willowgarage.com", sources
-                tf.write("deb http://aptproxy.willowgarage.com/us.archive.ubuntu.com/ubuntu %s main restricted universe multiverse\n" % self.distro)
-                tf.write("deb http://aptproxy.willowgarage.com/us.archive.ubuntu.com/ubuntu %s-updates main restricted universe multiverse\n" % self.distro)
-                tf.write("deb http://aptproxy.willowgarage.com/us.archive.ubuntu.com/ubuntu %s-security main restricted universe multiverse\n" % self.distro)
+                print "Setting sources to %s"%deboot_url, sources
+                tf.write("deb %s %s main restricted universe multiverse\n" % (deboot_url, self.distro))
+                tf.write("deb %s %s-updates main restricted universe multiverse\n" %  (deboot_url, self.distro))
+                tf.write("deb %s %s-security main restricted universe multiverse\n" %  (deboot_url, self.distro))
 
                 tf.flush()
                 cmd = ['sudo', 'cp', tf.name, sources]
@@ -284,7 +323,7 @@ class ChrootInstance:
         if self.distro in valid_ubuntu_distros:
             self.execute(['locale-gen', 'en_US.UTF-8'])
 
-        self.execute(['apt-get', 'update'])
+        self.execute(['apt-get', 'update'], robust=True)
 
         if self.distro in valid_debian_distros:
             self.execute(['apt-get', 'install', 'sudo', 'lsb-release', '-y', '--force-yes'])
@@ -312,7 +351,7 @@ grub-pc grub-pc/install_devices_empty boolean true
 
         # If we're on lucid, pull in the nvidia drivers, in case we're
         # going to run Gazebo-based tests, which need the GPU.
-        if self.distro == 'lucid':
+        if self.distro == 'lucid' and self.arch != 'arm':
             # The --force-yes is necessary to accept the nvidia-current
             # package without a valid GPG signature.
             self.execute(['apt-get', 'install', '-y', '--force-yes', 'linux-headers-2.6.32-23'])
@@ -338,11 +377,11 @@ grub-pc grub-pc/install_devices_empty boolean true
 
         self.setup_rosbuild()
 
-    def setup_rosbuild(self):
+    def debian_setup_rosbuild(self):
         cmd = "useradd rosbuild -m --groups sudo".split()
         print self.execute(cmd)
 
-        self.setup_ssh_client()
+        self.debian_setup_ssh_client()
         self.setup_svn_ssl_certs()
 
     def add_ros_sources(self):
@@ -393,7 +432,7 @@ grub-pc grub-pc/install_devices_empty boolean true
         cmd = ['apt-key', 'add', os.path.join('/', key_file)]
         self.execute(cmd) 
 
-    def setup_ssh_client(self):
+    def debian_setup_ssh_client(self):
         print 'Setting up ssh client'
         # Pull in ssh, and drop a private key that will allow the slave to
         # upload results of the build.
@@ -422,7 +461,7 @@ grub-pc grub-pc/install_devices_empty boolean true
     def setup_svn_ssl_certs(self):
         print 'Setting up ssl certs'
 
-        self.execute(["apt-get", "update"])
+        self.execute(["apt-get", "update"], robust=True)
         cmd = "apt-get install subversion -y --force-yes".split()
         self.execute(cmd)
         
@@ -565,13 +604,15 @@ grub-pc grub-pc/install_devices_empty boolean true
         return local_call(cmd, display or self.debug_chroot)
 
 def run_chroot(options, path, workspace, hdd_tmp_dir):
-    with ChrootInstance(options.distro, options.arch, path, workspace, clear_chroot = not options.persist, ssh_key_path=options.ssh_key_path, use_wg_sources = options.use_wg_sources, scratch_dir = options.hdd_scratch, hdd_tmp_dir=hdd_tmp_dir, debug_chroot= options.debug_chroot) as chrti:
+    with ChrootInstance(options.distro, options.arch, path, workspace, clear_chroot = not options.persist, ssh_key_path=options.ssh_key_path, use_wg_sources = options.use_wg_sources, scratch_dir = options.hdd_scratch, hdd_tmp_dir=hdd_tmp_dir, debug_chroot= options.debug_chroot, repo_url=options.repo_url) as chrti:
 
         #initialization here so that if it throws the cleanup is called.  
         chrti.manual_init()
+        print "returning early for debug"
+
 
         cmd = "apt-get update".split()
-        chrti.execute(cmd)
+        chrti.execute(cmd, robust=True) # continue 
 
         cmd = "apt-get install -y --force-yes build-essential python-yaml cmake subversion mercurial bzr git-core wget python-setuptools".split()
         chrti.execute(cmd)
@@ -659,7 +700,7 @@ parser.add_option("--distro", type="string", dest="distro",
 parser.add_option("--persist-chroot", action="store_true", dest="persist", default=False,
                   help="do not clear the chroot before running")
 parser.add_option("--chroot-dir", action="store", dest="chroot_dir", default="/home/rosbuild/chroot",
-                  type="string", help="prefix for ros_release")
+                  type="string", help="Where to put the chroot, + JOB_NAME")
 parser.add_option("--ramdisk-size", action="store", dest="ramdisk_size", default="20000M",
                   type="string", help="Ramdisk size string, default '20GB'")
 parser.add_option("--ramdisk", action="store_true", dest="ramdisk", default=False,
@@ -678,11 +719,13 @@ parser.add_option("--interactive", action="store_true", dest="interactive", defa
                   help="Pop up an xterm to interact in.")
 parser.add_option("--debug-chroot", action="store_true", dest="debug_chroot", default=False,
                   help="Display chroot setup console output.")
+parser.add_option("--repo-url", action="store", dest="repo_url", default=None,
+                  type="string", help="The url of the package repo")
 
 
 (options, args) = parser.parse_args()
 
-if options.distro not in (valid_ubuntu_distros + valid_debian_distros):
+if options.distro not in (valid_ubuntu_distros + valid_debian_distros + valid_redhat_distros):
     parser.error("%s is not a valid distro: %s"%(options.distro, valid_ubuntu_distros+ valid_debian_distros))
 if options.arch not in valid_archs:
     parser.error("%s is not a valid arch: %s"%(options.arch, valid_archs))
