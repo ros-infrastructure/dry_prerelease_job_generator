@@ -46,20 +46,42 @@ import sys
 import yaml
 import urllib2
 
-def get_manifest(arg):
+def options_to_branch(options):
+    # we don't let the user express the full range of options at the
+    # command-line, mainly for (1) simplicity and (2) the distro
+    # branch is not reliable.
+    if options.dev:
+        return 'devel'
+    else:
+        return 'release'
+    
+def get_manifest(arg, distro_name=None):
     """
     Get the manifest data and type of arg.
 
+    @param arg: name of package/stack to get manifest information for.
+    get_manifest() gives stacks symbols precedence over package
+    symbols.
+    @type  arg: str
+    
     @return: (manifest data, 'package'|'stack'). 
     @rtype: ({str: str}, str)
     @raise IOError: if data cannot be loaded
     """
     try:
-        r = urllib2.urlopen('http://ros.org/doc/api/%s/stack.yaml'%(arg))
+        if distro_name is not None:
+            url = 'http://ros.org/doc/%s/api/%s/stack.yaml'%(distro_name, arg)
+        else:
+            url = 'http://ros.org/doc/api/%s/stack.yaml'%(arg)
+        r = urllib2.urlopen(url)
         return yaml.load(r), 'stack'
     except:
         try:
-            r = urllib2.urlopen('http://ros.org/doc/api/%s/manifest.yaml'%(arg))
+            if distro_name is not None:
+                url = 'http://ros.org/doc/%s/api/%s/manifest.yaml'%(distro_name, arg)
+            else:
+                url = 'http://ros.org/doc/api/%s/manifest.yaml'%(arg)
+            r = urllib2.urlopen(url)
             return yaml.load(r), 'package'
         except:
             raise IOError(arg)
@@ -69,11 +91,33 @@ def get_manifest(arg):
 # well implement the command-line.
         
 def get_rosinstall(name, data, type_, options=None):
+    """
+    Compute a rosinstall fragment for checkout
+    
+    @param name: resource name
+    @param data: manifest data for resource
+    
+    @param options: command-line options. Behavior of various options are:
+    
+     - options.prefix: path prefix to use for 'local-name' in rosinstall
+     - options.dev: branch to return information for.  If manifest
+    does not provide branch-specific information, return default info.
+    """
+    
     if not 'rosinstall' in data:
         sys.stderr.write("rosinstall control information for %s %s\n"%(type_, name))
         return ''
 
-    ri_entry = data['rosinstall']
+    ri_entry = None
+    branch = options_to_branch(options)
+    if branch and 'rosinstalls' in data:
+        ri_entry = data['rosinstalls'].get(branch, None)
+
+    # if we were unable to compute the rosinstall info based on a
+    # desired branch, use the default info instead
+    if ri_entry is None:
+        ri_entry = data['rosinstall']
+        
     if len(ri_entry) != 1:
         sys.stderr.write("rosinstall malformed for %s %s\n"%(type_, name))
         return ''
@@ -88,12 +132,24 @@ def get_rosinstall(name, data, type_, options=None):
             path = '/'.join(paths)
             v['local-name'] = path
 
-    return yaml.dump([ri_entry])
+    return yaml.dump([ri_entry], default_flow_style=False)
 
 def get_info(name, data, type_, options=None):
-    if not 'vcs' in data or not 'vcs_uri' in data:
-        sys.stderr.write("No version control information for %s %s\n"%(type_, name))
-        return ''
+    # first attempt to get rosinstall entry from 'rosinstalls' option,
+    # which is only available for released entities.
+    branch = options_to_branch(options)
+    ri_entry = None
+    if branch and 'rosinstalls' in data:
+        ri_entry = data['rosinstalls'].get(branch, None)
+        vcs_type = ri_entry.keys()[0]
+        
+    # if we can't get release info, construct a default configuration
+    if ri_entry is None:
+        if not 'vcs' in data or not 'vcs_uri' in data:
+            sys.stderr.write("No version control information for %s %s\n"%(type_, name))
+            return ''
+        vcs_type = data['vcs']
+        ri_entry = {vcs_type: {'uri': data['vcs_uri']}}
 
     # compute path: we can't use os.path.join because rosinstall paths
     # are always Unix-style.
@@ -101,20 +157,30 @@ def get_info(name, data, type_, options=None):
     paths = [x for x in (prefix, name) if x]
     path = '/'.join(paths)
 
-    return """- %s:
-        local-name: %s
-        uri: %s\n"""%(data['vcs'], os.path.join(prefix, name), data['vcs_uri'])
+    ri_entry[vcs_type]['local-name'] = os.path.join(prefix, name)
+    return yaml.dump([ri_entry], default_flow_style=False)
 
 def get_type(name, data, type_, options=None):
     return type_
 def get_vcs(name, data, type_, options=None):
     return data.get('vcs', '')
+
+def get_vcs_uri_for_branch(data, branch=None):
+    ri_entry = None
+    if branch and 'rosinstalls' in data:
+        ri_entry = data['rosinstalls'].get(branch, None)
+        vcs_type = ri_entry.keys()[0]
+        return ri_entry[vcs_type]['uri']
+    else:
+        return data.get('vcs_uri', '')
+    
 def get_vcs_uri(name, data, type_, options=None):
-    return data.get('vcs_uri', '')
+    return get_vcs_uri_for_branch(data, options_to_branch(options))
 # for backwards compatibility
 def get_svn_uri(name, data, type_, options=None):
+    #TODO: replace with branch routine    
     if data.get('vcs', '') == 'svn':
-        return data.get('vcs_uri', '')
+        return get_vcs_uri_for_branch(data, options_to_branch(options))
     else:
         sys.stderr.write("version control is not svn\n")
         return ''
@@ -178,10 +244,23 @@ def roslocate_main():
                            help="path prefix for rosinstall")
         
     # TODO: distro-specific return values
-    # parser.add_option("--distro",
-    #                   dest="list_uri", default=False,
-    #                   action="store_true",
-    #                   help="list XML-RPC URIs")
+    parser.add_option("--distro",
+                      dest="distro", default=None,
+                      help="fetch information for specific ROS distribution release")
+    
+    # In this implementation, we're optimizing for the use case where
+    # the user wishes to do a source-based install of a released
+    # stack.  The user also has an efficient flag for specifying that
+    # they want a development branch instead.  We are not exposing
+    # users to the full range of devel/released/distro branches that
+    # the rosinstall file encodes, mainly because the distro branch is
+    # not reliable with DVCS systems like git.  Thus, rosinstall
+    # abstracts the logic for determining what the correct released
+    # branch to use is.
+    parser.add_option("--dev",
+                      dest="dev", default=False,
+                      action="store_true", 
+                      help="fetch development branch information")
 
     # noop parse for now.  Will matter once we can pass in --distro
     options, args = parser.parse_args()
@@ -189,8 +268,9 @@ def roslocate_main():
     if len(args) != 2:
         parser.error("please provide a resource name (package or stack)")
     name = args[1]
+
     try:
-        data, type_ = get_manifest(name)
+        data, type_ = get_manifest(name, options.distro)
     except IOError:
         sys.stderr.write('cannot locate information about %s\n'%(name))
         sys.exit(1)
