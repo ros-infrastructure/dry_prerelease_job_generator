@@ -456,6 +456,15 @@ def check_stack_depends(local_path, stack_name):
         except:
             pass
     
+    # we enable one more level down for forwarded depends
+    # (e.g. metastacks), but go no further.
+    for d in m.depends:
+        try:
+            m_depend = roslib.stack_manifest.parse_file(roslib.stack_manifest.stack_file(d.stack))
+            declared.extend([d.stack for d in m_depend.depends])
+        except:
+            pass
+    
     # it is okay for a stack to overdeclare as it may be doing
     # something metapackage-like, but it must have every dependency
     # that is calculated.
