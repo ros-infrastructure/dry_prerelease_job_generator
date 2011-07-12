@@ -542,7 +542,7 @@ def main():
         # create the tarball
         tarball, control = make_dist_of_dir(tmp_dir, name, version, distro_stack)
         #tarball, control = make_dist(name, version, distro_stack, repair=repair)
-        if 0 and not control['rosdeps']:
+        if not control['rosdeps']:
             print >> sys.stderr, """Misconfiguration: control rosdeps are empty.\n
     In order to run create.py, the stack you are releasing must be on your current
     ROS_PACKAGE_PATH. This is so create.py can access the stack's rosdeps."""
