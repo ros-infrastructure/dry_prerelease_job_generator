@@ -38,7 +38,7 @@ from __future__ import with_statement
 PKG = 'release'
 NAME="create.py"
 
-VERSION=5
+VERSION=7
 
 import roslib; roslib.load_manifest(PKG)
 
@@ -446,6 +446,24 @@ def check_stack_depends(local_path, stack_name):
     depends = compute_stack_depends(local_path)
     m = roslib.stack_manifest.parse_file(os.path.join(local_path, roslib.stack_manifest.STACK_FILE))
     declared = [d.stack for d in m.depends]
+
+    # we enable one more level down for forwarded depends
+    # (e.g. metastacks), but go no further.
+    for d in m.depends:
+        try:
+            m_depend = roslib.stack_manifest.parse_file(roslib.stack_manifest.stack_file(d.stack))
+            declared.extend([d.stack for d in m_depend.depends])
+        except:
+            pass
+    
+    # we enable one more level down for forwarded depends
+    # (e.g. metastacks), but go no further.
+    for d in m.depends:
+        try:
+            m_depend = roslib.stack_manifest.parse_file(roslib.stack_manifest.stack_file(d.stack))
+            declared.extend([d.stack for d in m_depend.depends])
+        except:
+            pass
     
     # it is okay for a stack to overdeclare as it may be doing
     # something metapackage-like, but it must have every dependency
