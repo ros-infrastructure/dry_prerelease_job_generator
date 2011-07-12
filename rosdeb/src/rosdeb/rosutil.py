@@ -277,7 +277,11 @@ def stack_rosdeps(stack_name, stack_dir, platform):
             value = rdlp.lookup_rosdep(r)
             if '\n' in value:
                 raise Exception("cannot generate rosdeps for stack [%s] on platform [%s]:\n\trosdep [%s] has a script binding"%(stack_name, os_version, r))
-            deb_deps.extend([x for x in value.split(' ') if x.strip()])
+            if type(value) == dict:
+                if 'apt' in value:
+                    deb_deps.extend(value['apt']['packages'])
+            else:
+                deb_deps.extend([x for x in value.split(' ') if x.strip()])
 
     return list(set(deb_deps))
         
