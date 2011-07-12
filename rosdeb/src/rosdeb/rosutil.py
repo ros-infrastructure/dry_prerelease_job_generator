@@ -47,6 +47,7 @@ import roslib.stacks
 import vcstools.vcs_abstraction
 
 import rosdeb
+import rosdep
 from rosdep.core import RosdepLookupPackage, YamlCache
 
 IMPLICIT_DEPS = ['libc6','build-essential','cmake','python-yaml','subversion']
@@ -256,11 +257,12 @@ def stack_rosdeps(stack_name, stack_dir, platform):
     # reverse lookup version number, which is the key for rosdep
     os_version = [k for k, v in rosdeb.get_ubuntu_map().iteritems() if v == platform][0]
     
-    if hasattr(rosdep, 'installers'):
+    try:
+        # REP 111 API
         import rosdep.installers
-        installers = [rosdep.installers.AptInstaller(), rosdep.installers.SourceInstaller()]
+        installers = {'apt': rosdep.installers.AptInstaller, 'source': rosdep.installers.SourceInstaller}
         yc = YamlCache(os_name, os_version, installers)
-    else:
+    except ImportError:
         yc = YamlCache(os_name, os_version)
 
     package_manifests = package_manifests_of(stack_dir)
