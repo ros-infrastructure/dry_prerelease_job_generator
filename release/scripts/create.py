@@ -38,7 +38,7 @@ from __future__ import with_statement
 PKG = 'release'
 NAME="create.py"
 
-VERSION=6
+VERSION=7
 
 import roslib; roslib.load_manifest(PKG)
 
