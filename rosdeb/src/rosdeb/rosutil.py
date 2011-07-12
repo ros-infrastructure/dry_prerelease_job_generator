@@ -256,7 +256,12 @@ def stack_rosdeps(stack_name, stack_dir, platform):
     # reverse lookup version number, which is the key for rosdep
     os_version = [k for k, v in rosdeb.get_ubuntu_map().iteritems() if v == platform][0]
     
-    yc = YamlCache(os_name, os_version)
+    if hasattr(rosdep, 'installers'):
+        import rosdep.installers
+        installers = [rosdep.installers.AptInstaller(), rosdep.installers.SourceInstaller()]
+        yc = YamlCache(os_name, os_version, installers)
+    else:
+        yc = YamlCache(os_name, os_version)
 
     package_manifests = package_manifests_of(stack_dir)
     for p, m_file in package_manifests:
