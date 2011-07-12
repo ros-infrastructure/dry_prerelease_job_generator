@@ -82,6 +82,7 @@ def checkout_tag_to_tmp(name, distro_stack):
     directory 'name'. temporary directory will be a subdirectory of
     OS-provided temporary space.
     @rtype: str
+    @raise Exception: if checkout cannot be done 
     """
 
     for key in ['svn', 'git', 'hz', 'bzr']:
@@ -247,6 +248,7 @@ def stack_rosdeps(stack_name, stack_dir, platform):
     
     @return: list of debian package deps
     @rtype: [str]
+    @raise Exception: if stack rosdeps cannot be fully resolved
     """
     
     # - implicit deps of all ROS packages
@@ -275,12 +277,15 @@ def stack_rosdeps(stack_name, stack_dir, platform):
         rdlp = RosdepLookupPackage(os_name, os_version, p, yc)
         for r in rosdeps:
             value = rdlp.lookup_rosdep(r)
-            if '\n' in value:
-                raise Exception("cannot generate rosdeps for stack [%s] on platform [%s]:\n\trosdep [%s] has a script binding"%(stack_name, os_version, r))
+            if value is False:
+                raise Exception("cannot generate rosdeps for stack [%s] on platform [%s]:\n\trosdep lookup of [%s] failed"%(stack_name, os_version, r))                
             if type(value) == dict:
                 if 'apt' in value:
                     deb_deps.extend(value['apt']['packages'])
             else:
+                if '\n' in value:
+                    raise Exception("cannot generate rosdeps for stack [%s] on platform [%s]:\n\trosdep [%s] has a script binding"%(stack_name, os_version, r))
+
                 deb_deps.extend([x for x in value.split(' ') if x.strip()])
 
     return list(set(deb_deps))
