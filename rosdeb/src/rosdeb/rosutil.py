@@ -281,7 +281,11 @@ def stack_rosdeps(stack_name, stack_dir, platform):
                 raise Exception("cannot generate rosdeps for stack [%s] on platform [%s]:\n\trosdep lookup of [%s] failed"%(stack_name, os_version, r))                
             if type(value) == dict:
                 if 'apt' in value:
-                    deb_deps.extend(value['apt']['packages'])
+                    packages = value['apt']['packages']
+                    if type(packages) == list:
+                        deb_deps.extend(packages)
+                    else:
+                        deb_deps.append(packages)
             else:
                 if '\n' in value:
                     raise Exception("cannot generate rosdeps for stack [%s] on platform [%s]:\n\trosdep [%s] has a script binding"%(stack_name, os_version, r))
