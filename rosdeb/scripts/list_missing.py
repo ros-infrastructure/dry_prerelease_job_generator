@@ -109,10 +109,11 @@ def compute_deps(distro, stack_name):
             for d in si['depends']:
                 add_stack(d)
         except MissingDefinition as e:
-            # TODO: rewrite, but have to preserve sys.exit behavior
-            # for now as build_debs calls this and we need it to exit
+            # converted this is a soft-fail from a sys.exit. this is
+            # caused by stacks that depend on stacks that have been
+            # pulled.
             sys.stderr.write("[%s] build failure loading dependency [%s]: %s\n"%(s, d, e))
-            sys.exit(1)
+            #raise MissingDefinition("[%s] build failure loading dependency [%s]: %s\n"%(s, d, e))
         except Exception as e:
             # this is a soft-fail. If the load_info fails, it means
             # the stack is missing. We will detect it missing
