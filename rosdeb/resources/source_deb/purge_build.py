@@ -8,6 +8,7 @@ import os, sys, string
 from optparse import OptionParser
 import subprocess
 import roslib
+import roslib.stacks
 import shutil
 
 def main(argv, stdout, environ):
