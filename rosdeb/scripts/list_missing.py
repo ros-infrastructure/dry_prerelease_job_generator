@@ -90,6 +90,8 @@ def load_info(stack_name, stack_version):
     except:
         raise Exception("Problem fetching yaml info for %s %s (%s)"%(stack_name, stack_version, url))
 
+class MissingDefinition(Exception): pass
+
 def compute_deps(distro, stack_name):
 
     seen = set()
@@ -99,19 +101,20 @@ def compute_deps(distro, stack_name):
         if s in seen:
             return
         if s not in distro.stacks:
-            print >> sys.stderr, "[%s] not found in distro."%(s)
-            sys.exit(1)
+            raise MissingDefinition("[%s] not found in distro."%(s))
         seen.add(s)
         v = distro.stacks[s].version
         try:
             si = load_info(s, v)
             for d in si['depends']:
                 add_stack(d)
-        except Exception, e:
+        except MissingDefinition as e:
+            raise MissingDefinition("[%s] build failure loading dependency [%s]: %s"%(s, d, e))
+        except Exception as e:
             # this is a soft-fail. If the load_info fails, it means
             # the stack is missing. We will detect it missing
             # elsewhere.
-            print >> sys.stderr, str(e)
+            sys.stderr.write(str(e)+'\n')
         ordered_deps.append((s,v))
 
     if stack_name == 'ALL':
