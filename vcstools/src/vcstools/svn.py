@@ -36,8 +36,9 @@ svn vcs support.
 New in ROS C-Turtle.
 """
 
-import subprocess
 import os
+import sys
+import subprocess
 import vcs_base
 
 class SVNClient(vcs_base.VCSClientBase):
@@ -76,7 +77,7 @@ class SVNClient(vcs_base.VCSClientBase):
 
     def checkout(self, url, version=''):
         if self.path_exists():
-            print >>sys.stderr, "Error: cannot checkout into existing directory"
+            sys.stderr.write("Error: cannot checkout into existing directory\n")
             return False
             
         cmd = "svn co %s %s %s"%(version, url, self._path)

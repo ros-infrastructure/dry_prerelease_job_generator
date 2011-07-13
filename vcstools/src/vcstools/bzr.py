@@ -38,6 +38,7 @@ New in ROS C-Turtle.
 
 import subprocess
 import os
+import sys
 import vcs_base
 import urllib
 
@@ -70,7 +71,7 @@ class BZRClient(vcs_base.VCSClientBase):
 
     def checkout(self, url, version=''):
         if self.path_exists():
-            print >>sys.stderr, "Error: cannot checkout into existing directory"
+            sys.stderr.write("Error: cannot checkout into existing directory\n")
             return False
             
         if version:

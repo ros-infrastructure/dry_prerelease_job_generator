@@ -91,7 +91,7 @@ class GITClient(vcs_base.VCSClientBase):
 
     def checkout(self, url, version='master'):
         if self.path_exists():
-            print >>sys.stderr, "Error: cannot checkout into existing directory"
+            sys.stderr.write("Error: cannot checkout into existing directory\n")
             return False
             
         cmd = "git clone %s %s"%(url, self._path)
@@ -240,7 +240,7 @@ class GITClient(vcs_base.VCSClientBase):
             try:
                 base64.b64decode(hashstr)
                 return True
-            except Exception, ex:
+            except Exception as ex:
                 pass
         return False
 
