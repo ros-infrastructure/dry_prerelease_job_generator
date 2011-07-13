@@ -1,0 +1,213 @@
+#!/usr/bin/env python
+# Software License Agreement (BSD License)
+#
+# Copyright (c) 2010, Willow Garage, Inc.
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+#
+#  * Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+#  * Redistributions in binary form must reproduce the above
+#    copyright notice, this list of conditions and the following
+#    disclaimer in the documentation and/or other materials provided
+#    with the distribution.
+#  * Neither the name of Willow Garage, Inc. nor the names of its
+#    contributors may be used to endorse or promote products derived
+#    from this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+# COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+# ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+#
+# Revision $Id$
+# $Author$
+
+"""
+usage: rosinstall_switch [OPTIONS] PATH {devel|release|system} STACK
+
+rosinstall_switch will modify the rosinstall configuration for the overlay
+in PATH to pull STACK from the indicated location.  If `devel` or `release`,
+then STACK is added to the overlay, pulled from the development or release
+branch, respectively.  If `system`, then STACK is removed from the overlay
+(on the assumption that it will come from the system install).
+
+By default, currently installed stacks that depend on STACK will also be
+modified (added to or deleted from the overlay as appropriate).  Use -R to
+disable recursive modification.
+
+By default, rosinstall_switch will run rosinstall to update the overlay.
+Use -n to disable this step.
+"""
+
+from __future__ import with_statement
+import traceback
+import sys
+import os
+import shutil
+import yaml
+import distutils.version
+from subprocess import Popen, PIPE
+from optparse import OptionParser
+
+class ROSInstallSwitchException(Exception): pass
+
+class ROSInstallSwitch:
+
+    def __init__(self, args):
+        self._parse_args(args)
+        self._read_rosinstall_file()
+
+    def _parse_args(self, args):
+        parser = OptionParser(usage='usage: %prog {devel|release|system} PATH STACK', version='%prog 0.0.1')
+        parser.add_option("-n", "--no-update", dest="noupdate", default=False,
+                          help="change configuration, but don't run rosinstall",
+                          action="store_true")
+        parser.add_option("-R", "--no-recurse", dest="norecurse", default=False,
+                          help="don't change configuration for dependent stacks",
+                          action="store_true")
+        (options, args) = parser.parse_args(args)
+        self.noupdate = options.noupdate
+        self.norecurse = options.norecurse
+    
+        if len(args) != 4:
+            parser.error('rosinstall_switch requires exactly 3 arguments')
+
+        if args[1] != 'devel' and args[1] != 'release' and args[1] != 'system':
+            parser.error('unknown mode "%s"'%(args[1]))
+        
+        self.mode = args[1]
+        self.path = args[2]
+        self.stack = args[3]
+        self.rosinstall_fname = os.path.join(self.path, '.rosinstall')
+
+    def _read_rosinstall_file(self):
+        if not os.path.isfile(self.rosinstall_fname):
+            raise ROSInstallSwitchException('No such file %s'%self.rosinstall_fname)
+        with open(self.rosinstall_fname, 'r') as f:
+            self.rosinstall = yaml.load(f)
+        
+        if [e for e in self.rosinstall if not 'local-name' in e.values()[0]]:
+            raise ROSInstallSwitchException("invalid rosinstall file: missing local-name key")
+
+    def _get_dependent_stacks(self, stack):
+        # roslib.stacks doesn't expose the dependency parts of rosstack, so
+        # we'll call it manually
+        cmd = ['rosstack', 'depends-on', stack]
+        p = Popen(cmd, stdout=PIPE, stderr=PIPE)
+        stdout, stderr = p.communicate()
+        if p.returncode != 0:
+            raise ROSInstallSwitchException('rosstack failed: %s'%(stderr))
+        # Make sure to exclude empty lines
+        deps = []
+        for l in stdout.split('\n'):
+            if len(l) > 0:
+                deps.append(l)
+        return deps
+
+    def _remove_stack_from_overlay(self, stack):
+        # Do we currently include this stack in our overlay?
+        x = [e for e in self.rosinstall if e.values()[0]['local-name'] == stack]
+        if x:
+            self.rosinstall.remove(x[0])
+            return True
+        else:
+            return False
+
+    def _roslocate_info(self, stack, distro, dev):
+        # TODO: use roslocate from code
+        cmd = ['roslocate', 'info', '--distro=%s'%(distro), stack]
+        if dev == True:
+            cmd.append('--dev')
+        p = Popen(cmd, stdout=PIPE, stderr=PIPE)
+        stdout, stderr = p.communicate()
+        if p.returncode != 0:
+            raise ROSInstallSwitchException('roslocate failed: %s'%(stderr))
+        return yaml.load(stdout)
+
+    def _rosversion_to_distro_name(self):
+        # There ought to be a better way to do this.
+        cmd = ['rosversion', 'ros']
+        p = Popen(cmd, stdout=PIPE, stderr=PIPE)
+        stdout, stderr = p.communicate()
+        if p.returncode != 0:
+            raise ROSInstallSwitchException('rosversion failed: %s'%(stderr))
+        ver = distutils.version.StrictVersion(stdout).version
+        if len(ver) < 2:
+            raise ROSInstallSwitchException('invalid ros version: %s'%(stdout))
+        major, minor = ver[0:2]
+        if major == 1 and minor == 6:
+            return 'electric'
+        elif major == 1 and minor == 5:
+            return 'unstable'
+        elif major == 1 and minor == 4:
+            return 'diamondback'
+        else:
+            raise ROSInstallSwitchException('unknown ros version: %s'%(stdout))
+
+    def _rosinstall(self, my_stdout=sys.stdout, my_stderr=sys.stderr):
+        cmd = ['rosinstall', self.path]
+        p = Popen(cmd, stdout=my_stdout, stderr=my_stderr)
+        stdout, stderr = p.communicate()
+        if p.returncode != 0:
+            raise ROSInstallSwitchException('rosinstall failed: %s'%(stderr))
+
+    # Main entry point
+    def switch(self):
+        distro = self._rosversion_to_distro_name()
+        self._remove_stack_from_overlay(self.stack)
+
+        if self.mode == 'devel' or self.mode == 'release':
+            info = self._roslocate_info(self.stack, distro, self.mode=='devel')
+            self.rosinstall.extend(info)    
+            if not self.norecurse:
+                deps = self._get_dependent_stacks(self.stack)
+                # Also switch anything that depends on this stack
+                for s in deps:
+                    self._remove_stack_from_overlay(s)
+                    info = self._roslocate_info(s, distro, self.mode=='devel')
+                    self.rosinstall.extend(info)
+        elif self.mode == 'system':
+            if not self.norecurse:
+                deps = self._get_dependent_stacks(self.stack)
+                for s in deps:
+                    self._remove_stack_from_overlay(s)
+            pass
+        else:
+            raise ROSInstallSwitchException("unknown mode: %s"%(self.mode))
+
+        # Back up the original rosinstall file
+        backup_fname = os.path.join(self.path, '.rosinstall.bak')
+        shutil.copyfile(self.rosinstall_fname, backup_fname)
+
+        # Output a new rosinstall file
+        with open(self.rosinstall_fname, 'w') as f:
+            yaml.dump(self.rosinstall, f, default_flow_style=False)
+
+        print 'Wrote new rosinstall configuration to %s'%(self.rosinstall_fname)
+        if self.noupdate:
+            print 'You should now update your overlay like so:'
+            print '  rosinstall %s'%(self.path)
+        else:
+            print 'Runnning rosinstall to update your overlay...'
+            self._rosinstall()
+
+if __name__ == '__main__':
+    try:
+        ri = ROSInstallSwitch(sys.argv)
+        ri.switch()
+    except Exception, e:
+        print e
+        traceback.print_exc()
+        sys.exit(1)
