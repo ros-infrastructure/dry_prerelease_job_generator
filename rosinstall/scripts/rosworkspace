@@ -35,9 +35,9 @@
 # $Author$
 
 """
-usage: rosinstall_switch [OPTIONS] PATH {devel|release|system} STACK
+usage: rosworkspace [OPTIONS] PATH {devel|release|system} STACK
 
-rosinstall_switch will modify the rosinstall configuration for the overlay
+rosworkspace will modify the rosinstall configuration for the overlay
 in PATH to pull STACK from the indicated location.  If `devel` or `release`,
 then STACK is added to the overlay, pulled from the development or release
 branch, respectively.  If `system`, then STACK is removed from the overlay
@@ -47,7 +47,7 @@ By default, currently installed stacks that depend on STACK will also be
 modified (added to or deleted from the overlay as appropriate).  Use -R to
 disable recursive modification.
 
-By default, rosinstall_switch will run rosinstall to update the overlay.
+By default, rosworkspace will run rosinstall to update the overlay.
 Use -n to disable this step.
 """
 
@@ -70,27 +70,44 @@ class ROSInstallSwitch:
         self._read_rosinstall_file()
 
     def _parse_args(self, args):
-        parser = OptionParser(usage='usage: %prog {devel|release|system} PATH STACK', version='%prog 0.0.1')
+        parser = OptionParser(usage='usage: %prog PATH {init | {add|delete} STACK}', version='%prog 0.0.1')
         parser.add_option("-n", "--no-update", dest="noupdate", default=False,
                           help="change configuration, but don't run rosinstall",
                           action="store_true")
-        parser.add_option("-R", "--no-recurse", dest="norecurse", default=False,
+        parser.add_option("-r", "--no-recurse", dest="norecurse", default=False,
                           help="don't change configuration for dependent stacks",
+                          action="store_true")
+        parser.add_option("--delete-changed-uris", dest="delete_changed", default=False,
+                          help="Delete the local copy of a directory before changing uri", 
+                          action="store_true")
+        parser.add_option("--released", dest="released", default=False,
+                          help="Pull stack from release tag instead of development branch",
                           action="store_true")
         (options, args) = parser.parse_args(args)
         self.noupdate = options.noupdate
         self.norecurse = options.norecurse
+        self.delete_changed = options.delete_changed
+        self.released = options.released
     
-        if len(args) != 4:
-            parser.error('rosinstall_switch requires exactly 3 arguments')
+        if len(args) < 3:
+            parser.error('rosworkspace requires at least 2 arguments')
 
-        if args[1] != 'devel' and args[1] != 'release' and args[1] != 'system':
-            parser.error('unknown mode "%s"'%(args[1]))
-        
-        self.mode = args[1]
-        self.path = args[2]
-        self.stack = args[3]
+        self.path = args[1]
+        self.mode = args[2]
+        self.init_args = None
+        self.stack = None
+        if self.mode == 'init':
+            if len(args) > 3:
+                self.init_args = args[2:]
+        elif self.mode == 'add' or self.mode == 'delete':
+            if len(args) != 4:
+                parser.error('init and add commands require exactly 3 arguments')
+            self.stack = args[3]
+        else:
+            parser.error('unknown mode "%s"'%(self.mode))
         self.rosinstall_fname = os.path.join(self.path, '.rosinstall')
+
+        
 
     def _read_rosinstall_file(self):
         if not os.path.isfile(self.rosinstall_fname):
@@ -137,7 +154,8 @@ class ROSInstallSwitch:
         return yaml.load(stdout)
 
     def _rosversion_to_distro_name(self):
-        # There ought to be a better way to do this.
+        # TODO: switch to `rosversion -d` after it's been released (r14279,
+        # r14280)
         cmd = ['rosversion', 'ros']
         p = Popen(cmd, stdout=PIPE, stderr=PIPE)
         stdout, stderr = p.communicate()
@@ -168,22 +186,23 @@ class ROSInstallSwitch:
         distro = self._rosversion_to_distro_name()
         self._remove_stack_from_overlay(self.stack)
 
-        if self.mode == 'devel' or self.mode == 'release':
-            info = self._roslocate_info(self.stack, distro, self.mode=='devel')
+        if self.mode == 'init':
+            raise ROSInstallSwitchException('init not implemented yet')
+        elif self.mode == 'add':
+            info = self._roslocate_info(self.stack, distro, not self.released)
             self.rosinstall.extend(info)    
             if not self.norecurse:
                 deps = self._get_dependent_stacks(self.stack)
                 # Also switch anything that depends on this stack
                 for s in deps:
                     self._remove_stack_from_overlay(s)
-                    info = self._roslocate_info(s, distro, self.mode=='devel')
+                    info = self._roslocate_info(s, distro, not self.released)
                     self.rosinstall.extend(info)
-        elif self.mode == 'system':
+        elif self.mode == 'delete':
             if not self.norecurse:
                 deps = self._get_dependent_stacks(self.stack)
                 for s in deps:
                     self._remove_stack_from_overlay(s)
-            pass
         else:
             raise ROSInstallSwitchException("unknown mode: %s"%(self.mode))
 
