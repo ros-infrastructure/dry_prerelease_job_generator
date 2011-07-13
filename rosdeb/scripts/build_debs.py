@@ -170,7 +170,10 @@ def compute_deps(distro, stack_name):
         si = load_info(s, v)
         loaded_deps = si['depends']
         for d in loaded_deps:
-            add_stack(d)
+            try:
+                add_stack(d)
+            except BuildFailure as e:
+                raise BuildFailure("[%s] build failure loading dependency [%s]: %s"%(s, d, e))
         ordered_deps.append((s,v))
 
     if stack_name == 'ALL':
