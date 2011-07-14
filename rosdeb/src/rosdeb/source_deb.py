@@ -185,6 +185,7 @@ def deb_depends(metadata, distro_name, platform_name):
     for r in rosdeps:
         if '=' in r:
             # example libeigen3-dev=3.0.1-*, libeigen3-dev=3.0.1-1+ros4~lucid
+            rosdep_name, version = r.split('=')
             rosdeps_fixed.append("%s (=%s)"%(rosdep_name, version))
         else:
             rosdeps_fixed.append(r)
