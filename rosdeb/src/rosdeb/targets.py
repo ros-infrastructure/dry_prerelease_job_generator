@@ -4,5 +4,6 @@ os_platform = {
     'electric': ['lucid', 'maverick', 'natty', 'oneiric'],
     'diamondback': ['lucid', 'maverick', 'natty'],
     'cturtle': ['lucid', 'maverick', 'karmic'],
-    'boxturtle': ['hardy', 'intrepid', 'jaunty', 'karmic'],    
+# no longer supported
+#    'boxturtle': ['hardy', 'intrepid', 'jaunty', 'karmic'],    
 }

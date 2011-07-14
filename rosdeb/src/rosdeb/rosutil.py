@@ -263,7 +263,9 @@ def stack_rosdeps(stack_name, stack_dir, platform):
         # REP 111 API
         import rosdep.installers
         installers = {'apt': rosdep.installers.AptInstaller, 'source': rosdep.installers.SourceInstaller}
+        os_version = platform
         yc = YamlCache(os_name, os_version, installers)
+
     except ImportError:
         yc = YamlCache(os_name, os_version)
 

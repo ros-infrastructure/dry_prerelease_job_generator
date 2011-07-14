@@ -41,6 +41,9 @@ ubuntu_map = {
     '11.04': 'natty',
     '10.10': 'maverick',
     '10.04': 'lucid',
+    }
+# no longer supported.  have to disable due to rep111 compatibility issues
+old_ubuntu_map = {
     '9.10': 'karmic',
     '9.04': 'jaunty',
     '8.10': 'intrepid',
