@@ -180,8 +180,21 @@ def deb_depends(metadata, distro_name, platform_name):
         else:
             return None      
     rosdeps = metadata['rosdeps'][platform_name]
-
-    return rosdeps
+    # support version-locking syntax
+    rosdeps_fixed = []
+    for r in rosdeps:
+        if '=' in r:
+            # example libeigen3-dev=3.0.1-*
+            if r.endswith('-*'):
+                # strip -*
+                r = r[:-2]
+                rosdep_name, version = r.split('=')
+                rosdeps_fixed.append("%s (=%s)"%(rosdep_name, version))
+            else:
+                raise Exception("cannot support version-locking with syntax [%s]"%(r))
+        else:
+            rosdeps_fixed.append(r)
+    return rosdeps_fixed
 
 def stack_depends(metadata, distro_name, platform_name):
     """
