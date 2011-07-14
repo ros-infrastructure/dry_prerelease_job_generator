@@ -184,7 +184,9 @@ def deb_depends(metadata, distro_name, platform_name):
     rosdeps_fixed = []
     for r in rosdeps:
         if '=' in r:
-            # example libeigen3-dev=3.0.1-*, libeigen3-dev=3.0.1-1+ros4~lucid
+            # example libeigen3-dev=3.0.1-1+ros4~lucid
+            if '*' in r:
+                raise Exception("cannot include glob patterns in debian control file")
             rosdep_name, version = r.split('=')
             rosdeps_fixed.append("%s (=%s)"%(rosdep_name, version))
         else:
