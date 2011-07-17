@@ -117,8 +117,7 @@ class SVNClient(vcs_base.VCSClientBase):
                 # if the rev does not exist). So we first do a very
                 # quick svn info, and check revision numbers.
                 currentversion = self.get_version(spec = None)
-                # currentversion is '-r4711'
-                print int(currentversion[2:]), int(spec)
+                # currentversion is like '-r12345'
                 if currentversion != None and int(currentversion[2:]) > int(spec):
                     # so if we know revision exist, just return the
                     # number, avoid the long call to svn server
