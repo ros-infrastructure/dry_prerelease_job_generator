@@ -106,6 +106,28 @@ class HGClientTest(unittest.TestCase):
         shutil.rmtree(directory)
         self.directories.pop("checkout_test")
 
+    def test_checkout_into_subdir_without_existing_parent(self): # test for #3497
+        directory = tempfile.mkdtemp()
+        self.directories["checkout_test"] = directory
+        local_path = os.path.join(directory, "anyvc", "nonexistant_subdir")
+        url = "http://bitbucket.org/RonnyPfannschmidt/anyvc"
+        hgc = hg.HGClient(local_path)
+        self.assertFalse(hgc.path_exists())
+        self.assertFalse(hgc.detect_presence())
+        self.assertFalse(hgc.detect_presence())
+        self.assertTrue(hgc.checkout(url))
+        self.assertTrue(hgc.path_exists())
+        self.assertTrue(hgc.detect_presence())
+        self.assertEqual(hgc.get_path(), local_path)
+        self.assertEqual(hgc.get_url(), url)
+
+        #self.assertEqual(hgc.get_version(), )
+        
+
+        shutil.rmtree(directory)
+        self.directories.pop("checkout_test")
+
+
     def test_checkout_specific_version_and_update(self):
         directory = tempfile.mkdtemp()
         subdir = "checkout_specific_version_test"
