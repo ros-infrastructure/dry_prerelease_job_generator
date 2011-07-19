@@ -59,7 +59,7 @@ class SVNClient(vcs_base.VCSClientBase):
         """
         if self.detect_presence():
             output = subprocess.Popen(['svn', 'info', self._path], stdout=subprocess.PIPE).communicate()[0]
-            matches = [l for l in output.split('\n') if l.startswith('URL: ')]
+            matches = [l for l in output.splitlines() if l.startswith('URL: ')]
             if matches:
                 return matches[0][5:]
         return None
@@ -126,7 +126,7 @@ class SVNClient(vcs_base.VCSClientBase):
         command.append(self._path)
         output = subprocess.Popen(command, stdout=subprocess.PIPE).communicate()[0]
         if output != None:
-            matches = [l for l in output.split('\n') if l.startswith('Revision: ')]
+            matches = [l for l in output.splitlines() if l.startswith('Revision: ')]
             if len(matches) == 1:
                 split_str = matches[0].split()
                 if len(split_str) == 2:
