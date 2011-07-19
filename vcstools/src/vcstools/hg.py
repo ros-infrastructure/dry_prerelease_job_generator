@@ -71,7 +71,15 @@ class HGClient(vcs_base.VCSClientBase):
         if self.path_exists():
             print >>sys.stderr, "Error: cannot checkout into existing directory"
             return False
-            
+
+        # make sure that the parent directory exists for #3497
+        base_path = os.path.split(self.get_path())[0]
+        try:
+            os.makedirs(base_path) 
+        except OSError, ex:
+            # OSError thrown if directory already exists this is ok
+            pass
+        
         cmd = "hg clone %s %s"%(url, self._path)
         if not subprocess.call(cmd, shell=True) == 0:
             return False
