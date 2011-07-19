@@ -340,6 +340,7 @@ sudo apt-get update
 sudo apt-get install build-essential
 tar -xjvf /tmp/compat-wireless-2.6.tar.bz2
 cd /tmp/compat-wireless-2011-07-18
+sed -i "s/update-grub/echo would update-grub, but commented/g" scripts/update-initramfs
 scripts/driver-select atl1c
 make
 make install
