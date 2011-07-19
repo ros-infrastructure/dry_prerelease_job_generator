@@ -52,7 +52,7 @@ def check_git_submodules():
     """
 
     try:
-        version = subprocess.Popen(['git', '--version'], stdout=subprocess.PIPE).communicate()[0]
+        version = subprocess.Popen(['git --version'], shell=True, stdout=subprocess.PIPE).communicate()[0]
     except:
         return False
    # 'git version 1.7.0.4\n'
@@ -81,7 +81,7 @@ class GITClient(vcs_base.VCSClientBase):
         @return: GIT URL of the directory path (output of git info command), or None if it cannot be determined
         """
         if self.detect_presence():
-            output = subprocess.Popen(["git", "config",  "--get", "remote.origin.url"], cwd=self._path, stdout=subprocess.PIPE).communicate()[0]
+            output = subprocess.Popen(["git config --get remote.origin.url"], shell=True, cwd=self._path, stdout=subprocess.PIPE).communicate()[0]
             return output.rstrip()
         return None
 
@@ -181,14 +181,14 @@ class GITClient(vcs_base.VCSClientBase):
             command = ['git', 'log', "-1", "--format='%H'"]
             if spec is not None:
                 command.insert(3, spec)
-            output = subprocess.Popen(command, cwd= self._path, stdout=subprocess.PIPE).communicate()[0]
+            output = subprocess.Popen(' '.join(command), shell=True, cwd= self._path, stdout=subprocess.PIPE).communicate()[0]
             output = output.strip().strip("'")
             return output
 
 
     def is_remote_branch(self, branch_name):
         if self.path_exists():
-            output = subprocess.Popen(['git', "branch", '-r'], cwd= self._path, stdout=subprocess.PIPE).communicate()[0]
+            output = subprocess.Popen(['git branch -r'], shell=True, cwd= self._path, stdout=subprocess.PIPE).communicate()[0]
             for l in output.split('\n'):
                 elems = l.split()
                 if len(elems) == 1:
@@ -199,7 +199,7 @@ class GITClient(vcs_base.VCSClientBase):
 
     def is_local_branch(self, branch_name):
         if self.path_exists():
-            output = subprocess.Popen(['git', "branch"], cwd= self._path, stdout=subprocess.PIPE).communicate()[0]
+            output = subprocess.Popen(['git branch'], shell=True, cwd= self._path, stdout=subprocess.PIPE).communicate()[0]
             for l in output.split('\n'):
                 elems = l.split()
                 if len(elems) == 1:
@@ -212,7 +212,7 @@ class GITClient(vcs_base.VCSClientBase):
 
     def get_branch(self):
         if self.path_exists():
-            output = subprocess.Popen(['git', "branch"], cwd= self._path, stdout=subprocess.PIPE).communicate()[0]
+            output = subprocess.Popen(['git branch'], shell=True, cwd= self._path, stdout=subprocess.PIPE).communicate()[0]
             for l in output.split('\n'):
                 elems = l.split()
                 if len(elems) == 2 and elems[0] == '*':
@@ -221,7 +221,7 @@ class GITClient(vcs_base.VCSClientBase):
 
     def get_branch_parent(self):
         if self.path_exists():
-            output = subprocess.Popen(['git', "config", "--get", "branch.%s.merge"%self.get_branch()], cwd= self._path, stdout=subprocess.PIPE).communicate()[0].strip()
+            output = subprocess.Popen(['git config --get branch.%s.merge'%self.get_branch()], shell=True, cwd= self._path, stdout=subprocess.PIPE).communicate()[0].strip()
             if not output:
                 print "No output of get branch.%s.merge"%self.get_branch()
                 return None
