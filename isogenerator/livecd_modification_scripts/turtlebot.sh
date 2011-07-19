@@ -323,6 +323,16 @@ chown root:turtlebot /lib/udev/rules.d/97-bluetooth.rules
 chmod a+r /lib/udev/rules.d/97-bluetooth.rules
 
 echo "Download and install wireless drivers"
+
+#This is a hack because uname is wrong under chroot
+CURRENT_FILE=/lib/modules/`ls /lib/modules/`
+DESIRED_FILE=/lib/modules/`/bin/uname -r`
+if [ $CURRENT_FILE == $DESIRED_FILE ] ; then
+    echo "Hack not needed"
+else
+    ln -s $CURRENT_FILE $DESIRED_FILE
+fi
+
 cd /tmp
 rm -f /tmp/compat-wireless-2.6.tar.bz2
 wget http://pr.willowgarage.com/downloads/turtlebot/compat-wireless-2.6.tar.bz2 --output-document=/tmp/compat-wireless-2.6.tar.bz2
