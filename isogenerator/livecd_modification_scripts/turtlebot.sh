@@ -329,7 +329,7 @@ wget http://pr.willowgarage.com/downloads/turtlebot/compat-wireless-2.6.tar.bz2 
 sudo apt-get update
 sudo apt-get install build-essential
 tar -xjvf /tmp/compat-wireless-2.6.tar.bz2
-cd compat-wireless*
+cd /tmp/compat-wireless-2011-07-18
 scripts/driver-select atl1c
 make
 make install
