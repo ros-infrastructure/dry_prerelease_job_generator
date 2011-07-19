@@ -45,6 +45,10 @@ import os
 import sys
 import yaml
 import urllib2
+try:
+    from os import EX_OK, EX_DATAERR, EX_USAGE
+except:
+    EX_OK, EX_DATAERR, EX_USAGE = 0, 1, 2
 
 def options_to_branch(options):
     # we don't let the user express the full range of options at the
@@ -208,7 +212,7 @@ def _fullusage():
 \tdescribe\tGet description of resource
 \trosinstall\tGet the rosinstall rule for the development branch
 """%(NAME))
-    sys.exit(os.EX_USAGE)
+    sys.exit(EX_USAGE)
     
 from operator import getitem
 from functools import partial
