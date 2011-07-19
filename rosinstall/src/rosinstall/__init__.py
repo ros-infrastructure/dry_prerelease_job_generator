@@ -1,2 +1,1 @@
-import distro
 import helpers
