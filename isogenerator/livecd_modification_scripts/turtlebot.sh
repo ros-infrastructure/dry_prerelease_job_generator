@@ -322,3 +322,15 @@ EOF
 chown root:turtlebot /lib/udev/rules.d/97-bluetooth.rules
 chmod a+r /lib/udev/rules.d/97-bluetooth.rules
 
+echo "Download and install wireless drivers"
+cd /tmp
+rm -f /tmp/compat-wireless-2.6.tar.bz2
+wget http://pr.willowgarage.com/downloads/turtlebot/compat-wireless-2.6.tar.bz2 --output-document=/tmp/compat-wireless-2.6.tar.bz2
+sudo apt-get update
+sudo apt-get install build-essential
+tar -xjvf /tmp/compat-wireless-2.6.tar.bz2
+cd compat-wireless*
+scripts/driver-select atl1c
+make
+make install
+
