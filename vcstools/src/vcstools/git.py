@@ -36,6 +36,7 @@ git vcs support.
 New in ROS C-Turtle.
 """
 
+from __future__ import with_statement
 import subprocess
 import os
 import vcs_base
