@@ -147,7 +147,7 @@ class ROSWorkspace:
     def _get_dependent_stacks(self, stack):
         # roslib.stacks doesn't expose the dependency parts of rosstack, so
         # we'll call it manually
-        cmd = ['rosstack', 'depends-on', stack]
+        cmd = ['rosstack', 'depends', stack]
         try:
             p = Popen(cmd, stdout=PIPE, stderr=PIPE)
         except OSError as e:
