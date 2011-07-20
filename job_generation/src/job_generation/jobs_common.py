@@ -55,7 +55,7 @@ cd $WORKSPACE &amp;&amp; $WORKSPACE/run_chroot.py --distro=UBUNTUDISTRO --arch=A
 ARCHES = ['amd64', 'i386']
 
 # ubuntu distro mapping to ros distro
-UBUNTU_DISTRO_MAP = targets.os_platform
+UBUNTU_DISTRO_MAP = targets.os_test_platform
 
 # Path to hudson server
 SERVER = 'http://build.willowgarage.com'
