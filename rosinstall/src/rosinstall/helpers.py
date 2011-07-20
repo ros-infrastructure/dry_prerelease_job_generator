@@ -10,7 +10,8 @@ def conditional_abspath(uri):
   @param uri: The uri to check
   @return: abspath(uri) if local path otherwise pass through uri
   """
-  if os.path.exists(uri):
+  u = urlparse.urlparse(uri)
+  if u.scheme == '': # maybe it's a local file?
     return os.path.abspath(uri)
   else:
     return uri
@@ -42,8 +43,9 @@ def is_path_ros(path):
 def get_yaml_from_uri(uri):
 
   # now that we've got a config uri and a path, let's move out.
+  u = urlparse.urlparse(uri)
   f = 0
-  if os.path.isfile(uri):
+  if u.scheme == '': # maybe it's a local file?
     try:
       f = open(uri, 'r')
     except IOError, e:
