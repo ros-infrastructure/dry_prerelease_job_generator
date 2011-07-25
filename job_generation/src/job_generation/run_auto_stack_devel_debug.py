@@ -43,7 +43,7 @@ def main():
         call('ls %s'%stack_xml, env, 'Checking if stack %s contains "stack.xml" file'%options.stack)
         with open(stack_xml) as stack_file:
             depends_one = [str(d) for d in stack_manifest.parse(stack_file.read()).depends]  # convert to list
-            print 'Dependencies of stack %s: %s'%(stack, str(depends_one))
+            print 'Dependencies of stack %s: %s'%(options.stack, str(depends_one))
             for d in depends_one:
                 if not d in options.stack and not d in depends:
                     print 'Adding dependencies of stack %s'%d
@@ -56,7 +56,7 @@ def main():
                 # Install Debian packages  stack dependencies
                 print 'Installing debian packages of stack dependencies from stacks %s'%str(options.stack)
                 call('sudo apt-get update', env)
-                print 'Installing debian packages of "%s" dependencies: %s'%(stack, str(depends))
+                print 'Installing debian packages of "%s" dependencies: %s'%(options.stack, str(depends))
                 call('sudo apt-get install %s --yes'%(stacks_to_debs(depends, options.rosdistro)), env)
             else:
                 # Install dependencies from source
