@@ -442,7 +442,7 @@ def generate_email(message, env):
     write_file(env['WORKSPACE']+'/build_output/buildfailures-with-context.txt', '')
     
 
-def call(command, env, message='', ignore_fail=False):
+def call(command, env=None, message='', ignore_fail=False):
     res = ''
     err = ''
     try:
@@ -463,11 +463,12 @@ def call(command, env, message='', ignore_fail=False):
             message += "\n=========================================\n"
             message += str(err)
             message += "\n=========================================\n"
-            message += "ROS_PACKAGE_PATH = %s\n"%env['ROS_PACKAGE_PATH']
-            message += "ROS_ROOT = %s\n"%env['ROS_ROOT']
-            message += "PYTHONPATH = %s\n"%env['PYTHONPATH']
-            message += "\n=========================================\n"
-            generate_email(message, env)
+            if env:
+                message += "ROS_PACKAGE_PATH = %s\n"%env['ROS_PACKAGE_PATH']
+                message += "ROS_ROOT = %s\n"%env['ROS_ROOT']
+                message += "PYTHONPATH = %s\n"%env['PYTHONPATH']
+                message += "\n=========================================\n"
+                generate_email(message, env)
             raise Exception
 
         
