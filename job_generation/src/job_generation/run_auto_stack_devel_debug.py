@@ -37,6 +37,7 @@ def main():
         env['PYTHONPATH'] = env['ROS_ROOT']+'/core/roslib/src'
         env['PATH'] = '%s/ros/bin:%s'%(ros_path, os.getenv('PATH'))
         stack_dir = env['WORKSPACE']+'/'+options.stack
+        print("environment set to %s"%str(env))
 
         # Parse distro file
         rosdistro_obj = rosdistro.Distro(get_rosdistro_file(options.rosdistro))
