@@ -53,6 +53,8 @@ cd $WORKSPACE &amp;&amp; $WORKSPACE/run_chroot.py --distro=UBUNTUDISTRO --arch=A
 BOOTSTRAP_SCRIPT_OSX = """
 echo "_________________________________BEGIN SCRIPT______________________________________"
 source /Users/rosbuild/ros_bootstrap/setup.bash
+export ROS_PACKAGE_PATH=$WORKSPACE/ros_release:$ROS_PACKAGE_PATH
+
 wget  --no-check-certificate http://code.ros.org/svn/ros/installers/trunk/hudson/hudson_helper -O $WORKSPACE/hudson_helper
 chmod +x  $WORKSPACE/hudson_helper
 svn co https://code.ros.org/svn/ros/stacks/ros_release/trunk $WORKSPACE/ros_release
