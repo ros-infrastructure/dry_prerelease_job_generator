@@ -31,6 +31,7 @@ def main():
             ros_path = env['WORKSPACE']
         else:
             ros_path = '/opt/ros/%s'%options.rosdistro
+        print "Working in %s"%ros_path
         env['ROS_PACKAGE_PATH'] = '%s:%s'%(os.environ['WORKSPACE'], ros_path)
         env['ROS_ROOT'] = '%s/ros'%ros_path
         env['PYTHONPATH'] = env['ROS_ROOT']+'/core/roslib/src'
