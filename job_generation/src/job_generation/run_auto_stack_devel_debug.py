@@ -32,10 +32,10 @@ def main():
         else:
             ros_path = '/opt/ros/%s'%options.rosdistro
         print "Working in %s"%ros_path
-        env['ROS_PACKAGE_PATH'] = '%s:%s'%(os.environ['WORKSPACE'], ros_path)
+        env['ROS_PACKAGE_PATH'] = '%s:%s'%(env['WORKSPACE'], ros_path)
         env['ROS_ROOT'] = '%s/ros'%ros_path
         env['PYTHONPATH'] = env['ROS_ROOT']+'/core/roslib/src'
-        env['PATH'] = '%s/ros/bin:%s'%(ros_path, os.environ['PATH'])
+        env['PATH'] = '%s/ros/bin:%s'%(ros_path, os.getenv['PATH'])
         stack_dir = env['WORKSPACE']+'/'+options.stack
 
         # Parse distro file
@@ -88,7 +88,7 @@ def main():
         print 'Running Hudson Helper'
         res = 0
         for r in range(0, options.repeat+1):
-            env['ROS_TEST_RESULTS_DIR'] = os.environ['ROS_TEST_RESULTS_DIR']+'/run_'+str(r)
+            env['ROS_TEST_RESULTS_DIR'] = os.getenv['ROS_TEST_RESULTS_DIR']+'/run_'+str(r)
             res_one = subprocess.call(('./hudson_helper --dir-test %s build'%stack_dir).split(' '), env=env)
             if res_one != 0:
                 res = res_one
