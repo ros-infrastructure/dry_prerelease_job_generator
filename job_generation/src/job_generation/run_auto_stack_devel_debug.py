@@ -96,7 +96,7 @@ def main():
 
     # global except
     except Exception, ex:
-        print "Global exception caught. Generating email with exception text %s"%srt(ex)
+        print "Global exception caught. Generating email with exception text %s"%str(ex)
         generate_email("%s. Check the console output for test failure details."%str(ex), env)
         traceback.print_exc(file=sys.stdout)
         raise ex
