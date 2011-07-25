@@ -253,16 +253,16 @@ def get_depends_all(distro_obj, stack_name, depends_all):
 
 
 def get_environment():
-    env = {}
-    env['WORKSPACE'] = os.getenv('WORKSPACE', '')
-    env['INSTALL_DIR'] = os.getenv('INSTALL_DIR', '')
-    #env['HOME'] = os.getenv('HOME', '')
-    env['HOME'] = os.path.expanduser('~')
-    env['JOB_NAME'] = os.getenv('JOB_NAME', '')
-    env['BUILD_NUMBER'] = os.getenv('BUILD_NUMBER', '')
-    env['ROS_TEST_RESULTS_DIR'] = os.getenv('ROS_TEST_RESULTS_DIR', '')
-    env['PWD'] = os.getenv('WORKSPACE', '')
-    return env
+    my_env = {}
+    my_env['WORKSPACE'] = os.getenv('WORKSPACE', '')
+    my_env['INSTALL_DIR'] = os.getenv('INSTALL_DIR', '')
+    #my_env['HOME'] = os.getenv('HOME', '')
+    my_env['HOME'] = os.path.expanduser('~')
+    my_env['JOB_NAME'] = os.getenv('JOB_NAME', '')
+    my_env['BUILD_NUMBER'] = os.getenv('BUILD_NUMBER', '')
+    my_env['ROS_TEST_RESULTS_DIR'] = os.getenv('ROS_TEST_RESULTS_DIR', '')
+    my_env['PWD'] = os.getenv('WORKSPACE', '')
+    return my_env
 
 
 def get_options(required, optional):
