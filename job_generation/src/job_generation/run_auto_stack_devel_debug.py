@@ -37,6 +37,10 @@ def main():
         env['PATH'] = '%s/ros/bin:%s'%(ros_path, os.environ['PATH'])
         stack_dir = env['WORKSPACE']+'/'+options.stack
 
+        # Parse distro file
+        rosdistro_obj = rosdistro.Distro(get_rosdistro_file(options.rosdistro))
+        print 'Operating on ROS distro %s'%rosdistro_obj.release_name
+
         # get all stack dependencies of the stack we're testing
         depends = []
         stack_xml = '%s/stack.xml'%stack_dir
