@@ -32,7 +32,7 @@ mkdir -p \$INSTALL_DIR
 cd \$INSTALL_DIR
 
 wget  --no-check-certificate http://code.ros.org/svn/ros/installers/trunk/hudson/hudson_helper 
-chmod +x hudson_helper
+chmod +x  hudson_helper
 svn co https://code.ros.org/svn/ros/stacks/ros_release/trunk ros_release
 """
 
@@ -48,6 +48,18 @@ rm -rf $WORKSPACE/test_output
 wget  --no-check-certificate https://code.ros.org/svn/ros/stacks/ros_release/trunk/hudson/scripts/run_chroot.py -O $WORKSPACE/run_chroot.py
 chmod +x $WORKSPACE/run_chroot.py
 cd $WORKSPACE &amp;&amp; $WORKSPACE/run_chroot.py --distro=UBUNTUDISTRO --arch=ARCH  --ramdisk --hdd-scratch=/home/rosbuild/install_dir --script=$WORKSPACE/script.sh --ssh-key-file=/home/rosbuild/rosbuild-ssh.tar
+"""
+
+BOOTSTRAP_SCRIPT_OSX = """
+echo "_________________________________BEGIN SCRIPT______________________________________"
+source /Users/rosbuild/ros_bootstrap/setup.bash
+wget  --no-check-certificate http://code.ros.org/svn/ros/installers/trunk/hudson/hudson_helper -O $WORKSPACE/hudson_helper
+chmod +x  $WORKSPACE/hudson_helper
+svn co https://code.ros.org/svn/ros/stacks/ros_release/trunk $WORKSPACE/ros_release
+"""
+
+SHUTDOWN_SCRIPT_OSX = """
+echo "_________________________________END SCRIPT_______________________________________"
 """
 
 
@@ -253,6 +265,9 @@ def get_environment():
 def get_options(required, optional):
     parser = optparse.OptionParser()
     ops = required + optional
+    if 'os' in ops:
+        parser.add_option('--os', dest = 'os', default='ubuntu', action='store',
+                          help='OS name')
     if 'rosdistro' in ops:
         parser.add_option('--rosdistro', dest = 'rosdistro', default=None, action='store',
                           help='Ros distro name')
