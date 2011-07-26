@@ -188,43 +188,16 @@ def get_tar(stack):
     return 'https://code.ros.org/svn/release/download/stacks/%s/%s/%s.tar.bz2'%(stack.name, name, name)
 
 
-def stack_to_rosinstall(stack, branch):
-    vcs = stack.vcs_config
-    if not branch in ['devel', 'release', 'distro', 'release-tar']:
-        print 'Unsupported branch type %s for stack %s'%(branch, stack.name)
-        return ''
-
-    if branch == 'release-tar':
-        return "- tar: {uri: '%s', version: '%s-%s', local-name: '%s'}\n"%(get_tar(stack), stack.name, stack.version, stack.name)
-
-    if not vcs.type in ['svn', 'hg', 'git', 'bzr']:
-        print 'Unsupported vcs type %s for stack %s'%(vcs.type, stack.name)
-        return ''
-        
-    if vcs.type in ['svn', 'bzr']:
-        if branch == 'devel':
-            return "- %s: {uri: '%s', local-name: '%s'}\n"%(vcs.type, vcs.anon_dev, stack.name)
-        elif branch == 'distro':
-            return "- %s: {uri: '%s', local-name: '%s'}\n"%(vcs.type, vcs.anon_distro_tag, stack.name)            
-
-        elif branch == 'release':
-            return "- %s: {uri: '%s', local-name: '%s'}\n"%(vcs.type, vcs.anon_release_tag, stack.name)  
-
-    elif vcs.type in ['hg', 'git']:
-        if branch == 'devel':
-            return "- %s: {uri: '%s', version: '%s', local-name: '%s'}\n"%(vcs.type, vcs.anon_repo_uri, vcs.dev_branch, stack.name)
-        elif branch == 'distro':
-            return "- %s: {uri: '%s', version: '%s', local-name: '%s'}\n"%(vcs.type, vcs.anon_repo_uri, vcs.distro_tag, stack.name)
-        elif branch == 'release':
-            return "- %s: {uri: '%s', version: '%s', local-name: '%s'}\n"%(vcs.type, vcs.anon_repo_uri, vcs.release_tag, stack.name)
-
-
 
 def stacks_to_rosinstall(stack_list, stack_map, branch):
     res = ''
     for s in stack_list:
         if s in stack_map:
-            res += stack_to_rosinstall(stack_map[s], branch)
+            try:
+                res += yaml.dump(rosdistro.stack_to_rosinstall(stack_map[s], branch, anonymous=True))
+            except rosdistro.DistroException, ex:
+                print str(ex)
+                pass
         else:
             print 'Stack "%s" is not in stack list. Not adding this stack to rosinstall file'%s
     return res

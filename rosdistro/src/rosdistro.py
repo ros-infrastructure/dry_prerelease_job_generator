@@ -87,7 +87,7 @@ def expand_rule(rule, stack_name, stack_ver, release_name, revision=None):
 
 def load_vcs_config(rules, rule_eval):
     vcs_config = None
-    if 'svn' in rules or 'dev-svn' in rules or 'bzr' in rules:
+    if 'svn' in rules or 'dev-svn' in rules:
         #legacy support
         if 'dev-svn' in rules:
             import vcstools.svn
@@ -99,19 +99,13 @@ def load_vcs_config(rules, rule_eval):
             vcs_config.anon_distro_tag = vcs_config.distro_tag
             vcs_config.anon_release_tag = vcs_config.release_tag
 
-        elif 'svn' in rules or 'bzr' in rules:
-            if 'svn' in rules:
-                import vcstools.svn
-                vcs_config = vcstools.svn.SVNConfig()
-                r = rules['svn']
-            elif 'bzr' in rules:
-                import vcstools.bzr
-                vcs_config = vcstools.bzr.BZRConfig()
-                r = rules['bzr']
-
+        elif 'svn' in rules:
+            import vcstools.svn
+            vcs_config = vcstools.svn.SVNConfig()
+            r = rules['svn']
             for k in ['dev', 'distro-tag', 'release-tag']:
                 if not k in r:
-                    raise KeyError("svn/bzr rules missing required %s key: %s"%(k, r))
+                    raise KeyError("svn rules missing required %s key: %s"%(k, r))
             vcs_config.dev     = rule_eval(r['dev'])
             vcs_config.distro_tag  = rule_eval(r['distro-tag'])
             vcs_config.release_tag = rule_eval(r['release-tag'])
@@ -132,7 +126,7 @@ def load_vcs_config(rules, rule_eval):
 
             
             
-    elif 'hg' in rules or 'git' in rules:
+    elif 'hg' in rules or 'git' in rules or 'bzr' in rules:
         r = None
         if 'hg' in rules:
             import vcstools.hg
@@ -143,6 +137,11 @@ def load_vcs_config(rules, rule_eval):
             import vcstools.git
             vcs_config = vcstools.git.GITConfig()
             r = rules['git']
+
+        elif 'bzr' in rules:
+            import vcstools.bzr
+            vcs_config = vcstools.bzr.BZRConfig()
+            r = rules['bzr']
 
         if not r:
             raise NotImplementedError("Rules %s not implemented"%rules)
@@ -503,42 +502,50 @@ def stack_to_rosinstall(stack, branch, anonymous=True):
 
 
     vcs = stack.vcs_config
-    if not branch in ['devel', 'release', 'distro']:
+    if not branch in ['devel', 'release', 'distro', 'release-tar']:
         raise DistroException('Unsupported branch type %s for stack %s'%(branch, stack.name))
-
-    if not vcs.type in ['svn', 'hg', 'bzr', 'git']:
+    if not vcs.type in ['svn', 'git', 'bzr', 'hg']:
         raise DistroException( 'Unsupported vcs type %s for stack %s'%(vcs.type, stack.name))
+
+
+    if branch == 'release-tar':
+        def get_tar(stack):
+            name = '%s-%s'%(stack.name, stack.version)
+            return 'https://code.ros.org/svn/release/download/stacks/%s/%s/%s.tar.bz2'%(stack.name, name, name)
+        uri = get_tar(stack)
         
-    if vcs.type in ['svn', 'bzr']:
-        if branch == 'devel':
-            if anonymous: 
-                uri = vcs.anon_dev
-            else:
-                uri = vcs.dev
-            #return "- svn: {uri: '%s', local-name: '%s'}\n"%(vcs.anon_dev, stack.name)
-        elif branch == 'distro':
-            if anonymous: 
-                uri = vcs.anon_distro_tag
-            else:
-                uri = vcs.distro_tag
-        elif branch == 'release':
-            if anonymous: 
-                uri = vcs.anon_release_tag
-            else:
-                uri = vcs.release_tag
+    else:
+        if vcs.type in ['svn']:
+            if branch == 'devel':
+                if anonymous: 
+                    uri = vcs.anon_dev
+                else:
+                    uri = vcs.dev
+                #return "- svn: {uri: '%s', local-name: '%s'}\n"%(vcs.anon_dev, stack.name)
+            elif branch == 'distro':
+                if anonymous: 
+                    uri = vcs.anon_distro_tag
+                else:
+                    uri = vcs.distro_tag
+            elif branch == 'release':
+                if anonymous: 
+                    uri = vcs.anon_release_tag
+                else:
+                    uri = vcs.release_tag
 
-    else:#if vcs.type == 'hg' or vcs.type == 'git' or vcs.type == 'bzr':
-        if anonymous and hasattr(vcs, 'anon_repo_uri'):
-            uri = vcs.anon_repo_uri
-        else:
-            uri = vcs.repo_uri
-        if branch == 'devel':
-            version_tag = vcs.dev_branch
-        elif branch == 'distro':
-            version_tag = vcs.distro_tag
-        elif branch == 'release':
-            version_tag = vcs.release_tag
+        elif vcs.type == 'hg' or vcs.type == 'git' or vcs.type == 'bzr':
+            if anonymous and hasattr(vcs, 'anon_repo_uri'):
+                uri = vcs.anon_repo_uri
+            else:
+                uri = vcs.repo_uri
+            if branch == 'devel':
+                version_tag = vcs.dev_branch
+            elif branch == 'distro':
+                version_tag = vcs.distro_tag
+            elif branch == 'release':
+                version_tag = vcs.release_tag
 
+        
 
     if version_tag:
         result.append({vcs.type: {"uri": uri, 'local-name': stack.name, 'version': version_tag} } )
