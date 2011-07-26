@@ -23,6 +23,7 @@ def main():
             print "You can only provide one stack at a time"
             return -1
         options.stack = options.stack[0]
+        print "parsed options: %s"%str(options)
 
         # set environment
         print "Setting up environment"
@@ -37,7 +38,7 @@ def main():
         env['PYTHONPATH'] = env['ROS_ROOT']+'/core/roslib/src'
         env['PATH'] = '%s/ros/bin:%s'%(ros_path, os.getenv('PATH'))
         stack_dir = env['WORKSPACE']+'/'+options.stack
-        print("environment set to %s"%str(env))
+        print("Environment set to %s"%str(env))
 
         # Parse distro file
         rosdistro_obj = rosdistro.Distro(get_rosdistro_file(options.rosdistro))
