@@ -51,7 +51,7 @@ def main():
             depends_one = [str(d) for d in stack_manifest.parse(stack_file.read()).depends]  # convert to list
             print 'Dependencies of stack %s: %s'%(options.stack, str(depends_one))
             for d in depends_one:
-                if not d in options.stack and not d in depends:
+                if not d == options.stack and not d in depends:
                     print 'Adding dependencies of stack %s'%d
                     get_depends_all(rosdistro_obj, d, depends)
                     print 'Resulting total dependencies: %s'%str(depends)
@@ -74,7 +74,7 @@ def main():
                 call('rosinstall --delete-changed-uris --rosdep-yes %s %s'%(env['WORKSPACE'], rosinstall_file), env,
                      'Install the stack dependencies from source.')
         else:
-            print 'Stack(s) %s do(es) not have any dependencies, not installing anything now'%str(options.stack)
+            print 'Stack %s does not have any dependencies, not installing anything now'%str(options.stack)
 
 
 
