@@ -77,14 +77,9 @@ def main():
         else:
             print 'Stack %s does not have any dependencies, not installing anything now'%str(options.stack)
 
-        # Install system dependencies
-        print 'Installing system dependencies'
-        call('rosmake rosdep', env)
-        call('rosdep install -y %s'%options.stack, env,
-             'Installing system dependencies of stack %s'%options.stack)
 
         # Start Hudson Helper
-        print 'Running Hudson Helper'
+        print 'Running Hudson Helper in folder %s'%stack_dir
         res = 0
         test_results = env['ROS_TEST_RESULTS_DIR']
         for r in range(0, options.repeat+1):
