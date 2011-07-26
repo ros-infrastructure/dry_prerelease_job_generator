@@ -68,6 +68,7 @@ def main():
                 # Install dependencies from source
                 print 'Installing stack dependencies from source'
                 rosinstall = stacks_to_rosinstall(depends, rosdistro_obj.released_stacks, 'release-tar')
+                print 'Using rosinstall yaml: %s'%rosinstall
                 rosinstall_file = '%s.rosinstall'%options.stack
                 with open(rosinstall_file, 'w') as f:
                     f.write(rosinstall)
