@@ -188,16 +188,19 @@ def get_tar(stack):
     return 'https://code.ros.org/svn/release/download/stacks/%s/%s/%s.tar.bz2'%(stack.name, name, name)
 
 
+def stack_to_rosinstall(stack_obj, branch):
+    try:
+        return yaml.dump(rosdistro.stack_to_rosinstall(stack_obj, branch, anonymous=True))
+    except rosdistro.DistroException, ex:
+        print str(ex)
+        return ''
+
 
 def stacks_to_rosinstall(stack_list, stack_map, branch):
     res = ''
     for s in stack_list:
         if s in stack_map:
-            try:
-                res += yaml.dump(rosdistro.stack_to_rosinstall(stack_map[s], branch, anonymous=True))
-            except rosdistro.DistroException, ex:
-                print str(ex)
-                pass
+            res += stack_to_rosinstall(stack_map[s], branch)
         else:
             print 'Stack "%s" is not in stack list. Not adding this stack to rosinstall file'%s
     return res
