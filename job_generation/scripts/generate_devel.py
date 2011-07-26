@@ -15,7 +15,7 @@ HUDSON_DEVEL_CONFIG = """<?xml version='1.0' encoding='UTF-8'?>
     </hudson.plugins.trac.TracProjectProperty> 
   </properties> 
   HUDSON_VCS
-  <assignedNode>devel</assignedNode>
+  <assignedNode>NODE</assignedNode>
   <canRoam>false</canRoam> 
   <disabled>false</disabled> 
   <blockBuildWhenUpstreamBuilding>false</blockBuildWhenUpstreamBuilding> 
@@ -91,11 +91,13 @@ def create_devel_configs(os, rosdistro, stack):
         bootstrap_script = BOOTSTRAP_SCRIPT
         shutdown_script = SHUTDOWN_SCRIPT
         source_only = ''
+        node = 'devel'
     elif os == 'osx':
         dist_arch.append(('osx', 'amd64'))
         bootstrap_script = BOOTSTRAP_SCRIPT_OSX
         shutdown_script = SHUTDOWN_SCRIPT_OSX
         source_only = '--source-only'
+        node = 'osx10_5_vnc'
 
     # create gold distro
     gold_children = [devel_job_name(rosdistro, stack.name, u, a) for (u, a) in dist_arch]
@@ -145,6 +147,7 @@ def create_devel_configs(os, rosdistro, stack):
         hudson_config = hudson_config.replace('TIME_TRIGGER', time_trigger)
         hudson_config = hudson_config.replace('JOB_CHILDREN', job_children)
         hudson_config = hudson_config.replace('EMAIL', 'wim+devel@willowgarage.com')
+        hudson_config = hudson_config.replace('NODE', node)
         configs[name] = hudson_config
     return configs
 
