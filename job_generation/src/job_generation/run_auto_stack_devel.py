@@ -88,7 +88,7 @@ def main():
         test_results = env['ROS_TEST_RESULTS_DIR']
         for r in range(0, options.repeat+1):
             env['ROS_TEST_RESULTS_DIR'] = test_results + '/run_'+str(r)
-            call('./hudson_helper --dir-test %s build'%stack_dir, env)
+            call('./hudson_helper --dir-test %s build'%stack_dir, env, 'Calling hudson helper on folder %s'%stack_dir, ignore_fail=True)
 
     # global except
     except Exception, ex:
