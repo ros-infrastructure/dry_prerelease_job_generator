@@ -77,14 +77,6 @@ def main():
             print 'Stack %s does not have any dependencies, not installing anything now'%str(options.stack)
 
 
-
-        # Install system dependencies
-        print 'Installing system dependencies'
-        call('rosmake rosdep', env)
-        call('rosdep install -y %s'%options.stack, env,
-             'Installing system dependencies of stack %s'%options.stack)
-
-
         # Start Hudson Helper
         print 'Running Hudson Helper'
         res = 0
