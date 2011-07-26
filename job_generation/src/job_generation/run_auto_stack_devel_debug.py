@@ -39,7 +39,7 @@ def main():
         stack_dir = env['WORKSPACE']+'/'+options.stack
         print("environment set to %s"%str(env))
 
-        call('env', env)
+        call('env')
 
         # Parse distro file
         rosdistro_obj = rosdistro.Distro(get_rosdistro_file(options.rosdistro))
