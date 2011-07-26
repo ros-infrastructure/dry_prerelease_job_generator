@@ -57,7 +57,6 @@ def main():
                     get_depends_all(rosdistro_obj, d, depends)
                     print 'Resulting total dependencies: %s'%str(depends)
 
-
         if len(depends) > 0:
             if not options.source_only:
                 # Install Debian packages  stack dependencies
@@ -78,6 +77,11 @@ def main():
         else:
             print 'Stack %s does not have any dependencies, not installing anything now'%str(options.stack)
 
+        # Install system dependencies of stack itself
+        print 'Installing system dependencies of stack %s'%options.stack
+        call('rosmake rosdep', env)
+        call('rosdep install -y %s'%options.stack, env,
+             'Install system dependencies of stack %s'%options.stack)
 
         # Start Hudson Helper
         print 'Running Hudson Helper in folder %s'%stack_dir
