@@ -85,14 +85,10 @@ def main():
 
         # Start Hudson Helper
         print 'Running Hudson Helper in folder %s'%stack_dir
-        res = 0
         test_results = env['ROS_TEST_RESULTS_DIR']
         for r in range(0, options.repeat+1):
             env['ROS_TEST_RESULTS_DIR'] = test_results + '/run_'+str(r)
-            res_one = subprocess.call(('./hudson_helper --dir-test %s build'%stack_dir).split(' '), env=env)
-            if res_one != 0:
-                res = res_one
-        return res
+            call('./hudson_helper --dir-test %s build'%stack_dir, env)
 
     # global except
     except Exception, ex:
