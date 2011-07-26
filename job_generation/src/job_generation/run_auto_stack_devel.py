@@ -89,7 +89,8 @@ def main():
         test_results = env['ROS_TEST_RESULTS_DIR']
         for r in range(0, options.repeat+1):
             env['ROS_TEST_RESULTS_DIR'] = test_results + '/run_'+str(r)
-            res_one = subprocess.call(('./hudson_helper --dir-test %s build'%stack_dir).split(' '), env=env)
+            #res_one = subprocess.call(('./hudson_helper --dir-test %s build'%stack_dir).split(' '), env=env)
+            res_one = subprocess.call(('./hudson_helper --pkg-test %s build'%options.stack).split(' '), env=env)
             if res_one != 0:
                 res = res_one
         return res
