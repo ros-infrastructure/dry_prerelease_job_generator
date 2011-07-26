@@ -253,7 +253,7 @@ def get_depends_all(distro_obj, stack_name, depends_all):
 
 
 def get_environment():
-    my_env = {}
+    my_env = os.environ
     my_env['WORKSPACE'] = os.getenv('WORKSPACE', '')
     my_env['INSTALL_DIR'] = os.getenv('INSTALL_DIR', '')
     #my_env['HOME'] = os.getenv('HOME', '')
