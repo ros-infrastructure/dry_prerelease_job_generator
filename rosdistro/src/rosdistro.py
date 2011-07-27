@@ -513,8 +513,10 @@ def stack_to_rosinstall(stack, branch, anonymous=True):
             name = '%s-%s'%(stack.name, stack.version)
             return 'https://code.ros.org/svn/release/download/stacks/%s/%s/%s.tar.bz2'%(stack.name, name, name)
         uri = get_tar(stack)
+        vcs_type = 'tar'
         
     else:
+        vcs_type = vcs.type
         if vcs.type in ['svn']:
             if branch == 'devel':
                 if anonymous: 
@@ -548,9 +550,9 @@ def stack_to_rosinstall(stack, branch, anonymous=True):
         
 
     if version_tag:
-        result.append({vcs.type: {"uri": uri, 'local-name': stack.name, 'version': version_tag} } )
+        result.append({vcs_type: {"uri": uri, 'local-name': stack.name, 'version': version_tag} } )
     else:
-        result.append({vcs.type: {"uri": uri, 'local-name': stack.name} } )
+        result.append({vcs_type: {"uri": uri, 'local-name': stack.name} } )
     return result
 
 def variant_to_rosinstall(variant_name, distro, branch, anonymous=True):
