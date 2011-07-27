@@ -122,7 +122,7 @@ def main():
             arch = 'amd64'
         ubuntudistro = call('lsb_release -a', env).split('Codename:')[1].strip()
         print "Detected %s machine running Ubuntu %s"%(arch, ubuntudistro)
-        apt_deps = parse_apt(ubuntudistro, arch)
+        apt_deps = parse_apt(ubuntudistro, arch, options.rosdistro)
         print "Parsing apt repository configuration file to get stack dependencies"
 
         # Install all stacks that depend on this stack from source
