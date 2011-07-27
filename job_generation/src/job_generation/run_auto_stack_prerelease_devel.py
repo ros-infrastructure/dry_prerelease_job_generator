@@ -76,7 +76,7 @@ def main():
 
         if len(depends) > 0:
             if not options.source_only:
-                # Install Debian packages  stack dependencies
+                # Install Debian packages of stack dependencies
                 print 'Installing debian packages of stack dependencies from stacks %s'%str(options.stack)
                 call('sudo apt-get update', env)
                 print 'Installing debian packages of "%s" dependencies: %s'%(stack, str(depends))
@@ -95,7 +95,7 @@ def main():
         else:
             print 'Stack(s) %s do(es) not have any dependencies, not installing anything now'%str(options.stack)
 
-        # Install system dependencies
+        # Install system dependencies of stacks re're testing
         print "Installing system dependencies of stacks we're testing"
         call('rosmake rosdep', env)
         for stack in options.stack:
@@ -124,8 +124,6 @@ def main():
         print "Detected %s machine running Ubuntu %s"%(arch, ubuntudistro)
         apt_deps = parse_apt(ubuntudistro, arch, options.rosdistro)
         print "Parsing apt repository configuration file to get stack dependencies"
-
-        # Install all stacks that depend on this stack from source
         depends_on_all = apt_deps.depends_on_all(options.stack)
         depends_all = apt_deps.depends_all(depends_on_all)
         for d in depends_on_all:
