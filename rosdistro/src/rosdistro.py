@@ -513,7 +513,7 @@ def stack_to_rosinstall(stack, branch, anonymous=True):
             name = '%s-%s'%(stack.name, stack.version)
             return 'https://code.ros.org/svn/release/download/stacks/%s/%s/%s.tar.bz2'%(stack.name, name, name)
         uri = get_tar(stack)
-        version = '%s-%s'%(stack.name, stack.version)
+        version_tag = '%s-%s'%(stack.name, stack.version)
         vcs_type = 'tar'
         
     else:
