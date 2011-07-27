@@ -9,11 +9,19 @@ import roslib; roslib.load_manifest("job_generation")
 from roslib import stack_manifest
 import rosdistro
 from jobs_common import *
+from apt_parser import parse_apt
 import sys
 import os
 import optparse 
 import subprocess
 import traceback
+
+
+def remove(list1, list2):
+    for l in list2:
+        if l in list1:
+            list1.remove(l)
+
 
 def main():
     # global try
@@ -60,7 +68,7 @@ def main():
 
 
         # get all stack dependencies of stacks we're testing
-        depends = []
+        depends_all = []
         for stack in options.stack:    
             stack_xml = '%s/%s/stack.xml'%(STACK_DIR, stack)
             call('ls %s'%stack_xml, env, 'Checking if stack %s contains "stack.xml" file'%stack)
@@ -68,33 +76,31 @@ def main():
                 depends_one = [str(d) for d in stack_manifest.parse(stack_file.read()).depends]  # convert to list
                 print 'Dependencies of stack %s: %s'%(stack, str(depends_one))
                 for d in depends_one:
-                    if not d in options.stack and not d in depends:
+                    if not d in options.stack and not d in depends_all:
                         print 'Adding dependencies of stack %s'%d
-                        get_depends_all(rosdistro_obj, d, depends)
-                        print 'Resulting total dependencies: %s'%str(depends)
+                        get_depends_all(rosdistro_obj, d, depends_all)
+                        print 'Resulting total dependencies of all stacks that get tested: %s'%str(depends_all)
 
-        if len(depends) > 0:
-            if not options.source_only:
-                # Install Debian packages  stack dependencies
-                print 'Installing debian packages of stack dependencies from stacks %s'%str(options.stack)
-                call('sudo apt-get update', env)
-                print 'Installing debian packages of "%s" dependencies: %s'%(stack, str(depends))
-                call('sudo apt-get install %s --yes'%(stacks_to_debs(depends, options.rosdistro)), env)
-            else:
+        if len(depends_all) > 0:
+            if options.source_only:
                 # Install dependencies from source
                 print 'Installing stack dependencies from source'
-                if 'ros' in depends:
-                    depends.remove('ros')
-                rosinstall = stacks_to_rosinstall(depends, rosdistro_obj.released_stacks, 'release-tar')
+                rosinstall = stacks_to_rosinstall(depends_all, rosdistro_obj.released_stacks, 'release-tar')
                 rosinstall_file = '%s.rosinstall'%DEPENDS_DIR
                 with open(rosinstall_file, 'w') as f:
                     f.write(rosinstall)
                 call('rosinstall --rosdep-yes %s /opt/ros/%s %s'%(DEPENDS_DIR, options.rosdistro, rosinstall_file), env,
                      'Install the stack dependencies from source.')
+            else:
+                # Install Debian packages of stack dependencies
+                print 'Installing debian packages of "%s" dependencies: %s'%(stack, str(depends_all))
+                call('sudo apt-get update', env)
+                call('sudo apt-get install %s --yes'%(stacks_to_debs(depends_all, options.rosdistro)), env)
         else:
             print 'Stack(s) %s do(es) not have any dependencies, not installing anything now'%str(options.stack)
 
-        # Install system dependencies
+
+        # Install system dependencies of stacks re're testing
         print "Installing system dependencies of stacks we're testing"
         call('rosmake rosdep', env)
         for stack in options.stack:
@@ -115,38 +121,47 @@ def main():
             return res
 
 
-        # Install Debian packages of ALL stacks in distro
-        print 'Installing all stacks of ros distro %s: %s'%(options.rosdistro, str(rosdistro_obj.released_stacks.keys()))
-        for stack in rosdistro_obj.released_stacks:
-            call('sudo apt-get install %s --yes'%(stack_to_deb(stack, options.rosdistro)), env, ignore_fail=True)
+        # parse debian repository configuration file to get stack dependencies
+        arch = 'i386'
+        if '64' in call('uname -mrs', env):
+            arch = 'amd64'
+        ubuntudistro = call('lsb_release -a', env).split('Codename:')[1].strip()
+        print "Parsing apt repository configuration file to get stack dependencies, for %s machine running %s"%(arch, ubuntudistro)
+        apt_deps = parse_apt(ubuntudistro, arch, options.rosdistro)
+        # all stacks that depends on the tested stacks, excluding the tested stacks.
+        depends_on_all = apt_deps.depends_on_all(options.stack)
+        remove(depends_on_all, options.stack)
+        # all stack dependencies of above stack list, except for the test stack dependencies
+        depends_all_depends_on_all = apt_deps.depends_all(depends_on_all)
+        remove(depends_all_depends_on_all, options.stack)
+        remove(depends_all_depends_on_all, depends_all)
 
 
-        # Install all stacks that depend on this stack
-        print 'Installing all stacks that depend on these stacks from source'
-        depends_on = {}
-        for stack in options.stack:
-            res = call('rosstack depends-on %s'%stack, env, 'Getting list of stacks that depend on stack %s'%stack)
-            if res != '':
-                for r in res.split('\n'):
-                    if r != '':
-                        depends_on[r] = ''
-        print 'Removing the stacks we are testing from the depends_on list'
-        depends_on_keys = list(set(depends_on.keys()) - set(options.stack))
-        if len(depends_on_keys) == 0:
-            print 'No stacks depends on %s, finishing test.'%options.stack        
-            return 0
-        print 'These stacks depend on the stacks we are testing: "%s"'%str(depends_on_keys)
-        rosinstall = stacks_to_rosinstall(depends_on_keys, rosdistro_obj.released_stacks, 'release-tar')
+        # Install dependencies of depends_on_all stacks, excluding dependencies of test stacks.
+        print "Install dependencies of depends_on_all stacks, excluding dependencies of test stacks."
+        if not options.source_only:
+            # Install Debian packages of 'depends_all_depends_on_all' list
+            print 'Installing Debian package of %s'%str(depends_all_depends_on_all)
+            call('sudo apt-get install %s --yes'%(stacks_to_debs(depends_all_depends_on_all, options.rosdistro)), env)
+        else:
+            # Install source of 'depends_all_depends_on_all' list
+            print 'Installing source of %s'%str(depends_all_depends_on_all)
+            rosinstall = stacks_to_rosinstall(depends_all_depends_on_all, rosdistro_obj.released_stacks, 'release-tar')
+            rosinstall_file = '%s_depends_all_depends_on_all.rosinstall'%DEPENDS_ON_DIR
+            with open(rosinstall_file, 'w') as f:
+                f.write(rosinstall)
+                call('rosinstall --rosdep-yes %s /opt/ros/%s %s %s'%(DEPENDS_ON_DIR, options.rosdistro, STACK_DIR, rosinstall_file), env,
+                     'Install the stacks that depend on the stacks that are getting tested from source.')
+            
+
+        # Install all stacks that depend on this stack from source
+        print 'Installing all stacks that depend on these stacks from source: %s'%str(depends_on_all)
+        rosinstall = stacks_to_rosinstall(depends_on_all, rosdistro_obj.released_stacks, 'release-tar')
         rosinstall_file = '%s.rosinstall'%DEPENDS_ON_DIR
         with open(rosinstall_file, 'w') as f:
             f.write(rosinstall)
         call('rosinstall --rosdep-yes %s /opt/ros/%s %s %s'%(DEPENDS_ON_DIR, options.rosdistro, STACK_DIR, rosinstall_file), env,
              'Install the stacks that depend on the stacks that are getting tested from source.')
-
-        # Remove stacks that depend on this stack from Debians
-        print 'Removing all stacks from Debian that depend on these stacks'
-        for stack in options.stack:    
-            call('sudo apt-get remove %s --yes'%stack_to_deb(stack, options.rosdistro), env, ignore_fail=True)
 
         # Run hudson helper for all stacks
         print 'Running Hudson Helper'
