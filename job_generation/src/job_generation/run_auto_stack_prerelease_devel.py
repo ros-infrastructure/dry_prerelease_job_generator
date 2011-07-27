@@ -137,9 +137,7 @@ def main():
 
         # Install Debian packages of 'depends_all' list
         print 'Installing Debian package of %s'%str(depends_all)
-        for stack in depends_all:
-            call('sudo apt-get install %s --yes'%(stack_to_deb(stack, options.rosdistro)), env, ignore_fail=True)
-
+        call('sudo apt-get install %s --yes'%(stacks_to_debs(depends_all, options.rosdistro)), env)
 
         # Install all stacks that depend on this stack from source
         print 'Installing all stacks that depend on these stacks from source: %s'%str(depends_on_all)
