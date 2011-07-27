@@ -183,11 +183,6 @@ def stacks_to_debs(stack_list, rosdistro):
     return ' '.join([stack_to_deb(s, rosdistro) for s in stack_list])
 
 
-def get_tar(stack):
-    name = '%s-%s'%(stack.name, stack.version)
-    return 'https://code.ros.org/svn/release/download/stacks/%s/%s/%s.tar.bz2'%(stack.name, name, name)
-
-
 def stack_to_rosinstall(stack_obj, branch):
     try:
         return yaml.dump(rosdistro.stack_to_rosinstall(stack_obj, branch, anonymous=True))

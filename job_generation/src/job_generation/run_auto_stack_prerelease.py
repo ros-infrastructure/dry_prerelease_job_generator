@@ -95,7 +95,7 @@ def main():
             print 'Stack(s) %s do(es) not have any dependencies, not installing anything now'%str(options.stack)
 
         # Install system dependencies
-        print 'Installing system dependencies'
+        print "Installing system dependencies of stacks we're testing"
         call('rosmake rosdep', env)
         for stack in options.stack:
             call('rosdep install -y %s'%stack, env,
