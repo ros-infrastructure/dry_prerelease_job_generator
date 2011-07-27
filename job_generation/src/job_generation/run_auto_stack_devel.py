@@ -59,13 +59,13 @@ def main():
 
         if len(depends) > 0:
             if not options.source_only:
-                # Install Debian packages  stack dependencies
+                # Install Debian packages of stack dependencies
                 print 'Installing debian packages of stack dependencies from stacks %s'%str(options.stack)
                 call('sudo apt-get update', env)
                 print 'Installing debian packages of "%s" dependencies: %s'%(options.stack, str(depends))
                 call('sudo apt-get install %s --yes'%(stacks_to_debs(depends, options.rosdistro)), env)
             else:
-                # Install dependencies from source
+                # Install stack dependencies from source
                 print 'Installing stack dependencies from source'
                 rosinstall = stacks_to_rosinstall(depends, rosdistro_obj.released_stacks, 'release-tar')
                 print 'Using rosinstall yaml: %s'%rosinstall
