@@ -63,7 +63,7 @@ def main():
                 print 'Installing debian packages of stack dependencies from stacks %s'%str(options.stack)
                 call('sudo apt-get update', env)
                 print 'Installing debian packages of "%s" dependencies: %s'%(options.stack, str(depends))
-                call('sudo apt-get install %s --yes'%(stacks_to_debs(depends, options.rosdistro)), env, end_with_success=True)
+                call('sudo apt-get install %s --yes'%(stacks_to_debs(depends, options.rosdistro)), env)
             else:
                 # Install stack dependencies from source
                 print 'Installing stack dependencies from source'
@@ -96,9 +96,6 @@ def main():
         return res
 
     # global except
-    except SuccessException, ex:
-        return 0
-
     except Exception, ex:
         print "Global exception caught. Generating email with exception text %s"%str(ex)
         generate_email("%s. Check the console output for test failure details."%str(ex), env)
