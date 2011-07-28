@@ -96,6 +96,9 @@ def main():
         return res
 
     # global except
+    except SuccessException, ex:
+        return 0
+
     except Exception, ex:
         print "Global exception caught. Generating email with exception text %s"%str(ex)
         generate_email("%s. Check the console output for test failure details."%str(ex), env)
@@ -107,8 +110,6 @@ if __name__ == '__main__':
     try:
         res = main()
         sys.exit( res )
-    except SuccessException, ex:
-        sys.exit(0)
     except Exception, ex:
         sys.exit(-1)
 
