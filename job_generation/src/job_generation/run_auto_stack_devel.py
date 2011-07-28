@@ -63,7 +63,7 @@ def main():
                 print 'Installing debian packages of stack dependencies from stacks %s'%str(options.stack)
                 call('sudo apt-get update', env)
                 print 'Installing debian packages of "%s" dependencies: %s'%(options.stack, str(depends))
-                call('sudo apt-get install %s --yes'%(stacks_to_debs(depends, options.rosdistro)), env)
+                call('sudo apt-get install %s --yes'%(stacks_to_debs(depends, options.rosdistro)), env, end_with_success=True)
             else:
                 # Install stack dependencies from source
                 print 'Installing stack dependencies from source'
@@ -107,6 +107,8 @@ if __name__ == '__main__':
     try:
         res = main()
         sys.exit( res )
+    except SuccessException, ex:
+        sys.exit(0)
     except Exception, ex:
         sys.exit(-1)
 

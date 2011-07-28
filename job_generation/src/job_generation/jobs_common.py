@@ -413,7 +413,11 @@ def generate_email(message, env):
     write_file(env['WORKSPACE']+'/build_output/buildfailures-with-context.txt', '')
     
 
-def call(command, env=None, message='', ignore_fail=False):
+class SuccessException(Exception):
+    pass
+
+
+def call(command, env=None, message='', ignore_fail=False, end_with_success=False):
     res = ''
     err = ''
     try:
@@ -428,18 +432,24 @@ def call(command, env=None, message='', ignore_fail=False):
     except Exception:
         if not ignore_fail:
             message += "\n=========================================\n"
-            message += "Failed to execute '%s'"%command
+            if not end_with_success:
+                message += "Failed to execute '%s'"%command
+            else:
+                message += "Finished executing '%s'"%command
             message += "\n=========================================\n"
             message += str(res)
             message += "\n=========================================\n"
             message += str(err)
             message += "\n=========================================\n"
-            if env:
+            if env and not end_with_success:
                 message += "ROS_PACKAGE_PATH = %s\n"%env['ROS_PACKAGE_PATH']
                 message += "ROS_ROOT = %s\n"%env['ROS_ROOT']
                 message += "PYTHONPATH = %s\n"%env['PYTHONPATH']
                 message += "\n=========================================\n"
                 generate_email(message, env)
-            raise Exception
+            if end_with_success:
+                raise SuccessException
+            else:
+                raise Exception
 
         
