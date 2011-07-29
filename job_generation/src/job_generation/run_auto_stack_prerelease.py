@@ -138,20 +138,23 @@ def main():
 
 
         # Install dependencies of depends_on_all stacks, excluding dependencies of test stacks.
-        print "Install dependencies of depends_on_all stacks, excluding dependencies of test stacks."
-        if not options.source_only:
-            # Install Debian packages of 'depends_all_depends_on_all' list
-            print 'Installing Debian package of %s'%str(depends_all_depends_on_all)
-            call('sudo apt-get install %s --yes'%(stacks_to_debs(depends_all_depends_on_all, options.rosdistro)), env)
+        if len(depends_all_depends_on_all) > 0:
+            print "Install dependencies of depends_on_all stacks, excluding dependencies of test stacks."
+            if not options.source_only:
+                # Install Debian packages of 'depends_all_depends_on_all' list
+                print 'Installing Debian package of %s'%str(depends_all_depends_on_all)
+                call('sudo apt-get install %s --yes'%(stacks_to_debs(depends_all_depends_on_all, options.rosdistro)), env)
+            else:
+                # Install source of 'depends_all_depends_on_all' list
+                print 'Installing source of %s'%str(depends_all_depends_on_all)
+                rosinstall = stacks_to_rosinstall(depends_all_depends_on_all, rosdistro_obj.released_stacks, 'release-tar')
+                rosinstall_file = '%s_depends_all_depends_on_all.rosinstall'%DEPENDS_ON_DIR
+                with open(rosinstall_file, 'w') as f:
+                    f.write(rosinstall)
+                    call('rosinstall --rosdep-yes %s /opt/ros/%s %s %s'%(DEPENDS_ON_DIR, options.rosdistro, STACK_DIR, rosinstall_file), env,
+                         'Install the stacks that depend on the stacks that are getting tested from source.')
         else:
-            # Install source of 'depends_all_depends_on_all' list
-            print 'Installing source of %s'%str(depends_all_depends_on_all)
-            rosinstall = stacks_to_rosinstall(depends_all_depends_on_all, rosdistro_obj.released_stacks, 'release-tar')
-            rosinstall_file = '%s_depends_all_depends_on_all.rosinstall'%DEPENDS_ON_DIR
-            with open(rosinstall_file, 'w') as f:
-                f.write(rosinstall)
-                call('rosinstall --rosdep-yes %s /opt/ros/%s %s %s'%(DEPENDS_ON_DIR, options.rosdistro, STACK_DIR, rosinstall_file), env,
-                     'Install the stacks that depend on the stacks that are getting tested from source.')
+            print "No dependencies of depends_on_all stacks"
             
 
         # Install all stacks that depend on this stack from source
