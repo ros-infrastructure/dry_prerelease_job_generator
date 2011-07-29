@@ -33,6 +33,7 @@ def main():
             return -1
 
         # set environment
+        print "Setting up environment"
         env = get_environment()
         env['ROS_PACKAGE_PATH'] = '%s:%s:%s:/opt/ros/%s/stacks'%(env['INSTALL_DIR']+'/'+STACK_DIR,
                                                                  env['INSTALL_DIR']+'/'+DEPENDS_DIR,
@@ -45,7 +46,7 @@ def main():
             env['ROS_ROOT'] = '/opt/ros/%s/ros'%options.rosdistro
         env['PYTHONPATH'] = env['ROS_ROOT']+'/core/roslib/src'
         env['PATH'] = '/opt/ros/%s/ros/bin:%s'%(options.rosdistro, os.environ['PATH'])
-
+        print "Environment set to %s"%str(env)
 
         # Parse distro file
         rosdistro_obj = rosdistro.Distro(get_rosdistro_file(options.rosdistro))
@@ -68,6 +69,7 @@ def main():
 
 
         # get all stack dependencies of stacks we're testing
+        print "Computing dependencies of stacks we're testing"
         depends_all = []
         for stack in options.stack:    
             stack_xml = '%s/%s/stack.xml'%(STACK_DIR, stack)
@@ -109,7 +111,7 @@ def main():
 
 
         # Run hudson helper for stacks only
-        print 'Running Hudson Helper'
+        print "Running Hudson Helper for stacks we're testing"
         res = 0
         for r in range(0, int(options.repeat)+1):
             env['ROS_TEST_RESULTS_DIR'] = env['ROS_TEST_RESULTS_DIR'] + '/' + STACK_DIR + '_run_' + str(r)
@@ -158,20 +160,24 @@ def main():
             
 
         # Install all stacks that depend on this stack from source
-        print 'Installing all stacks that depend on these stacks from source: %s'%str(depends_on_all)
-        rosinstall = stacks_to_rosinstall(depends_on_all, rosdistro_obj.released_stacks, 'release-tar')
-        rosinstall_file = '%s.rosinstall'%DEPENDS_ON_DIR
-        with open(rosinstall_file, 'w') as f:
-            f.write(rosinstall)
-        call('rosinstall --rosdep-yes %s /opt/ros/%s %s %s'%(DEPENDS_ON_DIR, options.rosdistro, STACK_DIR, rosinstall_file), env,
-             'Install the stacks that depend on the stacks that are getting tested from source.')
+        if len(depends_on_all) > 0:
+            print 'Installing depends_on_all stacks from source: %s'%str(depends_on_all)
+            rosinstall = stacks_to_rosinstall(depends_on_all, rosdistro_obj.released_stacks, 'release-tar')
+            rosinstall_file = '%s.rosinstall'%DEPENDS_ON_DIR
+            with open(rosinstall_file, 'w') as f:
+                f.write(rosinstall)
+            call('rosinstall --rosdep-yes %s /opt/ros/%s %s %s'%(DEPENDS_ON_DIR, options.rosdistro, STACK_DIR, rosinstall_file), env,
+                 'Install the stacks that depend on the stacks that are getting tested from source.')
 
-        # Run hudson helper for all stacks
-        print 'Running Hudson Helper'
-        env['ROS_TEST_RESULTS_DIR'] = env['ROS_TEST_RESULTS_DIR'] + '/' + DEPENDS_ON_DIR
-        helper = subprocess.Popen(('./hudson_helper --dir-test %s build'%DEPENDS_ON_DIR).split(' '), env=env)
-        helper.communicate()
-        return helper.returncode
+            # Run hudson helper for all stacks
+            print 'Running Hudson Helper'
+            env['ROS_TEST_RESULTS_DIR'] = env['ROS_TEST_RESULTS_DIR'] + '/' + DEPENDS_ON_DIR
+            helper = subprocess.Popen(('./hudson_helper --dir-test %s build'%DEPENDS_ON_DIR).split(' '), env=env)
+            helper.communicate()
+            return helper.returncode
+        else:
+            print "No stacks depends on this stack. Tests finished"
+
 
     # global except
     except Exception, ex:
