@@ -116,10 +116,10 @@ def create_devel_configs(os, rosdistro, stack):
             raise NotImplementedError("vcs type %s not implemented as hudson scm manager"%stack.vcs_config.type)
 
 
-        if stack.vcs_config.type in ['svn', 'bzr']:
+        if stack.vcs_config.type in ['svn']:
             hudson_vcs = hudson_vcs.replace('STACKNAME', stack.name)
             hudson_vcs = hudson_vcs.replace('STACKURI', stack.vcs_config.anon_dev)
-        elif stack.vcs_config.type in ['git', 'hg']:
+        elif stack.vcs_config.type in ['git', 'hg', 'bzr']:
             hudson_vcs = hudson_vcs.replace('STACKBRANCH', stack.vcs_config.dev_branch)
             hudson_vcs = hudson_vcs.replace('STACKURI', stack.vcs_config.anon_repo_uri)
             hudson_vcs = hudson_vcs.replace('STACKNAME', stack.name)
@@ -163,8 +163,15 @@ def main():
     distro_obj = rosdistro.Distro(get_rosdistro_file(options.rosdistro))
     if options.stack:
         stack_list = options.stack
+        for s in stack_list:
+            if not s in distro_obj.released_stacks:
+                if s in distro_obj.stacks:
+                    print "Stack %s is in rosdistro file, but it is not yet released (version is set to 'null'"%s
+                else:
+                    print "Stack %s is not in rosdistro file"%s
+                return
     else:
-        stack_list = distro_obj.stacks
+        stack_list = distro_obj.released_stacks
     devel_configs = {}
     for stack_name in stack_list:
         devel_configs.update(create_devel_configs(options.os, distro_obj.release_name, distro_obj.stacks[stack_name]))
