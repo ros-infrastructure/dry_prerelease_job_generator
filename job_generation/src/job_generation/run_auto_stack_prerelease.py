@@ -130,6 +130,10 @@ def main():
         ubuntudistro = call('lsb_release -a', env).split('Codename:')[1].strip()
         print "Parsing apt repository configuration file to get stack dependencies, for %s machine running %s"%(arch, ubuntudistro)
         apt_deps = parse_apt(ubuntudistro, arch, options.rosdistro)
+        if not apt_deps.has_debian_package(options.stack):
+            print "Stack does not yet have a Debian package. No need to test dependenies"
+            return 0
+
         # all stacks that depends on the tested stacks, excluding the tested stacks.
         depends_on_all = apt_deps.depends_on_all(options.stack)
         remove(depends_on_all, options.stack)

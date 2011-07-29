@@ -62,6 +62,14 @@ class AptParser:
     def depends_on_all(self, pkg):
         return self._get_all_depth(pkg, self.depends_on_list)
 
+    def has_debian_package(self, pkg):
+        if type(pkg) != list:
+            pkg = [pkg]
+        for p in pkg:
+            if not p in self.depends_list:
+                return False
+        return True
+
 
     def _get_all_depth(self, pkg, my_list):
         res = []
