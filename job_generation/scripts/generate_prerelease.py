@@ -6,7 +6,7 @@ HUDSON_PRERELEASE_CONFIG = """<?xml version='1.0' encoding='UTF-8'?>
 <project> 
   <description>Pre-release build of STACKNAME for ROSDISTRO on UBUNTUDISTRO, ARCH</description> 
  <logRotator> 
-    <daysToKeep>5</daysToKeep> 
+    <daysToKeep>180</daysToKeep> 
     <numToKeep>-1</numToKeep> 
   </logRotator> 
   <keepDependencies>false</keepDependencies> 

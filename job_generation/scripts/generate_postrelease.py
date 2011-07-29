@@ -6,7 +6,7 @@ HUDSON_POST_RELEASE_CONFIG = """<?xml version='1.0' encoding='UTF-8'?>
 <project> 
   <description>Build of STACKNAME post-release for ROSDISTRO on UBUNTUDISTRO, ARCH</description> 
  <logRotator> 
-    <daysToKeep>21</daysToKeep> 
+    <daysToKeep>180</daysToKeep> 
     <numToKeep>-1</numToKeep> 
   </logRotator> 
   <keepDependencies>false</keepDependencies> 
