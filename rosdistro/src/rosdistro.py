@@ -494,8 +494,9 @@ def stack_to_rosinstall(stack, branch, anonymous=True):
 
     uri = None
     version = stack.version
-    if not version:
+    if not version and not branch == 'devel':
         print "Stack %s at version null, skipping"%stack.name
+        print "Can only get 'deve' branch from a stack at version null."
         return result
 
     version_tag = None # to be conditionally filled later
