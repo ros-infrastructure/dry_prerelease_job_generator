@@ -86,10 +86,10 @@ class OtherConfigElement(ConfigElement):
 
   def get_ros_path(self):
     if rosinstall.helpers.is_path_ros(self.path):
-      print "other config element is a ros path", self.path
+      #print "other config element is a ros path", self.path
       return self.path
     else:
-      print "other config element is not a ros path", self.path
+      #print "other config element is not a ros path", self.path
       return None
 
   def get_versioned_yaml(self):
@@ -210,31 +210,45 @@ class Config:
     return self.valid
 
   def load_yaml(self, y, rosinstall_source_uri):
+    #print "loading yaml for %s"%rosinstall_source_uri
     for t in y:
       for k, v in t.iteritems():
 
-
+        # Check that local_name exists and record it
         if not 'local-name' in v:
           raise ROSInstallException("local-name is required on all rosinstall elements")
         else:
           local_name = v['local-name']
 
+        # Get the version and source_uri elements
         source_uri = v.get('uri', None)
         version = v.get('version', '')
+        
+        #compute the local_path for the config element
         local_path = os.path.normpath(os.path.join(self.base_path, local_name))
-        #print "VERSION IS", version
+        #print "local path is %s joined with %s"%(self.base_path, local_name)
 
         if k == 'other':
-          rosinstall_uri = os.path.join(os.path.dirname(rosinstall_source_uri), ".rosinstall")
-          #print "processing other", rosinstall_uri, "suri", rosinstall_source_uri
+          rosinstall_uri = '' # does not exist
+          if os.path.exists(local_path) and os.path.isfile(local_path):
+            rosinstall_uri = local_path
+          elif os.path.isdir(local_path):
+            rosinstall_uri = os.path.join(local_path, ".rosinstall")
+          #print "processing other", rosinstall_uri, "suri", local_path
           if os.path.exists(rosinstall_uri):
-            child_config = Config(rosinstall.helpers.get_yaml_from_uri(rosinstall_uri), local_path)
+            #print "Found a rosinstall file at %s, for local_name %s in rosinstall file %s. loading all elements"%(rosinstall_uri, local_name, rosinstall_source_uri)
+
+            #print "Child from %s because %s exists"%(local_path, rosinstall_uri)
+            child_config = Config(rosinstall.helpers.get_yaml_from_uri(rosinstall_uri), rosinstall_uri)
+            #print "Done loading Child from", rosinstall_uri
             for child_t in child_config.trees:
-              #print "paths are---------------", local_path, child_t.get_path()
-              sys.exit(-1)
-              elem = OtherConfigElement(os.path.join(local_path, child_t.get_path()))
+
+              full_child_path = os.path.join(local_path, child_t.get_path())
+              #print "paths are---------------", local_path, child_t.get_path(), full_child_path
+              elem = OtherConfigElement(full_child_path)
               self.trees.append(elem)
           else:
+            #print "loading other %s because %s doesn't exist"%(local_path, rosinstall_uri)
             elem = OtherConfigElement(local_path)
             self.trees.append(elem)
         else:
@@ -243,6 +257,7 @@ class Config:
             self.trees.append(elem)
           except LookupError, ex:
             raise ROSInstallException("woah, unknown installation method %s" % ex)
+    #print "Done parsing %s"%rosinstall_source_uri
 
   def ros_path(self):
     rp = None
