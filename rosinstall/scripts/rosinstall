@@ -256,7 +256,7 @@ class Config:
             elem = AVCSConfigElement(k, local_path, source_uri, version)
             self.trees.append(elem)
           except LookupError, ex:
-            raise ROSInstallException("woah, unknown installation method %s" % ex)
+            raise ROSInstallException("Abstracted VCS Config failed. Exception: %s" % ex)
     #print "Done parsing %s"%rosinstall_source_uri
 
   def ros_path(self):
