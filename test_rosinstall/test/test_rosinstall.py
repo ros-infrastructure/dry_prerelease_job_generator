@@ -251,6 +251,20 @@ class RosinstallOptionsTest(unittest.TestCase):
         shutil.rmtree(directory)
         self.directories.pop("invalid_continue")
 
+    def test_rosinstall_change_vcs_type(self):
+        directory = tempfile.mkdtemp()
+        self.directories["change_vcs_type"] = directory
+        cmd = self.rosinstall_fn
+        cmd.extend([directory, os.path.join(roslib.packages.get_pkg_dir("test_rosinstall"), "rosinstalls", "simple.rosinstall"), "-n"])
+        self.assertEqual(0,subprocess.call(cmd))
+
+        cmd.extend([directory, os.path.join(roslib.packages.get_pkg_dir("test_rosinstall"), "rosinstalls", "simple_changed_vcs_type.rosinstall"), "--delete-changed-uri", "-n"])
+        self.assertEqual(0,subprocess.call(cmd))
+
+        shutil.rmtree(directory)
+        self.directories.pop("change_vcs_type")
+
+
 if __name__ == '__main__':
     rostest.unitrun('test_rosinstall', 'test_commandline', RosinstallOptionsTest, coverage_packages=['rosinstall'])  
     rostest.unitrun('test_rosinstall', 'test_commandline', RosinstallCommandlineTest, coverage_packages=['rosinstall'])  
