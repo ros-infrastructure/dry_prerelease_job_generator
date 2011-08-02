@@ -345,3 +345,5 @@ scripts/driver-select atl1c
 make
 make install
 
+sudo jockey-text -l
+sudo jockey-text --enable=kmod:wl
