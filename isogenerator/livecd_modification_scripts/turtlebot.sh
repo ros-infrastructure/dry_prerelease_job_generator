@@ -351,5 +351,5 @@ rm -rf /tmp/compat-wireless*
 
 ###
 echo "Install wireless driver for 1215n laptop (not the official one)"
-apt-get update
-apt-get install bcmwl-kernel-source
+yes | apt-get update
+yes | apt-get install bcmwl-kernel-source
