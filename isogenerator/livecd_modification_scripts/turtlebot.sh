@@ -345,9 +345,14 @@ echo "File $DRIVER_FILE"
 
 mkdir -p $DRIVER_DIR
 wget http://pr.willowgarage.com/downloads/turtlebot/1215n_p27_wl.ko --output-document=$DRIVER_FILE
+
+cat > /home/turtlebot/Desktop/install_driver.sh <<EOF
+#!/bin/bash
 modprobe lib80211
 insmod $DRIVER_FILE
 modprobe wl
+EOF
+chmod a+wrx /home/turtlebot/Desktop/install_driver.sh
 
 ###
 echo "Install ethernet driver"
