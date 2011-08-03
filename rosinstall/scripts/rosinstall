@@ -2,13 +2,16 @@
 
 """
 usage: rosinstall [OPTIONS] INSTALL_PATH [ROSINSTALL FILES OR DIRECTORIES]
+see: http://www.ros.org/wiki/rosinstall
 
-Options:
+Common Option:
 -n or --nobuild (don't perform a 'make core_cools' on the ros stack)
+
+Type 'rosinstall --help' for usage.
 
 Common invocations:
 
-initial checkout:   rosinstall ~/ros http://www.ros.org/rosinstalls/latest_pr2all.rosinstall
+initial checkout:   rosinstall ~/ros "http://packages.ros.org/cgi-bin/gen_rosinstall.py?rosdistro=diamondback&variant=ros-full&overlay=no"
 subsequent update:  rosinstall ~/ros
 
 """
@@ -451,39 +454,49 @@ def rewrite_included_source(source_yaml, source_path):
         del entry[t]
         entry['other'] = {}
         entry['other']['local-name'] = local_path
-  #print "after", source_yaml  
+  #print "after", source_yaml
   return source_yaml
 
 def rosinstall_main(argv):
   if len(argv) < 2:
     usage()
   args = argv[1:]
-  parser = OptionParser(usage="usage: %prog PATH [<options> ...] [URI]... ", version="%prog 0.5.17")
+  parser = OptionParser(usage="usage: rosinstall [OPTIONS] INSTALL_PATH [ROSINSTALL FILES OR DIRECTORIES]\n\n\
+rosinstall does the following:\n\
+  1. Merges all URIs into new or existing .rosinstall file at PATH\n\
+  2. Checks out or updates all version controlled URIs\n\
+  3. Calls rosmake after checkout or updates\n\
+  4. Generates/overwrites updated setup files\n\n\
+URIs can be web urls to remote .rosinstall files, local .rosinstall files,\n\
+git, svn, bzr, hg URIs, or local directories.\n\
+Later URIs will shadow packages of earlier URIs.\n",
+                        epilog="See: http://www.ros.org/wiki/rosinstall for details\n",
+                        version="%prog 0.5.17")
   parser.add_option("-n", "--nobuild", dest="nobuild", default=False,
                     help="skip the build step for the ROS stack",
                     action="store_true")
   parser.add_option("--rosdep-yes", dest="rosdep_yes", default=False,
-                    help="Pass through --rosdep-yes to rosmake", 
+                    help="Pass through --rosdep-yes to rosmake",
                     action="store_true")
   parser.add_option("--continue-on-error", dest="robust", default=False,
-                    help="Continue despite checkout errors", 
+                    help="Continue despite checkout errors",
                     action="store_true")
   parser.add_option("--delete-changed-uris", dest="delete_changed", default=False,
-                    help="Delete the local copy of a directory before changing uri.", 
+                    help="Delete the local copy of a directory before changing uri.",
                     action="store_true")
   parser.add_option("--abort-changed-uris", dest="abort_changed", default=False,
-                    help="Abort if changed uri detected", 
+                    help="Abort if changed uri detected",
                     action="store_true")
   parser.add_option("--backup-changed-uris", dest="backup_changed", default='',
-                    help="backup the local copy of a directory before changing uri to this directory.", 
+                    help="backup the local copy of a directory before changing uri to this directory.",
                     action="store")
 
   parser.add_option("--generate-versioned-rosinstall", dest="generate_versioned", default=None,
-                    help="generate a versioned rosintall file", action="store")
+                    help="generate a versioned rosinstall file", action="store")
   (options, args) = parser.parse_args(args)
-    
+
   if len(args) < 1:
-    parser.error("rosinstall requires at least 1 arguments")
+    parser.error("rosinstall requires at least 1 argument")
 
   mode = 'prompt'
   if options.delete_changed:
