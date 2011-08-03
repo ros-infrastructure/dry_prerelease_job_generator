@@ -333,6 +333,22 @@ else
     echo "Created hacky symlink to get around uname version issues"
     ln -s $CURRENT_FILE $DESIRED_FILE
 fi
+
+###
+echo "Install speciality wireless drivers"
+
+DRIVER_DIR=$CURRENT_FILE/updates/dkms
+DRIVER_FILE=$DRIVER_DIR/wl.ko
+
+echo "Dir $DRIVER_DIR"
+echo "File $DRIVER_FILE"
+
+mkdir -p $DRIVER_DIR
+wget http://pr.willowgarage.com/downloads/turtlebot/1215n_p27_wl.ko --output-document=$DRIVER_FILE
+modprobe lib80211
+insmod $DRIVER_FILE
+modprobe wl
+
 ###
 echo "Install ethernet driver"
 cd /tmp
@@ -348,8 +364,3 @@ make
 make install
 rm -rf /tmp/compat-wireless*
 ###
-
-###
-echo "Install wireless driver for 1215n laptop (not the official one)"
-yes | apt-get update
-yes | apt-get install bcmwl-kernel-source
