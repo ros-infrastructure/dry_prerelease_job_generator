@@ -58,25 +58,20 @@ class ConfigElement:
     shutil.move(self.path, backup_path)
 
 
-def prompt_del_abort_retry(prompt):
-    backup_path = None
-    mode = "abort"
+def prompt_del_abort_retry(prompt, allow_skip = False):
+  mode = ""
 
+  while mode == "":
     mode_input = raw_input(prompt)
     if mode_input == 'b' or mode_input == 'backup':
-        mode = 'backup'
+      mode = 'backup'
     elif mode_input == 'd' or mode_input =='delete':
-        mode = 'delete'            
+      mode = 'delete'
     elif mode_input == 'a' or mode_input =='abort':
-        mode = 'abort'
-    elif mode_input == 's' or mode_input =='skip':
-        mode = 'skip'
-    else:
-        print "Failed to get valid prompt from user, aborting"
-        mode = 'abort'
-        
-    return mode
-
+      mode = 'abort'
+    elif allow_skip and mode_input == 's' or mode_input =='skip':
+      mode = 'skip'
+  return mode
 
 def get_backup_path():
     backup_path = raw_input("Please enter backup pathname: ")
@@ -127,7 +122,7 @@ class VCSConfigElement(ConfigElement):
       if error_message:
         if mode == 'prompt':
             valid_modes = ['(d)elete', '(a)bort', '(b)ackup', '(s)kip']
-            mode = prompt_del_abort_retry("%s %s: "%(error_message, ", ".join(valid_modes)))
+            mode = prompt_del_abort_retry("%s %s: "%(error_message, ", ".join(valid_modes)), allow_skip = True)
             if mode == 'backup':
               backup_path = get_backup_path()
         if mode == 'abort':
