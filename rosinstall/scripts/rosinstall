@@ -276,13 +276,6 @@ class Config:
       source_aggregate.extend(t.get_versioned_yaml())
 
     with open(filename, 'w') as fh:
-      f.write(
-        """# THIS IS A FILE WHICH IS MODIFIED BY rosinstall
-# IT IS UNLIKELY YOU WANT TO EDIT THIS FILE BY HAND
-# IF YOU WANT TO CHANGE THE ROS ENVIRONMENT VARIABLES
-# USE THE rosinstall TOOL INSTEAD.
-# IF YOU CHANGE IT, USE rosinstall FOR THE CHANGES TO TAKE EFFECT
-""")
       fh.write(yaml.safe_dump(source_aggregate))
       
   def write_source(self):
@@ -292,6 +285,13 @@ class Config:
     if not os.path.exists(self.base_path):
       os.makedirs(self.base_path)
     f = open(os.path.join(self.base_path, ".rosinstall"), "w+b")
+    f.write(
+      """# THIS IS A FILE WHICH IS MODIFIED BY rosinstall
+# IT IS UNLIKELY YOU WANT TO EDIT THIS FILE BY HAND
+# IF YOU WANT TO CHANGE THE ROS ENVIRONMENT VARIABLES
+# USE THE rosinstall TOOL INSTEAD.
+# IF YOU CHANGE IT, USE rosinstall FOR THE CHANGES TO TAKE EFFECT
+""")
     f.write(yaml.safe_dump(self.source))
     f.close()
     
