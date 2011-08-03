@@ -44,7 +44,7 @@ class ConfigElement:
     self.path = path
   def get_path(self):
     return self.path
-  def install(self, backup_path, mode):
+  def install(self, backup_path, mode, robust):
     raise NotImplementedError, "ConfigElement install unimplemented"
   def get_ros_path(self):
     raise NotImplementedError, "ConfigElement get_ros_path unimplemented"
@@ -87,7 +87,7 @@ def get_backup_path():
     return backup_path
 
 class OtherConfigElement(ConfigElement):
-  def install(self, backup_path, mode):
+  def install(self, backup_path, mode, robust=False):
     return True
 
   def get_ros_path(self):
@@ -111,13 +111,15 @@ class VCSConfigElement(ConfigElement):
       self.uri = uri
     self.version = version
 
-  def install(self,  backup_path = None,arg_mode = 'abort'):
+  def install(self,  backup_path = None,arg_mode = 'abort', robust=False):
     mode = arg_mode
     print "Installing %s %s to %s"%(self.uri, self.version, self.path)
-    if not self.vcsc.path_exists():
-        if not self.vcsc.checkout(self.uri, self.version):
-            return False
-    else:
+
+    # Directory doesn't exist just do a fresh checkout
+
+
+    # Directory exists see what we need to do
+    if self.vcsc.path_exists():
       error_message = None
       if not self.vcsc.detect_presence():
         error_message = "Failed to detect %s presence at %s."%(self.vcsc.get_vcs_type_name(), self.path)
@@ -127,10 +129,17 @@ class VCSConfigElement(ConfigElement):
               and (self.vcsc.get_version() != self.version \
                      and self.vcsc.get_branch_parent() != self.version)):
         error_message = "The version %s of repo %s requested to be checked out into %s is not the current branch or commit and cannot be blindly updated in place."%(self.version, self.uri, self.path)
+        
+      # If robust ala continue-on-error, just error now and it will be continued at a higher level
+      if robust and error_message:
+          raise ROSInstallException(error_message)
+
+
+      # prompt the user based on the error code
       if error_message:
-        if mode == 'prompt':
+        if arg_mode == 'prompt':
             mode = prompt_del_abort_retry(error_message, allow_skip = True)
-            if mode == 'backup':
+            if mode == 'backup': # you can only backup if in prompt mode
               backup_path = get_backup_path()
         if mode == 'abort':
           raise ROSInstallException(error_message)
@@ -139,42 +148,21 @@ class VCSConfigElement(ConfigElement):
         elif mode == 'delete':
           shutil.rmtree(self.path)
         elif mode == 'skip':
-          return True
+          return
+      
 
-        if not self.vcsc.checkout(self.uri, self.version):
-            if arg_mode == 'prompt':
-                mode = prompt_del_abort_retry("Checkout of %s into %s failed. "%(self.uri, self.path))
-                if mode == 'backup':
-                    backup_path = get_backup_path()
-                
-            if mode == 'abort':
-                raise ROSInstallException("Failed to checkout %s into %s"%(self.uri, self.path))
-            elif mode == 'backup':
-                self.backup(backup_path)
-            elif mode == "delete":
-                shutil.rmtree(self.path)
-            else:
-                raise ROSInstallException("Invalid mode '%s"%mode)
-            return self.vcsc.checkout(self.uri, self.version)
-
+    # If the directory does not exist checkout
+    if not self.vcsc.path_exists():
+      if not self.vcsc.checkout(self.uri, self.version):
+        raise ROSInstallException("Checkout of %s version %s into %s failed."%(self.uri, self.version, self.path))
       else:
-        if not self.vcsc.update(self.version):
-            if arg_mode == 'prompt':
-                mode = prompt_del_abort_retry("Checkout of %s into %s failed."%(self.uri, self.path))
-                if mode == 'backup':
-                    backup_path = get_backup_path()
-                
-            if mode == 'abort':
-                raise ROSInstallException("Failed to checkout %s into %s"%(self.uri, self.path))
-            elif mode == 'backup':
-                self.backup(backup_path)
-            elif mode == "delete":
-                shutil.rmtree(self.path)
-            else:
-                raise ROSInstallException("Invalid mode '%s"%mode)
-            return self.vcsc.checkout(self.uri, self.version)
-
-    return True
+        return
+    else: # otherwise update
+      if not self.vcsc.update(self.version):
+          raise ROSInstallException("Update Failed of %s"%self.path)
+      else:
+          return 
+    return
   
   def get_ros_path(self):
     if rosinstall.helpers.is_path_ros(self.path):
@@ -300,12 +288,15 @@ class Config:
     if not os.path.exists(self.base_path):
       os.mkdir(self.base_path)
     for t in self.trees:
-      if not t.install(os.path.join(self.base_path, backup_path), mode):
-        fail_str = "Failed to install tree '%s'\n vcs not setup correctly"%t.get_path()
-        if not robust:
-          raise ROSInstallException(fail_str)
+      try:
+        t.install(os.path.join(self.base_path, backup_path), mode)
+      except ROSInstallException, ex:
+        success = False
+        fail_str = "Failed to install tree '%s'\n %s"%(t.get_path(), ex)
+        if robust:
+          print "rosinstall Continuing despite %s"%fail_str
         else:
-          success = False
+          raise ROSInstallException(fail_str)
       else:
           pass
           #print "%s successfully installed"%t
