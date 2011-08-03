@@ -322,7 +322,7 @@ EOF
 chown root:turtlebot /lib/udev/rules.d/97-bluetooth.rules
 chmod a+r /lib/udev/rules.d/97-bluetooth.rules
 
-echo "Download and install wireless drivers"
+echo "Download and install networking drivers"
 
 #This is a hack because uname is wrong under chroot
 CURRENT_FILE=/lib/modules/`ls /lib/modules/`
@@ -330,9 +330,11 @@ DESIRED_FILE=/lib/modules/`/bin/uname -r`
 if [ $CURRENT_FILE == $DESIRED_FILE ] ; then
     echo "Hack not needed"
 else
+    echo "Created hacky symlink to get around uname version issues"
     ln -s $CURRENT_FILE $DESIRED_FILE
 fi
-
+###
+echo "Install ethernet driver"
 cd /tmp
 rm -f /tmp/compat-wireless-2.6.tar.bz2
 wget http://pr.willowgarage.com/downloads/turtlebot/compat-wireless-2.6.tar.bz2 --output-document=/tmp/compat-wireless-2.6.tar.bz2
@@ -344,6 +346,10 @@ sed -i "s/update-grub/echo would update-grub, but commented/g" scripts/update-in
 scripts/driver-select atl1c
 make
 make install
+rm -rf /tmp/compat-wireless*
+###
 
-sudo jockey-text -l
-sudo jockey-text --enable=kmod:wl
+###
+echo "Install wireless driver for 1215n laptop (not the official one)"
+apt-get update
+apt-get install bcmwl-kernel-source
