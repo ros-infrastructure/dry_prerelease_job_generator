@@ -296,12 +296,15 @@ def control_data(stack_name, stack_version, md5sum, stack_file=None):
     for platform in platforms():
         try:
             rosdeps[platform] = stack_rosdeps(stack_name, os.path.dirname(stack_file), platform)
-        except:
-            # ignore failures as these are generally unsupported
+        except Exception as e:
+            # #3435
+            # TODO: this is a hack that should be turned into a typed exception
+            if "cannot generate" in str(e):
+                sys.stderr.write("Error with platform [%s]: %s\n"%(platform, str(e)))
+            # ignore other failures as these are generally unsupported
             # platforms. Later logic is responsible for erroring if
             # control file is missing bindings, and unit tests on
             # stack_rosdeps verify its functionality
-            pass
     
     return metadata
 
