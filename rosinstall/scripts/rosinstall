@@ -115,7 +115,6 @@ class VCSConfigElement(ConfigElement):
     mode = arg_mode
     print "Installing %s %s to %s"%(self.uri, self.version, self.path)
 
-    # Directory doesn't exist just do a fresh checkout
 
 
     # Directory exists see what we need to do
@@ -123,7 +122,7 @@ class VCSConfigElement(ConfigElement):
       error_message = None
       if not self.vcsc.detect_presence():
         error_message = "Failed to detect %s presence at %s."%(self.vcsc.get_vcs_type_name(), self.path)
-      elif self.vcsc.get_url().rstrip('/') != self.uri.rstrip('/'):  #strip trailing slashes for #3269
+      elif not self.vcsc.get_url() or self.vcsc.get_url().rstrip('/') != self.uri.rstrip('/'):  #strip trailing slashes for #3269
         error_message = "url %s does not match %s requested."%(self.vcsc.get_url(), self.uri)
       elif (self.vcsc.get_vcs_type_name() == 'git' \
               and (self.vcsc.get_version() != self.version \
