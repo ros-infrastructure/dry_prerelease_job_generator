@@ -132,7 +132,7 @@ def get_rosinstall(name, data, type_, options=None):
             # compute path: we can't use os.path.join because rosinstall paths
             # are always Unix-style.
             prefix = options.prefix if options is not None and options.prefix else ''
-            paths = [x for x in (prefix, name) if x]
+            paths = [x for x in (prefix, v['local-name']) if x]
             path = '/'.join(paths)
             v['local-name'] = path
 
@@ -191,7 +191,27 @@ def get_svn_uri(name, data, type_, options=None):
 def get_www(name, data, type_, options=None):
     return data.get('url', '')
 def get_description(name, data, type_, options=None):
-    return data.get('url', '')
+    if type_ == 'package':
+        return """
+Type: package
+Stack: %s
+Description: %s
+URL: %s
+    """%(data.get('stack', 'none'), data.get('description', ''), data.get('url', ''))
+    elif type_ == 'stack':
+        return """
+Type: package
+Stack: %s
+Description: %s
+URL: %s
+    """%(data.get('stack', 'none'), data.get('description', ''), data.get('url', ''))
+    else:
+        return """
+Type: %s
+Description: %s
+URL: %s
+    """%(type_, ", ".join(data.get('packages', [])), data.get('description', ''), data.get('url', ''))
+        
 def get_repo(name, data, type_, options=None):
     return data.get('repository', '')
 
