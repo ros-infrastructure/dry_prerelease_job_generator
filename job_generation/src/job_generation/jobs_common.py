@@ -224,7 +224,7 @@ def get_depends_all(distro_obj, stack_name, depends_all):
                 get_depends_all(distro_obj, d, depends_all)
         except KeyError, ex:
             print "Exception: %s  --- %s is not in distro_obj.stacks %s"%(ex, stack_name, distro_obj.stacks)
-
+            raise ex
 
 def get_environment():
     my_env = os.environ
