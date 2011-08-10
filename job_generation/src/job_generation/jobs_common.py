@@ -219,8 +219,11 @@ def get_depends_one(stack):
 def get_depends_all(distro_obj, stack_name, depends_all):
     if not stack_name in depends_all:
         depends_all.append(stack_name)
-        for d in get_depends_one(distro_obj.stacks[stack_name]):
-            get_depends_all(distro_obj, d, depends_all)
+        try:
+            for d in get_depends_one(distro_obj.stacks[stack_name]):
+                get_depends_all(distro_obj, d, depends_all)
+        except KeyError, ex:
+            print "Exception: %s  --- %s is not in distro_obj.stacks %s"%(ex, stack_name, distro_obj.stacks)
 
 
 def get_environment():
