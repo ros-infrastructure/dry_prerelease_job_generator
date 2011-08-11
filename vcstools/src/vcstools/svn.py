@@ -59,7 +59,8 @@ class SVNClient(vcs_base.VCSClientBase):
         @return: SVN URL of the directory path (output of svn info command), or None if it cannot be determined
         """
         if self.detect_presence():
-            output = subprocess.Popen(['svn', 'info', self._path], stdout=subprocess.PIPE).communicate()[0]
+            #3305: parsing not robust to non-US locales
+            output = subprocess.Popen(['svn', 'info', self._path], stdout=subprocess.PIPE, env={"LANG":"en_US.UTF-8"}).communicate()[0]
             matches = [l for l in output.splitlines() if l.startswith('URL: ')]
             if matches:
                 return matches[0][5:]
@@ -125,7 +126,8 @@ class SVNClient(vcs_base.VCSClientBase):
                     return '-r'+spec
             command.append('-r' + spec)
         command.append(self._path)
-        output = subprocess.Popen(command, stdout=subprocess.PIPE).communicate()[0]
+        # #3305: parsing not robust to non-US locales
+        output = subprocess.Popen(command, env={"LANG":"en_US.UTF-8"}, stdout=subprocess.PIPE).communicate()[0]
         if output != None:
             matches = [l for l in output.splitlines() if l.startswith('Revision: ')]
             if len(matches) == 1:
