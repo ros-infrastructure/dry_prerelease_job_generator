@@ -110,7 +110,7 @@ class GITClient(vcs_base.VCSClientBase):
             cmd = "git checkout remotes/origin/%s -b %s"%(version, version)
         else:  # tag or hash
             cmd = "git checkout %s -b %s"%(version, branch_name)
-        if not self.is_hash(version):
+        if not self.is_hash(version) and not self.is_tag(version):
             cmd = cmd + " --track"
         #print "Git Installing: %s"%cmd
         if not subprocess.call(cmd, cwd=self._path, shell=True) == 0:
@@ -190,7 +190,7 @@ class GITClient(vcs_base.VCSClientBase):
     def is_remote_branch(self, branch_name):
         if self.path_exists():
             output = subprocess.Popen(['git branch -r'], shell=True, cwd= self._path, stdout=subprocess.PIPE).communicate()[0]
-            for l in output.split('\n'):
+            for l in output.splitlines():
                 elems = l.split()
                 if len(elems) == 1:
                     br_names = elems[0].split('/')
@@ -201,7 +201,7 @@ class GITClient(vcs_base.VCSClientBase):
     def is_local_branch(self, branch_name):
         if self.path_exists():
             output = subprocess.Popen(['git branch'], shell=True, cwd= self._path, stdout=subprocess.PIPE).communicate()[0]
-            for l in output.split('\n'):
+            for l in output.splitlines():
                 elems = l.split()
                 if len(elems) == 1:
                     if elems[0] == branch_name:
@@ -214,7 +214,7 @@ class GITClient(vcs_base.VCSClientBase):
     def get_branch(self):
         if self.path_exists():
             output = subprocess.Popen(['git branch'], shell=True, cwd= self._path, stdout=subprocess.PIPE).communicate()[0]
-            for l in output.split('\n'):
+            for l in output.splitlines():
                 elems = l.split()
                 if len(elems) == 2 and elems[0] == '*':
                     return elems[1]
@@ -244,6 +244,15 @@ class GITClient(vcs_base.VCSClientBase):
             except Exception as ex:
                 pass
         return False
+
+    def is_tag(self, tag_name):
+        if self.path_exists():
+            output = subprocess.Popen(['git tag %s'%tag_name], shell=True, cwd= self._path, stdout=subprocess.PIPE).communicate()[0]
+            lines =  output.splitlines()
+            if len(lines) == 1:
+                return True
+            return False
+        
 
 
 class GITConfig(object):
