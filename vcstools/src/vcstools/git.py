@@ -247,7 +247,7 @@ class GITClient(vcs_base.VCSClientBase):
 
     def is_tag(self, tag_name):
         if self.path_exists():
-            output = subprocess.Popen(['git tag %s'%tag_name], shell=True, cwd= self._path, stdout=subprocess.PIPE).communicate()[0]
+            output = subprocess.Popen(['git tag -l %s'%tag_name], shell=True, cwd= self._path, stdout=subprocess.PIPE).communicate()[0]
             lines =  output.splitlines()
             if len(lines) == 1:
                 return True
