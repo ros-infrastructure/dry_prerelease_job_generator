@@ -227,7 +227,7 @@ class GITClient(vcs_base.VCSClientBase):
                 print "No output of get branch.%s.merge"%self.get_branch()
                 return None
             elems = output.split('/')
-            if len(elems) != 3 or elems[0] != 'refs' or (elems[1] != 'heads' or elems[1] != 'tags'):
+            if len(elems) != 3 or elems[0] != 'refs' or (elems[1] != 'heads' and elems[1] != 'tags'):
                 print "elems improperly formatted", elems
                 return None
             else:
