@@ -426,7 +426,7 @@ def call(command, env=None, message='', ignore_fail=False):
     err = ''
     try:
         print message+'\nExecuting command "%s"'%command
-        helper = subprocess.Popen(command.split(' '), stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env)
+        helper = subprocess.Popen(command.split(' '), stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=True, env=env)
         res, err = helper.communicate()
         print str(res)
         print str(err)
