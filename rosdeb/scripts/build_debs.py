@@ -124,6 +124,7 @@ def deb_in_repo(deb_name, deb_version, os_platform, arch):
     return rosdeb.deb_in_repo(SHADOW_REPO_URL, deb_name, deb_version, os_platform, arch, use_regex=True)
 
 def get_depends(deb_name, os_platform, arch):
+    print "Get depends from %s"%(SHADOW_REPO_URL)
     return rosdeb.get_depends(SHADOW_REPO_URL, deb_name, os_platform, arch)
     
 def download_files(stack_name, stack_version, staging_dir, files):

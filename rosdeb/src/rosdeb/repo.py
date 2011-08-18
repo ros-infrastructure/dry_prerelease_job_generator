@@ -122,7 +122,11 @@ def get_depends(repo_url, deb_name, os_platform, arch):
     # There is probably something much simpler we could do, but this
     # more robust to any bad state we may have caused to the shadow
     # repo.
+    #TODOXXX:remove print
+    print "loading Packages from [%s]"%(repo_url)
     package_deps = load_Packages(repo_url, os_platform, arch)
+    #TODOXXX:remove print
+    print "got package list"
     done = False
     queue = [deb_name]
     depends = set()
@@ -133,12 +137,15 @@ def get_depends(repo_url, deb_name, os_platform, arch):
     while queue:
         next  = queue[0]
         queue = queue[1:]
+        #TODOXXX:remove
+        print "QUEUE", queue
         for package, _, deps, _ in package_deps:
             #strip of version specifications from deps
             deps = [d.split()[0] for d in deps]
             if package not in depends and next in deps:
                 queue.append(package)
                 depends.add(package)
+    print "get_depends done", depends
     return list(depends)
 
 def get_stack_version(packageslist, distro_name, stack_name):
