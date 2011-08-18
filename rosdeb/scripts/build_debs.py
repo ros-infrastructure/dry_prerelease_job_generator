@@ -360,13 +360,18 @@ dpkg -l %(deb_name)s
         files = [os.path.join(results_dir, x) for x in base_files]
     
         print "uploading debs for %s-%s to %s"%(stack_name, stack_version, REPO_HOSTNAME)
-        subprocess.check_call(['scp'] + files + ['%s:/var/packages/ros-shadow/ubuntu/incoming/%s'%(REPO_LOGIN, os_platform)], stderr=subprocess.STDOUT)
+        cmd = ['scp'] + files + ['%s:/var/packages/ros-shadow/ubuntu/incoming/%s'%(REPO_LOGIN, os_platform)]
+        print ' '.join(cmd)
+        subprocess.check_call(cmd, stderr=subprocess.STDOUT)
+        print "upload complete"
 
         # Assemble string for moving all files from incoming to queue (while lock is being held)
         move_str = '\n'.join(['mv '+os.path.join('/var/packages/ros-shadow/ubuntu/incoming',os_platform,x)+' '+os.path.join('/var/packages/ros-shadow/ubuntu/queue',os_platform,x) for x in base_files])
 
         # This script moves files into queue directory, removes all dependent debs, removes the existing deb, and then processes the incoming files
-        remote_cmd = "TMPFILE=`mktemp` || exit 1 && cat > ${TMPFILE} && chmod +x ${TMPFILE} && ${TMPFILE}; ret=${?}; rm ${TMPFILE}; exit ${ret}"
+        remote_cmd = "TMPFILE=`mktemp` || exit 1 && cat > ${TMPFILE} && chmod +x ${TMPFILE} && ${TMPFILE}; ret=${?}; rm ${TM
+PFILE}; exit ${ret}"
+        print "running remote command [%s]"%(remote_cmd)
         run_script = subprocess.Popen(['ssh', REPO_LOGIN, remote_cmd], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         invalidate = [deb_name] + get_depends(deb_name, os_platform, arch)
         print "invalidating pre-existing and downstream: %s"%(invalidate)
