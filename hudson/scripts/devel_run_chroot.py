@@ -248,7 +248,7 @@ class ChrootInstance:
         self.check_call(cmd)
         
 
-        deboot_url = 'us.archive.ubuntu.com/ubuntu'
+        deboot_url = 'http://us.archive.ubuntu.com/ubuntu'
         if self.distro in valid_debian_distros:
             deboot_url = 'http://ftp.us.debian.org/debian/'
         if self.distro in valid_ubuntu_distros and self.arch == 'arm':
@@ -375,7 +375,10 @@ grub-pc grub-pc/install_devices_empty boolean true
         self.execute(['chmod', '4755', '-R', '/usr/bin/sudo'])
 
 
-        self.setup_rosbuild()
+        if self.distro in valid_debian_distros + valid_ubuntu_distros:
+            self.debian_setup_rosbuild()
+        else:
+            raise NotImplementedError("non debian rosbuild setup not implemented")
 
     def debian_setup_rosbuild(self):
         cmd = "useradd rosbuild -m --groups sudo".split()
