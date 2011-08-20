@@ -38,17 +38,11 @@ Library for process rosdistro files.
 New in ROS C-Turtle
 """
 
-from __future__ import with_statement
-
-import roslib; roslib.load_manifest('rosdistro')
-
 import os
 import sys
 import yaml
 import string
 import subprocess
-
-import vcstools
 
 class DistroException(Exception): pass
 
@@ -90,8 +84,7 @@ def load_vcs_config(rules, rule_eval):
     if 'svn' in rules or 'dev-svn' in rules:
         #legacy support
         if 'dev-svn' in rules:
-            import vcstools.svn
-            vcs_config = vcstools.svn.SVNConfig()
+            vcs_config = SvnConfig()
             vcs_config.dev         = rule_eval(rules['dev-svn'])
             vcs_config.distro_tag  = rule_eval(rules['distro-svn'])
             vcs_config.release_tag = rule_eval(rules['release-svn'])
@@ -100,8 +93,7 @@ def load_vcs_config(rules, rule_eval):
             vcs_config.anon_release_tag = vcs_config.release_tag
 
         elif 'svn' in rules:
-            import vcstools.svn
-            vcs_config = vcstools.svn.SVNConfig()
+            vcs_config = SvnConfig()
             r = rules['svn']
             for k in ['dev', 'distro-tag', 'release-tag']:
                 if not k in r:
@@ -129,35 +121,30 @@ def load_vcs_config(rules, rule_eval):
     elif 'hg' in rules or 'git' in rules or 'bzr' in rules:
         r = None
         if 'hg' in rules:
-            import vcstools.hg
-            vcs_config = vcstools.hg.HGConfig()
+            vcs_config = HgConfig()
             r = rules['hg']
 
         elif 'git' in rules:
-            import vcstools.git
-            vcs_config = vcstools.git.GITConfig()
+            vcs_config = GitConfig()
             r = rules['git']
 
         elif 'bzr' in rules:
-            import vcstools.bzr
-            vcs_config = vcstools.bzr.BZRConfig()
+            vcs_config = BZRConfig()
             r = rules['bzr']
 
         if not r:
             raise NotImplementedError("Rules %s not implemented"%rules)
 
-        vcs_config.repo_uri      = rule_eval(r['uri'])
+        vcs_config.repo_uri = rule_eval(r['uri'])
 
         if 'anon-uri' in r:
-            vcs_config.anon_repo_uri      = rule_eval(r['anon-uri'])
+            vcs_config.anon_repo_uri = rule_eval(r['anon-uri'])
         else:
-            vcs_config.anon_repo_uri      = vcs_config.repo_uri
+            vcs_config.anon_repo_uri = vcs_config.repo_uri
 
         vcs_config.dev_branch    = rule_eval(r['dev-branch'])
         vcs_config.distro_tag    = rule_eval(r['distro-tag'])
         vcs_config.release_tag   = rule_eval(r['release-tag'])
-    #else: Required until legacy support for 'dev' rules are dropped.
-    #    raise NotImplementedError("Rules %s not implemented"%rules)
 
     return vcs_config
     
@@ -588,4 +575,118 @@ def distro_to_rosinstall(distro, branch, anonymous=True):
         rosinstall_dict.extend(stack_to_rosinstall(s, branch, anonymous))
     return rosinstall_dict
 
+
+class BZRConfig(object):
+    """
+    Configuration information about an BZR repository for a component
+    of code. The configuration we maintain is specific to ROS
+    toolchain concepts and is not a general notion of BZR configuration.
+    
+     * repo_uri: base URI of repo
+     * dev_branch: hg branch the code is developed
+     * distro_tag: a tag of the latest released code for a specific ROS distribution
+     * release_tag: a tag of the code for a specific release
+     """
+
+    def __init__(self):
+        self.type = 'bzr'
+        self.repo_uri      = None
+        self.anon_repo_uri = None
+        self.dev_branch    = None
+        self.distro_tag    = None
+        self.release_tag   = None
+
+    def __eq__(self, other):
+        return self.repo_uri == other.repo_uri and \
+            self.anon_repo_uri == other.anon_repo_uri and \
+            self.dev_branch == other.dev_branch and \
+            self.release_tag == other.release_tag and \
+            self.distro_tag == other.distro_tag
+
+class HgConfig(object):
+    """
+    Configuration information about an SVN repository for a component
+    of code. The configuration we maintain is specific to ROS
+    toolchain concepts and is not a general notion of SVN configuration.
+
+     * repo_uri: base URI of repo
+     * dev_branch: hg branch the code is developed
+     * distro_tag: a tag of the latest released code for a specific ROS distribution
+     * release_tag: a tag of the code for a specific release
+     """
+
+    def __init__(self):
+        self.type = 'hg'
+        self.repo_uri      = None
+        self.anon_repo_uri = None
+        self.dev_branch    = None
+        self.distro_tag    = None
+        self.release_tag   = None
+
+    def __eq__(self, other):
+        return self.repo_uri == other.repo_uri and \
+            self.anon_repo_uri == other.anon_repo_uri and \
+            self.dev_branch == other.dev_branch and \
+            self.release_tag == other.release_tag and \
+            self.distro_tag == other.distro_tag
+
+class GitConfig(object):
+    """
+    Configuration information about an SVN repository for a component
+    of code. The configuration we maintain is specific to ROS
+    toolchain concepts and is not a general notion of SVN configuration.
+
+     * repo_uri: base URI of repo
+     * dev_branch: git branch the code is developed
+     * distro_tag: a tag of the latest released code for a specific ROS distribution
+     * release_tag: a tag of the code for a specific release
+     """
+
+    def __init__(self):
+        self.type = 'git'
+        self.repo_uri      = None
+        self.anon_repo_uri = None
+        self.dev_branch    = None
+        self.distro_tag    = None
+        self.release_tag   = None
+
+    def __eq__(self, other):
+        return self.repo_uri == other.repo_uri and \
+            self.anon_repo_uri == other.anon_repo_uri and \
+            self.dev_branch == other.dev_branch and \
+            self.release_tag == other.release_tag and \
+            self.distro_tag == other.distro_tag
+
+class SvnConfig(object):
+    """
+    Configuration information about an SVN repository for a component
+    of code. The configuration we maintain is specific to ROS
+    toolchain concepts and is not a general notion of SVN configuration.
+
+     * dev: where the code is developed
+     * distro_tag: a tag of the code for a specific ROS distribution
+     * release_tag: a tag of the code for a specific release
+    """
+    
+    def __init__(self):
+        self.type = 'svn'
+        self.dev = None
+        self.distro_tag = None
+        self.release_tag = None
+
+        # anonymously readable version of URLs above. Some repos have
+        # separate URLs for read-only vs. writable versions of repo
+        # and many tools need to be able to read repos without
+        # providing credentials.
+        self.anon_dev         = None
+        self.anon_distro_tag  = None
+        self.anon_release_tag = None
+
+    def __eq__(self, other):
+        return self.dev == other.dev and \
+            self.distro_tag == other.distro_tag and \
+            self.release_tag == other.release_tag and \
+            self.anon_dev == other.anon_dev and \
+            self.anon_distro_tag == other.anon_distro_tag and \
+            self.anon_release_tag == other.anon_release_tag
 
