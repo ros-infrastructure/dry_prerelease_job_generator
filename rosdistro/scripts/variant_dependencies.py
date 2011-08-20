@@ -1,44 +1,39 @@
 #!/usr/bin/env python
 
-from __future__ import with_statement
+from __future__ import print_function
+
 import roslib; roslib.load_manifest('rosdistro')
 
 import sys
 import os
-import os.path
-import traceback
-import subprocess
 import rosdistro 
-import urllib
+import urllib2
 import yaml
 
 def get_depends(stack):
     name = '%s-%s'%(stack.name, stack.version)
-    url = urllib.urlopen('https://code.ros.org/svn/release/download/stacks/%s/%s/%s.yaml'%(stack.name, name, name))
-    conf = url.read()
-    if '404 Not Found' in conf:
+    try:
+        url = urllib2.urlopen('https://code.ros.org/svn/release/download/stacks/%s/%s/%s.yaml'%(stack.name, name, name))
+        depends = yaml.load(url)['depends']
+    except urllib2.HTTPError:
+        print("failed to load depends for stack [%s]"%(stack.name), file=sys.stderr)
         return []
-    depends = yaml.load(conf)['depends']
-    if depends:
-        return depends
-    else:
+    except yaml.YAMLError:
+        print("bad YAML data for stack [%s]"%(stack.name), file=sys.stderr)
         return []
-
-def get_rosdistro_file(rosdistro):
-    return 'https://code.ros.org/svn/release/trunk/distros/%s.rosdistro'%rosdistro
-
+    return depends or []
 
 def main():
     if len(sys.argv) < 2:
-        print "Usage: variant_dependencies.py <rosdistro> [variants]..."
+        print("Usage: variant_dependencies.py <rosdistro> [variants]...")
         return
 
     # parse rosdistro file
     if os.path.isfile(sys.argv[1]):
         rosdistro_obj = rosdistro.Distro(sys.argv[1])
     else:
-        rosdistro_obj = rosdistro.Distro(get_rosdistro_file(sys.argv[1]))
-    print 'Operating on ROS distro %s'%rosdistro_obj.release_name
+        rosdistro_obj = rosdistro.Distro(rosdistro.distro_uri(sys.argv[1]))
+    print('Operating on ROS distro %s'%rosdistro_obj.release_name)
 
     # use all variants or user-specified set
     if len(sys.argv) > 2:
@@ -50,18 +45,21 @@ def main():
         try:
             variant = rosdistro_obj.variants[variant_name]
         except KeyError:
-            print >> sys.stderr, "No variant [%s]"%(variant_name)
+            print(sys.stderr, "No variant [%s]"%(variant_name), file=sys.stderr)
             continue
         header = True
         for stack_name in variant.stack_names_explicit:
+            if not stack_name in rosdistro_obj.released_stacks:
+                print('Variant %s depends on %s, which is not released'%(variant_name, stack_name))
+                continue
             stack = rosdistro_obj.stacks[stack_name]
             depends = get_depends(stack)
             for d in depends:
                 if not d in variant.stack_names:
                     if header:
-                        print 'Variant %s'%variant_name
+                        print('Variant %s'%variant_name)
                         header = False
-                    print ' - Stack %s depends on %s, which is not part of the variant'%(stack.name, d)
+                    print(' - Stack %s depends on %s, which is not part of the variant'%(stack.name, d))
 
 if __name__ == '__main__':
     main()
