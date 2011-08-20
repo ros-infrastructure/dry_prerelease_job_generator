@@ -39,58 +39,7 @@ Utilities for dealing with Version-control systems
 New in ROS C-Turtle.
 """
 
-from __future__ import with_statement
-
 import os
-
-def get_svn_url(dir_path):
-    """
-    @return: SVN URL of the directory path (output of svn info command), or None if it cannot be determined
-    """
-    if os.path.isdir(os.path.join(dir_path, '.svn')):
-        import subprocess
-        output = subprocess.Popen(['svn', 'info', dir_path], stdout=subprocess.PIPE).communicate()[0]
-        matches = [l for l in output.split('\n') if l.startswith('URL: ')]
-        if matches:
-            return matches[0][5:]
-    return None
-    
-def guess_vcs_uri(dir_path):
-    """
-    Guess the repository URI of the version-controlled directory path
-    @param path: directry path
-    @type  path: str
-    @return: version control system and URI, e.g. 'svn', 'http://code.ros.org/svn/ros'. Return None, None if VCS cannot be determined.
-    @rtype: str, str
-    """
-    repo = None, None
-    try:
-        if os.path.isdir(os.path.join(dir_path, '.svn')):
-            # shell out to svn info and parse the output
-            import subprocess
-            output = subprocess.Popen(['svn', 'info', dir_path], stdout=subprocess.PIPE).communicate()[0]
-            matches = [l for l in output.split('\n') if l.startswith('Repository Root: ')]
-            if matches:
-                repo = ('svn', matches[0][17:]) 
-        else:
-            # check parent directories for the .git config directory
-            dir_path = os.path.abspath(dir_path)
-            while dir_path and dir_path != os.path.dirname(dir_path) and repo == (None, None):
-                if os.path.isdir(os.path.join(dir_path, '.git')):
-                    with open(os.path.join(dir_path, '.git', 'config')) as config:
-                        in_section = False
-                        for l in config.readlines():
-                            if l.strip() == '[remote "origin"]':
-                                in_section = True
-                            elif in_section and l.startswith('\turl = '):
-                                repo = 'git', l[7:].strip()
-                                break
-                else:
-                    dir_path = os.path.dirname(dir_path)
-    except Exception, e:
-        pass
-    return repo
-    
 
 def svn_url_exists(url):
     """
