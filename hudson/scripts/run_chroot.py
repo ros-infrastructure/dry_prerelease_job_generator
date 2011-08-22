@@ -10,7 +10,7 @@ import traceback
 import urllib
 
 # Valid options
-valid_archs = ['i386', 'i686', 'amd64', 'arm']
+valid_archs = ['i386', 'i686', 'amd64']
 valid_ubuntu_distros = ['hardy', 'jaunty', 'karmic', 'lucid', 'maverick', 'natty']
 valid_debian_distros = ['lenny', 'squeeze']
 
@@ -154,7 +154,7 @@ def clean_up_chroots():
 
 
 class ChrootInstance:
-    def __init__(self, distro, arch, path, host_workspace, clear_chroot = True, ssh_key_path = None, use_wg_sources = False, scratch_dir=None, hdd_tmp_dir=None, debug_chroot=False, repo_url=None):
+    def __init__(self, distro, arch, path, host_workspace, clear_chroot = True, ssh_key_path = None, use_wg_sources = False, scratch_dir=None, hdd_tmp_dir=None, debug_chroot=False):
         #logging
         self.profile = []
         self.chroot_path = path
@@ -176,7 +176,6 @@ class ChrootInstance:
         self.scratch_dir = scratch_dir
         self.local_scratch_dir = None
         self.debug_chroot = debug_chroot # if enabled print to screen during setup and teardown
-        self.repo_url = repo_url
 
 
     def clean(self):
@@ -220,21 +219,11 @@ class ChrootInstance:
         print cmd
         self.check_call(cmd)
         
-
-        deboot_url = 'http://us.archive.ubuntu.com/ubuntu'
+        deboot_url = 'http://aptproxy.willowgarage.com/us.archive.ubuntu.com/ubuntu'
         if self.distro in valid_debian_distros:
             deboot_url = 'http://ftp.us.debian.org/debian/'
-        if self.distro in valid_ubuntu_distros and self.arch == 'arm':
-            deboot_url = 'http://ports.ubuntu.com/ubuntu-ports/'
-        if self.repo_url:  # override if necessary
-            deboot_url = self.repo_url
 
-
-        cmd = []
-        if self.arch =='arm':
-            cmd = ['sudo', 'build-arm-chroot', self.distro, self.chroot_path] #aptproxy doesn't have armel yet, deboot_url]
-        else:
-            cmd = ['sudo', 'debootstrap', '--arch', self.arch, self.distro, self.chroot_path, deboot_url]
+        cmd = ['sudo', 'debootstrap', '--arch', self.arch, self.distro, self.chroot_path, deboot_url]
         print cmd
         print "This will take a few minutes.  Please be patient."
         self.check_call(cmd)
@@ -249,17 +238,16 @@ class ChrootInstance:
         print "Runing cmd", cmd
         self.check_call(cmd)
 
-
         
         if self.distro in valid_ubuntu_distros:
             # Move sources.list to apt-proxy
-            sources=os.path.join(self.chroot_path, 'etc', 'apt', 'sources.list.d', 'bootstrap.list')
+            sources=os.path.join(self.chroot_path, 'etc', 'apt', 'sources.list.d', 'aptproxy.list')
 
             with tempfile.NamedTemporaryFile() as tf:
-                print "Setting sources to %s"%deboot_url, sources
-                tf.write("deb %s %s main restricted universe multiverse\n" % (deboot_url, self.distro))
-                tf.write("deb %s %s-updates main restricted universe multiverse\n" %  (deboot_url, self.distro))
-                tf.write("deb %s %s-security main restricted universe multiverse\n" %  (deboot_url, self.distro))
+                print "Setting sources to aptproxy.willowgarage.com", sources
+                tf.write("deb http://aptproxy.willowgarage.com/us.archive.ubuntu.com/ubuntu %s main restricted universe multiverse\n" % self.distro)
+                tf.write("deb http://aptproxy.willowgarage.com/us.archive.ubuntu.com/ubuntu %s-updates main restricted universe multiverse\n" % self.distro)
+                tf.write("deb http://aptproxy.willowgarage.com/us.archive.ubuntu.com/ubuntu %s-security main restricted universe multiverse\n" % self.distro)
 
                 tf.flush()
                 cmd = ['sudo', 'cp', tf.name, sources]
@@ -296,7 +284,7 @@ class ChrootInstance:
         if self.distro in valid_ubuntu_distros:
             self.execute(['locale-gen', 'en_US.UTF-8'])
 
-        self.execute(['apt-get', 'update'], robust=True)
+        self.execute(['apt-get', 'update'])
 
         if self.distro in valid_debian_distros:
             self.execute(['apt-get', 'install', 'sudo', 'lsb-release', '-y', '--force-yes'])
@@ -324,7 +312,7 @@ grub-pc grub-pc/install_devices_empty boolean true
 
         # If we're on lucid, pull in the nvidia drivers, in case we're
         # going to run Gazebo-based tests, which need the GPU.
-        if self.distro == 'lucid' and self.arch != 'arm':
+        if self.distro == 'lucid':
             # The --force-yes is necessary to accept the nvidia-current
             # package without a valid GPG signature.
             self.execute(['apt-get', 'install', '-y', '--force-yes', 'linux-headers-2.6.32-23'])
@@ -434,7 +422,7 @@ grub-pc grub-pc/install_devices_empty boolean true
     def setup_svn_ssl_certs(self):
         print 'Setting up ssl certs'
 
-        self.execute(["apt-get", "update"], robust=True)
+        self.execute(["apt-get", "update"])
         cmd = "apt-get install subversion -y --force-yes".split()
         self.execute(cmd)
         
@@ -577,13 +565,13 @@ grub-pc grub-pc/install_devices_empty boolean true
         return local_call(cmd, display or self.debug_chroot)
 
 def run_chroot(options, path, workspace, hdd_tmp_dir):
-    with ChrootInstance(options.distro, options.arch, path, workspace, clear_chroot = not options.persist, ssh_key_path=options.ssh_key_path, use_wg_sources = options.use_wg_sources, scratch_dir = options.hdd_scratch, hdd_tmp_dir=hdd_tmp_dir, debug_chroot= options.debug_chroot, repo_url=options.repo_url) as chrti:
+    with ChrootInstance(options.distro, options.arch, path, workspace, clear_chroot = not options.persist, ssh_key_path=options.ssh_key_path, use_wg_sources = options.use_wg_sources, scratch_dir = options.hdd_scratch, hdd_tmp_dir=hdd_tmp_dir, debug_chroot= options.debug_chroot) as chrti:
 
         #initialization here so that if it throws the cleanup is called.  
         chrti.manual_init()
 
         cmd = "apt-get update".split()
-        chrti.execute(cmd, robust=True) # continue 
+        chrti.execute(cmd)
 
         cmd = "apt-get install -y --force-yes build-essential python-yaml cmake subversion mercurial bzr git-core wget python-setuptools".split()
         chrti.execute(cmd)
@@ -690,8 +678,6 @@ parser.add_option("--interactive", action="store_true", dest="interactive", defa
                   help="Pop up an xterm to interact in.")
 parser.add_option("--debug-chroot", action="store_true", dest="debug_chroot", default=False,
                   help="Display chroot setup console output.")
-parser.add_option("--repo-url", action="store", dest="repo_url", default=None,
-                  type="string", help="The url of the package repo")
 
 
 (options, args) = parser.parse_args()
