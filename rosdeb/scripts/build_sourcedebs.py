@@ -56,9 +56,6 @@ from rosdeb import ubuntu_release, debianize_name, debianize_version, \
 from rosdeb.rosutil import checkout_svn_to_tmp, send_email
 from rosdeb.source_deb import download_control
 
-import list_missing
-import stamp_versions
-
 NAME = 'build_sourcedebs.py' 
 TARBALL_URL = "https://code.ros.org/svn/release/download/stacks/%(stack_name)s/%(base_name)s/%(f_name)s"
 
