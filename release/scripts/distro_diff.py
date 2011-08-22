@@ -75,7 +75,8 @@ def main():
             if stack1.distro_svn != stack2.distro_svn or \
                     stack1.release_svn != stack2.release_svn or \
                     stack1.dev_svn != stack2.dev_svn:
-                print "[%s]: rules differ"%(stack_name)
+                if 0:
+                    print "[%s]: rules differ"%(stack_name)
 
         for variant_name, v1 in d1.variants.iteritems():
             v2 = d2.variants.get(variant_name, None)
