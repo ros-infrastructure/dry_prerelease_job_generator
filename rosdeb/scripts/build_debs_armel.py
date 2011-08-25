@@ -311,7 +311,7 @@ echo "Resuming pbuilder"
             os.chmod(p, stat.S_IRWXU)
 
 
-    if arch == 'amd64':
+    if arch == 'amd64' or arch == 'armel':
         archcmd = []
     else:
         archcmd = ['setarch', arch]
