@@ -122,14 +122,17 @@ def main():
     (options, args) = parser.parse_args()
     if not options.rosdistro:
         parser.parse_error("rosdistro required")
+    if options.rosdistro:
+        rosdistro_list = [options.rosdistro]
         
+
+    os_list = ['lucid', 'maverick', 'natty']
+    arch_list = ['i386', 'amd64', 'armel']
 
     if options.codename:
         os_list = options.codename
     if options.arch:
         arch_list = options.arch
-    if options.rosdistro:
-        rosdistro_list = [options.rosdistro]
     
     print os_list, arch_list, rosdistro_list
  
