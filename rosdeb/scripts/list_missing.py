@@ -70,6 +70,8 @@ ROS_REPO=REPO_URL%{'repo': 'ros'}
 
 HUDSON='http://build.willowgarage.com/'
 
+ARCHES = ['i386', 'amd64', 'armel']
+
 import traceback
 
 _distro_yaml_cache = {}
@@ -361,7 +363,7 @@ def generate_allhtml_report(output, distro_name, os_platforms):
     distro = load_distro(distro_name)
 
     main_repo = {}
-    arches = ['amd64', 'i386']
+    arches = ARCHES
     for os_platform in os_platforms:
         for arch in arches:
             try:
@@ -370,7 +372,7 @@ def generate_allhtml_report(output, distro_name, os_platforms):
                 main_repo["%s-%s"%(os_platform, arch)] = []
 
     fixed_repo = {}
-    arches = ['amd64', 'i386']
+    arches = ARCHES
     for os_platform in os_platforms:
         for arch in arches:
             try:
