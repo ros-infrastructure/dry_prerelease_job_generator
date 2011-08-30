@@ -188,6 +188,17 @@ sudo chown ros:ros /home/ros/Desktop/ubiquity-gtkui.desktop
 sudo chown ros:ros /home/ros/Desktop
 sudo chmod a+rw /home/ros/Desktop/ubiquity-gtkui.desktop
 
+echo "Add clean-up script"
+cat > /root/on_install.sh <<EOF
+#!/bin/bash
+echo "Delete icon"
+rm /home/turtlebot/Desktop/ubiquity-gtkui.desktop
+echo "Delete persistent rules"
+echo "" > /etc/udev/rules.d/70-persistent-net.rules
+echo "" > /etc/udev/rules.d/70-persistent-cd.rules
+EOF
+chmod a+wrx /root/on_install.sh
+
 echo "Adding .bashrc"
 cp /etc/skel/.bashrc /home/ros/.bashrc
 cat >> /home/ros/.bashrc <<EOF

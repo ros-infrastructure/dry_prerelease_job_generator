@@ -259,6 +259,17 @@ EOF
 chown root:root /etc/gconf/gconf.xml.defaults/%gconf-tree.xml
 chmod a+r /etc/gconf/gconf.xml.defaults/%gconf-tree.xml
 
+echo "Add clean-up script"
+cat > /root/on_install.sh <<EOF
+#!/bin/bash
+echo "Delete icon"
+rm /home/turtlebot/Desktop/ubiquity-gtkui.desktop
+echo "Delete persistent rules"
+echo "" > /etc/udev/rules.d/70-persistent-net.rules
+echo "" > /etc/udev/rules.d/70-persistent-cd.rules
+EOF
+chmod a+wrx /root/on_install.sh
+
 echo "Adding ps3joy.conf"
 cat > /etc/init/ps3joy.conf <<EOF
 start on runlevel [2345]
@@ -361,3 +372,4 @@ make
 make install
 rm -rf /tmp/compat-wireless*
 ###
+
