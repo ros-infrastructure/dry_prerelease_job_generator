@@ -202,8 +202,8 @@ chmod a+wrx /root/on_install.sh
 echo "Adding .bashrc"
 cp /etc/skel/.bashrc /home/ros/.bashrc
 cat >> /home/ros/.bashrc <<EOF
-if [ -f /opt/ros/diamondback/setup.bash ] ; then
-    source /opt/ros/diamondback/setup.bash
+if [ -f /opt/ros/electric/setup.bash ] ; then
+    source /opt/ros/electric/setup.bash
 else
     echo "ROS is not installed yet. After installing, please"
     echo "source your .bashrc again by typing:"
@@ -214,6 +214,6 @@ sudo chown ros:ros /home/ros/.bashrc
 sudo chmod a+rw /home/ros/.bashrc
 
 echo "Installing ros"
-yes | apt-get install ros-diamondback-all
+yes | apt-get install ros-electric-all
 
 
