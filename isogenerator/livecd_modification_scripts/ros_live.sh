@@ -7,6 +7,9 @@ echo "installing ssh and ntp"
 apt-get install ssh ntp -y
 echo "removing openoffice"
 apt-get remove openoffice.org* -y
+echo "installing vim, emacs23 and lsof"
+apt-get install vim emacs23 lsof
+
 
 echo "Adding ROS to the apt-get sources"
 echo "deb http://packages.ros.org/ros/ubuntu lucid main" > /etc/apt/sources.list.d/ros-latest.list
@@ -213,7 +216,11 @@ EOF
 sudo chown ros:ros /home/ros/.bashrc
 sudo chmod a+rw /home/ros/.bashrc
 
+echo "Pre-ros"
+lsof /proc
+
 echo "Installing ros"
 apt-get install -y ros-electric-desktop-full ros-electric-ros-full
 
-
+echo "Post ros"
+lsof /proc
