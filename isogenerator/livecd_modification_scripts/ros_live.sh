@@ -8,7 +8,7 @@ apt-get install ssh ntp -y
 echo "removing openoffice"
 apt-get remove openoffice.org* -y
 echo "installing vim, emacs23 and lsof"
-apt-get install vim emacs23 lsof
+apt-get install vim emacs23 lsof -y
 
 
 echo "Adding ROS to the apt-get sources"
