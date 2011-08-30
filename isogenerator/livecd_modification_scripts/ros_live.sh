@@ -214,6 +214,6 @@ sudo chown ros:ros /home/ros/.bashrc
 sudo chmod a+rw /home/ros/.bashrc
 
 echo "Installing ros"
-yes | apt-get install ros-electric-all
+yes | apt-get install ros-electric-desktop-full ros-electric-ros-full
 
 
