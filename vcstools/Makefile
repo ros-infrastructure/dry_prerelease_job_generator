@@ -42,3 +42,9 @@ binary_deb: dsc
 
 upload: source_deb
 	cd deb_dist && dput ppa:tully.foote/tully-test-ppa ../${NAME}_${VERSION}-1_source.changes 
+
+tests:
+	echo "running tests"
+
+test: tests
+	nosetests test/*.py --with-coverage --cover-package=vcstools

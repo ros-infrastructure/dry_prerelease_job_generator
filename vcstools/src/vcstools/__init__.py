@@ -32,7 +32,19 @@
 #
 """
 Library for tools that need to interact with ROS-support version control systems.
-
-New in ROS C-Turtle.
 """
 
+from .vcs_abstraction import VCSClient, register_vcs
+
+from .svn import SVNClient
+from .bzr import BZRClient
+from .hg import HGClient
+from .git import GitClient
+from .tar import TarClient
+
+# configure the VCSClient
+register_vcs("svn", SVNClient)
+register_vcs("bzr", BZRClient)
+register_vcs("git", GitClient)
+register_vcs("hg", HGClient)
+register_vcs("tar", TarClient)

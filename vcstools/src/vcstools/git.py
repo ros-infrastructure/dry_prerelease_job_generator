@@ -62,7 +62,7 @@ def check_git_submodules():
         return False
     return LooseVersion(version) > LooseVersion('1.7')
 
-class GITClient(vcs_base.VCSClientBase):
+class GitClient(vcs_base.VCSClientBase):
     def __init__(self, path):
         """
         Raise LookupError if git not detected
@@ -252,3 +252,4 @@ class GITClient(vcs_base.VCSClientBase):
                 return True
             return False
         
+GITClient=GitClient

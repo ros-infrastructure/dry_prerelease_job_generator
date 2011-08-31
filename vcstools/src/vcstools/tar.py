@@ -36,22 +36,23 @@ tar vcs support.
 New in ROS C-Turtle.
 """
 
-from __future__ import with_statement
 import subprocess
 import os
-import vcs_base
 import yaml
 import urllib
 import tempfile
 import sys
 import shutil
 
-class TARClient(vcs_base.VCSClientBase):
+from .vcs_base import VCSClientBase
+
+class TarClient(VCSClientBase):
+
     def __init__(self, path):
         """
-        Raise LookupError if tar not detected
+        @raise KeyError if tar not detected
         """
-        vcs_base.VCSClientBase.__init__(self, path)
+        VCSClientBase.__init__(self, path)
         self.metadata_path = os.path.join(self._path, ".tar")
         with open(os.devnull, 'w') as fnull:
             try:
@@ -67,27 +68,16 @@ class TARClient(vcs_base.VCSClientBase):
             with open(self.metadata_path, 'r') as metadata_file:
                 metadata = yaml.load(metadata_file.read())
                 if 'url' in metadata:
-                    return metadata['url']
-                
+                    return metadata['url']                
         return None
 
     def detect_presence(self):
         return self.path_exists() and os.path.exists(self.metadata_path)
 
-    def __removed_exists(self, url):
-        """
-        @return: True if url exists in repo
-        """
-        cmd = ['tar', 'info', url]
-        output = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
-        return bool(output[0])
-
     def checkout(self, url, version=''):
         if self.path_exists():
-            print >>sys.stderr, "Error: cannot checkout into existing directory"
+            sys.stderr.write("Error: cannot checkout into existing directory\n")
             return False
-        
-        
         try:
             (filename, headers) = urllib.urlretrieve(url)
             #print "filename", filename
@@ -97,18 +87,14 @@ class TARClient(vcs_base.VCSClientBase):
             if subprocess.call(cmd, shell=True) == 0:
                 subdir = os.path.join(tempdir, version)
                 if not os.path.isdir(subdir):
-                    print >> sys.stderr, "%s is not a subdirectory"%subdir
+                    sys.stderr.write("%s is not a subdirectory\n"%subdir)
                     return False
-                #print "moving"
                 try:
                     #os.makedirs(os.path.dirname(self._path))
                     shutil.move(subdir, self._path)
-                #except shutil.Error, ex:
-                except Exception, ex:
+                except Exception as ex:
                     print "%s failed to move %s to %s"%(ex, subdir, self._path)
-                #print "dumping yaml"
                 metadata = yaml.dump({'url': url, 'version':version})
-                #print metadata
                 with open(self.metadata_path, 'w') as md:
                     md.write(metadata)
 
@@ -118,7 +104,7 @@ class TARClient(vcs_base.VCSClientBase):
                 os.shutil.rmtree(filename)
                 return False
         except:
-            print >>sys.stderr, "Tarball download unpack failed"
+            sys.stderr.write("Tarball download unpack failed\n")
             return False
         return False
 
@@ -127,15 +113,13 @@ class TARClient(vcs_base.VCSClientBase):
             return False
 
         if version != self.get_version():
-            print >> sys.stderr, "Tarball Client does not support updating with different version."
+            sys.stderr.write("Tarball Client does not support updating with different version.\n")
             return False
 
         return True
 
-        
     def get_vcs_type_name(self):
         return 'tar'
-
 
     def get_version(self):
         if self.detect_presence():
@@ -143,7 +127,7 @@ class TARClient(vcs_base.VCSClientBase):
                 metadata = yaml.load(metadata_file.read())
                 if 'version' in metadata:
                     return metadata['version']
-                
         return None
 
-
+# backwards compatibility
+TARClient = TarClient
