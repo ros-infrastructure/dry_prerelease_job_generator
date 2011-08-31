@@ -7,8 +7,8 @@ echo "installing ssh and ntp"
 apt-get install ssh ntp -y
 echo "removing openoffice"
 apt-get remove openoffice.org* -y
-echo "installing vim, emacs23 and lsof"
-apt-get install vim emacs23 lsof -y
+echo "installing vim, emacs23"
+apt-get install vim emacs23 -y
 
 
 echo "Adding ROS to the apt-get sources"
@@ -217,10 +217,11 @@ sudo chown ros:ros /home/ros/.bashrc
 sudo chmod a+rw /home/ros/.bashrc
 
 echo "Pre-ros"
-lsof /proc
+ps -aux
 
 echo "Installing ros"
 apt-get install -y ros-electric-desktop-full ros-electric-ros-full
 
 echo "Post ros"
-lsof /proc
+ps -aux
+echo "Done"
