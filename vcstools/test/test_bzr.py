@@ -30,111 +30,111 @@
 # LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
-import roslib; roslib.load_manifest('vcstools')
 
 import os
-import stat
-import struct
 import sys
 import unittest
 import subprocess
 import tempfile
-import urllib
 import shutil
-
-from vcstools import svn, bzr, git, hg
 
 class BZRClientTest(unittest.TestCase):
 
     def setUp(self):
-        self.directories = {}
+        from vcstools.bzr import BzrClient
+        
         directory = tempfile.mkdtemp()
-        name = "setUp"
-        self.directories[name] = directory
-        self.readonly_url = "http://bazaar.launchpad.net/~tully.foote/+junk/ros-vcstools-test/"
-        self.readonly_version = "1"
+        self.directories = dict(setUp=directory)
+        remote_path = os.path.join(directory, "remote")
+        os.makedirs(remote_path)
+
+        # create a "remote" repo
+        subprocess.check_call(["bzr", "init"], cwd=remote_path)
+        subprocess.check_call(["touch", "fixed.txt"], cwd=remote_path)
+        subprocess.check_call(["bzr", "add", "fixed.txt"], cwd=remote_path)
+        subprocess.check_call(["bzr", "commit", "-m", "initial"], cwd=remote_path)
+        subprocess.check_call(["bzr", "tag", "test_tag"], cwd=remote_path)
+        self.readonly_version_init = "1"
+        
+        # files to be modified in "local" repo
+        subprocess.check_call(["touch", "modified.txt"], cwd=remote_path)
+        subprocess.check_call(["touch", "modified-fs.txt"], cwd=remote_path)
+        subprocess.check_call(["bzr", "add", "modified.txt", "modified-fs.txt"], cwd=remote_path)
+        subprocess.check_call(["bzr", "commit", "-m", "initial"], cwd=remote_path)
+        self.readonly_version_second = "2"
+        
+        subprocess.check_call(["touch", "deleted.txt"], cwd=remote_path)
+        subprocess.check_call(["touch", "deleted-fs.txt"], cwd=remote_path)
+        subprocess.check_call(["bzr", "add", "deleted.txt", "deleted-fs.txt"], cwd=remote_path)
+        subprocess.check_call(["bzr", "commit", "-m", "modified"], cwd=remote_path)
+        self.readonly_version = "3"
+
         self.readonly_path = os.path.join(directory, "readonly")
-        bzrc = bzr.BZRClient(self.readonly_path)
-        self.assertTrue(bzrc.checkout(self.readonly_url, self.readonly_version))
+        self.readonly_url = remote_path
+        
+        client = BzrClient(self.readonly_path)
+        self.assertTrue(client.checkout(self.readonly_url, self.readonly_version))
 
     def tearDown(self):
         for d in self.directories:
             shutil.rmtree(self.directories[d])
 
     def test_get_url_by_reading(self):
-        bzrc = bzr.BZRClient(self.readonly_path)
-        self.assertTrue(bzrc.path_exists())
-        self.assertTrue(bzrc.detect_presence())
-        self.assertEqual(bzrc.get_url(), self.readonly_url)
-        self.assertEqual(bzrc.get_version(), self.readonly_version)
-
+        from vcstools.bzr import BzrClient
+        client = BzrClient(self.readonly_path)
+        self.assertTrue(client.path_exists())
+        self.assertTrue(client.detect_presence())
+        self.assertEqual(client.get_url(), self.readonly_url)
+        self.assertEqual(client.get_version(), self.readonly_version)
 
     def test_get_type_name(self):
+        from vcstools.bzr import BzrClient
         local_path = "/tmp/dummy"
-        bzrc = bzr.BZRClient(local_path)
-        self.assertEqual(bzrc.get_vcs_type_name(), 'bzr')
+        client = BzrClient(local_path)
+        self.assertEqual(client.get_vcs_type_name(), 'bzr')
 
     def test_checkout(self):
+        from vcstools.bzr import BzrClient
         directory = tempfile.mkdtemp()
         self.directories["checkout_test"] = directory
         local_path = os.path.join(directory, "ros")
-        url = "http://bazaar.launchpad.net/~tully.foote/+junk/ros-vcstools-test/"
-        bzrc = bzr.BZRClient(local_path)
-        self.assertFalse(bzrc.path_exists())
-        self.assertFalse(bzrc.detect_presence())
-        self.assertFalse(bzrc.detect_presence())
-        self.assertTrue(bzrc.checkout(url))
-        self.assertTrue(bzrc.path_exists())
-        self.assertTrue(bzrc.detect_presence())
-        self.assertEqual(bzrc.get_path(), local_path)
-        self.assertEqual(bzrc.get_url(), url)
+        url = self.readonly_url
+        client = BzrClient(local_path)
+        self.assertFalse(client.path_exists())
+        self.assertFalse(client.detect_presence())
+        self.assertFalse(client.detect_presence())
+        self.assertTrue(client.checkout(url))
+        self.assertTrue(client.path_exists())
+        self.assertTrue(client.detect_presence())
+        self.assertEqual(client.get_path(), local_path)
+        self.assertEqual(client.get_url(), url)
 
-        #self.assertEqual(bzrc.get_version(), '-r*')
-        
-
+        #self.assertEqual(client.get_version(), '-r*')
         shutil.rmtree(directory)
         self.directories.pop("checkout_test")
 
     def test_checkout_specific_version_and_update(self):
+        from vcstools.bzr import BzrClient
         directory = tempfile.mkdtemp()
         subdir = "checkout_specific_version_test"
         self.directories[subdir] = directory
         local_path = os.path.join(directory, "ros")
-        url = "http://bazaar.launchpad.net/~tully.foote/+junk/ros-vcstools-test/"
+        url = self.readonly_url
         version = "1"
-        bzrc = bzr.BZRClient(local_path)
-        self.assertFalse(bzrc.path_exists())
-        self.assertFalse(bzrc.detect_presence())
-        self.assertFalse(bzrc.detect_presence())
-        self.assertTrue(bzrc.checkout(url, version))
-        self.assertTrue(bzrc.path_exists())
-        self.assertTrue(bzrc.detect_presence())
-        self.assertEqual(bzrc.get_path(), local_path)
-        self.assertEqual(bzrc.get_url(), url)
-        self.assertEqual(bzrc.get_version(), version)
+        client = BzrClient(local_path)
+        self.assertFalse(client.path_exists())
+        self.assertFalse(client.detect_presence())
+        self.assertFalse(client.detect_presence())
+        self.assertTrue(client.checkout(url, version))
+        self.assertTrue(client.path_exists())
+        self.assertTrue(client.detect_presence())
+        self.assertEqual(client.get_path(), local_path)
+        self.assertEqual(client.get_url(), url)
+        self.assertEqual(client.get_version(), version)
         
         new_version = '2'
-        self.assertTrue(bzrc.update(new_version))
-        self.assertEqual(bzrc.get_version(), new_version)
+        self.assertTrue(client.update(new_version))
+        self.assertEqual(client.get_version(), new_version)
         
         shutil.rmtree(directory)
         self.directories.pop(subdir)
-
-class FakeBZRClientTest(unittest.TestCase):
-
-
-    def test_get_url_by_reading(self):
-        self.assertTrue("Test not running on Jaunty")
-
-
-
-if __name__ == '__main__':
-    from ros import rostest
-    from roslib import os_detect
-    os_detector = os_detect.OSDetect()
-    if os_detector.get_name() == "ubuntu" and os_detector.get_version() == "9.04":
-        print "jaunty detected, skipping test"
-        rostest.unitrun('vcstools', 'test_vcs', FakeBZRClientTest, coverage_packages=['vcstools'])  
-    else:
-        rostest.unitrun('vcstools', 'test_vcs', BZRClientTest, coverage_packages=['vcstools'])  
-

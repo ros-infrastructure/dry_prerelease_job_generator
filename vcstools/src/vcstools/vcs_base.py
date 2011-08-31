@@ -37,10 +37,11 @@ New in ROS C-Turtle.
 """
 import os
 
-class VCSClientBase:
+class VcsClientBase:
 
-    def __init__(self, path):
+    def __init__(self, vcs_type_name, path):
         self._path = path
+        self._vcs_type_name = vcs_type_name
         
     def path_exists(self):
         return os.path.exists(self._path)
@@ -74,11 +75,10 @@ class VCSClientBase:
     def update(self, version):
         raise NotImplementedError("Base class update method must be overridden")
 
-
     def detect_presence(self):
         """For auto detection"""
         raise NotImplementedError("Base class detect_presence method must be overridden")
 
     def get_vcs_type_name(self):
         """ used when auto detected """
-        raise NotImplementedError("Base class get_vcs_type_name method must be overridden")
+        return self._vcs_type_name

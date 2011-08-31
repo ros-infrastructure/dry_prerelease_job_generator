@@ -32,22 +32,20 @@
 #
 """
 svn vcs support.
-
-New in ROS C-Turtle.
 """
-from __future__ import with_statement
 
 import os
 import sys
 import subprocess
-import vcs_base
+from .vcs_base import VcsClientBase
 
-class SVNClient(vcs_base.VCSClientBase):
+class SvnClient(VcsClientBase):
+
     def __init__(self, path):
         """
         Raise LookupError if svn not detected
         """
-        vcs_base.VCSClientBase.__init__(self, path)
+        VcsClientBase.__init__(self, 'svn', path)
         with open(os.devnull, 'w') as fnull:
             try:
                 subprocess.call("svn help".split(), stdout=fnull, stderr=fnull)
@@ -95,10 +93,6 @@ class SVNClient(vcs_base.VCSClientBase):
             return True
         return False
 
-    def get_vcs_type_name(self):
-        return 'svn'
-
-
     def get_version(self, spec=None):
         """
         @param spec: (optional) spec can be what 'svn info --help
@@ -136,3 +130,4 @@ class SVNClient(vcs_base.VCSClientBase):
                     return '-r'+split_str[1]
         return None
 
+SVNClient = SvnClient

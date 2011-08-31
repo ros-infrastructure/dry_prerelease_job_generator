@@ -34,17 +34,17 @@
 Library for tools that need to interact with ROS-support version control systems.
 """
 
-from .vcs_abstraction import VCSClient, register_vcs
+from .vcs_abstraction import VcsClient, VCSClient, register_vcs
 
-from .svn import SVNClient
-from .bzr import BZRClient
-from .hg import HGClient
+from .svn import SvnClient
+from .bzr import BzrClient
+from .hg import HgClient
 from .git import GitClient
 from .tar import TarClient
 
 # configure the VCSClient
-register_vcs("svn", SVNClient)
-register_vcs("bzr", BZRClient)
+register_vcs("svn", SvnClient)
+register_vcs("bzr", BzrClient)
 register_vcs("git", GitClient)
-register_vcs("hg", HGClient)
+register_vcs("hg", HgClient)
 register_vcs("tar", TarClient)

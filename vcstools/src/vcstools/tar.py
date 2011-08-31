@@ -44,15 +44,15 @@ import tempfile
 import sys
 import shutil
 
-from .vcs_base import VCSClientBase
+from .vcs_base import VcsClientBase
 
-class TarClient(VCSClientBase):
+class TarClient(VcsClientBase):
 
     def __init__(self, path):
         """
         @raise KeyError if tar not detected
         """
-        VCSClientBase.__init__(self, path)
+        VcsClientBase.__init__(self, 'tar', path)
         self.metadata_path = os.path.join(self._path, ".tar")
         with open(os.devnull, 'w') as fnull:
             try:
@@ -117,9 +117,6 @@ class TarClient(VCSClientBase):
             return False
 
         return True
-
-    def get_vcs_type_name(self):
-        return 'tar'
 
     def get_version(self):
         if self.detect_presence():

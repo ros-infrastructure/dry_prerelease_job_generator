@@ -30,136 +30,128 @@
 # LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
-import roslib; roslib.load_manifest('vcstools')
 
 import os
-import stat
 import struct
 import sys
 import unittest
 import subprocess
 import tempfile
-import urllib
 import shutil
-import roslib
-
-from vcstools import svn, bzr, git, hg
-
-class FakeHGClientTest(unittest.TestCase):
-
-    def setUp(self):
-        pass
-    def tearDown(self):
-        pass
-
-    def test_get_url_by_reading(self):
-        pass
 
 class HGClientTest(unittest.TestCase):
 
     def setUp(self):
-        self.directories = {}
+        from vcstools.hg import HgClient
         directory = tempfile.mkdtemp()
-        name = "setUp"
-        self.directories[name] = directory
-        self.readonly_url = "http://bitbucket.org/RonnyPfannschmidt/anyvc"
-        self.readonly_version = "f6a5c5c581cb"
+        self.directories = dict(setUp=directory)
+        remote_path = os.path.join(directory, "remote")
+        os.makedirs(remote_path)
+
+        # create a "remote" repo
+        subprocess.check_call(["hg", "init"], cwd=remote_path)
+        subprocess.check_call(["touch", "fixed.txt"], cwd=remote_path)
+        subprocess.check_call(["hg", "add", "fixed.txt"], cwd=remote_path)
+        subprocess.check_call(["hg", "commit", "-m", "initial"], cwd=remote_path)
+        subprocess.check_call(["hg", "tag", "test_tag"], cwd=remote_path)
+        
+        po = subprocess.Popen(["hg", "log", "--template", "'{node|short}'", "-l1"], cwd=remote_path, stdout=subprocess.PIPE)
+        self.readonly_version_init = po.stdout.read().rstrip("'").lstrip("'")
+        
+        # files to be modified in "local" repo
+        subprocess.check_call(["touch", "modified.txt"], cwd=remote_path)
+        subprocess.check_call(["touch", "modified-fs.txt"], cwd=remote_path)
+        subprocess.check_call(["hg", "add", "modified.txt", "modified-fs.txt"], cwd=remote_path)
+        subprocess.check_call(["hg", "commit", "-m", "initial"], cwd=remote_path)
+        po = subprocess.Popen(["hg", "log", "--template", "'{node|short}'", "-l1"], cwd=remote_path, stdout=subprocess.PIPE)
+        self.readonly_version_second = po.stdout.read().rstrip("'").lstrip("'")
+        
+        subprocess.check_call(["touch", "deleted.txt"], cwd=remote_path)
+        subprocess.check_call(["touch", "deleted-fs.txt"], cwd=remote_path)
+        subprocess.check_call(["hg", "add", "deleted.txt", "deleted-fs.txt"], cwd=remote_path)
+        subprocess.check_call(["hg", "commit", "-m", "modified"], cwd=remote_path)
+        po = subprocess.Popen(["hg", "log", "--template", "'{node|short}'", "-l1"], cwd=remote_path, stdout=subprocess.PIPE)
+        self.readonly_version = po.stdout.read().rstrip("'").lstrip("'")
+
         self.readonly_path = os.path.join(directory, "readonly")
-        hgc = hg.HGClient(self.readonly_path)
-        self.assertTrue(hgc.checkout(self.readonly_url, self.readonly_version))
+        self.readonly_url = remote_path
+        
+        client = HgClient(self.readonly_path)
+        self.assertTrue(client.checkout(remote_path, self.readonly_version))
 
     def tearDown(self):
         for d in self.directories:
             shutil.rmtree(self.directories[d])
 
     def test_get_url_by_reading(self):
-        hgc = hg.HGClient(self.readonly_path)
-        self.assertTrue(hgc.path_exists())
-        self.assertTrue(hgc.detect_presence())
-        self.assertEqual(hgc.get_url(), self.readonly_url)
-        self.assertEqual(hgc.get_version(), self.readonly_version)
-
+        from vcstools.hg import HgClient
+        client = HgClient(self.readonly_path)
+        self.assertTrue(client.path_exists())
+        self.assertTrue(client.detect_presence())
+        self.assertEqual(client.get_url(), self.readonly_url)
+        self.assertEqual(client.get_version(), self.readonly_version)
 
     def test_get_type_name(self):
+        from vcstools.hg import HgClient
         local_path = "/tmp/dummy"
-        hgc = hg.HGClient(local_path)
-        self.assertEqual(hgc.get_vcs_type_name(), 'hg')
+        client = HgClient(local_path)
+        self.assertEqual(client.get_vcs_type_name(), 'hg')
 
     def test_checkout(self):
+        from vcstools.hg import HgClient
         directory = tempfile.mkdtemp()
         self.directories["checkout_test"] = directory
         local_path = os.path.join(directory, "anyvc")
-        url = "http://bitbucket.org/RonnyPfannschmidt/anyvc"
-        hgc = hg.HGClient(local_path)
-        self.assertFalse(hgc.path_exists())
-        self.assertFalse(hgc.detect_presence())
-        self.assertFalse(hgc.detect_presence())
-        self.assertTrue(hgc.checkout(url))
-        self.assertTrue(hgc.path_exists())
-        self.assertTrue(hgc.detect_presence())
-        self.assertEqual(hgc.get_path(), local_path)
-        self.assertEqual(hgc.get_url(), url)
-
-        #self.assertEqual(hgc.get_version(), )
-        
-
-        shutil.rmtree(directory)
-        self.directories.pop("checkout_test")
+        url = self.readonly_url
+        client = HgClient(local_path)
+        self.assertFalse(client.path_exists())
+        self.assertFalse(client.detect_presence())
+        self.assertFalse(client.detect_presence())
+        self.assertTrue(client.checkout(url))
+        self.assertTrue(client.path_exists())
+        self.assertTrue(client.detect_presence())
+        self.assertEqual(client.get_path(), local_path)
+        self.assertEqual(client.get_url(), url)
 
     def test_checkout_into_subdir_without_existing_parent(self): # test for #3497
+        from vcstools.hg import HgClient
         directory = tempfile.mkdtemp()
         self.directories["checkout_test"] = directory
         local_path = os.path.join(directory, "anyvc", "nonexistant_subdir")
-        url = "http://bitbucket.org/RonnyPfannschmidt/anyvc"
-        hgc = hg.HGClient(local_path)
-        self.assertFalse(hgc.path_exists())
-        self.assertFalse(hgc.detect_presence())
-        self.assertFalse(hgc.detect_presence())
-        self.assertTrue(hgc.checkout(url))
-        self.assertTrue(hgc.path_exists())
-        self.assertTrue(hgc.detect_presence())
-        self.assertEqual(hgc.get_path(), local_path)
-        self.assertEqual(hgc.get_url(), url)
-
-        #self.assertEqual(hgc.get_version(), )
-        
-
-        shutil.rmtree(directory)
-        self.directories.pop("checkout_test")
-
+        url = self.readonly_url
+        client = HgClient(local_path)
+        self.assertFalse(client.path_exists())
+        self.assertFalse(client.detect_presence())
+        self.assertFalse(client.detect_presence())
+        self.assertTrue(client.checkout(url))
+        self.assertTrue(client.path_exists())
+        self.assertTrue(client.detect_presence())
+        self.assertEqual(client.get_path(), local_path)
+        self.assertEqual(client.get_url(), url)
 
     def test_checkout_specific_version_and_update(self):
+        from vcstools.hg import HgClient
         directory = tempfile.mkdtemp()
         subdir = "checkout_specific_version_test"
         self.directories[subdir] = directory
         local_path = os.path.join(directory, "anyvc")
-        url = "http://bitbucket.org/RonnyPfannschmidt/anyvc"
-        version = "76d53fab3a3f"
-        hgc = hg.HGClient(local_path)
-        self.assertFalse(hgc.path_exists())
-        self.assertFalse(hgc.detect_presence())
-        self.assertFalse(hgc.detect_presence())
-        self.assertTrue(hgc.checkout(url, version))
-        self.assertTrue(hgc.path_exists())
-        self.assertTrue(hgc.detect_presence())
-        self.assertEqual(hgc.get_path(), local_path)
-        self.assertEqual(hgc.get_url(), url)
-        self.assertEqual(hgc.get_version(), version)
+        url = self.readonly_url
+        version = self.readonly_version
+        client = HgClient(local_path)
+        self.assertFalse(client.path_exists())
+        self.assertFalse(client.detect_presence())
+        self.assertFalse(client.detect_presence())
+        self.assertTrue(client.checkout(url, version))
+        self.assertTrue(client.path_exists())
+        self.assertTrue(client.detect_presence())
+        self.assertEqual(client.get_path(), local_path)
+        self.assertEqual(client.get_url(), url)
+        self.assertEqual(client.get_version(), version)
         
-        new_version = '850a419b3dc2'
-        self.assertTrue(hgc.update(new_version))
-        self.assertEqual(hgc.get_version(), new_version)
+        new_version = self.readonly_version_second
+        self.assertTrue(client.update(new_version))
+        self.assertEqual(client.get_version(), new_version)
         
         shutil.rmtree(directory)
         self.directories.pop(subdir)
 
-
-if __name__ == '__main__':
-    from ros import rostest
-    from roslib import os_detect
-    os_detector = os_detect.OSDetect()
-    if os_detector.get_name() == "ubuntu" and os_detector.get_version() == "9.04":
-        print "jaunty detected, skipping test"
-        rostest.unitrun('vcstools', 'test_vcs', FakeHGClientTest,  coverage_packages=['vcstools'])
-    else:
-        rostest.unitrun('vcstools', 'test_vcs', HGClientTest,  coverage_packages=['vcstools'])

@@ -29,7 +29,6 @@
 # LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
-#
 
 import os
 
@@ -41,7 +40,7 @@ def register_vcs(vcs_type, clazz):
 def get_vcs(vcs_type):
     return _vcs_types[vcs_type]
 
-class VCSClient: 
+class VcsClient: 
     def __init__(self, vcs_type, path):
         self._path = path
         self.vcs = get_vcs(vcs_type)(path)
@@ -73,3 +72,6 @@ class VCSClient:
 
     def get_branch_parent(self):
         return self.vcs.get_branch_parent()
+
+# backwards compat
+VCSClient=VcsClient

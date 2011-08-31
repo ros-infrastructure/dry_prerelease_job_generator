@@ -38,10 +38,11 @@ New in ROS C-Turtle.
 
 import subprocess
 import os
-import vcs_base
 import base64 
 import sys
 from distutils.version import LooseVersion
+
+from .vcs_base import VcsClientBase
 
 branch_name = "rosinstall_tagged_branch"
 
@@ -50,7 +51,6 @@ def check_git_submodules():
     @return: True if git version supports submodules, False otherwise,
     including if version cannot be detected
     """
-
     try:
         version = subprocess.Popen(['git --version'], shell=True, stdout=subprocess.PIPE).communicate()[0]
     except:
@@ -62,12 +62,12 @@ def check_git_submodules():
         return False
     return LooseVersion(version) > LooseVersion('1.7')
 
-class GitClient(vcs_base.VCSClientBase):
+class GitClient(VcsClientBase):
     def __init__(self, path):
         """
         Raise LookupError if git not detected
         """
-        vcs_base.VCSClientBase.__init__(self, path)
+        VcsClientBase.__init__(self, 'git', path)
         with open(os.devnull, 'w') as fnull:
             try:
                 subprocess.call("git help".split(), stdout=fnull, stderr=fnull)
@@ -87,7 +87,6 @@ class GitClient(vcs_base.VCSClientBase):
 
     def detect_presence(self):
         return self.path_exists() and os.path.isdir(os.path.join(self._path, '.git'))
-
 
     def checkout(self, url, version='master'):
         if self.path_exists():
@@ -165,9 +164,6 @@ class GitClient(vcs_base.VCSClientBase):
                     return False
         return self.update_submodules()
 
-    def get_vcs_type_name(self):
-        return 'git'
-
     def get_version(self, spec=None):
         """
         @param spec: (optional) token to identify desired version. For
@@ -184,7 +180,6 @@ class GitClient(vcs_base.VCSClientBase):
             output = subprocess.Popen(' '.join(command), shell=True, cwd= self._path, stdout=subprocess.PIPE).communicate()[0]
             output = output.strip().strip("'")
             return output
-
 
     def is_remote_branch(self, branch_name):
         if self.path_exists():

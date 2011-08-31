@@ -31,8 +31,6 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-import roslib; roslib.load_manifest('vcstools')
-
 import os
 import struct
 import sys
@@ -92,7 +90,3 @@ class TarClientTest(unittest.TestCase):
         #self.assertEqual(client.get_version(), '-r*')
         shutil.rmtree(directory)
         self.directories.pop("checkout_test")
-
-if __name__ == '__main__':
-    from ros import rosunit
-    rosunit.unitrun('vcstools', 'test_vcs', TarClientTest, coverage_packages=['vcstools'])  

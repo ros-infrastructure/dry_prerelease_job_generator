@@ -39,15 +39,16 @@ New in ROS C-Turtle.
 import subprocess
 import os
 import sys
-import vcs_base
 import urllib
 
-class BZRClient(vcs_base.VCSClientBase):
+from  .vcs_base import VcsClientBase
+
+class BzrClient(VcsClientBase):
     def __init__(self, path):
         """
         Raise LookupError if bzr not detected
         """
-        vcs_base.VCSClientBase.__init__(self, path)
+        VcsClientBase.__init__(self, 'bzr', path)
         with open(os.devnull, 'w') as fnull:
             try:
                 subprocess.call("bzr help".split(), stdout=fnull, stderr=fnull)
@@ -67,7 +68,6 @@ class BZRClient(vcs_base.VCSClientBase):
 
     def detect_presence(self):
         return self.path_exists() and os.path.isdir(os.path.join(self._path, '.bzr'))
-
 
     def checkout(self, url, version=''):
         if self.path_exists():
@@ -93,10 +93,6 @@ class BZRClient(vcs_base.VCSClientBase):
                 return True
         return False
 
-    def get_vcs_type_name(self):
-        return 'bzr'
-
-
     def get_version(self, spec=None):
         """
         @param spec: (optional) revisionspec of desired version.  May
@@ -121,3 +117,4 @@ class BZRClient(vcs_base.VCSClientBase):
                 output = subprocess.Popen(['bzr', 'revno'], cwd= self._path, stdout=subprocess.PIPE).communicate()[0]
                 return output.strip()
 
+BZRClient=BzrClient

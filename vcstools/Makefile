@@ -1,7 +1,7 @@
 .PHONY: all setup clean_dist distro clean install dsc source_deb upload
 
 NAME=vcstools
-VERSION=0.0.1
+VERSION=0.0.2
 
 all:
 	echo "noop for debbuild"
@@ -43,8 +43,9 @@ binary_deb: dsc
 upload: source_deb
 	cd deb_dist && dput ppa:tully.foote/tully-test-ppa ../${NAME}_${VERSION}-1_source.changes 
 
-tests:
+testsetup:
 	echo "running tests"
 
-test: tests
+test: testsetup
+	export PYTHONPATH=src:$PYTHONPATH
 	nosetests test/*.py --with-coverage --cover-package=vcstools

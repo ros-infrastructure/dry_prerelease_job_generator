@@ -36,19 +36,19 @@ hg vcs support.
 New in ROS C-Turtle.
 """
 
-from __future__ import with_statement
-import subprocess
 import os
-import vcs_base
+import subprocess
 import sys
 
-class HGClient(vcs_base.VCSClientBase):
+from .vcs_base import VcsClientBase
+
+class HgClient(VcsClientBase):
         
     def __init__(self, path):
         """
         Raise LookupError if hg not detected
         """
-        vcs_base.VCSClientBase.__init__(self, path)
+        VcsClientBase.__init__(self, 'hg', path)
         with open(os.devnull, 'w') as fnull:
             try:
                 subprocess.call("hg help".split(), stdout=fnull, stderr=fnull)
@@ -67,10 +67,9 @@ class HGClient(vcs_base.VCSClientBase):
     def detect_presence(self):
         return self.path_exists() and os.path.isdir(os.path.join(self._path, '.hg'))
 
-
     def checkout(self, url, version=''):
         if self.path_exists():
-            print >>sys.stderr, "Error: cannot checkout into existing directory"
+            sys.stderr.write("Error: cannot checkout into existing directory\n")
             return False
 
         # make sure that the parent directory exists for #3497
@@ -100,9 +99,6 @@ class HGClient(vcs_base.VCSClientBase):
             return False
         return True
 
-    def get_vcs_type_name(self):
-        return 'hg'
-
     def get_version(self, spec=None):
         """
         @param: (optional) token for identifying version. spec can be
@@ -128,3 +124,6 @@ class HGClient(vcs_base.VCSClientBase):
             output = subprocess.Popen(command, stdout=subprocess.PIPE).communicate()[0]
             return output.strip()
 
+
+# backwards compat
+HGClient = HgClient

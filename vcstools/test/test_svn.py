@@ -30,100 +30,109 @@
 # LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
-import roslib; roslib.load_manifest('vcstools')
 
 import os
-import stat
-import struct
 import sys
 import unittest
 import subprocess
 import tempfile
-import urllib
 import shutil
 
-from vcstools import svn, bzr, git, hg
-
-class SVNClientTest(unittest.TestCase):
+class SvnClientTest(unittest.TestCase):
 
     def setUp(self):
-        self.directories = {}
+        from vcstools.svn import SvnClient
         directory = tempfile.mkdtemp()
-        name = "setUp"
-        self.directories[name] = directory
-        self.readonly_url = "https://code.ros.org/svn/ros/stacks/ros/trunk"
-        self.readonly_version = "-r8800"
+        self.directories = dict(setUp=directory)
+        remote_path = os.path.join(directory, "remote")
+        init_path = os.path.join(directory, "remote")
+        
+        # create a "remote" repo
+        subprocess.check_call(["svnadmin", "create", remote_path], cwd=directory)
+        self.readonly_url = "file://localhost"+remote_path
+        
+        # create an "init" repo to feed remote repo
+        subprocess.check_call(["svn", "checkout", self.readonly_url, init_path], cwd=directory)
+        
+        subprocess.check_call(["touch", "fixed.txt"], cwd=init_path)
+        subprocess.check_call(["svn", "add", "fixed.txt"], cwd=init_path)
+        subprocess.check_call(["svn", "commit", "-m", "initial"], cwd=init_path)
+                
+        self.readonly_version_init = "-r1"
+        
+        # files to be modified in "local" repo
+        subprocess.check_call(["touch", "modified.txt"], cwd=init_path)
+        subprocess.check_call(["touch", "modified-fs.txt"], cwd=init_path)
+        subprocess.check_call(["svn", "add", "modified.txt", "modified-fs.txt"], cwd=init_path)
+        subprocess.check_call(["svn", "commit", "-m", "initial"], cwd=init_path)
+        
+        self.readonly_version_second = "-r2"
+        
+        subprocess.check_call(["touch", "deleted.txt"], cwd=init_path)
+        subprocess.check_call(["touch", "deleted-fs.txt"], cwd=init_path)
+        subprocess.check_call(["svn", "add", "deleted.txt", "deleted-fs.txt"], cwd=init_path)
+        subprocess.check_call(["svn", "commit", "-m", "modified"], cwd=init_path)
+        
+        self.readonly_version = "-r3"
+
         self.readonly_path = os.path.join(directory, "readonly")
-        svnc = svn.SVNClient(self.readonly_path)
-        self.assertTrue(svnc.checkout(self.readonly_url, self.readonly_version))
+        client = SvnClient(self.readonly_path)
+        self.assertTrue(client.checkout(self.readonly_url, self.readonly_version))
 
     def tearDown(self):
         for d in self.directories:
             shutil.rmtree(self.directories[d])
 
     def test_get_url_by_reading(self):
-        svnc = svn.SVNClient(self.readonly_path)
-        self.assertTrue(svnc.path_exists())
-        self.assertTrue(svnc.detect_presence())
-        self.assertEqual(svnc.get_url(), self.readonly_url)
-        #self.assertEqual(svnc.get_version(), self.readonly_version)
-
+        from vcstools.svn import SvnClient
+        client = SvnClient(self.readonly_path)
+        self.assertTrue(client.path_exists())
+        self.assertTrue(client.detect_presence())
+        self.assertEqual(client.get_url(), self.readonly_url)
+        #self.assertEqual(client.get_version(), self.readonly_version)
 
     def test_get_type_name(self):
+        from vcstools.svn import SvnClient
         local_path = "/tmp/dummy"
-        svnc = svn.SVNClient(local_path)
-        self.assertEqual(svnc.get_vcs_type_name(), 'svn')
+        client = SvnClient(local_path)
+        self.assertEqual(client.get_vcs_type_name(), 'svn')
 
     def test_checkout(self):
+        from vcstools.svn import SvnClient
         directory = tempfile.mkdtemp()
         self.directories["checkout_test"] = directory
         local_path = os.path.join(directory, "ros")
-        url = "https://code.ros.org/svn/ros/stacks/ros/trunk"
-        svnc = svn.SVNClient(local_path)
-        self.assertFalse(svnc.path_exists())
-        self.assertFalse(svnc.detect_presence())
-        self.assertFalse(svnc.detect_presence())
-        self.assertTrue(svnc.checkout(url))
-        self.assertTrue(svnc.path_exists())
-        self.assertTrue(svnc.detect_presence())
-        self.assertEqual(svnc.get_path(), local_path)
-        self.assertEqual(svnc.get_url(), url)
+        url = self.readonly_url
+        client = SvnClient(local_path)
+        self.assertFalse(client.path_exists())
+        self.assertFalse(client.detect_presence())
+        self.assertFalse(client.detect_presence())
+        self.assertTrue(client.checkout(url))
+        self.assertTrue(client.path_exists())
+        self.assertTrue(client.detect_presence())
+        self.assertEqual(client.get_path(), local_path)
+        self.assertEqual(client.get_url(), url)
 
-        #self.assertEqual(svnc.get_version(), '-r*')
-        
-
-        shutil.rmtree(directory)
-        self.directories.pop("checkout_test")
+        #self.assertEqual(client.get_version(), '-r*')
 
     def test_checkout_specific_version_and_update(self):
+        from vcstools.svn import SvnClient
         directory = tempfile.mkdtemp()
         subdir = "checkout_specific_version_test"
         self.directories[subdir] = directory
         local_path = os.path.join(directory, "ros")
-        url = "https://code.ros.org/svn/ros/stacks/ros/trunk"
-        version = "-r8800"
-        svnc = svn.SVNClient(local_path)
-        self.assertFalse(svnc.path_exists())
-        self.assertFalse(svnc.detect_presence())
-        self.assertFalse(svnc.detect_presence())
-        self.assertTrue(svnc.checkout(url, version))
-        self.assertTrue(svnc.path_exists())
-        self.assertTrue(svnc.detect_presence())
-        self.assertEqual(svnc.get_path(), local_path)
-        self.assertEqual(svnc.get_url(), url)
-        #self.assertEqual(svnc.get_version(), version)
+        url = self.readonly_url
+        version = "-r3"
+        client = SvnClient(local_path)
+        self.assertFalse(client.path_exists())
+        self.assertFalse(client.detect_presence())
+        self.assertFalse(client.detect_presence())
+        self.assertTrue(client.checkout(url, version))
+        self.assertTrue(client.path_exists())
+        self.assertTrue(client.detect_presence())
+        self.assertEqual(client.get_path(), local_path)
+        self.assertEqual(client.get_url(), url)
+        #self.assertEqual(client.get_version(), version)
         
-        new_version = '-r8801'
-        self.assertTrue(svnc.update(new_version))
-        #self.assertEqual(svnc.get_version(), new_version)
-        
-        shutil.rmtree(directory)
-        self.directories.pop(subdir)
-
-
-
-
-
-if __name__ == '__main__':
-    from ros import rostest
-    rostest.unitrun('vcstools', 'test_vcs', SVNClientTest, coverage_packages=['vcstools'])  
+        new_version = '-r2'
+        self.assertTrue(client.update(new_version))
