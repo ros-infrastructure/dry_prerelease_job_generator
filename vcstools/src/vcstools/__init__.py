@@ -36,4 +36,3 @@ Library for tools that need to interact with ROS-support version control systems
 New in ROS C-Turtle.
 """
 
-from legacy_vcs import *

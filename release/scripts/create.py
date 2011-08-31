@@ -34,7 +34,6 @@
 # Revision $Id: create.py 5643 2010-11-11 20:09:27Z kwc $
 # $Author: kwc $
 
-from __future__ import with_statement
 PKG = 'release'
 NAME="create.py"
 
@@ -55,7 +54,6 @@ import hudson
 import roslib.packages
 import roslib.stacks
 
-from vcstools import svn_url_exists
 from vcstools.hg import HGClient
 from vcstools.git import GITClient
 from vcstools.bzr import BZRClient
@@ -73,6 +71,18 @@ TARBALL_DIR_URL = 'https://code.ros.org/svn/release/download/stacks/%(stack_name
 ROSORG_URL = 'http://ros.org/download/stacks/%(stack_name)s/%(stack_name)s-%(stack_version)s.tar.bz2'
 SERVER = 'http://build.willowgarage.com/'
     
+def svn_url_exists(url):
+    """
+    @return: True if SVN url points to an existing resource
+    """
+    import subprocess
+    try:
+        p = subprocess.Popen(['svn', 'info', url], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        p.wait()
+        return p.returncode == 0
+    except:
+        return False
+
 def yes_or_no():
     print ("(y/n)")
     while 1:
@@ -432,11 +442,6 @@ def trigger_debs(distro, os_platform, arch):
         }
     h.build_job('debbuild-build-debs-%s-%s-%s'%(distro, os_platform, arch), parameters=parameters, token='RELEASE_BUILD_DEBS')
 
-def main_trigger_all():
-    for os_platform in ['lucid', 'jaunty', 'karmic']:
-        for arch in ['amd64', 'i386']:
-            trigger_debs(sys.argv[2], os_platform, arch)
-            
 def check_stack_depends(local_path, stack_name):
     """
     @param local_path: stack directory
@@ -486,17 +491,6 @@ def main():
     check_version()
     
     try:
-        # temporary for bootstrapping repo
-        if len(sys.argv) > 2 and sys.argv[1] == '_rebuild':
-            main_rebuild_repo()
-            return
-        if len(sys.argv) > 2 and sys.argv[1] == '_trigger':
-            main_trigger_sourcedebs()
-            return
-        if len(sys.argv) > 2 and sys.argv[1] == '_all':
-            main_trigger_all()
-            return
-
         repair = '--repair' in sys.argv
         sys.argv = [a for a in sys.argv if a != '--repair']
         
@@ -505,7 +499,7 @@ def main():
         try:
             local_path = roslib.stacks.get_stack_dir(name)
         except:
-            print >> sys.stderr, "ERROR: Cannot find local checkout of stack [%s].\nThis script requires a local version of the stack that you wish to release."%(name)
+            sys.stderr.write("ERROR: Cannot find local checkout of stack [%s].\nThis script requires a local version of the stack that you wish to release.\n"%(name))
             sys.exit(1)
 
 
@@ -543,9 +537,9 @@ def main():
         tarball, control = make_dist_of_dir(tmp_dir, name, version, distro_stack)
         #tarball, control = make_dist(name, version, distro_stack, repair=repair)
         if not control['rosdeps']:
-            print >> sys.stderr, """Misconfiguration: control rosdeps are empty.\n
+            sys.stderr.write("""Misconfiguration: control rosdeps are empty.\n
     In order to run create.py, the stack you are releasing must be on your current
-    ROS_PACKAGE_PATH. This is so create.py can access the stack's rosdeps."""
+    ROS_PACKAGE_PATH. This is so create.py can access the stack's rosdeps.\n""")
             sys.exit(1)
             
         print_bold("Release should be in %s"%(tarball))
@@ -579,107 +573,7 @@ Now:
  * update the changelist at http://www.ros.org/wiki/%s/ChangeList
 """%name
         
-    except ReleaseException, e:
-        print >> sys.stderr, "ERROR: %s"%str(e)
-        sys.exit(1)
-
-def main_rebuild_repo():
-    # NOTE: does not trigger source deb jobs
-    try:
-        print "running _rebuild job"
-        simulate = '-s' in sys.argv
-        args = [a for a in sys.argv if a != '-s']
-        if len(args) < 3:
-            print >> sys.stderr, "usage: create.py _rebuild <distro-name>"
-            sys.exit(1)
-            
-        distro_file = os.path.join(distros_dir, '%s.rosdistro'%(args[2]))
-        distro_file = os.path.abspath(distro_file)
-        if not os.path.isfile(distro_file):
-            print >> sys.stderr, "cannot locate distro file, expected in [%s]"%(distro_file)
-            sys.exit(1)
-            
-        distro = Distro(distro_file)
-        stack_names = args[3:]
-        stack_names = stack_names if stack_names else distro.stacks.keys()
-        print "stacks: ", stack_names
-
-        import urllib, tempfile
-        from rosdeb import control_data
-        for stack_name in stack_names:
-            distro_stack = distro.stacks[stack_name]
-
-            stack_version = distro_stack.version
-            if stack_version is None:
-                continue # not released
-            tarball_url = ROSORG_URL%locals()
-            tarball_name = '%s-%s.tar.bz2'%(stack_name, stack_version)
-            
-            # check to see if we have already synced this tarball
-            upload_url = TARBALL_DIR_URL%locals() + '/%s'%tarball_name
-            try:
-                f = urllib2.urlopen(upload_url)
-                f.close()
-                print "%s-%s already exists, ignoring"%(stack_name, stack_version)
-                continue
-            except:
-                pass
-
-            if simulate:
-                print "simulate", stack_name
-                md5sum = 'FAKEMD5'
-                control = control_data(stack_name, stack_version, md5sum)
-                print '\t' + ', '.join(control['depends'])
-                #print control['rosdeps']
-            else:
-                tarball = os.path.join(tempfile.gettempdir(), tarball_name)
-                urllib.urlretrieve(tarball_url, tarball)
-                from release import md5sum_file
-                md5sum = md5sum_file(tarball)
-
-                # WARNING: this only works if our current checkout matches the distro above
-                control = control_data(stack_name, stack_version, md5sum)
-
-                copy_to_server(stack_name, stack_version, tarball, control, control_only=False)
-
-                os.remove(tarball)
-
-                # trigger source deb system
-                print "triggering", stack_name
-                trigger_hudson_source_deb(stack_name, stack_version, distro)
-
-    except ReleaseException, e:
-        print >> sys.stderr, "ERROR: %s"%str(e)
-        sys.exit(1)
-
-def main_trigger_sourcedebs():
-    try:
-        simulate = '-s' in sys.argv
-        args = [a for a in sys.argv if a != '-s']
-        if len(args) < 3:
-            print >> sys.stderr, "usage: create.py _trigger <distro-name>"
-            sys.exit(1)
-            
-        distro_file = os.path.join(distros_dir, '%s.rosdistro'%(args[2]))
-        distro_file = os.path.abspath(distro_file)
-        if not os.path.isfile(distro_file):
-            print >> sys.stderr, "cannot locate distro file, expected in [%s]"%(distro_file)
-            sys.exit(1)
-            
-        distro = Distro(distro_file)
-        stack_names = args[3:]
-        stack_names = stack_names if stack_names else distro.stacks.keys()
-
-        import urllib, tempfile
-        for stack_name in stack_names:
-            distro_stack = distro.stacks[stack_name]
-            stack_version = distro_stack.version
-            if simulate:
-                print "simulate triggering [%s-%s]"%(stack_name, stack_version)
-            else:
-                trigger_hudson_source_deb(stack_name, stack_version, distro)
-
-    except ReleaseException, e:
+    except ReleaseException as e:
         print >> sys.stderr, "ERROR: %s"%str(e)
         sys.exit(1)
 

@@ -54,8 +54,6 @@ import time
 import rosdeb
 from rosdeb.rosutil import checkout_svn_to_tmp
 
-from vcstools import svn_url_exists
-
 from rosdistro import Distro
 from rosdeb import ubuntu_release, debianize_name, debianize_version, platforms, ubuntu_release_name, \
     deb_in_repo, load_Packages, get_repo_version, get_stack_version, BadRepo
@@ -75,6 +73,18 @@ ARCHES = ['i386', 'amd64', 'armel']
 import traceback
 
 _distro_yaml_cache = {}
+
+def svn_url_exists(url):
+    """
+    @return: True if SVN url points to an existing resource
+    """
+    import subprocess
+    try:
+        p = subprocess.Popen(['svn', 'info', url], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        p.wait()
+        return p.returncode == 0
+    except:
+        return False
 
 def load_info(stack_name, stack_version):
     
