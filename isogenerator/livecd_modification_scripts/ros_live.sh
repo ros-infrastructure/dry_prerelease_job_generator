@@ -220,7 +220,7 @@ echo "Pre-ros"
 ps -aux
 
 echo "Installing ros"
-apt-get install -y ros-electric-desktop-full ros-electric-ros-full
+#apt-get install -y ros-electric-desktop-full ros-electric-ros-full
 
 echo "Post ros"
 ps -aux
