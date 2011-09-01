@@ -36,18 +36,47 @@ hg vcs support.
 New in ROS C-Turtle.
 """
 
-import subprocess
 import os
-import vcs_base
+import subprocess
 import sys
 
-class HGClient(vcs_base.VCSClientBase):
+from .vcs_base import VcsClientBase
+
+#hg diff cannot seem to be persuaded to accept a different prefix for filenames
+def _hg_diff_path_change(diff, path):
+    """
+    Parses hg diff result and changes the filename prefixes.
+    """
+    if diff == None:
+        return None
+    INIT = 0
+    INDIFF = 1
+    # small state machine makes sure we never touch anything inside the actual diff
+    state = INIT
+    result = ""
+    s_list = [line for line in diff.split(os.linesep)]
+    for line in s_list:
+        newline = line
+        if state == INIT:
+            if line.startswith("@@"):
+                state = INDIFF
+            else:
+                if line.startswith("---") and not line.startswith("--- /dev/null"):
+                    newline = "--- " + path + line[5:]
+                if line.startswith("+++") and not line.startswith("+++ /dev/null"):
+                    newline = "+++ " + path + line[5:]
+        elif line.startswith("diff"):
+            state = INIT
+        result += newline + '\n'
+    return result
+
+class HgClient(VcsClientBase):
         
     def __init__(self, path):
         """
         Raise LookupError if hg not detected
         """
-        vcs_base.VCSClientBase.__init__(self, path)
+        VcsClientBase.__init__(self, 'hg', path)
         with open(os.devnull, 'w') as fnull:
             try:
                 subprocess.call("hg help".split(), stdout=fnull, stderr=fnull)
@@ -66,12 +95,19 @@ class HGClient(vcs_base.VCSClientBase):
     def detect_presence(self):
         return self.path_exists() and os.path.isdir(os.path.join(self._path, '.hg'))
 
-
     def checkout(self, url, version=''):
         if self.path_exists():
-            print >>sys.stderr, "Error: cannot checkout into existing directory"
+            sys.stderr.write("Error: cannot checkout into existing directory\n")
             return False
-            
+
+        # make sure that the parent directory exists for #3497
+        base_path = os.path.split(self.get_path())[0]
+        try:
+            os.makedirs(base_path) 
+        except OSError, ex:
+            # OSError thrown if directory already exists this is ok
+            pass
+        
         cmd = "hg clone %s %s"%(url, self._path)
         if not subprocess.call(cmd, shell=True) == 0:
             return False
@@ -91,12 +127,9 @@ class HGClient(vcs_base.VCSClientBase):
             return False
         return True
 
-    def get_vcs_type_name(self):
-        return 'hg'
-
     def get_version(self, spec=None):
         """
-        @param: (optional) token for identifying version. spec can be
+        @param spec: (optional) token for identifying version. spec can be
         a whatever is allowed by 'hg log -r', e.g. a tagname, sha-ID,
         revision-number
 
@@ -118,30 +151,39 @@ class HGClient(vcs_base.VCSClientBase):
             command = ['hg', 'identify', "-i", self._path]
             output = subprocess.Popen(command, stdout=subprocess.PIPE).communicate()[0]
             return output.strip()
+        
+    def get_diff(self, basepath=None):
+        response = None
+        if basepath == None:
+            basepath = self._path
+        if self.path_exists():
+            rel_path = self._normalized_rel_path(self._path, basepath)
+            command = "cd %s; hg diff -g %s"%(basepath, rel_path)
+            stdout_handle = os.popen(command, "r")
+            response = stdout_handle.read()
+            response = _hg_diff_path_change(response, rel_path)
+        if response != None and response.strip() == '':
+            response = None
+        return response
 
-class HGConfig(object):
-    """
-    Configuration information about an SVN repository for a component
-    of code. The configuration we maintain is specific to ROS
-    toolchain concepts and is not a general notion of SVN configuration.
 
-     * repo_uri: base URI of repo
-     * dev_branch: hg branch the code is developed
-     * distro_tag: a tag of the latest released code for a specific ROS distribution
-     * release_tag: a tag of the code for a specific release
-     """
+    def get_status(self, basepath=None, untracked=False):
+        response=None
+        if basepath == None:
+            basepath = self._path
+        if self.path_exists():
+            rel_path = self._normalized_rel_path(self._path, basepath)
+            command = "cd %s; hg status %s"%(basepath, rel_path)
+            if not untracked:
+                command += " -mard"
+            stdout_handle = os.popen(command, "r")
+            response = stdout_handle.read()
+            response_processed = ""
+            for line in response.split('\n'):
+                if len(line.strip()) > 0:
+                    response_processed+=line[0:2]+line[2:]+'\n'
+            response = response_processed
+        return response
 
-    def __init__(self):
-        self.type = 'hg'
-        self.repo_uri      = None
-        self.anon_repo_uri = None
-        self.dev_branch    = None
-        self.distro_tag    = None
-        self.release_tag   = None
-
-    def __eq__(self, other):
-        return self.repo_uri == other.repo_uri and \
-            self.anon_repo_uri == other.anon_repo_uri and \
-            self.dev_branch == other.dev_branch and \
-            self.release_tag == other.release_tag and \
-            self.distro_tag == other.distro_tag
+# backwards compat
+HGClient = HgClient

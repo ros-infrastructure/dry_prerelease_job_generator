@@ -2,11 +2,14 @@
 #WARNING: this script is run under a chroot, so it cannot access files on the file system in general.
 
 echo "Updating apt-get"
-yes | apt-get update
+apt-get update -y
 echo "installing ssh and ntp"
-yes | apt-get install ssh ntp
+apt-get install ssh ntp -y
 echo "removing openoffice"
-yes | apt-get remove openoffice.org*
+apt-get remove openoffice.org* -y
+echo "installing vim, emacs23"
+apt-get install vim emacs23 -y
+
 
 echo "Adding ROS to the apt-get sources"
 echo "deb http://packages.ros.org/ros/ubuntu lucid main" > /etc/apt/sources.list.d/ros-latest.list
@@ -188,11 +191,22 @@ sudo chown ros:ros /home/ros/Desktop/ubiquity-gtkui.desktop
 sudo chown ros:ros /home/ros/Desktop
 sudo chmod a+rw /home/ros/Desktop/ubiquity-gtkui.desktop
 
+echo "Add clean-up script"
+cat > /root/on_install.sh <<EOF
+#!/bin/bash
+echo "Delete icon"
+rm /home/turtlebot/Desktop/ubiquity-gtkui.desktop
+echo "Delete persistent rules"
+echo "" > /etc/udev/rules.d/70-persistent-net.rules
+echo "" > /etc/udev/rules.d/70-persistent-cd.rules
+EOF
+chmod a+wrx /root/on_install.sh
+
 echo "Adding .bashrc"
 cp /etc/skel/.bashrc /home/ros/.bashrc
 cat >> /home/ros/.bashrc <<EOF
-if [ -f /opt/ros/diamondback/setup.bash ] ; then
-    source /opt/ros/diamondback/setup.bash
+if [ -f /opt/ros/electric/setup.bash ] ; then
+    source /opt/ros/electric/setup.bash
 else
     echo "ROS is not installed yet. After installing, please"
     echo "source your .bashrc again by typing:"
@@ -202,7 +216,12 @@ EOF
 sudo chown ros:ros /home/ros/.bashrc
 sudo chmod a+rw /home/ros/.bashrc
 
+echo "Pre-ros"
+ps -aux
+
 echo "Installing ros"
-yes | apt-get install ros-diamondback-all
+#apt-get install -y ros-electric-desktop-full ros-electric-ros-full
 
-
+echo "Post ros"
+ps -aux
+echo "Done"

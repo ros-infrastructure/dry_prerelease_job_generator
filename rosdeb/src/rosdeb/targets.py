@@ -4,5 +4,14 @@ os_platform = {
     'electric': ['lucid', 'maverick', 'natty', 'oneiric'],
     'diamondback': ['lucid', 'maverick', 'natty'],
     'cturtle': ['lucid', 'maverick', 'karmic'],
-    'boxturtle': ['hardy', 'intrepid', 'jaunty', 'karmic'],    
+# no longer supported
+#    'boxturtle': ['hardy', 'intrepid', 'jaunty', 'karmic'],    
+}
+
+os_test_platform = {
+    'testing': ['lucid', 'maverick'],
+    'unstable': ['lucid', 'maverick', 'natty'],
+    'electric': ['lucid', 'maverick', 'natty'],
+    'diamondback': ['lucid', 'maverick', 'natty'],
+    'cturtle': ['lucid', 'maverick', 'karmic'],
 }

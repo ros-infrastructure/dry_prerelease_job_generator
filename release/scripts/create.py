@@ -34,7 +34,6 @@
 # Revision $Id: create.py 5643 2010-11-11 20:09:27Z kwc $
 # $Author: kwc $
 
-from __future__ import with_statement
 PKG = 'release'
 NAME="create.py"
 
@@ -55,10 +54,7 @@ import hudson
 import roslib.packages
 import roslib.stacks
 
-from vcstools import svn_url_exists
-from vcstools.hg import HGClient
-from vcstools.git import GITClient
-from vcstools.bzr import BZRClient
+from vcstools import VcsClient
 
 from release import ReleaseException, update_rosdistro_yaml, make_dist, \
     compute_stack_depends, get_stack_version, \
@@ -73,6 +69,18 @@ TARBALL_DIR_URL = 'https://code.ros.org/svn/release/download/stacks/%(stack_name
 ROSORG_URL = 'http://ros.org/download/stacks/%(stack_name)s/%(stack_name)s-%(stack_version)s.tar.bz2'
 SERVER = 'http://build.willowgarage.com/'
     
+def svn_url_exists(url):
+    """
+    @return: True if SVN url points to an existing resource
+    """
+    import subprocess
+    try:
+        p = subprocess.Popen(['svn', 'info', url], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        p.wait()
+        return p.returncode == 0
+    except:
+        return False
+
 def yes_or_no():
     print ("(y/n)")
     while 1:
@@ -80,6 +88,14 @@ def yes_or_no():
         if input in ['y', 'n']:
             break
     return input == 'y'
+
+def prompt(msg):
+    while True:
+        prompt = raw_input("Would you like to tag %s as %s in %s, [y/n]"%(config.dev_branch, tag_name, from_url))
+        if prompt == 'y':
+            return True
+        elif prompt == 'n':
+            return False
 
 #NOTE: ROS 1.2 does not have the cwd arg
 def ask_and_call(cmds, cwd=None):
@@ -226,6 +242,13 @@ def copy_to_server(name, version, tarball, control, control_only=False):
     else:
         check_call(['svn', 'ci', '-m', "new release %s-%s"%(name, version), tarball_name, control_f], cwd=subdir)
 
+def checkout_distro_stack(distro_stack, from_url, spec):
+    vcs_type = distro_stack.vcs_config.type
+    tempdir = tempfile.mkdtemp()
+    temp_repo = os.path.join(tempdir, distro_stack.name)
+    client = VcsClient(vcs_type, temp_repo)
+    client.checkout(from_url, config.dev_branch)
+    return temp_repo
 
 def tag_release(distro_stack):
     if 'svn' in distro_stack._rules:
@@ -240,9 +263,7 @@ def tag_release(distro_stack):
         raise Exception("unsupported VCS")
     
 def tag_subversion(distro_stack):
-    urls = []
     cmds = []
-
     config = distro_stack.vcs_config
     for tag_url in [config.release_tag, config.distro_tag]:
         from_url = config.dev
@@ -254,151 +275,58 @@ def tag_subversion(distro_stack):
         cmds.append(['svn', 'cp', '--parents', '-m', 'Tagging %s new release'%(release_name), from_url, tag_url])
     if not ask_and_call(cmds):    
         print "create_release will not create this tag in subversion"
+        return []
     else:
-        urls.append(tag_url)
-    return urls
+        return [tag_url]
     
 def tag_mercurial(distro_stack):
-    urls = []
-    cmds = []
-
     config = distro_stack.vcs_config
-
     for tag_name in [config.release_tag, config.distro_tag]:
         from_url = config.repo_uri
-
-        make_tag = False
-        while True:
-            prompt = raw_input("Would you like to tag %s as %s in %s, [y/n]"%(config.dev_branch, tag_name, from_url))
-            if prompt == 'y':
-                make_tag = True
-                break
-            elif prompt == 'n':
-                break
-            
-        if make_tag == False:
-            continue
-
-        tempdir = tempfile.mkdtemp()
-        temp_repo = os.path.join(tempdir, distro_stack.name)
-        hgc = HGClient(temp_repo)
-        hgc.checkout(from_url, config.dev_branch)
-
-        subprocess.check_call(['hg', 'tag', '-f', tag_name], cwd=temp_repo)
-        subprocess.check_call(['hg', 'push'], cwd=temp_repo)
-    #if not ask_and_call(cmds):    
-    #    print "create_release will not create this tag in subversion"
-    #else:
-    urls.append(tag_name)
-    return urls
+        if prompt("Would you like to tag %s as %s in %s, [y/n]"%(config.dev_branch, tag_name, from_url)):
+            temp_repo = checkout_distro_stack(distro_stack, from_url, config.dev_branch)
+            subprocess.check_call(['hg', 'tag', '-f', tag_name], cwd=temp_repo)
+            subprocess.check_call(['hg', 'push'], cwd=temp_repo)
+    return [tag_name]
 
 def tag_bzr(distro_stack):
-    urls = []
-    cmds = []
-
     config = distro_stack.vcs_config
-
     from_url = config.repo_uri
 
     # First create a release tag in the bzr repository.
-    make_tag = False
-    while True:
-        prompt = raw_input("Would you like to tag %s as %s in %s, [y/n]"%(config.dev_branch, config.release_tag, from_url))
-        if prompt == 'y':
-            make_tag = True
-            break
-        elif prompt == 'n':
-            break
-
-    if make_tag == True:
-        tempdir = tempfile.mkdtemp()
-        temp_repo = os.path.join(tempdir, distro_stack.name)
-        bzr_client = BZRClient(temp_repo)
-        bzr_client.checkout(from_url, config.dev_branch)
-
-        #bzr tag -d lp:sr-ros-interface --force tes
+    if prompt("Would you like to tag %s as %s in %s, [y/n]"%(config.dev_branch, config.release_tag, from_url)):
+        temp_repo = checkout_distro_stack(distro_stack, from_url, config.dev_branch)
         #directly create and push the tag to the repo
         subprocess.check_call(['bzr', 'tag', '-d', config.dev_branch,'--force',config.release_tag], cwd=temp_repo)
 
     # Now create a distro branch.
     # In bzr a branch is a much better solution since
     # branches can be force-updated by fetch.
-    make_tag = False
-    while True:
-        branch_name = config.release_tag
-        prompt = raw_input("Would you like to create the branch %s as %s in %s, [y/n]"%(config.dev_branch, branch_name, from_url))
-        if prompt == 'y':
-            make_tag = True
-            break
-        elif prompt == 'n':
-            break
-
-    if make_tag == True:
-        tempdir = tempfile.mkdtemp()
-        temp_repo = os.path.join(tempdir, distro_stack.name)
-        bzr_client = BZRClient(temp_repo)
-        bzr_client.checkout(from_url, config.dev_branch)
-
-        #subprocess.check_call(['bzr', 'branch', '-f', branch_name, config.dev_branch], cwd=temp_repo)
+    branch_name = config.release_tag
+    if prompt("Would you like to create the branch %s as %s in %s, [y/n]"%(config.dev_branch, branch_name, from_url)):
+        temp_repo = checkout_distro_stack(distro_stack, from_url, config.dev_branch)
         subprocess.check_call(['bzr', 'push', '--create-prefix', from_url+"/"+branch_name], cwd=temp_repo)
-
-    urls.append(config.distro_tag)
-    return urls
+    return [config.distro_tag]
 
 def tag_git(distro_stack):
-    urls = []
-    cmds = []
-
     config = distro_stack.vcs_config
-
     from_url = config.repo_uri
 
     # First create a release tag in the git repository.
-    make_tag = False
-    while True:
-        prompt = raw_input("Would you like to tag %s as %s in %s, [y/n]"%(config.dev_branch, config.release_tag, from_url))
-        if prompt == 'y':
-            make_tag = True
-            break
-        elif prompt == 'n':
-            break
-        
-    if make_tag == True:
-        tempdir = tempfile.mkdtemp()
-        temp_repo = os.path.join(tempdir, distro_stack.name)
-        gc = GITClient(temp_repo)
-        gc.checkout(from_url, config.dev_branch)
-
+    if prompt("Would you like to tag %s as %s in %s, [y/n]"%(config.dev_branch, config.release_tag, from_url)):
+        temp_repo = checkout_distro_stack(distro_stack, from_url, config.dev_branch)
         subprocess.check_call(['git', 'tag', '-f', config.release_tag], cwd=temp_repo)
         subprocess.check_call(['git', 'push', '--tags'], cwd=temp_repo)
 
     # Now create a distro branch. In git tags are not overwritten
     # during updates, so a branch is a much better solution since
     # branches can be force-updated by fetch.
-    make_tag = False
-    while True:
-        branch_name = config.distro_tag
-        prompt = raw_input("Would you like to create the branch %s as %s in %s, [y/n]"%(config.dev_branch, branch_name, from_url))
-        if prompt == 'y':
-            make_tag = True
-            break
-        elif prompt == 'n':
-            break
-        
-    if make_tag == True:
-        tempdir = tempfile.mkdtemp()
-        temp_repo = os.path.join(tempdir, distro_stack.name)
-        gc = GITClient(temp_repo)
-        gc.checkout(from_url, config.dev_branch)
-
+    branch_name = config.distro_tag
+    if prompt("Would you like to create the branch %s as %s in %s, [y/n]"%(config.dev_branch, branch_name, from_url)):
+        temp_repo = checkout_distro_stack(distro_stack, from_url, config.dev_branch)
         subprocess.check_call(['git', 'branch', '-f', branch_name, config.dev_branch], cwd=temp_repo)
         subprocess.check_call(['git', 'push', from_url, branch_name], cwd=temp_repo)
-    
-    #if not ask_and_call(cmds):    
-    #    print "create_release will not create this tag in subversion"
-    #else:
-    urls.append(config.distro_tag)
-    return urls
+    return [config.distro_tag]
 
 def print_bold(m):
     print '\033[1m%s\033[0m'%m    
@@ -432,11 +360,6 @@ def trigger_debs(distro, os_platform, arch):
         }
     h.build_job('debbuild-build-debs-%s-%s-%s'%(distro, os_platform, arch), parameters=parameters, token='RELEASE_BUILD_DEBS')
 
-def main_trigger_all():
-    for os_platform in ['lucid', 'jaunty', 'karmic']:
-        for arch in ['amd64', 'i386']:
-            trigger_debs(sys.argv[2], os_platform, arch)
-            
 def check_stack_depends(local_path, stack_name):
     """
     @param local_path: stack directory
@@ -486,17 +409,6 @@ def main():
     check_version()
     
     try:
-        # temporary for bootstrapping repo
-        if len(sys.argv) > 2 and sys.argv[1] == '_rebuild':
-            main_rebuild_repo()
-            return
-        if len(sys.argv) > 2 and sys.argv[1] == '_trigger':
-            main_trigger_sourcedebs()
-            return
-        if len(sys.argv) > 2 and sys.argv[1] == '_all':
-            main_trigger_all()
-            return
-
         repair = '--repair' in sys.argv
         sys.argv = [a for a in sys.argv if a != '--repair']
         
@@ -505,20 +417,20 @@ def main():
         try:
             local_path = roslib.stacks.get_stack_dir(name)
         except:
-            print >> sys.stderr, "ERROR: Cannot find local checkout of stack [%s].\nThis script requires a local version of the stack that you wish to release."%(name)
+            sys.stderr.write("ERROR: Cannot find local checkout of stack [%s].\nThis script requires a local version of the stack that you wish to release.\n"%(name))
             sys.exit(1)
 
 
         # ask if stack got tested
         print 'Did you run prerelease tests on your stack?'
         if not yes_or_no():
-            print 'Before releasing a stack, you should make sure your stack works well,'
-            print ' and that the new release does not break any already released stacks'
-            print ' that depend on your stack.'
-            print 'Willow Garage offers a pre-release test set that tests your stack and all'
-            print ' released stacks that depend on your stack, on all distributions and architectures'
-            print ' supported by Willow Garage. '
-            print 'You can trigger pre-release builds for your stack on <http://code.ros.org/prerelease/>'
+            print """Before releasing a stack, you should make sure your stack works well,
+ and that the new release does not break any already released stacks
+ that depend on your stack.
+Willow Garage offers a pre-release test set that tests your stack and all
+ released stacks that depend on your stack, on all distributions and architectures
+ supported by Willow Garage. 
+You can trigger pre-release builds for your stack on <http://code.ros.org/prerelease/>"""
             return
 
         # make sure distro_file is up-to-date
@@ -537,15 +449,14 @@ def main():
 
         distro_stack.update_version(version)
         email = get_email()            
-
         
         # create the tarball
         tarball, control = make_dist_of_dir(tmp_dir, name, version, distro_stack)
         #tarball, control = make_dist(name, version, distro_stack, repair=repair)
         if not control['rosdeps']:
-            print >> sys.stderr, """Misconfiguration: control rosdeps are empty.\n
+            sys.stderr.write("""Misconfiguration: control rosdeps are empty.\n
     In order to run create.py, the stack you are releasing must be on your current
-    ROS_PACKAGE_PATH. This is so create.py can access the stack's rosdeps."""
+    ROS_PACKAGE_PATH. This is so create.py can access the stack's rosdeps.\n""")
             sys.exit(1)
             
         print_bold("Release should be in %s"%(tarball))
@@ -579,107 +490,7 @@ Now:
  * update the changelist at http://www.ros.org/wiki/%s/ChangeList
 """%name
         
-    except ReleaseException, e:
-        print >> sys.stderr, "ERROR: %s"%str(e)
-        sys.exit(1)
-
-def main_rebuild_repo():
-    # NOTE: does not trigger source deb jobs
-    try:
-        print "running _rebuild job"
-        simulate = '-s' in sys.argv
-        args = [a for a in sys.argv if a != '-s']
-        if len(args) < 3:
-            print >> sys.stderr, "usage: create.py _rebuild <distro-name>"
-            sys.exit(1)
-            
-        distro_file = os.path.join(distros_dir, '%s.rosdistro'%(args[2]))
-        distro_file = os.path.abspath(distro_file)
-        if not os.path.isfile(distro_file):
-            print >> sys.stderr, "cannot locate distro file, expected in [%s]"%(distro_file)
-            sys.exit(1)
-            
-        distro = Distro(distro_file)
-        stack_names = args[3:]
-        stack_names = stack_names if stack_names else distro.stacks.keys()
-        print "stacks: ", stack_names
-
-        import urllib, tempfile
-        from rosdeb import control_data
-        for stack_name in stack_names:
-            distro_stack = distro.stacks[stack_name]
-
-            stack_version = distro_stack.version
-            if stack_version is None:
-                continue # not released
-            tarball_url = ROSORG_URL%locals()
-            tarball_name = '%s-%s.tar.bz2'%(stack_name, stack_version)
-            
-            # check to see if we have already synced this tarball
-            upload_url = TARBALL_DIR_URL%locals() + '/%s'%tarball_name
-            try:
-                f = urllib2.urlopen(upload_url)
-                f.close()
-                print "%s-%s already exists, ignoring"%(stack_name, stack_version)
-                continue
-            except:
-                pass
-
-            if simulate:
-                print "simulate", stack_name
-                md5sum = 'FAKEMD5'
-                control = control_data(stack_name, stack_version, md5sum)
-                print '\t' + ', '.join(control['depends'])
-                #print control['rosdeps']
-            else:
-                tarball = os.path.join(tempfile.gettempdir(), tarball_name)
-                urllib.urlretrieve(tarball_url, tarball)
-                from release import md5sum_file
-                md5sum = md5sum_file(tarball)
-
-                # WARNING: this only works if our current checkout matches the distro above
-                control = control_data(stack_name, stack_version, md5sum)
-
-                copy_to_server(stack_name, stack_version, tarball, control, control_only=False)
-
-                os.remove(tarball)
-
-                # trigger source deb system
-                print "triggering", stack_name
-                trigger_hudson_source_deb(stack_name, stack_version, distro)
-
-    except ReleaseException, e:
-        print >> sys.stderr, "ERROR: %s"%str(e)
-        sys.exit(1)
-
-def main_trigger_sourcedebs():
-    try:
-        simulate = '-s' in sys.argv
-        args = [a for a in sys.argv if a != '-s']
-        if len(args) < 3:
-            print >> sys.stderr, "usage: create.py _trigger <distro-name>"
-            sys.exit(1)
-            
-        distro_file = os.path.join(distros_dir, '%s.rosdistro'%(args[2]))
-        distro_file = os.path.abspath(distro_file)
-        if not os.path.isfile(distro_file):
-            print >> sys.stderr, "cannot locate distro file, expected in [%s]"%(distro_file)
-            sys.exit(1)
-            
-        distro = Distro(distro_file)
-        stack_names = args[3:]
-        stack_names = stack_names if stack_names else distro.stacks.keys()
-
-        import urllib, tempfile
-        for stack_name in stack_names:
-            distro_stack = distro.stacks[stack_name]
-            stack_version = distro_stack.version
-            if simulate:
-                print "simulate triggering [%s-%s]"%(stack_name, stack_version)
-            else:
-                trigger_hudson_source_deb(stack_name, stack_version, distro)
-
-    except ReleaseException, e:
+    except ReleaseException as e:
         print >> sys.stderr, "ERROR: %s"%str(e)
         sys.exit(1)
 

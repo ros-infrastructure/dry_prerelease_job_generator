@@ -38,10 +38,11 @@ New in ROS C-Turtle.
 
 import subprocess
 import os
-import vcs_base
 import base64 
 import sys
 from distutils.version import LooseVersion
+
+from .vcs_base import VcsClientBase
 
 branch_name = "rosinstall_tagged_branch"
 
@@ -50,9 +51,8 @@ def check_git_submodules():
     @return: True if git version supports submodules, False otherwise,
     including if version cannot be detected
     """
-
     try:
-        version = subprocess.Popen(['git', '--version'], stdout=subprocess.PIPE).communicate()[0]
+        version = subprocess.Popen(['git --version'], shell=True, stdout=subprocess.PIPE).communicate()[0]
     except:
         return False
    # 'git version 1.7.0.4\n'
@@ -62,12 +62,12 @@ def check_git_submodules():
         return False
     return LooseVersion(version) > LooseVersion('1.7')
 
-class GITClient(vcs_base.VCSClientBase):
+class GitClient(VcsClientBase):
     def __init__(self, path):
         """
         Raise LookupError if git not detected
         """
-        vcs_base.VCSClientBase.__init__(self, path)
+        VcsClientBase.__init__(self, 'git', path)
         with open(os.devnull, 'w') as fnull:
             try:
                 subprocess.call("git help".split(), stdout=fnull, stderr=fnull)
@@ -81,17 +81,16 @@ class GITClient(vcs_base.VCSClientBase):
         @return: GIT URL of the directory path (output of git info command), or None if it cannot be determined
         """
         if self.detect_presence():
-            output = subprocess.Popen(["git", "config",  "--get", "remote.origin.url"], cwd=self._path, stdout=subprocess.PIPE).communicate()[0]
+            output = subprocess.Popen(["git config --get remote.origin.url"], shell=True, cwd=self._path, stdout=subprocess.PIPE).communicate()[0]
             return output.rstrip()
         return None
 
     def detect_presence(self):
         return self.path_exists() and os.path.isdir(os.path.join(self._path, '.git'))
 
-
     def checkout(self, url, version='master'):
         if self.path_exists():
-            print >>sys.stderr, "Error: cannot checkout into existing directory"
+            sys.stderr.write("Error: cannot checkout into existing directory\n")
             return False
             
         cmd = "git clone %s %s"%(url, self._path)
@@ -109,7 +108,7 @@ class GITClient(vcs_base.VCSClientBase):
             cmd = "git checkout remotes/origin/%s -b %s"%(version, version)
         else:  # tag or hash
             cmd = "git checkout %s -b %s"%(version, branch_name)
-        if not self.is_hash(version):
+        if not self.is_hash(version) and not self.is_tag(version):
             cmd = cmd + " --track"
         #print "Git Installing: %s"%cmd
         if not subprocess.call(cmd, cwd=self._path, shell=True) == 0:
@@ -165,9 +164,6 @@ class GITClient(vcs_base.VCSClientBase):
                     return False
         return self.update_submodules()
 
-    def get_vcs_type_name(self):
-        return 'git'
-
     def get_version(self, spec=None):
         """
         @param spec: (optional) token to identify desired version. For
@@ -181,15 +177,51 @@ class GITClient(vcs_base.VCSClientBase):
             command = ['git', 'log', "-1", "--format='%H'"]
             if spec is not None:
                 command.insert(3, spec)
-            output = subprocess.Popen(command, cwd= self._path, stdout=subprocess.PIPE).communicate()[0]
+            output = subprocess.Popen(' '.join(command), shell=True, cwd= self._path, stdout=subprocess.PIPE).communicate()[0]
             output = output.strip().strip("'")
             return output
 
+    def get_diff(self, basepath=None):
+        response = None
+        if basepath == None:
+            basepath = self._path
+        if self.path_exists():
+            rel_path = self._normalized_rel_path(self._path, basepath)
+            # git needs special treatment as it only works from inside
+            # use HEAD to also show staged changes. Maybe should be option?
+            command = "cd %s; git diff HEAD"%(self._path)
+            # change path using prefix
+            command += " --src-prefix=%s/ --dst-prefix=%s/ ."%(rel_path,rel_path)
+            stdout_handle = os.popen(command, "r")
+            response = stdout_handle.read()
+        if response != None and response.strip() == '':
+            response = None
+        return response
 
+    def get_status(self, basepath=None, untracked=False):
+        response=None
+        if basepath == None:
+            basepath = self._path
+        if self.path_exists():
+            rel_path = self._normalized_rel_path(self._path, basepath)
+            # git command only works inside repo
+            command = "cd %s; git status -s "%(self._path)
+            if not untracked:
+                command += " -uno"
+            stdout_handle = os.popen(command, "r")
+            response = stdout_handle.read()
+            response_processed = ""
+            for line in response.split('\n'):
+                if len(line.strip()) > 0:
+                    # prepend relative path
+                    response_processed+=line[0:3]+rel_path+'/'+line[3:]+'\n'
+            response = response_processed
+        return response
+        
     def is_remote_branch(self, branch_name):
         if self.path_exists():
-            output = subprocess.Popen(['git', "branch", '-r'], cwd= self._path, stdout=subprocess.PIPE).communicate()[0]
-            for l in output.split('\n'):
+            output = subprocess.Popen(['git branch -r'], shell=True, cwd= self._path, stdout=subprocess.PIPE).communicate()[0]
+            for l in output.splitlines():
                 elems = l.split()
                 if len(elems) == 1:
                     br_names = elems[0].split('/')
@@ -199,8 +231,8 @@ class GITClient(vcs_base.VCSClientBase):
 
     def is_local_branch(self, branch_name):
         if self.path_exists():
-            output = subprocess.Popen(['git', "branch"], cwd= self._path, stdout=subprocess.PIPE).communicate()[0]
-            for l in output.split('\n'):
+            output = subprocess.Popen(['git branch'], shell=True, cwd= self._path, stdout=subprocess.PIPE).communicate()[0]
+            for l in output.splitlines():
                 elems = l.split()
                 if len(elems) == 1:
                     if elems[0] == branch_name:
@@ -212,8 +244,8 @@ class GITClient(vcs_base.VCSClientBase):
 
     def get_branch(self):
         if self.path_exists():
-            output = subprocess.Popen(['git', "branch"], cwd= self._path, stdout=subprocess.PIPE).communicate()[0]
-            for l in output.split('\n'):
+            output = subprocess.Popen(['git branch'], shell=True, cwd= self._path, stdout=subprocess.PIPE).communicate()[0]
+            for l in output.splitlines():
                 elems = l.split()
                 if len(elems) == 2 and elems[0] == '*':
                     return elems[1]
@@ -221,12 +253,12 @@ class GITClient(vcs_base.VCSClientBase):
 
     def get_branch_parent(self):
         if self.path_exists():
-            output = subprocess.Popen(['git', "config", "--get", "branch.%s.merge"%self.get_branch()], cwd= self._path, stdout=subprocess.PIPE).communicate()[0].strip()
+            output = subprocess.Popen(['git config --get branch.%s.merge'%self.get_branch()], shell=True, cwd= self._path, stdout=subprocess.PIPE).communicate()[0].strip()
             if not output:
                 print "No output of get branch.%s.merge"%self.get_branch()
                 return None
             elems = output.split('/')
-            if len(elems) != 3 or elems[0] != 'refs' or elems[1] != 'heads':
+            if len(elems) != 3 or elems[0] != 'refs' or (elems[1] != 'heads' and elems[1] != 'tags'):
                 print "elems improperly formatted", elems
                 return None
             else:
@@ -240,34 +272,16 @@ class GITClient(vcs_base.VCSClientBase):
             try:
                 base64.b64decode(hashstr)
                 return True
-            except Exception, ex:
+            except Exception as ex:
                 pass
         return False
 
-
-class GITConfig(object):
-    """
-    Configuration information about an SVN repository for a component
-    of code. The configuration we maintain is specific to ROS
-    toolchain concepts and is not a general notion of SVN configuration.
-
-     * repo_uri: base URI of repo
-     * dev_branch: git branch the code is developed
-     * distro_tag: a tag of the latest released code for a specific ROS distribution
-     * release_tag: a tag of the code for a specific release
-     """
-
-    def __init__(self):
-        self.type = 'git'
-        self.repo_uri      = None
-        self.anon_repo_uri = None
-        self.dev_branch    = None
-        self.distro_tag    = None
-        self.release_tag   = None
-
-    def __eq__(self, other):
-        return self.repo_uri == other.repo_uri and \
-            self.anon_repo_uri == other.anon_repo_uri and \
-            self.dev_branch == other.dev_branch and \
-            self.release_tag == other.release_tag and \
-            self.distro_tag == other.distro_tag
+    def is_tag(self, tag_name):
+        if self.path_exists():
+            output = subprocess.Popen(['git tag -l %s'%tag_name], shell=True, cwd= self._path, stdout=subprocess.PIPE).communicate()[0]
+            lines =  output.splitlines()
+            if len(lines) == 1:
+                return True
+            return False
+        
+GITClient=GitClient

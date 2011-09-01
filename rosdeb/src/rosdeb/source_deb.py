@@ -180,8 +180,18 @@ def deb_depends(metadata, distro_name, platform_name):
         else:
             return None      
     rosdeps = metadata['rosdeps'][platform_name]
-
-    return rosdeps
+    # support version-locking syntax
+    rosdeps_fixed = []
+    for r in rosdeps:
+        if '=' in r:
+            # example libeigen3-dev=3.0.1-1+ros4~lucid
+            if '*' in r:
+                raise Exception("cannot include glob patterns in debian control file")
+            rosdep_name, version = r.split('=')
+            rosdeps_fixed.append("%s (=%s)"%(rosdep_name, version))
+        else:
+            rosdeps_fixed.append(r)
+    return rosdeps_fixed
 
 def stack_depends(metadata, distro_name, platform_name):
     """
@@ -286,12 +296,15 @@ def control_data(stack_name, stack_version, md5sum, stack_file=None):
     for platform in platforms():
         try:
             rosdeps[platform] = stack_rosdeps(stack_name, os.path.dirname(stack_file), platform)
-        except:
-            # ignore failures as these are generally unsupported
+        except Exception as e:
+            # #3435
+            # TODO: this is a hack that should be turned into a typed exception
+            if "cannot generate" in str(e):
+                sys.stderr.write("Error with platform [%s]: %s\n"%(platform, str(e)))
+            # ignore other failures as these are generally unsupported
             # platforms. Later logic is responsible for erroring if
             # control file is missing bindings, and unit tests on
             # stack_rosdeps verify its functionality
-            pass
     
     return metadata
 

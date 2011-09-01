@@ -10,7 +10,7 @@ import traceback
 import urllib
 
 # Valid options
-valid_archs = ['i386', 'i686', 'amd64', 'arm']
+valid_archs = ['i386', 'i686', 'amd64', 'armel']
 valid_ubuntu_distros = ['hardy', 'jaunty', 'karmic', 'lucid', 'maverick', 'natty']
 valid_debian_distros = ['lenny', 'squeeze']
 valid_redhat_distros = ['fedora-15']
@@ -248,18 +248,19 @@ class ChrootInstance:
         self.check_call(cmd)
         
 
-        deboot_url = 'us.archive.ubuntu.com/ubuntu'
+        deboot_url = 'http://us.archive.ubuntu.com/ubuntu'
         if self.distro in valid_debian_distros:
             deboot_url = 'http://ftp.us.debian.org/debian/'
-        if self.distro in valid_ubuntu_distros and self.arch == 'arm':
+        if self.distro in valid_ubuntu_distros and self.arch == 'armel':
             deboot_url = 'http://ports.ubuntu.com/ubuntu-ports/'
         if self.repo_url:  # override if necessary
             deboot_url = self.repo_url
 
 
         cmd = []
-        if self.arch =='arm':
-            cmd = ['sudo', 'build-arm-chroot', self.distro, self.chroot_path] #aptproxy doesn't have armel yet, deboot_url]
+        if self.arch =='armel':
+            #cmd = ['sudo', 'build-arm-chroot', self.distro, self.chroot_path] #aptproxy doesn't have armel yet, deboot_url]
+            cmd = ['sudo', 'qemu-debootstrap', '--arch', self.arch, self.distro, self.chroot_path, deboot_url]
         else:
             cmd = ['sudo', 'debootstrap', '--arch', self.arch, self.distro, self.chroot_path, deboot_url]
         print cmd
@@ -351,7 +352,7 @@ grub-pc grub-pc/install_devices_empty boolean true
 
         # If we're on lucid, pull in the nvidia drivers, in case we're
         # going to run Gazebo-based tests, which need the GPU.
-        if self.distro == 'lucid' and self.arch != 'arm':
+        if self.distro == 'lucid' and self.arch != 'armel':
             # The --force-yes is necessary to accept the nvidia-current
             # package without a valid GPG signature.
             self.execute(['apt-get', 'install', '-y', '--force-yes', 'linux-headers-2.6.32-23'])
@@ -375,7 +376,10 @@ grub-pc grub-pc/install_devices_empty boolean true
         self.execute(['chmod', '4755', '-R', '/usr/bin/sudo'])
 
 
-        self.setup_rosbuild()
+        if self.distro in valid_debian_distros + valid_ubuntu_distros:
+            self.debian_setup_rosbuild()
+        else:
+            raise NotImplementedError("non debian rosbuild setup not implemented")
 
     def debian_setup_rosbuild(self):
         cmd = "useradd rosbuild -m --groups sudo".split()

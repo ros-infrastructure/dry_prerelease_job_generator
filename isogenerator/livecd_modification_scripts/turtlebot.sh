@@ -259,6 +259,17 @@ EOF
 chown root:root /etc/gconf/gconf.xml.defaults/%gconf-tree.xml
 chmod a+r /etc/gconf/gconf.xml.defaults/%gconf-tree.xml
 
+echo "Add clean-up script"
+cat > /root/on_install.sh <<EOF
+#!/bin/bash
+echo "Delete icon"
+rm /home/turtlebot/Desktop/ubiquity-gtkui.desktop
+echo "Delete persistent rules"
+echo "" > /etc/udev/rules.d/70-persistent-net.rules
+echo "" > /etc/udev/rules.d/70-persistent-cd.rules
+EOF
+chmod a+wrx /root/on_install.sh
+
 echo "Adding ps3joy.conf"
 cat > /etc/init/ps3joy.conf <<EOF
 start on runlevel [2345]
@@ -321,4 +332,44 @@ cat > /lib/udev/rules.d/97-bluetooth.rules <<EOF
 EOF
 chown root:turtlebot /lib/udev/rules.d/97-bluetooth.rules
 chmod a+r /lib/udev/rules.d/97-bluetooth.rules
+
+echo "Download and install networking drivers"
+
+#This is a hack because uname is wrong under chroot
+CURRENT_FILE=/lib/modules/`ls /lib/modules/`
+DESIRED_FILE=/lib/modules/`/bin/uname -r`
+if [ $CURRENT_FILE == $DESIRED_FILE ] ; then
+    echo "Hack not needed"
+else
+    echo "Created hacky symlink to get around uname version issues"
+    ln -s $CURRENT_FILE $DESIRED_FILE
+fi
+
+###
+echo "Install speciality wireless drivers"
+
+DRIVER_DIR=$CURRENT_FILE/updates/dkms
+DRIVER_FILE=$DRIVER_DIR/wl.ko
+
+echo "Dir $DRIVER_DIR"
+echo "File $DRIVER_FILE"
+
+mkdir -p $DRIVER_DIR
+wget http://pr.willowgarage.com/downloads/turtlebot/1215n_p27_wl.ko --output-document=$DRIVER_FILE
+
+###
+echo "Install ethernet driver"
+cd /tmp
+rm -f /tmp/compat-wireless-2.6.tar.bz2
+wget http://pr.willowgarage.com/downloads/turtlebot/compat-wireless-2.6.tar.bz2 --output-document=/tmp/compat-wireless-2.6.tar.bz2
+sudo apt-get update
+sudo apt-get install build-essential
+tar -xjvf /tmp/compat-wireless-2.6.tar.bz2
+cd /tmp/compat-wireless-2011-07-18
+sed -i "s/update-grub/echo would update-grub, but commented/g" scripts/update-initramfs
+scripts/driver-select atl1c
+make
+make install
+rm -rf /tmp/compat-wireless*
+###
 

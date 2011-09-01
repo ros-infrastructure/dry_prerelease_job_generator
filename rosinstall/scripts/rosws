@@ -35,7 +35,7 @@
 # $Author$
 
 """
-usage: rosworkspace [OPTIONS] PATH {init | {{add | delete} STACK}}
+usage: rosworkspace [OPTIONS] {init PATH | {add | delete} STACK}
 """
 
 from __future__ import print_function
@@ -58,7 +58,10 @@ class ROSWorkspace:
             self._read_rosinstall_file()
 
     def _parse_args(self, args):
-        parser = OptionParser(usage='usage: %prog PATH {init | {{add | delete} STACK}}', version='%prog 0.0.1')
+        parser = OptionParser(usage='usage: %prog {init PATH | {add | delete} STACK}', version='%prog 0.0.1')
+        parser.add_option("-p", "--path", dest="path", default=None,
+                          help="path to workspace; overrides ROS_WORKSPACE",
+                          action="store")
         parser.add_option("-c", "--configure", dest="noupdate", default=False,
                           help="change configuration, but don't run rosinstall",
                           action="store_true")
@@ -67,6 +70,9 @@ class ROSWorkspace:
                           action="store_true")
         parser.add_option("--released", dest="released", default=False,
                           help="Pull stack from release tag instead of development branch",
+                          action="store_true")
+        parser.add_option("-d", "--delete-working-copies", dest="delete", default=False,
+                          help="when deleting a stack from the configuration, also delete the working copy (DANGEROUS!)",
                           action="store_true")
 
         # We take all rosinstall args and pass them through; there's
@@ -101,21 +107,30 @@ class ROSWorkspace:
         self.norecurse = options.norecurse
         self.released = options.released
         self.rosinstall_options = options.rosinstall_options
+        self.path = options.path
+        self.delete = options.delete
     
-        if len(args) < 3:
-            parser.error('rosworkspace requires at least 2 arguments')
+        if len(args) < 2:
+            parser.error('rosworkspace requires at least 1 arguments')
 
-        self.path = args[1]
-        self.mode = args[2]
+        self.mode = args[1]
         self.init_args = None
-        self.stack = None
+        self.stacks = []
         if self.mode == 'init':
-            if len(args) > 3:
-                self.init_args = args[2:]
+            if len(args) < 3:
+                parser.error('init command requires exactly at least 2 arguments')
+            self.path = args[2]
+            self.init_args = args[3:]
         elif self.mode == 'add' or self.mode == 'delete':
-            if len(args) != 4:
-                parser.error('init and add commands require exactly 3 arguments')
-            self.stack = args[3]
+            if len(args) < 3:
+                parser.error('add and delete commands require at least 2 arguments')
+            self.stacks = args[2:]
+
+            if self.path is None:
+                if 'ROS_WORKSPACE' in os.environ:
+                    self.path = os.environ['ROS_WORKSPACE']
+                else:
+                    parser.error('no ROS_WORKSPACE and no --path option given')
         else:
             parser.error('unknown mode "%s"'%(self.mode))
         self.rosinstall_fname = os.path.join(self.path, '.rosinstall')
@@ -148,7 +163,6 @@ class ROSWorkspace:
         return deps
 
     def _remove_stack_from_overlay(self, stack):
-        # Do we currently include this stack in our overlay?
         x = [e for e in self.rosinstall if e.values()[0]['local-name'] == stack]
         if x:
             self.rosinstall.remove(x[0])
@@ -222,24 +236,29 @@ class ROSWorkspace:
 
         else:
             distro = self._rosversion_to_distro_name()
-            self._remove_stack_from_overlay(self.stack)
-            if self.mode == 'add':
-                info = self._roslocate_info(self.stack, distro, not self.released)
-                self.rosinstall.extend(info)    
-                if not self.norecurse:
-                    deps = self._get_dependent_stacks(self.stack)
-                    # Also switch anything that depends on this stack
-                    for s in deps:
-                        self._remove_stack_from_overlay(s)
-                        info = self._roslocate_info(s, distro, not self.released)
-                        self.rosinstall.extend(info)
-            elif self.mode == 'delete':
-                if not self.norecurse:
-                    deps = self._get_dependent_stacks(self.stack)
-                    for s in deps:
-                        self._remove_stack_from_overlay(s)
-            else:
-                raise ROSWorkspaceException("unknown mode: %s"%(self.mode))
+            for stack in self.stacks:
+                self._remove_stack_from_overlay(stack)
+                if self.mode == 'add':
+                    info = self._roslocate_info(stack, distro, not self.released)
+                    self.rosinstall.extend(info)    
+                    if not self.norecurse:
+                        deps = self._get_dependent_stacks(stack)
+                        # Also switch anything that depends on this stack
+                        for s in deps:
+                            self._remove_stack_from_overlay(s)
+                            info = self._roslocate_info(s, distro, not self.released)
+                            self.rosinstall.extend(info)
+                elif self.mode == 'delete':
+                    if self.delete:
+                        shutil.rmtree(os.path.join(self.path, stack), ignore_errors=True)
+                    if not self.norecurse:
+                        deps = self._get_dependent_stacks(stack)
+                        for s in deps:
+                            self._remove_stack_from_overlay(s)
+                            if self.delete:
+                                shutil.rmtree(os.path.join(self.path, s), ignore_errors=True)
+                else:
+                    raise ROSWorkspaceException("unknown mode: %s"%(self.mode))
 
             # Back up the original rosinstall file
             backup_fname = os.path.join(self.path, '.rosinstall.bak')

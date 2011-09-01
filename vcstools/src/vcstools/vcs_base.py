@@ -37,9 +37,11 @@ New in ROS C-Turtle.
 """
 import os
 
-class VCSClientBase:
-    def __init__(self, path):
+class VcsClientBase:
+
+    def __init__(self, vcs_type_name, path):
         self._path = path
+        self._vcs_type_name = vcs_type_name
         
     def path_exists(self):
         return os.path.exists(self._path)
@@ -52,7 +54,7 @@ class VCSClientBase:
         @return: The source control url for the path
         @rtype: str
         """
-        raise NotImplementedError, "Base class get_url method must be overridden"
+        raise NotImplementedError("Base class get_url method must be overridden")
 
     def get_version(self, spec=None):
         """
@@ -68,16 +70,52 @@ class VCSClientBase:
         raise NotImplementedError, "Base class get_version method must be overridden"
 
     def checkout(self, url, version):
-        raise NotImplementedError, "Base class checkout method must be overridden"
+        raise NotImplementedError("Base class checkout method must be overridden")
 
     def update(self, version):
-        raise NotImplementedError, "Base class update method must be overridden"
-
+        raise NotImplementedError("Base class update method must be overridden")
 
     def detect_presence(self):
         """For auto detection"""
-        raise NotImplementedError, "Base class detect_presence method must be overridden"
+        raise NotImplementedError("Base class detect_presence method must be overridden")
 
     def get_vcs_type_name(self):
         """ used when auto detected """
-        raise NotImplementedError, "Base class get_vcs_type_name method must be overridden"
+        return self._vcs_type_name
+
+    def get_diff(self, basepath=None):
+        """
+        @param basepath: diff paths will be relative to this, if any
+        @return: A string showing local differences
+        """
+        raise NotImplementedError("Base class get_diff method must be overridden")
+
+    # kruset: not sure whether we need 2 options (unchanged, unstaged) instead and what the default should be
+    def get_status(self, basepath=None, untracked=False):
+        """
+        Calls scm status command. semantics of untracked are difficult
+        to generalize. In SVN, this would be new files only. In git,
+        hg, bzr, this would be changesthat have not been added for
+        commit.
+
+        @param basepath: status path will be relative to this, if any
+        @param untracked: whether to also show changes that would not commit
+        @return: A string summarizing locally modified files
+        """
+        raise NotImplementedError("Base class get_status method must be overridden")
+
+    def _normalized_rel_path(self, path, basepath):
+        """
+        Utility function for subclasses.
+        
+        If path is absolute, return relative path to it from
+        basepath. If relative, return it normalized.
+        
+        @param path: an absolute or relative path
+        @param basepath: if path is absolute, shall be made relative to this
+        @return: a normalized relative path
+        """
+        # gracefully ignore invalid input absolute path + no basepath
+        if os.path.isabs(path) and basepath is not None:
+            return os.path.normpath(os.path.relpath(path, basepath))
+        return os.path.normpath(path)

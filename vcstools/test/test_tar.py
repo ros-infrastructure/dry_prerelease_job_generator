@@ -31,76 +31,68 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-import roslib; roslib.load_manifest('vcstools')
-
 import os
-import stat
 import struct
 import sys
 import unittest
-import subprocess
 import tempfile
-import urllib
 import shutil
 
-from vcstools import tar
-
-class TARClientTest(unittest.TestCase):
+class TarClientTest(unittest.TestCase):
 
     def setUp(self):
         self.directories = {}
-        directory = tempfile.mkdtemp()
-        name = "setUp"
-        self.directories[name] = directory
-        self.readonly_url = "https://code.ros.org/svn/release/download/stacks/exploration/exploration-0.3.0/exploration-0.3.0.tar.bz2"
-        self.readonly_version = "exploration-0.3.0"
-        self.readonly_path = os.path.join(directory, "readonly")
-        tarc = tar.TARClient(self.readonly_path)
-        self.assertTrue(tarc.checkout(self.readonly_url, self.readonly_version))
 
     def tearDown(self):
         for d in self.directories:
             shutil.rmtree(self.directories[d])
 
     def test_get_url_by_reading(self):
-        tarc = tar.TARClient(self.readonly_path)
-        self.assertTrue(tarc.path_exists())
-        self.assertTrue(tarc.detect_presence())
-        self.assertEqual(tarc.get_url(), self.readonly_url)
-        #self.assertEqual(tarc.get_version(), self.readonly_version)
+        from vcstools.tar import TarClient
 
+        directory = tempfile.mkdtemp()
+        self.directories['readonly'] = directory
+
+        readonly_url = "https://code.ros.org/svn/release/download/stacks/exploration/exploration-0.3.0/exploration-0.3.0.tar.bz2"
+        readonly_version = "exploration-0.3.0"
+        readonly_path = os.path.join(directory, "readonly")
+
+        client = TarClient(readonly_path)
+        self.assertTrue(client.checkout(readonly_url, readonly_version))
+        
+        self.assertTrue(client.path_exists())
+        self.assertTrue(client.detect_presence())
+        self.assertEqual(client.get_url(), readonly_url)
+        #self.assertEqual(client.get_version(), readonly_version)
+
+    def test_get_url_nonexistant(self):
+        from vcstools.tar import TarClient
+        local_path = "/tmp/dummy"
+        client = TarClient(local_path)
+        self.assertEqual(client.get_url(), None)
 
     def test_get_type_name(self):
+        from vcstools.tar import TarClient
         local_path = "/tmp/dummy"
-        tarc = tar.TARClient(local_path)
-        self.assertEqual(tarc.get_vcs_type_name(), 'tar')
+        client = TarClient(local_path)
+        self.assertEqual(client.get_vcs_type_name(), 'tar')
 
     def test_checkout(self):
+        from vcstools.tar import TarClient
         directory = tempfile.mkdtemp()
         self.directories["checkout_test"] = directory
         local_path = os.path.join(directory, "exploration")
         url = "https://code.ros.org/svn/release/download/stacks/exploration/exploration-0.3.0/exploration-0.3.0.tar.bz2"
-        tarc = tar.TARClient(local_path)
-        self.assertFalse(tarc.path_exists())
-        self.assertFalse(tarc.detect_presence())
-        self.assertFalse(tarc.detect_presence())
-        self.assertTrue(tarc.checkout(url))
-        self.assertTrue(tarc.path_exists())
-        self.assertTrue(tarc.detect_presence())
-        self.assertEqual(tarc.get_path(), local_path)
-        self.assertEqual(tarc.get_url(), url)
+        client = TarClient(local_path)
+        self.assertFalse(client.path_exists())
+        self.assertFalse(client.detect_presence())
+        self.assertFalse(client.detect_presence())
+        self.assertTrue(client.checkout(url))
+        self.assertTrue(client.path_exists())
+        self.assertTrue(client.detect_presence())
+        self.assertEqual(client.get_path(), local_path)
+        self.assertEqual(client.get_url(), url)
 
-        #self.assertEqual(tarc.get_version(), '-r*')
-        
-
+        #self.assertEqual(client.get_version(), '-r*')
         shutil.rmtree(directory)
         self.directories.pop("checkout_test")
-
-
-
-
-
-
-if __name__ == '__main__':
-    from ros import rostest
-    rostest.unitrun('vcstools', 'test_vcs', TARClientTest, coverage_packages=['vcstools'])  

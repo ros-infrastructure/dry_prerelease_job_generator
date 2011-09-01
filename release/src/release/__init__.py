@@ -260,17 +260,6 @@ def make_dist_of_dir(tmp_dir, name, version, distro_stack):
     shutil.rmtree(tmp_dir)
     return dst, control
 
-def svn_url_exists(url):
-    try:
-        stdout, stderr = subprocess.Popen(['svn', 'info', url], stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
-        if not stderr:
-            return True
-        else:
-            return False            
-    except:
-        return False
-
-
 TAR_IGNORE_TOP=['build']
 TAR_IGNORE_ALL=['.svn', '.git', '.hg']
 

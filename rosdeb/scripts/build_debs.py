@@ -45,7 +45,6 @@ import tempfile
 import yaml
 import urllib2
 import stat
-import tempfile
 import re
 import time
 
@@ -57,7 +56,6 @@ from rosdeb.rosutil import checkout_svn_to_tmp, send_email
 from rosdeb.source_deb import download_control
 
 import list_missing
-import stamp_versions
 
 NAME = 'build_debs.py' 
 TARBALL_URL = "https://code.ros.org/svn/release/download/stacks/%(stack_name)s/%(base_name)s/%(f_name)s"
@@ -105,11 +103,11 @@ class TempRamFS:
     def __enter__(self):
         
         cmd = ['sudo', 'mkdir', '-p', self.path]
-        subprocess.check_call(cmd)
+        subprocess.check_call(cmd, stderr=subprocess.STDOUT)
         cmd = ['sudo', 'mount', '-t', 'tmpfs', '-o', 'size=%s,mode=0755'%self.size, 'tmpfs', self.path]
-        subprocess.check_call(cmd)
+        subprocess.check_call(cmd, stderr=subprocess.STDOUT)
         cmd = ['sudo', 'chown', '-R', str(os.geteuid()), self.path]
-        subprocess.check_call(cmd)
+        subprocess.check_call(cmd, stderr=subprocess.STDOUT)
         return self
 
     def __exit__(self, mtype, value, tb):
@@ -118,13 +116,14 @@ class TempRamFS:
             traceback.print_exception(mtype, value, tb, file=sys.stdout)
             
         cmd = ['sudo', 'umount', '-f', self.path]
-        subprocess.check_call(cmd)
+        subprocess.check_call(cmd, stderr=subprocess.STDOUT)
 
     
 def deb_in_repo(deb_name, deb_version, os_platform, arch):
     return rosdeb.deb_in_repo(SHADOW_REPO_URL, deb_name, deb_version, os_platform, arch, use_regex=True)
 
 def get_depends(deb_name, os_platform, arch):
+    print "Get depends from %s"%(SHADOW_REPO_URL)
     return rosdeb.get_depends(SHADOW_REPO_URL, deb_name, os_platform, arch)
     
 def download_files(stack_name, stack_version, staging_dir, files):
@@ -170,7 +169,10 @@ def compute_deps(distro, stack_name):
         si = load_info(s, v)
         loaded_deps = si['depends']
         for d in loaded_deps:
-            add_stack(d)
+            try:
+                add_stack(d)
+            except BuildFailure as e:
+                raise BuildFailure("[%s] build failure loading dependency [%s]: %s"%(s, d, e))
         ordered_deps.append((s,v))
 
     if stack_name == 'ALL':
@@ -212,7 +214,13 @@ def create_chroot(distro, distro_name, os_platform, arch):
 
     deplist = ' '.join(basedeps+rosdeps)
 
-    subprocess.check_call(['sudo', 'pbuilder', '--create', '--distribution', os_platform, '--debootstrapopts', '--arch=%s'%arch, '--othermirror', 'deb http://packages.ros.org/ros-shadow/ubuntu %s main'%(os_platform), '--basetgz', distro_tgz, '--components', 'main restricted universe multiverse', '--extrapackages', deplist, '--aptcache', cache_dir])
+    debootstrap_type = 'debootstrap' # use default
+    mirror = 'http://aptproxy.willowgarage.com/archive.ubuntu.com/ubuntu' # use wg mirror
+    if arch == 'armel':
+        debootstrap_type = 'qemu-debootstrap'
+        mirror = 'http://ports.ubuntu.com/ubuntu-ports/'
+        
+    subprocess.check_call(['sudo', 'pbuilder', '--create', '--distribution', os_platform, '--debootstrap', debootstrap_type, '--debootstrapopts', '--arch=%s'%arch, '--mirror', mirror, '--othermirror', 'deb http://packages.ros.org/ros-shadow/ubuntu %s main'%(os_platform), '--basetgz', distro_tgz, '--components', 'main restricted universe multiverse', '--extrapackages', deplist, '--aptcache', cache_dir], stderr=subprocess.STDOUT)
 
 
 def do_deb_build(distro_name, stack_name, stack_version, os_platform, arch, staging_dir, noupload, interactive):
@@ -301,14 +309,14 @@ echo "Resuming pbuilder"
             os.chmod(p, stat.S_IRWXU)
 
 
-    if arch == 'amd64':
+    if arch == 'amd64' or arch == 'armel':
         archcmd = []
     else:
         archcmd = ['setarch', arch]
 
     # Actually build the deb.  This results in the deb being located in results_dir
     print "starting pbuilder build of %s-%s"%(stack_name, stack_version)
-    subprocess.check_call(archcmd+ ['sudo', 'pbuilder', '--build', '--basetgz', distro_tgz, '--configfile', conf_file, '--hookdir', hook_dir, '--buildresult', results_dir, '--binary-arch', '--buildplace', build_dir, '--aptcache', cache_dir, dsc_file])
+    subprocess.check_call(archcmd+ ['sudo', 'pbuilder', '--build', '--basetgz', distro_tgz, '--configfile', conf_file, '--hookdir', hook_dir, '--buildresult', results_dir, '--binary-arch', '--buildplace', build_dir, '--aptcache', cache_dir, dsc_file], stderr=subprocess.STDOUT)
 
     # Set up an RE to look for the debian file and find the build_version
     deb_version_wild = debianize_version(stack_version, '(\w*)', os_platform)
@@ -350,7 +358,7 @@ dpkg -l %(deb_name)s
 
 
     print "starting verify script for %s-%s"%(stack_name, stack_version)
-    subprocess.check_call(archcmd + ['sudo', 'pbuilder', '--execute', '--basetgz', distro_tgz, '--configfile', conf_file, '--bindmounts', results_dir, '--buildplace', build_dir, '--aptcache', cache_dir, verify_script])
+    subprocess.check_call(archcmd + ['sudo', 'pbuilder', '--execute', '--basetgz', distro_tgz, '--configfile', conf_file, '--bindmounts', results_dir, '--buildplace', build_dir, '--aptcache', cache_dir, verify_script], stderr=subprocess.STDOUT)
 
     if not noupload:
         # Upload the debs to the server
@@ -358,14 +366,19 @@ dpkg -l %(deb_name)s
         files = [os.path.join(results_dir, x) for x in base_files]
     
         print "uploading debs for %s-%s to %s"%(stack_name, stack_version, REPO_HOSTNAME)
-        subprocess.check_call(['scp'] + files + ['%s:/var/packages/ros-shadow/ubuntu/incoming/%s'%(REPO_LOGIN, os_platform)])
+        cmd = ['scp'] + files + ['%s:/var/packages/ros-shadow/ubuntu/incoming/%s'%(REPO_LOGIN, os_platform)]
+        print ' '.join(cmd)
+        subprocess.check_call(cmd, stderr=subprocess.STDOUT)
+        print "upload complete"
 
         # Assemble string for moving all files from incoming to queue (while lock is being held)
         move_str = '\n'.join(['mv '+os.path.join('/var/packages/ros-shadow/ubuntu/incoming',os_platform,x)+' '+os.path.join('/var/packages/ros-shadow/ubuntu/queue',os_platform,x) for x in base_files])
 
         # This script moves files into queue directory, removes all dependent debs, removes the existing deb, and then processes the incoming files
         remote_cmd = "TMPFILE=`mktemp` || exit 1 && cat > ${TMPFILE} && chmod +x ${TMPFILE} && ${TMPFILE}; ret=${?}; rm ${TMPFILE}; exit ${ret}"
+        print "running remote command [%s]"%(remote_cmd)
         run_script = subprocess.Popen(['ssh', REPO_LOGIN, remote_cmd], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        print "getting depends to prepare invalidate script"
         invalidate = [deb_name] + get_depends(deb_name, os_platform, arch)
         print "invalidating pre-existing and downstream: %s"%(invalidate)
         invalidate_cmds = ["reprepro -b /var/packages/ros-shadow/ubuntu -V -A %(arch)s removefilter %(os_platform)s 'Package (==%(deb_name_x)s)'"%locals() for deb_name_x in  invalidate]
@@ -386,6 +399,7 @@ reprepro -b /var/packages/ros-shadow/ubuntu -V processincoming %(os_platform)s
 
         #Actually run script and check result
         (o,e) = run_script.communicate(script_content)
+        print "waiting for invalidation script"
         res = run_script.wait()
         print o
         if res != 0:
@@ -550,7 +564,7 @@ Description: Meta package for %(metapackage)s variant of ROS.
 
     if not missing:
         dest_deb = os.path.join(workdir, "%(deb_name)s_%(deb_version)s_%(arch)s.deb"%locals())
-        subprocess.check_call(['dpkg-deb', '--nocheck', '--build', metadir, dest_deb])
+        subprocess.check_call(['dpkg-deb', '--nocheck', '--build', metadir, dest_deb], stderr=subprocess.STDOUT)
     else:
         dest_deb = None
 
@@ -564,7 +578,7 @@ def upload_debs(files,distro_name,os_platform,arch):
         print >> sys.stderr, "No debs to upload."
         return 1 # no files to upload
 
-    subprocess.check_call(['scp'] + files + ['%s:/var/packages/%s/ubuntu/incoming/%s'%(REPO_LOGIN, SHADOW_REPO,os_platform)])
+    subprocess.check_call(['scp'] + files + ['%s:/var/packages/%s/ubuntu/incoming/%s'%(REPO_LOGIN, SHADOW_REPO,os_platform)], stderr=subprocess.STDOUT)
 
     base_files = [x.split('/')[-1] for x in files]
 

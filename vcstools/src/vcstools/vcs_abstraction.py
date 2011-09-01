@@ -29,45 +29,60 @@
 # LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
-#
 
-
-import svn, bzr, hg, git, tar
 import os
 
+_vcs_types = {}
 
-class VCSClient: 
-  def __init__(self, vcs_type, path):
-    self._path = path
-    self.vcs_types = {
-      "svn": svn.SVNClient,
-      "bzr": bzr.BZRClient,
-      "git": git.GITClient,
-      "hg": hg.HGClient,
-      "tar": tar.TARClient,
-      }
-    if not vcs_type in self.vcs_types:
-      raise LookupError("%s VCS type undefined"%vcs_type)
-    self.vcs = self.vcs_types[vcs_type](path)
+def register_vcs(vcs_type, clazz):
+    _vcs_types[vcs_type] = clazz
+  
+def get_vcs(vcs_type):
+    return _vcs_types[vcs_type]
+
+class VcsClient(object):
+    """
+    API for interacting with source-controlled paths independent of
+    actual version-control implementation.
+    """
+
+    def __init__(self, vcs_type, path):
+        self._path = path
+        self.vcs = get_vcs(vcs_type)(path)
     
-  def path_exists(self):
-      return os.path.exists(self._path)
+    def path_exists(self):
+        return os.path.exists(self._path)
 
-  def get_path(self):
-      return self._path
+    def get_path(self):
+        return self._path
 
-  # pass through VCSClientBase API
-  def get_version(self, spec=None):
-    return self.vcs.get_version(spec)
-  def checkout(self, url, version=''):
-    return self.vcs.checkout(url, version)
-  def update(self, version):
-    return self.vcs.update(version)
-  def detect_presence(self):
-    return self.vcs.detect_presence()
-  def get_vcs_type_name(self):
-    return self.vcs.get_vcs_type_name()
-  def get_url(self):
-    return self.vcs.get_url()
-  def get_branch_parent(self):
-    return self.vcs.get_branch_parent()
+    # pass through VCSClientBase API
+    def get_version(self, spec=None):
+        return self.vcs.get_version(spec)
+
+    def checkout(self, url, version=''):
+        return self.vcs.checkout(url, version)
+
+    def update(self, version):
+        return self.vcs.update(version)
+
+    def detect_presence(self):
+        return self.vcs.detect_presence()
+
+    def get_vcs_type_name(self):
+        return self.vcs.get_vcs_type_name()
+
+    def get_url(self):
+        return self.vcs.get_url()
+
+    def get_branch_parent(self):
+        return self.vcs.get_branch_parent()
+
+    def get_diff(self, basepath=None):
+        return self.vcs.get_diff(self, basepath)
+
+    def get_status(self, basepath=None, untracked=False):
+        return self.vcs.get_status(self, basepath, untracked)
+
+# backwards compat
+VCSClient=VcsClient
