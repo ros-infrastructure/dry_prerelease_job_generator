@@ -129,7 +129,7 @@ class HgClient(VcsClientBase):
 
     def get_version(self, spec=None):
         """
-        @param: (optional) token for identifying version. spec can be
+        @param spec: (optional) token for identifying version. spec can be
         a whatever is allowed by 'hg log -r', e.g. a tagname, sha-ID,
         revision-number
 
