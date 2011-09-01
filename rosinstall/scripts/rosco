@@ -91,7 +91,13 @@ def _parse_args(parser, options, args):
     return get_rosinstall(name, data, type_, options_to_branch(options))
     
 def rosco_main():
-    parser = OptionParser(usage="usages:\n\trosco [file]\n\troslocate info foo | rosco")
+    parser = OptionParser(usage="""
+\trosco [options] <package-or-stack>
+\trosco -r <rosinstall-file>
+
+rosco also accepts piped rosinstall input:
+
+\troslocate info foo | rosco""")
     parser.add_option("-r", "--rosinstall",
                       dest="file", default=None,
                       help="checkout entries in rosinstall file")
