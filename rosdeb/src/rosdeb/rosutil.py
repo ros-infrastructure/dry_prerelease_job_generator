@@ -43,8 +43,7 @@ if __name__ == '__main__':
 import roslib.manifest
 import roslib.stack_manifest
 import roslib.packages
-import roslib.stacks
-import vcstools.vcs_abstraction
+import vcstools
 
 import rosdeb
 import rosdep
@@ -107,15 +106,13 @@ def checkout_tag_to_tmp(name, distro_stack):
     tmp_dir = tempfile.mkdtemp()
     dest = os.path.join(tmp_dir, name)
     print 'Checking out a fresh copy of %s from %s to %s...'%(name, uri, dest)
-    vcs_client = vcstools.vcs_abstraction.VCSClient(key, dest)
+    vcs_client = vcstools.VcsClient(key, dest)
     vcs_client.checkout(uri, version)
     return tmp_dir
 
 def checkout_dev_to_tmp(name, distro_stack):
     """
     Checkout an VCS-based 'dev' code tree to the tmp dir.
-    
-    Utility routine -- need to replace with vcstools
     
     @return: temporary directory that contains checkout of SVN tree in
     directory 'name'. temporary directory will be a subdirectory of
@@ -144,7 +141,7 @@ def checkout_dev_to_tmp(name, distro_stack):
     tmp_dir = tempfile.mkdtemp()
     dest = os.path.join(tmp_dir, name)
     print 'Checking out a fresh copy of %s from %s to %s...'%(name, uri, dest)
-    vcs_client = vcstools.vcs_abstraction.VCSClient(key, dest)
+    vcs_client = vcstools.VcsClient(key, dest)
     vcs_client.checkout(uri, version)
     return tmp_dir
 
