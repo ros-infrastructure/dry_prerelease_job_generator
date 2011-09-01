@@ -52,9 +52,6 @@ import tempfile
 import time
 
 import rosdeb
-from rosdeb.rosutil import checkout_svn_to_tmp
-
-from vcstools import svn_url_exists
 
 from rosdistro import Distro
 from rosdeb import ubuntu_release, debianize_name, debianize_version, platforms, ubuntu_release_name, \
@@ -70,9 +67,23 @@ ROS_REPO=REPO_URL%{'repo': 'ros'}
 
 HUDSON='http://build.willowgarage.com/'
 
+ARCHES = ['i386', 'amd64', 'armel']
+
 import traceback
 
 _distro_yaml_cache = {}
+
+def svn_url_exists(url):
+    """
+    @return: True if SVN url points to an existing resource
+    """
+    import subprocess
+    try:
+        p = subprocess.Popen(['svn', 'info', url], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        p.wait()
+        return p.returncode == 0
+    except:
+        return False
 
 def load_info(stack_name, stack_version):
     
@@ -90,6 +101,8 @@ def load_info(stack_name, stack_version):
     except:
         raise Exception("Problem fetching yaml info for %s %s (%s)"%(stack_name, stack_version, url))
 
+class MissingDefinition(Exception): pass
+
 def compute_deps(distro, stack_name):
 
     seen = set()
@@ -99,19 +112,24 @@ def compute_deps(distro, stack_name):
         if s in seen:
             return
         if s not in distro.stacks:
-            print >> sys.stderr, "[%s] not found in distro."%(s)
-            sys.exit(1)
+            raise MissingDefinition("[%s] not found in distro."%(s))
         seen.add(s)
         v = distro.stacks[s].version
         try:
             si = load_info(s, v)
             for d in si['depends']:
                 add_stack(d)
-        except Exception, e:
+        except MissingDefinition as e:
+            # converted this is a soft-fail from a sys.exit. this is
+            # caused by stacks that depend on stacks that have been
+            # pulled.
+            sys.stderr.write("[%s] build failure loading dependency [%s]: %s\n"%(s, d, e))
+            #raise MissingDefinition("[%s] build failure loading dependency [%s]: %s\n"%(s, d, e))
+        except Exception as e:
             # this is a soft-fail. If the load_info fails, it means
             # the stack is missing. We will detect it missing
             # elsewhere.
-            print >> sys.stderr, str(e)
+            sys.stderr.write(str(e)+'\n')
         ordered_deps.append((s,v))
 
     if stack_name == 'ALL':
@@ -354,7 +372,7 @@ def generate_allhtml_report(output, distro_name, os_platforms):
     distro = load_distro(distro_name)
 
     main_repo = {}
-    arches = ['amd64', 'i386']
+    arches = ARCHES
     for os_platform in os_platforms:
         for arch in arches:
             try:
@@ -363,7 +381,7 @@ def generate_allhtml_report(output, distro_name, os_platforms):
                 main_repo["%s-%s"%(os_platform, arch)] = []
 
     fixed_repo = {}
-    arches = ['amd64', 'i386']
+    arches = ARCHES
     for os_platform in os_platforms:
         for arch in arches:
             try:

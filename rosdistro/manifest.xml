@@ -4,13 +4,10 @@
      rosdistro
 
   </description>
-  <author>Ken Conley</author>
+  <author>Ken Conley, Wim Meeussen</author>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/rosdistro</url>
-
-  <depend package="vcstools" />
-
   <export>
     <rosdoc config="rosdoc.yaml"/>    
   </export>

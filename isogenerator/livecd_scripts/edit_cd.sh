@@ -36,15 +36,26 @@ chmod a+wrx custom/root/start_edit.sh
 chmod a+wrx custom/root/end_edit.sh
 rm _____start_edit.sh _____end_edit.sh
 
-echo "You are now ready to begin editing the livecd"
-echo "You are chrooted to the live cd. You may edit"
-echo "freely, however, you must not quit by closing"
-echo "the outer terminal. You must exit by typing"
-echo "\"exit\", or control+D so that the cleanup"
-echo "script is run, and garbage files are not left"
-echo "on the system."
+if [ -e custom/root/on_install.sh ] ; then
+    echo "Already have on_install.sh"
+else
+    cat > custom/root/on_install.sh <<EOF
+#!/bin/bash
+echo "Script runs on install - cleans up system"
+EOF
+    chmod a+wrx custom/root/on_install.sh
+fi
 
 if [ "x$1" = "x" ] ; then
+    echo "You are now ready to begin editing the livecd"
+    echo "You are chrooted to the live cd. You may edit"
+    echo "freely, however, you must not quit by closing"
+    echo "the outer terminal. You must exit by typing"
+    echo "\"exit\", or control+D so that the cleanup"
+    echo "script is run, and garbage files are not left"
+    echo "on the system."
+    echo "Don't forget to add custom post-install cleanup"
+    echo "code to: /root/on_install.sh"
     chroot custom /bin/bash --init-file /root/start_edit.sh
 else
     cp $1 custom/root/edit_script.sh
@@ -55,6 +66,13 @@ fi
 
 echo "Cleaning up the livecd"
 chroot custom /bin/bash -c "source /root/end_edit.sh"
+chmod a+wrx custom/root/on_install.sh
 echo "exiting"
 
-
+if [ "x" == "x`grep success_command cd/preseed/ubuntu.seed`" ] ; then
+    echo "Add script"
+    echo -e "ubiquity\tubiquity/success_command string chroot /target /bin/bash /root/on_install.sh" >> cd/preseed/ubuntu.seed
+else
+    echo "already added script"
+fi
+echo "done"

@@ -185,6 +185,9 @@ def source_deb_main():
     success = []
 
     for os_platform in targets:
+        if os_platform == 'oneiric':
+            print "ignoring oneiric for now"
+            continue
         staging_dir = os.path.join(tempfile.gettempdir(), "rosdeb-%s"%(os_platform))
         if os.path.exists(staging_dir):
             shutil.rmtree(staging_dir)

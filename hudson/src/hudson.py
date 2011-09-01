@@ -70,6 +70,7 @@ DISABLE_JOB  = 'job/%(name)s/disable'
 COPY_JOB     = 'createItem?name=%(to_name)s&mode=copy&from=%(from_name)s'
 BUILD_JOB    = 'job/%(name)s/build'
 BUILD_WITH_PARAMS_JOB = 'job/%(name)s/buildWithParameters'
+INFO = 'api/json'
 
 SLAVE_STATUS    = 'computer/%(name)s/api/json'
 SLAVE_CONFIGURE = 'computer/%(name)s/configSubmit'
@@ -170,6 +171,29 @@ class Hudson(object):
         @return: list of job dictionaries
         """
         return eval(urllib2.urlopen(self.server + Q_INFO).read())['items']
+
+    def get_info(self):
+        """
+        Get information on this Hudson server.  This information
+        includes job list and view information.
+
+        @return: dictionary of information about Hudson server
+        @rtype: dict
+        """
+        try:
+            return json.loads(self.hudson_open(urllib2.Request(self.server + INFO, '')))
+        except:
+            raise HudsonException("could not retrieve JSON info")
+
+    def get_jobs(self):
+        """
+        Get list of jobs running.  Each job is a dictionary with
+        'name', 'url', and 'color' keys.
+
+        @return: list of jobs
+        @rtype: [ { str: str} ]
+        """
+        return self.get_info()['jobs']
 
     def copy_job(self, from_name, to_name):
         """

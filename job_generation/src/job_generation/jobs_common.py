@@ -32,7 +32,7 @@ mkdir -p \$INSTALL_DIR
 cd \$INSTALL_DIR
 
 wget  --no-check-certificate http://code.ros.org/svn/ros/installers/trunk/hudson/hudson_helper 
-chmod +x hudson_helper
+chmod +x  hudson_helper
 svn co https://code.ros.org/svn/ros/stacks/ros_release/trunk ros_release
 """
 
@@ -50,12 +50,26 @@ chmod +x $WORKSPACE/run_chroot.py
 cd $WORKSPACE &amp;&amp; $WORKSPACE/run_chroot.py --distro=UBUNTUDISTRO --arch=ARCH  --ramdisk --hdd-scratch=/home/rosbuild/install_dir --script=$WORKSPACE/script.sh --ssh-key-file=/home/rosbuild/rosbuild-ssh.tar
 """
 
+BOOTSTRAP_SCRIPT_OSX = """
+echo "_________________________________BEGIN SCRIPT______________________________________"
+source /Users/rosbuild/ros_bootstrap/setup.bash
+export ROS_PACKAGE_PATH=$WORKSPACE/ros_release:$ROS_PACKAGE_PATH
+
+wget  --no-check-certificate http://code.ros.org/svn/ros/installers/trunk/hudson/hudson_helper -O $WORKSPACE/hudson_helper
+chmod +x  $WORKSPACE/hudson_helper
+svn co https://code.ros.org/svn/ros/stacks/ros_release/trunk $WORKSPACE/ros_release
+"""
+
+SHUTDOWN_SCRIPT_OSX = """
+echo "_________________________________END SCRIPT_______________________________________"
+"""
+
 
 # the supported Ubuntu distro's for each ros distro
 ARCHES = ['amd64', 'i386']
 
 # ubuntu distro mapping to ros distro
-UBUNTU_DISTRO_MAP = targets.os_platform
+UBUNTU_DISTRO_MAP = targets.os_test_platform
 
 # Path to hudson server
 SERVER = 'http://build.willowgarage.com'
@@ -169,41 +183,12 @@ def stacks_to_debs(stack_list, rosdistro):
     return ' '.join([stack_to_deb(s, rosdistro) for s in stack_list])
 
 
-def get_tar(stack):
-    name = '%s-%s'%(stack.name, stack.version)
-    return 'https://code.ros.org/svn/release/download/stacks/%s/%s/%s.tar.bz2'%(stack.name, name, name)
-
-
-def stack_to_rosinstall(stack, branch):
-    vcs = stack.vcs_config
-    if not branch in ['devel', 'release', 'distro', 'release-tar']:
-        print 'Unsupported branch type %s for stack %s'%(branch, stack.name)
+def stack_to_rosinstall(stack_obj, branch):
+    try:
+        return yaml.dump(rosdistro.stack_to_rosinstall(stack_obj, branch, anonymous=True))
+    except rosdistro.DistroException, ex:
+        print str(ex)
         return ''
-
-    if branch == 'release-tar':
-        return "- tar: {uri: '%s', version: '%s-%s', local-name: '%s'}\n"%(get_tar(stack), stack.name, stack.version, stack.name)
-
-    if not vcs.type in ['svn', 'hg', 'git', 'bzr']:
-        print 'Unsupported vcs type %s for stack %s'%(vcs.type, stack.name)
-        return ''
-        
-    if vcs.type in ['svn', 'bzr']:
-        if branch == 'devel':
-            return "- %s: {uri: '%s', local-name: '%s'}\n"%(vcs.type, vcs.anon_dev, stack.name)
-        elif branch == 'distro':
-            return "- %s: {uri: '%s', local-name: '%s'}\n"%(vcs.type, vcs.anon_distro_tag, stack.name)            
-
-        elif branch == 'release':
-            return "- %s: {uri: '%s', local-name: '%s'}\n"%(vcs.type, vcs.anon_release_tag, stack.name)  
-
-    elif vcs.type in ['hg', 'git']:
-        if branch == 'devel':
-            return "- %s: {uri: '%s', version: '%s', local-name: '%s'}\n"%(vcs.type, vcs.anon_repo_uri, vcs.dev_branch, stack.name)
-        elif branch == 'distro':
-            return "- %s: {uri: '%s', version: '%s', local-name: '%s'}\n"%(vcs.type, vcs.anon_repo_uri, vcs.distro_tag, stack.name)
-        elif branch == 'release':
-            return "- %s: {uri: '%s', version: '%s', local-name: '%s'}\n"%(vcs.type, vcs.anon_repo_uri, vcs.release_tag, stack.name)
-
 
 
 def stacks_to_rosinstall(stack_list, stack_map, branch):
@@ -232,27 +217,38 @@ def get_depends_one(stack):
         return []
 
 def get_depends_all(distro_obj, stack_name, depends_all):
+    start_depth = len(depends_all)
+    print start_depth, " depends all ", stack_name
     if not stack_name in depends_all:
         depends_all.append(stack_name)
-        for d in get_depends_one(distro_obj.stacks[stack_name]):
-            get_depends_all(distro_obj, d, depends_all)
-
+        try:
+            for d in get_depends_one(distro_obj.stacks[stack_name]):
+                get_depends_all(distro_obj, d, depends_all)
+        except KeyError, ex:
+            print "Exception when processing %s.  Key %s is not in distro_obj.stacks: %s"%(stack_name, ex, ", ".join([s for s in distro_obj.stacks]))
+            print "depends_all is %s"%(', '.join(depends_all))
+            raise ex
+    print start_depth, " DEPENDS_ALL ", stack_name, " end depth ", len(depends_all)
 
 def get_environment():
-    env = {}
-    env['WORKSPACE'] = os.environ['WORKSPACE']
-    env['INSTALL_DIR'] = os.environ['INSTALL_DIR']
-    env['HOME'] = '/home/rosbuild'#os.environ['INSTALL_DIR']
-    env['JOB_NAME'] = os.environ['JOB_NAME']
-    env['BUILD_NUMBER'] = os.environ['BUILD_NUMBER']
-    env['ROS_TEST_RESULTS_DIR'] = os.environ['ROS_TEST_RESULTS_DIR']
-    env['PWD'] = os.environ['WORKSPACE']
-    return env
+    my_env = os.environ
+    my_env['WORKSPACE'] = os.getenv('WORKSPACE', '')
+    my_env['INSTALL_DIR'] = os.getenv('INSTALL_DIR', '')
+    #my_env['HOME'] = os.getenv('HOME', '')
+    my_env['HOME'] = os.path.expanduser('~')
+    my_env['JOB_NAME'] = os.getenv('JOB_NAME', '')
+    my_env['BUILD_NUMBER'] = os.getenv('BUILD_NUMBER', '')
+    my_env['ROS_TEST_RESULTS_DIR'] = os.getenv('ROS_TEST_RESULTS_DIR', my_env['WORKSPACE']+'/test_results')
+    my_env['PWD'] = os.getenv('WORKSPACE', '')
+    return my_env
 
 
 def get_options(required, optional):
     parser = optparse.OptionParser()
     ops = required + optional
+    if 'os' in ops:
+        parser.add_option('--os', dest = 'os', default='ubuntu', action='store',
+                          help='OS name')
     if 'rosdistro' in ops:
         parser.add_option('--rosdistro', dest = 'rosdistro', default=None, action='store',
                           help='Ros distro name')
@@ -424,12 +420,13 @@ def generate_email(message, env):
     write_file(env['WORKSPACE']+'/build_output/buildfailures-with-context.txt', '')
     
 
-def call(command, env, message='', ignore_fail=False):
+
+def call(command, env=None, message='', ignore_fail=False):
     res = ''
     err = ''
     try:
         print message+'\nExecuting command "%s"'%command
-        helper = subprocess.Popen(command.split(' '), stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env)
+        helper = subprocess.Popen(command.split(' '), stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=True, env=env)
         res, err = helper.communicate()
         print str(res)
         print str(err)
@@ -445,11 +442,12 @@ def call(command, env, message='', ignore_fail=False):
             message += "\n=========================================\n"
             message += str(err)
             message += "\n=========================================\n"
-            message += "ROS_PACKAGE_PATH = %s\n"%env['ROS_PACKAGE_PATH']
-            message += "ROS_ROOT = %s\n"%env['ROS_ROOT']
-            message += "PYTHONPATH = %s\n"%env['PYTHONPATH']
-            message += "\n=========================================\n"
-            generate_email(message, env)
+            if env:
+                message += "ROS_PACKAGE_PATH = %s\n"%env['ROS_PACKAGE_PATH']
+                message += "ROS_ROOT = %s\n"%env['ROS_ROOT']
+                message += "PYTHONPATH = %s\n"%env['PYTHONPATH']
+                message += "\n=========================================\n"
+                generate_email(message, env)
             raise Exception
 
         

@@ -58,7 +58,7 @@ def get_Packages(repo_url, os_platform, arch):
         try:
             _Packages_cache[packages_url] = retval = urllib2.urlopen(packages_url).read()
         except urllib2.HTTPError:
-            raise BadRepo(repo_url)            
+            raise BadRepo("[%s]: %s"%(repo_url, packages_url))
     return retval
     
 def parse_Packages(packagelist):

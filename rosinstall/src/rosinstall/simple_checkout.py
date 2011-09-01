@@ -1,7 +1,6 @@
-#!/usr/bin/env python
 # Software License Agreement (BSD License)
 #
-# Copyright (c) 2009, Willow Garage, Inc.
+# Copyright (c) 2011, Willow Garage, Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -30,26 +29,24 @@
 # LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
-import roslib; roslib.load_manifest('vcstools')
 
-import os
-import sys
-import unittest
-import subprocess
+from __future__ import print_function
 
-import roslib
+import vcstools
 
-class LegacyVcsTest(unittest.TestCase):
+def checkout_rosinstall(rosinstall_data, verbose=False):
+    for frag in rosinstall_data:
+        for vcs_type, data in frag.items(): 
+            for reqd in ['local-name', 'uri']:
+                if not reqd in data:
+                    parser.error('invalid rosinstall snippet, missing key [%s]'%(reqd))
+                path = data['local-name']
+                uri = data['uri']
+                version = data.get('version', '')
 
-    def test_svn_url_exists(self):
-        from vcstools import svn_url_exists
-        self.assert_(svn_url_exists('https://code.ros.org/svn/ros/'))
-        self.assert_(svn_url_exists('https://code.ros.org/svn/ros/stacks/ros/trunk/CMakeLists.txt'))
+        if verbose:
+            print(vcs_type, path, uri, version)
+    
+        vcs_client = vcstools.VCSClient(vcs_type, path)
+        vcs_client.checkout(uri, version)
 
-        od = roslib.os_detect.OSDetect()
-        if od.get_version() != "9.04":
-            self.failIf(svn_url_exists('https://code.ros.org/svn/ros/stacks/ros/trunk/FAKEFILE.txt'))
-
-if __name__ == '__main__':
-    from ros import rostest
-    rostest.unitrun('vcstools', 'test_vcs_legacy', LegacyVcsTest, coverage_packages=['vcstools.legacy_vcs'])  

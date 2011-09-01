@@ -6,7 +6,7 @@ HUDSON_PRERELEASE_CONFIG = """<?xml version='1.0' encoding='UTF-8'?>
 <project> 
   <description>Pre-release build of STACKNAME for ROSDISTRO on UBUNTUDISTRO, ARCH</description> 
  <logRotator> 
-    <daysToKeep>5</daysToKeep> 
+    <daysToKeep>180</daysToKeep> 
     <numToKeep>-1</numToKeep> 
   </logRotator> 
   <keepDependencies>false</keepDependencies> 
@@ -76,6 +76,8 @@ def prerelease_job_name(rosdistro, stack_list, ubuntu, arch):
 
 
 def create_prerelease_configs(rosdistro, stack_list, email, repeat, source_only, arches=None, ubuntudistros=None):
+    stack_list.sort()
+
     if not arches:
         arches = ARCHES
     if not ubuntudistros:
@@ -107,7 +109,7 @@ def create_prerelease_configs(rosdistro, stack_list, email, repeat, source_only,
     
 
 def main():
-    (options, args) = get_options(['stack', 'rosdistro', 'email'], ['repeat', 'source-only', 'arch', 'ubuntu'])
+    (options, args) = get_options(['stack', 'rosdistro', 'email'], ['repeat', 'source-only', 'arch', 'ubuntu', 'delete'])
     if not options:
         return -1
 
@@ -130,9 +132,12 @@ def main():
 
         # send prerelease tests to Hudson
         print 'Creating pre-release Hudson jobs:'
-        schedule_jobs(prerelease_configs, start=True, hudson_obj=hudson_instance)
-        print 'You will receive %d emails on %s, one for each job'%(len(prerelease_configs), options.email)
-        print 'You can follow the progress of these jobs on <%s/view/pre-release>'%(SERVER)
+        schedule_jobs(prerelease_configs, start=True, hudson_obj=hudson_instance, delete=options.delete)
+        if options.delete:
+            print 'Jobs have been deleted. You can now start new jobs'
+        else:
+            print 'You will receive %d emails on %s, one for each job'%(len(prerelease_configs), options.email)
+            print 'You can follow the progress of these jobs on <%s/view/pre-release>'%(SERVER)
 
     # catch all exceptions
     except Exception, e:

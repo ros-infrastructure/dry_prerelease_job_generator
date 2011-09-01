@@ -1,15 +1,12 @@
 .PHONY: all setup clean_dist distro clean install dsc source_deb upload
 
-VERSION='0.5.16'
-
+VERSION='0.5.21'
 
 
 all:
 	echo "noop for debbuild"
 
 setup:
-	mkdir -p src/rosinstall/vcs
-	svn export --force $(shell rospack find vcstools)/src/vcstools src/rosinstall/vcs
 	echo "confirming version numbers are all consistent"
 	grep ${VERSION} scripts/rosinstall
 	grep ${VERSION} setup.py

@@ -43,10 +43,10 @@ if __name__ == '__main__':
 import roslib.manifest
 import roslib.stack_manifest
 import roslib.packages
-import roslib.stacks
-import vcstools.vcs_abstraction
+import vcstools
 
 import rosdeb
+import rosdep
 from rosdep.core import RosdepLookupPackage, YamlCache
 
 IMPLICIT_DEPS = ['libc6','build-essential','cmake','python-yaml','subversion']
@@ -81,6 +81,7 @@ def checkout_tag_to_tmp(name, distro_stack):
     directory 'name'. temporary directory will be a subdirectory of
     OS-provided temporary space.
     @rtype: str
+    @raise Exception: if checkout cannot be done 
     """
 
     for key in ['svn', 'git', 'hz', 'bzr']:
@@ -105,15 +106,13 @@ def checkout_tag_to_tmp(name, distro_stack):
     tmp_dir = tempfile.mkdtemp()
     dest = os.path.join(tmp_dir, name)
     print 'Checking out a fresh copy of %s from %s to %s...'%(name, uri, dest)
-    vcs_client = vcstools.vcs_abstraction.VCSClient(key, dest)
+    vcs_client = vcstools.VcsClient(key, dest)
     vcs_client.checkout(uri, version)
     return tmp_dir
 
 def checkout_dev_to_tmp(name, distro_stack):
     """
     Checkout an VCS-based 'dev' code tree to the tmp dir.
-    
-    Utility routine -- need to replace with vcstools
     
     @return: temporary directory that contains checkout of SVN tree in
     directory 'name'. temporary directory will be a subdirectory of
@@ -142,7 +141,7 @@ def checkout_dev_to_tmp(name, distro_stack):
     tmp_dir = tempfile.mkdtemp()
     dest = os.path.join(tmp_dir, name)
     print 'Checking out a fresh copy of %s from %s to %s...'%(name, uri, dest)
-    vcs_client = vcstools.vcs_abstraction.VCSClient(key, dest)
+    vcs_client = vcstools.VcsClient(key, dest)
     vcs_client.checkout(uri, version)
     return tmp_dir
 
@@ -246,6 +245,7 @@ def stack_rosdeps(stack_name, stack_dir, platform):
     
     @return: list of debian package deps
     @rtype: [str]
+    @raise Exception: if stack rosdeps cannot be fully resolved
     """
     
     # - implicit deps of all ROS packages
@@ -256,7 +256,15 @@ def stack_rosdeps(stack_name, stack_dir, platform):
     # reverse lookup version number, which is the key for rosdep
     os_version = [k for k, v in rosdeb.get_ubuntu_map().iteritems() if v == platform][0]
     
-    yc = YamlCache(os_name, os_version)
+    try:
+        # REP 111 API
+        import rosdep.installers
+        installers = {'apt': rosdep.installers.AptInstaller, 'source': rosdep.installers.SourceInstaller}
+        os_version = platform
+        yc = YamlCache(os_name, os_version, installers)
+
+    except ImportError:
+        yc = YamlCache(os_name, os_version)
 
     package_manifests = package_manifests_of(stack_dir)
     for p, m_file in package_manifests:
@@ -268,9 +276,20 @@ def stack_rosdeps(stack_name, stack_dir, platform):
         rdlp = RosdepLookupPackage(os_name, os_version, p, yc)
         for r in rosdeps:
             value = rdlp.lookup_rosdep(r)
-            if '\n' in value:
-                raise Exception("cannot generate rosdeps for stack [%s] on platform [%s]:\n\trosdep [%s] has a script binding"%(stack_name, os_version, r))
-            deb_deps.extend([x for x in value.split(' ') if x.strip()])
+            if value is False:
+                raise Exception("cannot generate rosdeps for stack [%s] on platform [%s]:\n\trosdep lookup of [%s] failed"%(stack_name, os_version, r))                
+            if type(value) == dict:
+                if 'apt' in value:
+                    packages = value['apt']['packages']
+                    if type(packages) == list:
+                        deb_deps.extend(packages)
+                    else:
+                        deb_deps.append(packages)
+            else:
+                if '\n' in value:
+                    raise Exception("cannot generate rosdeps for stack [%s] on platform [%s]:\n\trosdep [%s] has a script binding"%(stack_name, os_version, r))
+
+                deb_deps.extend([x for x in value.split(' ') if x.strip()])
 
     return list(set(deb_deps))
         

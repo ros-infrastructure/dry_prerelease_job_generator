@@ -6,7 +6,7 @@ HUDSON_POST_RELEASE_CONFIG = """<?xml version='1.0' encoding='UTF-8'?>
 <project> 
   <description>Build of STACKNAME post-release for ROSDISTRO on UBUNTUDISTRO, ARCH</description> 
  <logRotator> 
-    <daysToKeep>21</daysToKeep> 
+    <daysToKeep>180</daysToKeep> 
     <numToKeep>-1</numToKeep> 
   </logRotator> 
   <keepDependencies>false</keepDependencies> 
@@ -106,10 +106,10 @@ def create_post_release_configs(rosdistro, stack):
                 raise NotImplementedError("vcs type %s not implemented as hudson scm manager"%stack.vcs_config.type)
 
             
-            if stack.vcs_config.type in ['svn', 'bzr']:
+            if stack.vcs_config.type in ['svn']:
                 hudson_vcs = hudson_vcs.replace('STACKNAME', stack.name)
                 hudson_vcs = hudson_vcs.replace('STACKURI', stack.vcs_config.anon_distro_tag)
-            elif stack.vcs_config.type in ['git', 'hg']:
+            elif stack.vcs_config.type in ['git', 'hg', 'bzr']:
                 hudson_vcs = hudson_vcs.replace('STACKBRANCH', stack.vcs_config.distro_tag)
                 hudson_vcs = hudson_vcs.replace('STACKURI', stack.vcs_config.anon_repo_uri)
                 hudson_vcs = hudson_vcs.replace('STACKNAME', stack.name)
