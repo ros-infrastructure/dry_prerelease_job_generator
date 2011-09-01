@@ -91,6 +91,12 @@ class BzrClientTest(BzrClientTestSetups):
         self.assertEqual(client.get_url(), self.readonly_url)
         self.assertEqual(client.get_version(), self.readonly_version)
 
+    def test_get_url_nonexistant(self):
+        from vcstools.bzr import BzrClient
+        local_path = "/tmp/dummy"
+        client = BzrClient(local_path)
+        self.assertEqual(client.get_url(), None)
+
     def test_get_type_name(self):
         from vcstools.bzr import BzrClient
         local_path = "/tmp/dummy"

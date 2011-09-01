@@ -65,6 +65,12 @@ class TarClientTest(unittest.TestCase):
         self.assertEqual(client.get_url(), readonly_url)
         #self.assertEqual(client.get_version(), readonly_version)
 
+    def test_get_url_nonexistant(self):
+        from vcstools.tar import TarClient
+        local_path = "/tmp/dummy"
+        client = TarClient(local_path)
+        self.assertEqual(client.get_url(), None)
+
     def test_get_type_name(self):
         from vcstools.tar import TarClient
         local_path = "/tmp/dummy"

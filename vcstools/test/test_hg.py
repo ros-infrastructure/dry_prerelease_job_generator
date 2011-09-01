@@ -93,6 +93,12 @@ class HGClientTest(HGClientTestSetups):
         self.assertEqual(client.get_url(), self.readonly_url)
         self.assertEqual(client.get_version(), self.readonly_version)
 
+    def test_get_url_nonexistant(self):
+        from vcstools.hg import HgClient
+        local_path = "/tmp/dummy"
+        client = HgClient(local_path)
+        self.assertEqual(client.get_url(), None)
+
     def test_get_type_name(self):
         from vcstools.hg import HgClient
         local_path = "/tmp/dummy"
@@ -214,4 +220,7 @@ class HGDiffStatClientTest(HGClientTestSetups):
         self.assertEquals('M modified-fs.txt\nM modified.txt\nA added.txt\nR deleted.txt\n! deleted-fs.txt\n? added-fs.txt\n', client.get_status(untracked=True))
 
 
+    def test_hg_diff_path_change_None(self):
+        from vcstools.hg import _hg_diff_path_change
+        self.assertEqual(_hg_diff_path_change(None, '/tmp/dummy'), None)
 

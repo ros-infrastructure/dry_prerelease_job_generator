@@ -101,6 +101,12 @@ class SvnClientTest(SvnClientTestSetups):
         client = SvnClient(local_path)
         self.assertEqual(client.get_vcs_type_name(), 'svn')
 
+    def test_get_url_nonexistant(self):
+        from vcstools.svn import SvnClient
+        local_path = "/tmp/dummy"
+        client = SvnClient(local_path)
+        self.assertEqual(client.get_url(), None)
+
     def test_checkout(self):
         from vcstools.svn import SvnClient
         directory = tempfile.mkdtemp()

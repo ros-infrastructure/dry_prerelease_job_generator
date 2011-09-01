@@ -101,6 +101,12 @@ class GitClientTest(GitClientTestSetups):
         self.assertEqual(gitc.get_version(self.readonly_version_init[0:6]), self.readonly_version_init)
         self.assertEqual(gitc.get_version("test_tag"), self.readonly_version_init)
 
+    def test_get_url_nonexistant(self):
+        from vcstools.git import GitClient
+        local_path = "/tmp/dummy"
+        client = GitClient(local_path)
+        self.assertEqual(client.get_url(), None)
+
     def test_get_type_name(self):
         from vcstools.git import GitClient
         local_path = "/tmp/dummy"
