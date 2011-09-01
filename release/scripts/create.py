@@ -54,9 +54,7 @@ import hudson
 import roslib.packages
 import roslib.stacks
 
-from vcstools.hg import HGClient
-from vcstools.git import GITClient
-from vcstools.bzr import BZRClient
+from vcstools import VcsClient
 
 from release import ReleaseException, update_rosdistro_yaml, make_dist, \
     compute_stack_depends, get_stack_version, \
@@ -90,6 +88,14 @@ def yes_or_no():
         if input in ['y', 'n']:
             break
     return input == 'y'
+
+def prompt(msg):
+    while True:
+        prompt = raw_input("Would you like to tag %s as %s in %s, [y/n]"%(config.dev_branch, tag_name, from_url))
+        if prompt == 'y':
+            return True
+        elif prompt == 'n':
+            return False
 
 #NOTE: ROS 1.2 does not have the cwd arg
 def ask_and_call(cmds, cwd=None):
@@ -236,6 +242,13 @@ def copy_to_server(name, version, tarball, control, control_only=False):
     else:
         check_call(['svn', 'ci', '-m', "new release %s-%s"%(name, version), tarball_name, control_f], cwd=subdir)
 
+def checkout_distro_stack(distro_stack, from_url, spec):
+    vcs_type = distro_stack.vcs_config.type
+    tempdir = tempfile.mkdtemp()
+    temp_repo = os.path.join(tempdir, distro_stack.name)
+    client = VcsClient(vcs_type, temp_repo)
+    client.checkout(from_url, config.dev_branch)
+    return temp_repo
 
 def tag_release(distro_stack):
     if 'svn' in distro_stack._rules:
@@ -250,9 +263,7 @@ def tag_release(distro_stack):
         raise Exception("unsupported VCS")
     
 def tag_subversion(distro_stack):
-    urls = []
     cmds = []
-
     config = distro_stack.vcs_config
     for tag_url in [config.release_tag, config.distro_tag]:
         from_url = config.dev
@@ -264,151 +275,58 @@ def tag_subversion(distro_stack):
         cmds.append(['svn', 'cp', '--parents', '-m', 'Tagging %s new release'%(release_name), from_url, tag_url])
     if not ask_and_call(cmds):    
         print "create_release will not create this tag in subversion"
+        return []
     else:
-        urls.append(tag_url)
-    return urls
+        return [tag_url]
     
 def tag_mercurial(distro_stack):
-    urls = []
-    cmds = []
-
     config = distro_stack.vcs_config
-
     for tag_name in [config.release_tag, config.distro_tag]:
         from_url = config.repo_uri
-
-        make_tag = False
-        while True:
-            prompt = raw_input("Would you like to tag %s as %s in %s, [y/n]"%(config.dev_branch, tag_name, from_url))
-            if prompt == 'y':
-                make_tag = True
-                break
-            elif prompt == 'n':
-                break
-            
-        if make_tag == False:
-            continue
-
-        tempdir = tempfile.mkdtemp()
-        temp_repo = os.path.join(tempdir, distro_stack.name)
-        hgc = HGClient(temp_repo)
-        hgc.checkout(from_url, config.dev_branch)
-
-        subprocess.check_call(['hg', 'tag', '-f', tag_name], cwd=temp_repo)
-        subprocess.check_call(['hg', 'push'], cwd=temp_repo)
-    #if not ask_and_call(cmds):    
-    #    print "create_release will not create this tag in subversion"
-    #else:
-    urls.append(tag_name)
-    return urls
+        if prompt("Would you like to tag %s as %s in %s, [y/n]"%(config.dev_branch, tag_name, from_url)):
+            temp_repo = checkout_distro_stack(distro_stack, from_url, config.dev_branch)
+            subprocess.check_call(['hg', 'tag', '-f', tag_name], cwd=temp_repo)
+            subprocess.check_call(['hg', 'push'], cwd=temp_repo)
+    return [tag_name]
 
 def tag_bzr(distro_stack):
-    urls = []
-    cmds = []
-
     config = distro_stack.vcs_config
-
     from_url = config.repo_uri
 
     # First create a release tag in the bzr repository.
-    make_tag = False
-    while True:
-        prompt = raw_input("Would you like to tag %s as %s in %s, [y/n]"%(config.dev_branch, config.release_tag, from_url))
-        if prompt == 'y':
-            make_tag = True
-            break
-        elif prompt == 'n':
-            break
-
-    if make_tag == True:
-        tempdir = tempfile.mkdtemp()
-        temp_repo = os.path.join(tempdir, distro_stack.name)
-        bzr_client = BZRClient(temp_repo)
-        bzr_client.checkout(from_url, config.dev_branch)
-
-        #bzr tag -d lp:sr-ros-interface --force tes
+    if prompt("Would you like to tag %s as %s in %s, [y/n]"%(config.dev_branch, config.release_tag, from_url)):
+        temp_repo = checkout_distro_stack(distro_stack, from_url, config.dev_branch)
         #directly create and push the tag to the repo
         subprocess.check_call(['bzr', 'tag', '-d', config.dev_branch,'--force',config.release_tag], cwd=temp_repo)
 
     # Now create a distro branch.
     # In bzr a branch is a much better solution since
     # branches can be force-updated by fetch.
-    make_tag = False
-    while True:
-        branch_name = config.release_tag
-        prompt = raw_input("Would you like to create the branch %s as %s in %s, [y/n]"%(config.dev_branch, branch_name, from_url))
-        if prompt == 'y':
-            make_tag = True
-            break
-        elif prompt == 'n':
-            break
-
-    if make_tag == True:
-        tempdir = tempfile.mkdtemp()
-        temp_repo = os.path.join(tempdir, distro_stack.name)
-        bzr_client = BZRClient(temp_repo)
-        bzr_client.checkout(from_url, config.dev_branch)
-
-        #subprocess.check_call(['bzr', 'branch', '-f', branch_name, config.dev_branch], cwd=temp_repo)
+    branch_name = config.release_tag
+    if prompt("Would you like to create the branch %s as %s in %s, [y/n]"%(config.dev_branch, branch_name, from_url)):
+        temp_repo = checkout_distro_stack(distro_stack, from_url, config.dev_branch)
         subprocess.check_call(['bzr', 'push', '--create-prefix', from_url+"/"+branch_name], cwd=temp_repo)
-
-    urls.append(config.distro_tag)
-    return urls
+    return [config.distro_tag]
 
 def tag_git(distro_stack):
-    urls = []
-    cmds = []
-
     config = distro_stack.vcs_config
-
     from_url = config.repo_uri
 
     # First create a release tag in the git repository.
-    make_tag = False
-    while True:
-        prompt = raw_input("Would you like to tag %s as %s in %s, [y/n]"%(config.dev_branch, config.release_tag, from_url))
-        if prompt == 'y':
-            make_tag = True
-            break
-        elif prompt == 'n':
-            break
-        
-    if make_tag == True:
-        tempdir = tempfile.mkdtemp()
-        temp_repo = os.path.join(tempdir, distro_stack.name)
-        gc = GITClient(temp_repo)
-        gc.checkout(from_url, config.dev_branch)
-
+    if prompt("Would you like to tag %s as %s in %s, [y/n]"%(config.dev_branch, config.release_tag, from_url)):
+        temp_repo = checkout_distro_stack(distro_stack, from_url, config.dev_branch)
         subprocess.check_call(['git', 'tag', '-f', config.release_tag], cwd=temp_repo)
         subprocess.check_call(['git', 'push', '--tags'], cwd=temp_repo)
 
     # Now create a distro branch. In git tags are not overwritten
     # during updates, so a branch is a much better solution since
     # branches can be force-updated by fetch.
-    make_tag = False
-    while True:
-        branch_name = config.distro_tag
-        prompt = raw_input("Would you like to create the branch %s as %s in %s, [y/n]"%(config.dev_branch, branch_name, from_url))
-        if prompt == 'y':
-            make_tag = True
-            break
-        elif prompt == 'n':
-            break
-        
-    if make_tag == True:
-        tempdir = tempfile.mkdtemp()
-        temp_repo = os.path.join(tempdir, distro_stack.name)
-        gc = GITClient(temp_repo)
-        gc.checkout(from_url, config.dev_branch)
-
+    branch_name = config.distro_tag
+    if prompt("Would you like to create the branch %s as %s in %s, [y/n]"%(config.dev_branch, branch_name, from_url)):
+        temp_repo = checkout_distro_stack(distro_stack, from_url, config.dev_branch)
         subprocess.check_call(['git', 'branch', '-f', branch_name, config.dev_branch], cwd=temp_repo)
         subprocess.check_call(['git', 'push', from_url, branch_name], cwd=temp_repo)
-    
-    #if not ask_and_call(cmds):    
-    #    print "create_release will not create this tag in subversion"
-    #else:
-    urls.append(config.distro_tag)
-    return urls
+    return [config.distro_tag]
 
 def print_bold(m):
     print '\033[1m%s\033[0m'%m    
@@ -506,13 +424,13 @@ def main():
         # ask if stack got tested
         print 'Did you run prerelease tests on your stack?'
         if not yes_or_no():
-            print 'Before releasing a stack, you should make sure your stack works well,'
-            print ' and that the new release does not break any already released stacks'
-            print ' that depend on your stack.'
-            print 'Willow Garage offers a pre-release test set that tests your stack and all'
-            print ' released stacks that depend on your stack, on all distributions and architectures'
-            print ' supported by Willow Garage. '
-            print 'You can trigger pre-release builds for your stack on <http://code.ros.org/prerelease/>'
+            print """Before releasing a stack, you should make sure your stack works well,
+ and that the new release does not break any already released stacks
+ that depend on your stack.
+Willow Garage offers a pre-release test set that tests your stack and all
+ released stacks that depend on your stack, on all distributions and architectures
+ supported by Willow Garage. 
+You can trigger pre-release builds for your stack on <http://code.ros.org/prerelease/>"""
             return
 
         # make sure distro_file is up-to-date
@@ -531,7 +449,6 @@ def main():
 
         distro_stack.update_version(version)
         email = get_email()            
-
         
         # create the tarball
         tarball, control = make_dist_of_dir(tmp_dir, name, version, distro_stack)
