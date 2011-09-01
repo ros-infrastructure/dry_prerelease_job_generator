@@ -38,6 +38,7 @@ import unittest
 import subprocess
 import tempfile
 import shutil
+import re
 
 class SvnClientTestSetups(unittest.TestCase):
 
@@ -169,13 +170,31 @@ class SvnDiffStatClientTest(SvnClientTestSetups):
         f.close()
         subprocess.check_call(["svn", "add", "added.txt"], cwd=self.readonly_path)
         
+    def assertEqualDiffs(self, expected, actual):
+        "True if actual is similar enough to expected, minus svn properties"
+        filtered = ''
+        # A block starts with \nIndex, and the actual diff goes up to the first line starting with [a-zA-Z], e.g. "Properties changed:"
+        for block in actual.split("\nIndex: "):
+            if filtered != '':
+                # restore "Index: " removed by split()
+                block = "Index: " + block
+            newblock = ''
+            for line in block.splitlines():
+                if re.search("[=+-\\@ ].*", line) == None:
+                    break
+                else:
+                    newblock += line + '\n'
+            filtered += newblock
+        self.assertEquals(expected, filtered, "Assert failed, expected something like '"+ expected+"'\n but got:\n'" + filtered +"'\n, original:\n''" + actual)
+            
+        
     def test_diff(self):
         from vcstools.svn import SvnClient
         client = SvnClient(self.readonly_path)
         self.assertTrue(client.path_exists())
         self.assertTrue(client.detect_presence())
 
-        self.assertEquals('Index: added.txt\n===================================================================\n--- added.txt\t(revision 0)\n+++ added.txt\t(revision 0)\n@@ -0,0 +1 @@\n+0123456789abcdef\n\\ No newline at end of file\nIndex: modified-fs.txt\n===================================================================\n--- modified-fs.txt\t(revision 3)\n+++ modified-fs.txt\t(working copy)\n@@ -0,0 +1 @@\n+0123456789abcdef\n\\ No newline at end of file\nIndex: modified.txt\n===================================================================\n--- modified.txt\t(revision 3)\n+++ modified.txt\t(working copy)\n@@ -0,0 +1 @@\n+0123456789abcdef\n\\ No newline at end of file\n',
+        self.assertEqualDiffs('Index: added.txt\n===================================================================\n--- added.txt\t(revision 0)\n+++ added.txt\t(revision 0)\n@@ -0,0 +1 @@\n+0123456789abcdef\n\\ No newline at end of file\nIndex: modified-fs.txt\n===================================================================\n--- modified-fs.txt\t(revision 3)\n+++ modified-fs.txt\t(working copy)\n@@ -0,0 +1 @@\n+0123456789abcdef\n\\ No newline at end of file\nIndex: modified.txt\n===================================================================\n--- modified.txt\t(revision 3)\n+++ modified.txt\t(working copy)\n@@ -0,0 +1 @@\n+0123456789abcdef\n\\ No newline at end of file\n',
                           client.get_diff())
 
 
@@ -188,7 +207,7 @@ class SvnDiffStatClientTest(SvnClientTestSetups):
         print 'Index: readonly/added.txt\n===================================================================\n--- readonly/added.txt\t(revision 0)\n+++ readonly/added.txt\t(revision 0)\n@@ -0,0 +1 @@\n+0123456789abcdef\n\\ No newline at end of file\nIndex: readonly/modified-fs.txt\n===================================================================\n--- readonly/modified-fs.txt\t(revision 3)\n+++ readonly/modified-fs.txt\t(working copy)\n@@ -0,0 +1 @@\n+0123456789abcdef\n\\ No newline at end of file\nIndex: readonly/modified.txt\n===================================================================\n--- readonly/modified.txt\t(revision 3)\n+++ readonly/modified.txt\t(working copy)\n@@ -0,0 +1 @@\n+0123456789abcdef\n\\ No newline at end of file\n'
         print client.get_diff(basepath=os.path.dirname(self.readonly_path))
         
-        self.assertEquals('Index: readonly/added.txt\n===================================================================\n--- readonly/added.txt\t(revision 0)\n+++ readonly/added.txt\t(revision 0)\n@@ -0,0 +1 @@\n+0123456789abcdef\n\\ No newline at end of file\nIndex: readonly/modified-fs.txt\n===================================================================\n--- readonly/modified-fs.txt\t(revision 3)\n+++ readonly/modified-fs.txt\t(working copy)\n@@ -0,0 +1 @@\n+0123456789abcdef\n\\ No newline at end of file\nIndex: readonly/modified.txt\n===================================================================\n--- readonly/modified.txt\t(revision 3)\n+++ readonly/modified.txt\t(working copy)\n@@ -0,0 +1 @@\n+0123456789abcdef\n\\ No newline at end of file\n', client.get_diff(basepath=os.path.dirname(self.readonly_path)))
+        self.assertEqualDiffs('Index: readonly/added.txt\n===================================================================\n--- readonly/added.txt\t(revision 0)\n+++ readonly/added.txt\t(revision 0)\n@@ -0,0 +1 @@\n+0123456789abcdef\n\\ No newline at end of file\nIndex: readonly/modified-fs.txt\n===================================================================\n--- readonly/modified-fs.txt\t(revision 3)\n+++ readonly/modified-fs.txt\t(working copy)\n@@ -0,0 +1 @@\n+0123456789abcdef\n\\ No newline at end of file\nIndex: readonly/modified.txt\n===================================================================\n--- readonly/modified.txt\t(revision 3)\n+++ readonly/modified.txt\t(working copy)\n@@ -0,0 +1 @@\n+0123456789abcdef\n\\ No newline at end of file\n', client.get_diff(basepath=os.path.dirname(self.readonly_path)))
 
     def test_status(self):
         from vcstools.svn import SvnClient
