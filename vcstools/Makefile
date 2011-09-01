@@ -47,5 +47,4 @@ testsetup:
 	echo "running tests"
 
 test: testsetup
-	export PYTHONPATH=src:$PYTHONPATH
-	nosetests test/*.py --with-coverage --cover-package=vcstools
+	nosetests --with-coverage --cover-package=vcstools
