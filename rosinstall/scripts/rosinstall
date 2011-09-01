@@ -16,20 +16,17 @@ subsequent update:  rosinstall ~/ros
 
 """
 
-from __future__ import with_statement
-
 import os
 import subprocess
 import sys
-import xml.dom.minidom #import parse
 from optparse import OptionParser
 import yaml
 import shutil
 import datetime
 
 import rosinstall.helpers
-from rosinstall.vcs import svn, bzr, git
-from rosinstall.vcs import vcs_abstraction
+
+from vcstools import VcsClient
 
 def usage():
   print __doc__ % vars()
@@ -92,10 +89,8 @@ class OtherConfigElement(ConfigElement):
 
   def get_ros_path(self):
     if rosinstall.helpers.is_path_ros(self.path):
-      #print "other config element is a ros path", self.path
       return self.path
     else:
-      #print "other config element is not a ros path", self.path
       return None
 
   def get_versioned_yaml(self):
@@ -115,8 +110,6 @@ class VCSConfigElement(ConfigElement):
     mode = arg_mode
     print "Installing %s %s to %s"%(self.uri, self.version, self.path)
 
-
-
     # Directory exists see what we need to do
     if self.vcsc.path_exists():
       error_message = None
@@ -133,7 +126,6 @@ class VCSConfigElement(ConfigElement):
       if robust and error_message:
           raise ROSInstallException(error_message)
 
-
       # prompt the user based on the error code
       if error_message:
         if arg_mode == 'prompt':
@@ -149,7 +141,6 @@ class VCSConfigElement(ConfigElement):
         elif mode == 'skip':
           return
       
-
     # If the directory does not exist checkout
     if not self.vcsc.path_exists():
       if not self.vcsc.checkout(self.uri, self.version):
@@ -179,8 +170,7 @@ class AVCSConfigElement(VCSConfigElement):
     self.path = path
     self.uri = uri
     self.version = version
-    self.vcsc = vcs_abstraction.VCSClient(self.type, self.path)
-
+    self.vcsc = VcsClient(self.type, self.path)
 
 
 class Config:
@@ -200,7 +190,6 @@ class Config:
     return self.valid
 
   def load_yaml(self, y, rosinstall_source_uri):
-    #print "loading yaml for %s"%rosinstall_source_uri
     for t in y:
       for k, v in t.iteritems():
 
@@ -216,7 +205,6 @@ class Config:
         
         #compute the local_path for the config element
         local_path = os.path.normpath(os.path.join(self.base_path, local_name))
-        #print "local path is %s joined with %s"%(self.base_path, local_name)
 
         if k == 'other':
           rosinstall_uri = '' # does not exist
@@ -224,30 +212,21 @@ class Config:
             rosinstall_uri = local_path
           elif os.path.isdir(local_path):
             rosinstall_uri = os.path.join(local_path, ".rosinstall")
-          #print "processing other", rosinstall_uri, "suri", local_path
           if os.path.exists(rosinstall_uri):
-            #print "Found a rosinstall file at %s, for local_name %s in rosinstall file %s. loading all elements"%(rosinstall_uri, local_name, rosinstall_source_uri)
-
-            #print "Child from %s because %s exists"%(local_path, rosinstall_uri)
             child_config = Config(rosinstall.helpers.get_yaml_from_uri(rosinstall_uri), rosinstall_uri)
-            #print "Done loading Child from", rosinstall_uri
             for child_t in child_config.trees:
-
               full_child_path = os.path.join(local_path, child_t.get_path())
-              #print "paths are---------------", local_path, child_t.get_path(), full_child_path
               elem = OtherConfigElement(full_child_path)
               self.trees.append(elem)
           else:
-            #print "loading other %s because %s doesn't exist"%(local_path, rosinstall_uri)
             elem = OtherConfigElement(local_path)
             self.trees.append(elem)
         else:
           try:
             elem = AVCSConfigElement(k, local_path, source_uri, version)
             self.trees.append(elem)
-          except LookupError, ex:
+          except LookupError as ex:
             raise ROSInstallException("Abstracted VCS Config failed. Exception: %s" % ex)
-    #print "Done parsing %s"%rosinstall_source_uri
 
   def ros_path(self):
     rp = None
@@ -298,12 +277,9 @@ class Config:
           raise ROSInstallException(fail_str)
       else:
           pass
-          #print "%s successfully installed"%t
     return success
-
-  # TODO go back and make sure that everything in options.path is described
-  # in the yaml, and offer to delete otherwise? not sure, but it could go here
-
+    # TODO go back and make sure that everything in options.path is described
+    # in the yaml, and offer to delete otherwise? not sure, but it could go here
 
 
   def get_ros_package_path(self):
@@ -378,7 +354,6 @@ fi
     if not ros_root:
       raise ROSInstallException("No 'ros' stack detected.  The 'ros' stack is required in all rosinstall directories. Please add a definition of the 'ros' stack either manually in .rosinstall and then call 'rosinstall .' in the directory. Or add one on the command line 'rosinstall . http://www.ros.org/rosinstalls/boxturtle_ros.rosinstall'. Or reference an existing install like in /opt/ros/boxturtle with 'rosinstall . /opt/ros/boxturtle'.  Note: the above suggestions assume you are using boxturtle, if you are using latest or another distro please change the urls." )
     rpp = self.get_ros_package_path()
-
     
     text = self.generate_setup_sh_text(ros_root, rpp)
     setup_path = os.path.join(self.base_path, 'setup.sh')
@@ -397,8 +372,7 @@ def installed_uri(path):
   try:
     f = open(os.path.join(path, '.rosinstall_source_uri'),'r')
     print "Falling back onto deprecated .rosinstall_source_uri"
-  except IOError, e:
-    pass
+  except IOError as e:
     return None
   return rosinstall.helpers.conditional_abspath(f.readline())  # abspath here for backwards compatibility with change to abspath in breadcrumb
 
@@ -568,9 +542,6 @@ Later URIs will shadow packages of earlier URIs.\n",
     print "Saved versioned rosinstall of current directory %s to %s"%(options.path, filename)
     return 0
 
-
-
-
   ## Save .rosinstall 
   config.write_source()
   ## install or update each element
@@ -597,7 +568,7 @@ Later URIs will shadow packages of earlier URIs.\n",
 if __name__ == "__main__":
   try:
     sys.exit(not rosinstall_main(sys.argv))
-  except ROSInstallException, e:
+  except ROSInstallException as e:
     print >> sys.stderr, "ERROR: %s"%str(e)
     sys.exit(1)
 

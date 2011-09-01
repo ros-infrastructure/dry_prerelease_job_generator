@@ -1,11 +1,12 @@
 
-from distutils.core import setup
+from setuptools import setup
 
 
 setup(name='rosinstall',
       version= '0.5.20',
-      packages=['rosinstall', 'rosinstall.vcs'],
+      packages=['rosinstall'],
       package_dir = {'':'src'},
+      install_requires=['vcstools'],
       scripts = ["scripts/rosinstall", "scripts/roslocate", "scripts/rosws"],
       author = "Tully Foote", 
       author_email = "tfoote@willowgarage.com",
