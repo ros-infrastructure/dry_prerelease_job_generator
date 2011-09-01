@@ -1,7 +1,7 @@
-from distutils.core import setup
+from setuptools import setup
 
 setup(name='vcstools',
-      version= '0.0.2',
+      version= '0.0.3',
       packages=['vcstools'],
       package_dir = {'':'src'},
       scripts = [],
