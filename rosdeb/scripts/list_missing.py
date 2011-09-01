@@ -52,7 +52,6 @@ import tempfile
 import time
 
 import rosdeb
-from rosdeb.rosutil import checkout_svn_to_tmp
 
 from rosdistro import Distro
 from rosdeb import ubuntu_release, debianize_name, debianize_version, platforms, ubuntu_release_name, \
