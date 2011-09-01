@@ -4,7 +4,7 @@
      Python libraries for manipulation version control software systems (e.g. SVN, Git, Hg) in a uniform manner.
 
   </description>
-  <author>Tully Foote, Ken Conley, Thibault Kruse</author>
+  <author>Tully Foote, Thibault Kruse, Ken Conley</author>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/vcstools</url>
