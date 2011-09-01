@@ -40,7 +40,12 @@ def register_vcs(vcs_type, clazz):
 def get_vcs(vcs_type):
     return _vcs_types[vcs_type]
 
-class VcsClient: 
+class VcsClient(object):
+    """
+    API for interacting with source-controlled paths independent of
+    actual version-control implementation.
+    """
+
     def __init__(self, vcs_type, path):
         self._path = path
         self.vcs = get_vcs(vcs_type)(path)
@@ -72,6 +77,12 @@ class VcsClient:
 
     def get_branch_parent(self):
         return self.vcs.get_branch_parent()
+
+    def get_diff(self, basepath=None):
+        return self.vcs.get_diff(self, basepath)
+
+    def get_status(self, basepath=None, untracked=False):
+        return self.vcs.get_status(self, basepath, untracked)
 
 # backwards compat
 VCSClient=VcsClient

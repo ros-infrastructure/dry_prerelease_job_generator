@@ -117,4 +117,37 @@ class BzrClient(VcsClientBase):
                 output = subprocess.Popen(['bzr', 'revno'], cwd= self._path, stdout=subprocess.PIPE).communicate()[0]
                 return output.strip()
 
+    def get_diff(self, basepath=None):
+        response = None
+        if basepath == None:
+            basepath = self._path
+        if self.path_exists():
+            rel_path = self._normalized_rel_path(self._path, basepath)
+            command = "cd %s; bzr diff %s"%(basepath, rel_path)
+            command += " -p1 --prefix %s/:%s/"%(rel_path,rel_path)
+            stdout_handle = os.popen(command, "r")
+            response = stdout_handle.read()
+        if response != None and response.strip() == '':
+            response = None
+        return response
+
+
+    def get_status(self, basepath=None, untracked=False):
+        response=None
+        if basepath == None:
+            basepath = self._path
+        if self.path_exists():
+            rel_path = self._normalized_rel_path(self._path, basepath)
+            command = "cd %s; bzr status %s -S"%(basepath, rel_path)
+            if not untracked:
+                command += " -V"
+            stdout_handle = os.popen(command, "r")
+            response = stdout_handle.read()
+            response_processed = ""
+            for line in response.split('\n'):
+                if len(line.strip()) > 0:
+                    response_processed+=line[0:4]+rel_path+'/'+line[4:]+'\n'
+            response = response_processed
+        return response
+
 BZRClient=BzrClient

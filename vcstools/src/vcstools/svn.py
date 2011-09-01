@@ -130,4 +130,31 @@ class SvnClient(VcsClientBase):
                     return '-r'+split_str[1]
         return None
 
+    def get_diff(self, basepath=None):
+        response = None
+        if basepath == None:
+            basepath = self._path
+        if self.path_exists():
+            rel_path = self._normalized_rel_path(self._path, basepath)
+            command = "cd %s; svn diff %s"%(basepath, rel_path)
+            stdout_handle = os.popen(command, "r")
+            response = stdout_handle.read()
+        if response != None and response.strip() == '':
+            response = None
+        return response
+ 
+ 
+    def get_status(self, basepath=None, untracked=False):
+        response=None
+        if basepath == None:
+            basepath = self._path
+        if self.path_exists():
+            rel_path = self._normalized_rel_path(self._path, basepath)
+            command = "cd %s; svn status %s"%(basepath, rel_path)
+            if not untracked:
+                command += " -q"
+            stdout_handle = os.popen(command, "r")
+            response = stdout_handle.read()
+        return response
+
 SVNClient = SvnClient

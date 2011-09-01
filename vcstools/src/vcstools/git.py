@@ -181,6 +181,43 @@ class GitClient(VcsClientBase):
             output = output.strip().strip("'")
             return output
 
+    def get_diff(self, basepath=None):
+        response = None
+        if basepath == None:
+            basepath = self._path
+        if self.path_exists():
+            rel_path = self._normalized_rel_path(self._path, basepath)
+            # git needs special treatment as it only works from inside
+            # use HEAD to also show staged changes. Maybe should be option?
+            command = "cd %s; git diff HEAD"%(self._path)
+            # change path using prefix
+            command += " --src-prefix=%s/ --dst-prefix=%s/ ."%(rel_path,rel_path)
+            stdout_handle = os.popen(command, "r")
+            response = stdout_handle.read()
+        if response != None and response.strip() == '':
+            response = None
+        return response
+
+    def get_status(self, basepath=None, untracked=False):
+        response=None
+        if basepath == None:
+            basepath = self._path
+        if self.path_exists():
+            rel_path = self._normalized_rel_path(self._path, basepath)
+            # git command only works inside repo
+            command = "cd %s; git status -s "%(self._path)
+            if not untracked:
+                command += " -uno"
+            stdout_handle = os.popen(command, "r")
+            response = stdout_handle.read()
+            response_processed = ""
+            for line in response.split('\n'):
+                if len(line.strip()) > 0:
+                    # prepend relative path
+                    response_processed+=line[0:3]+rel_path+'/'+line[3:]+'\n'
+            response = response_processed
+        return response
+        
     def is_remote_branch(self, branch_name):
         if self.path_exists():
             output = subprocess.Popen(['git branch -r'], shell=True, cwd= self._path, stdout=subprocess.PIPE).communicate()[0]

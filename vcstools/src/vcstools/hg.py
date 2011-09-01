@@ -42,6 +42,34 @@ import sys
 
 from .vcs_base import VcsClientBase
 
+#hg diff cannot seem to be persuaded to accept a different prefix for filenames
+def _hg_diff_path_change(diff, path):
+    """
+    Parses hg diff result and changes the filename prefixes.
+    """
+    if diff == None:
+        return None
+    INIT = 0
+    INDIFF = 1
+    # small state machine makes sure we never touch anything inside the actual diff
+    state = INIT
+    result = ""
+    s_list = [line for line in diff.split(os.linesep)]
+    for line in s_list:
+        newline = line
+        if state == INIT:
+            if line.startswith("@@"):
+                state = INDIFF
+            else:
+                if line.startswith("---") and not line.startswith("--- /dev/null"):
+                    newline = "--- " + path + line[5:]
+                if line.startswith("+++") and not line.startswith("+++ /dev/null"):
+                    newline = "+++ " + path + line[5:]
+        elif line.startswith("diff"):
+            state = INIT
+        result += newline + '\n'
+    return result
+
 class HgClient(VcsClientBase):
         
     def __init__(self, path):
@@ -123,7 +151,39 @@ class HgClient(VcsClientBase):
             command = ['hg', 'identify', "-i", self._path]
             output = subprocess.Popen(command, stdout=subprocess.PIPE).communicate()[0]
             return output.strip()
+        
+    def get_diff(self, basepath=None):
+        response = None
+        if basepath == None:
+            basepath = self._path
+        if self.path_exists():
+            rel_path = self._normalized_rel_path(self._path, basepath)
+            command = "cd %s; hg diff -g %s"%(basepath, rel_path)
+            stdout_handle = os.popen(command, "r")
+            response = stdout_handle.read()
+            response = _hg_diff_path_change(response, rel_path)
+        if response != None and response.strip() == '':
+            response = None
+        return response
 
+
+    def get_status(self, basepath=None, untracked=False):
+        response=None
+        if basepath == None:
+            basepath = self._path
+        if self.path_exists():
+            rel_path = self._normalized_rel_path(self._path, basepath)
+            command = "cd %s; hg status %s"%(basepath, rel_path)
+            if not untracked:
+                command += " -mard"
+            stdout_handle = os.popen(command, "r")
+            response = stdout_handle.read()
+            response_processed = ""
+            for line in response.split('\n'):
+                if len(line.strip()) > 0:
+                    response_processed+=line[0:2]+line[2:]+'\n'
+            response = response_processed
+        return response
 
 # backwards compat
 HGClient = HgClient

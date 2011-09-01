@@ -32,6 +32,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 import os
+import io
 import struct
 import sys
 import unittest
@@ -39,8 +40,7 @@ import subprocess
 import tempfile
 import shutil
 
-class HGClientTest(unittest.TestCase):
-
+class HGClientTestSetups(unittest.TestCase):
     def setUp(self):
         from vcstools.hg import HgClient
         directory = tempfile.mkdtemp()
@@ -82,6 +82,8 @@ class HGClientTest(unittest.TestCase):
     def tearDown(self):
         for d in self.directories:
             shutil.rmtree(self.directories[d])
+
+class HGClientTest(HGClientTestSetups):
 
     def test_get_url_by_reading(self):
         from vcstools.hg import HgClient
@@ -154,4 +156,62 @@ class HGClientTest(unittest.TestCase):
         
         shutil.rmtree(directory)
         self.directories.pop(subdir)
+
+class HGDiffStatClientTest(HGClientTestSetups):
+    def setUp(self):
+        HGClientTestSetups.setUp(self)
+        # after setting up "readonly" repo, change files and make some changes
+        subprocess.check_call(["rm", "deleted-fs.txt"], cwd=self.readonly_path)
+        subprocess.check_call(["hg", "rm", "deleted.txt"], cwd=self.readonly_path)
+        f = io.open(os.path.join(self.readonly_path, "modified.txt"), 'a')
+        f.write(u'0123456789abcdef')
+        f.close()
+        f = io.open(os.path.join(self.readonly_path, "modified-fs.txt"), 'a')
+        f.write(u'0123456789abcdef')
+        f.close()
+        f = io.open(os.path.join(self.readonly_path, "added-fs.txt"), 'w')
+        f.write(u'0123456789abcdef')
+        f.close()
+        f = io.open(os.path.join(self.readonly_path, "added.txt"), 'w')
+        f.write(u'0123456789abcdef')
+        f.close()
+        subprocess.check_call(["hg", "add", "added.txt"], cwd=self.readonly_path)
+
+    def test_diff(self):
+        from vcstools.hg import HgClient
+        client = HgClient(self.readonly_path)
+        self.assertTrue(client.path_exists())
+        self.assertTrue(client.detect_presence())
+        self.assertEquals('diff --git a/added.txt b/added.txt\nnew file mode 100644\n--- /dev/null\n+++ ./added.txt\n@@ -0,0 +1,1 @@\n+0123456789abcdef\n\\ No newline at end of file\ndiff --git a/deleted.txt b/deleted.txt\ndeleted file mode 100644\ndiff --git a/modified-fs.txt b/modified-fs.txt\n--- ./modified-fs.txt\n+++ ./modified-fs.txt\n@@ -0,0 +1,1 @@\n+0123456789abcdef\n\\ No newline at end of file\ndiff --git a/modified.txt b/modified.txt\n--- ./modified.txt\n+++ ./modified.txt\n@@ -0,0 +1,1 @@\n+0123456789abcdef\n\\ No newline at end of file\n\n', client.get_diff())
+
+    def test_diff_relpath(self):
+        from vcstools.hg import HgClient
+        client = HgClient(self.readonly_path)
+        self.assertTrue(client.path_exists())
+        self.assertTrue(client.detect_presence())
+
+        self.assertEquals('diff --git a/added.txt b/added.txt\nnew file mode 100644\n--- /dev/null\n+++ readonly/added.txt\n@@ -0,0 +1,1 @@\n+0123456789abcdef\n\\ No newline at end of file\ndiff --git a/deleted.txt b/deleted.txt\ndeleted file mode 100644\ndiff --git a/modified-fs.txt b/modified-fs.txt\n--- readonly/modified-fs.txt\n+++ readonly/modified-fs.txt\n@@ -0,0 +1,1 @@\n+0123456789abcdef\n\\ No newline at end of file\ndiff --git a/modified.txt b/modified.txt\n--- readonly/modified.txt\n+++ readonly/modified.txt\n@@ -0,0 +1,1 @@\n+0123456789abcdef\n\\ No newline at end of file\n\n', client.get_diff(basepath=os.path.dirname(self.readonly_path)))
+
+    def test_status(self):
+        from vcstools.hg import HgClient
+        client = HgClient(self.readonly_path)
+        self.assertTrue(client.path_exists())
+        self.assertTrue(client.detect_presence())
+        self.assertEquals('M modified-fs.txt\nM modified.txt\nA added.txt\nR deleted.txt\n! deleted-fs.txt\n', client.get_status())
+
+    def test_status_relpath(self):
+        from vcstools.hg import HgClient
+        client = HgClient(self.readonly_path)
+        self.assertTrue(client.path_exists())
+        self.assertTrue(client.detect_presence())
+        self.assertEquals('M readonly/modified-fs.txt\nM readonly/modified.txt\nA readonly/added.txt\nR readonly/deleted.txt\n! readonly/deleted-fs.txt\n', client.get_status(basepath=os.path.dirname(self.readonly_path)))
+
+    def testStatusUntracked(self):
+        from vcstools.hg import HgClient
+        client = HgClient(self.readonly_path)
+        self.assertTrue(client.path_exists())
+        self.assertTrue(client.detect_presence())
+        self.assertEquals('M modified-fs.txt\nM modified.txt\nA added.txt\nR deleted.txt\n! deleted-fs.txt\n? added-fs.txt\n', client.get_status(untracked=True))
+
+
 

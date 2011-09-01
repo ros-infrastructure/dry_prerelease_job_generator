@@ -33,12 +33,14 @@
 
 import os
 import sys
-import unittest
+import io
+import fnmatch
+import shutil
 import subprocess
 import tempfile
-import shutil
+import unittest
 
-class BZRClientTest(unittest.TestCase):
+class BzrClientTestSetups(unittest.TestCase):
 
     def setUp(self):
         from vcstools.bzr import BzrClient
@@ -78,6 +80,8 @@ class BZRClientTest(unittest.TestCase):
     def tearDown(self):
         for d in self.directories:
             shutil.rmtree(self.directories[d])
+
+class BzrClientTest(BzrClientTestSetups):
 
     def test_get_url_by_reading(self):
         from vcstools.bzr import BzrClient
@@ -138,3 +142,64 @@ class BZRClientTest(unittest.TestCase):
         
         shutil.rmtree(directory)
         self.directories.pop(subdir)
+
+
+class BzrDiffStatClientTest(BzrClientTestSetups):
+    def setUp(self):
+        BzrClientTestSetups.setUp(self)
+        # after setting up "readonly" repo, change files and make some changes
+        subprocess.check_call(["rm", "deleted-fs.txt"], cwd=self.readonly_path)
+        subprocess.check_call(["bzr", "rm", "deleted.txt"], cwd=self.readonly_path)
+        f = io.open(os.path.join(self.readonly_path, "modified.txt"), 'a')
+        f.write(u'0123456789abcdef')
+        f.close()
+        f = io.open(os.path.join(self.readonly_path, "modified-fs.txt"), 'a')
+        f.write(u'0123456789abcdef')
+        f.close()
+        f = io.open(os.path.join(self.readonly_path, "added-fs.txt"), 'w')
+        f.write(u'0123456789abcdef')
+        f.close()
+        f = io.open(os.path.join(self.readonly_path, "added.txt"), 'w')
+        f.write(u'0123456789abcdef')
+        f.close()
+        subprocess.check_call(["bzr", "add", "added.txt"], cwd=self.readonly_path)
+
+    def test_diff(self):
+        from vcstools.bzr import BzrClient
+        client = BzrClient(self.readonly_path)
+        self.assertTrue(client.path_exists())
+        self.assertTrue(client.detect_presence())
+        # using fnmatch because date and time change (remove when bzr reaches diff --format)
+        self.assertTrue(fnmatch.fnmatch(client.get_diff(),"=== added file 'added.txt'\n--- ./added.txt\t????-??-?? ??:??:?? +0000\n+++ ./added.txt\t????-??-?? ??:??:?? +0000\n@@ -0,0 +1,1 @@\n+0123456789abcdef\n\\ No newline at end of file\n\n=== removed file 'deleted-fs.txt'\n=== removed file 'deleted.txt'\n=== modified file 'modified-fs.txt'\n--- ./modified-fs.txt\t????-??-?? ??:??:?? +0000\n+++ ./modified-fs.txt\t????-??-?? ??:??:?? +0000\n@@ -0,0 +1,1 @@\n+0123456789abcdef\n\\ No newline at end of file\n\n=== modified file 'modified.txt'\n--- ./modified.txt\t????-??-?? ??:??:?? +0000\n+++ ./modified.txt\t????-??-?? ??:??:?? +0000\n@@ -0,0 +1,1 @@\n+0123456789abcdef\n\\ No newline at end of file\n\n"))
+
+    def test_diff_relpath(self):
+        from vcstools.bzr import BzrClient
+        client = BzrClient(self.readonly_path)
+        self.assertTrue(client.path_exists())
+        self.assertTrue(client.detect_presence())
+        # using fnmatch because date and time change (remove when bzr introduces diff --format)
+        self.assertTrue(fnmatch.fnmatch(client.get_diff(basepath=os.path.dirname(self.readonly_path)), "=== added file 'added.txt'\n--- readonly/added.txt\t????-??-?? ??:??:?? +0000\n+++ readonly/added.txt\t????-??-?? ??:??:?? +0000\n@@ -0,0 +1,1 @@\n+0123456789abcdef\n\\ No newline at end of file\n\n=== removed file 'deleted-fs.txt'\n=== removed file 'deleted.txt'\n=== modified file 'modified-fs.txt'\n--- readonly/modified-fs.txt\t????-??-?? ??:??:?? +0000\n+++ readonly/modified-fs.txt\t????-??-?? ??:??:?? +0000\n@@ -0,0 +1,1 @@\n+0123456789abcdef\n\\ No newline at end of file\n\n=== modified file 'modified.txt'\n--- readonly/modified.txt\t????-??-?? ??:??:?? +0000\n+++ readonly/modified.txt\t????-??-?? ??:??:?? +0000\n@@ -0,0 +1,1 @@\n+0123456789abcdef\n\\ No newline at end of file\n\n"))
+
+    def test_status(self):
+        from vcstools.bzr import BzrClient
+        client = BzrClient(self.readonly_path)
+        self.assertTrue(client.path_exists())
+        self.assertTrue(client.detect_presence())
+        self.assertEquals('+N  ./added.txt\n D  ./deleted-fs.txt\n-D  ./deleted.txt\n M  ./modified-fs.txt\n M  ./modified.txt\n', client.get_status())
+
+    def test_status_relpath(self):
+        from vcstools.bzr import BzrClient
+        client = BzrClient(self.readonly_path)
+        self.assertTrue(client.path_exists())
+        self.assertTrue(client.detect_presence())
+        self.assertEquals('+N  readonly/added.txt\n D  readonly/deleted-fs.txt\n-D  readonly/deleted.txt\n M  readonly/modified-fs.txt\n M  readonly/modified.txt\n', client.get_status(basepath=os.path.dirname(self.readonly_path)))
+
+    def test_status_untracked(self):
+        from vcstools.bzr import BzrClient
+        client = BzrClient(self.readonly_path)
+        self.assertTrue(client.path_exists())
+        self.assertTrue(client.detect_presence())
+        self.assertEquals('?   ./added-fs.txt\n+N  ./added.txt\n D  ./deleted-fs.txt\n-D  ./deleted.txt\n M  ./modified-fs.txt\n M  ./modified.txt\n', client.get_status(untracked=True))
+
+        
+

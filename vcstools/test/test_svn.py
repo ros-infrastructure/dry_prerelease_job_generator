@@ -32,13 +32,14 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 import os
+import io
 import sys
 import unittest
 import subprocess
 import tempfile
 import shutil
 
-class SvnClientTest(unittest.TestCase):
+class SvnClientTestSetups(unittest.TestCase):
 
     def setUp(self):
         from vcstools.svn import SvnClient
@@ -82,6 +83,9 @@ class SvnClientTest(unittest.TestCase):
     def tearDown(self):
         for d in self.directories:
             shutil.rmtree(self.directories[d])
+
+
+class SvnClientTest(SvnClientTestSetups):
 
     def test_get_url_by_reading(self):
         from vcstools.svn import SvnClient
@@ -136,3 +140,65 @@ class SvnClientTest(unittest.TestCase):
         
         new_version = '-r2'
         self.assertTrue(client.update(new_version))
+
+
+class SvnDiffStatClientTest(SvnClientTestSetups):
+
+    def setUp(self):
+        SvnClientTestSetups.setUp(self)
+        # after setting up "readonly" repo, change files and make some changes
+        subprocess.check_call(["rm", "deleted-fs.txt"], cwd=self.readonly_path)
+        subprocess.check_call(["svn", "rm", "deleted.txt"], cwd=self.readonly_path)
+        f = io.open(os.path.join(self.readonly_path, "modified.txt"), 'a')
+        f.write(u'0123456789abcdef')
+        f.close()
+        f = io.open(os.path.join(self.readonly_path, "modified-fs.txt"), 'a')
+        f.write(u'0123456789abcdef')
+        f.close()
+        f = io.open(os.path.join(self.readonly_path, "added-fs.txt"), 'w')
+        f.write(u'0123456789abcdef')
+        f.close()
+        f = io.open(os.path.join(self.readonly_path, "added.txt"), 'w')
+        f.write(u'0123456789abcdef')
+        f.close()
+        subprocess.check_call(["svn", "add", "added.txt"], cwd=self.readonly_path)
+        
+    def test_diff(self):
+        from vcstools.svn import SvnClient
+        client = SvnClient(self.readonly_path)
+        self.assertTrue(client.path_exists())
+        self.assertTrue(client.detect_presence())
+        self.assertEquals('Index: added.txt\n===================================================================\n--- added.txt\t(revision 0)\n+++ added.txt\t(revision 0)\n@@ -0,0 +1 @@\n+0123456789abcdef\n\\ No newline at end of file\n\nProperty changes on: added.txt\n___________________________________________________________________\nAdded: svn:eol-style\n   + native\n\nIndex: modified-fs.txt\n===================================================================\n--- modified-fs.txt\t(revision 3)\n+++ modified-fs.txt\t(working copy)\n@@ -0,0 +1 @@\n+0123456789abcdef\n\\ No newline at end of file\nIndex: modified.txt\n===================================================================\n--- modified.txt\t(revision 3)\n+++ modified.txt\t(working copy)\n@@ -0,0 +1 @@\n+0123456789abcdef\n\\ No newline at end of file\n', client.get_diff())
+
+    def test_diff_relpath(self):
+        from vcstools.svn import SvnClient
+        client = SvnClient(self.readonly_path)
+        self.assertTrue(client.path_exists())
+        self.assertTrue(client.detect_presence())
+
+        print 'Index: readonly/added.txt\n===================================================================\n--- readonly/added.txt\t(revision 0)\n+++ readonly/added.txt\t(revision 0)\n@@ -0,0 +1 @@\n+0123456789abcdef\n\\ No newline at end of file\n\nProperty changes on: readonly/added.txt\n___________________________________________________________________\nAdded: svn:eol-style\n   + native\n\nIndex: readonly/modified-fs.txt\n===================================================================\n--- readonly/modified-fs.txt\t(revision 3)\n+++ readonly/modified-fs.txt\t(working copy)\n@@ -0,0 +1 @@\n+0123456789abcdef\n\\ No newline at end of file\nIndex: readonly/modified.txt\n===================================================================\n--- readonly/modified.txt\t(revision 3)\n+++ readonly/modified.txt\t(working copy)\n@@ -0,0 +1 @@\n+0123456789abcdef\n\\ No newline at end of file\n'
+        print client.get_diff(basepath=os.path.dirname(self.readonly_path))
+        
+        self.assertEquals('Index: readonly/added.txt\n===================================================================\n--- readonly/added.txt\t(revision 0)\n+++ readonly/added.txt\t(revision 0)\n@@ -0,0 +1 @@\n+0123456789abcdef\n\\ No newline at end of file\n\nProperty changes on: readonly/added.txt\n___________________________________________________________________\nAdded: svn:eol-style\n   + native\n\nIndex: readonly/modified-fs.txt\n===================================================================\n--- readonly/modified-fs.txt\t(revision 3)\n+++ readonly/modified-fs.txt\t(working copy)\n@@ -0,0 +1 @@\n+0123456789abcdef\n\\ No newline at end of file\nIndex: readonly/modified.txt\n===================================================================\n--- readonly/modified.txt\t(revision 3)\n+++ readonly/modified.txt\t(working copy)\n@@ -0,0 +1 @@\n+0123456789abcdef\n\\ No newline at end of file\n', client.get_diff(basepath=os.path.dirname(self.readonly_path)))
+
+    def test_status(self):
+        from vcstools.svn import SvnClient
+        client = SvnClient(self.readonly_path)
+        self.assertTrue(client.path_exists())
+        self.assertTrue(client.detect_presence())
+        self.assertEquals('A       added.txt\nD       deleted.txt\nM       modified-fs.txt\n!       deleted-fs.txt\nM       modified.txt\n', client.get_status())
+
+    def test_status_relpath(self):
+        from vcstools.svn import SvnClient
+        client = SvnClient(self.readonly_path)
+        self.assertTrue(client.path_exists())
+        self.assertTrue(client.detect_presence())
+        self.assertEquals('A       readonly/added.txt\nD       readonly/deleted.txt\nM       readonly/modified-fs.txt\n!       readonly/deleted-fs.txt\nM       readonly/modified.txt\n', client.get_status(basepath=os.path.dirname(self.readonly_path)))
+
+    def test_status_untracked(self):
+        from vcstools.svn import SvnClient
+        client = SvnClient(self.readonly_path)
+        self.assertTrue(client.path_exists())
+        self.assertTrue(client.detect_presence())
+        self.assertEquals('?       added-fs.txt\nA       added.txt\nD       deleted.txt\nM       modified-fs.txt\n!       deleted-fs.txt\nM       modified.txt\n', client.get_status(untracked=True))
+
