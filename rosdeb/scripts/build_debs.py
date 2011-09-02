@@ -440,6 +440,16 @@ reprepro -V -b /var/packages/ros-shadow-fixed/ubuntu --noskipold update %(os_pla
             raise InternalBuildFailure("Could not run version-locking script:\n%s\n%s"%(o, e))
 
 
+def get_buildable(deps, distro_name, os_platform, requested_stack_name, force):
+    # have to recalculate buildable after each build as invalidation
+    # may have occurred.  We examine in order to minimize retreading.
+    for sn, sv in deps:
+        deb_name = "ros-%s-%s"%(distro_name, debianize_name(sn))
+        deb_version = debianize_version(sv, '\w*', os_platform)
+        in_repo = deb_in_repo(deb_name, deb_version, os_platform, arch)
+        if not in_repo or (force and sn == requested_stack_name):
+            return sn, sv
+    
 def build_debs(distro, stack_name, os_platform, arch, staging_dir, force, noupload, interactive):
     distro_name = distro.release_name
 
@@ -456,33 +466,35 @@ def build_debs(distro, stack_name, os_platform, arch, staging_dir, force, nouplo
 
     # Find all the deps in the distro for this stack
     deps = compute_deps(distro, stack_name)
-
+    # filter down to debs we expect to build
+    deps = [(sn, sv) for (sn, sv) in deps if sn not in missing_ok]
+    
     broken = set()
     skipped = set()
 
-    # Build the deps in order
-    for (sn, sv) in deps:
-        # Only build debs we expect to be there
-        if sn not in missing_ok:
-            deb_name = "ros-%s-%s"%(distro_name, debianize_name(sn))
-            deb_version = debianize_version(sv, '\w*', os_platform)
-            print "Looking for deb [%s] ver [%s] in repo"%(deb_name, deb_version)
-            in_repo = deb_in_repo(deb_name, deb_version, os_platform, arch)
-            print "deb_in_repo[%s, %s]: %s"%(deb_name, deb_version, in_repo)
-            if not deb_in_repo(deb_name, deb_version, os_platform, arch) or (force and sn == stack_name):
-                si = load_info(sn, sv)
-                depends = set(si['depends'])
-                if depends.isdisjoint(broken.union(skipped)):
-                    try:
-                        do_deb_build(distro_name, sn, sv, os_platform, arch, staging_dir, noupload, interactive and sn == stack_name)
-                    except:
-                        broken.add(sn)
-                else:
-                    print "Skipping %s (%s) since dependencies not built: %s"%(sn, sv, broken.union(skipped)&depends)
-                    skipped.add(sn)
+    keep_building = True
+    while keep_building:
+        print "[build_debs]: looking for next stack to build. Current deps list is [%s]"%(deps)
+        buildable = get_buildable(deps, distro_name, os_platform, stack_name, force)
+        if buildable is None:
+            print "[build_debs]: Nothing left to build"
+            keep_building = False
+        else:
+            print "[build_debs]: Attempting to build: %s"%(buildable)
+            deps.remove(buildable)
+            sn, sv = buildable
+            si = load_info(sn, sv)
+            depends = set(si['depends'])
+            if depends.isdisjoint(broken.union(skipped)):
+                print "[build_debs]: Initiating build of: %s"%(buildable)                
+                try:
+                    do_deb_build(distro_name, sn, sv, os_platform, arch, staging_dir, noupload, interactive and sn == stack_name)
+                except:
+                    print "[build_debs]: Build of [%s] failed, adding to broken list"%(buildable)                
+                    broken.add(sn)
             else:
-                print "Skipping %s (%s) since already built."%(sn,sv)
-
+                print "[build_debs]: Skipping %s (%s) since dependencies not built: %s"%(sn, sv, broken.union(skipped)&depends)
+                skipped.add(sn)
 
     if broken.union(skipped):
         raise StackBuildFailure("debbuild did not complete successfully. A list of broken and skipped stacks are below. Broken means the stack itself did not build. Skipped stacks means that the stack's dependencies could not be built.\n\nBroken stacks: %s.  Skipped stacks: %s"%(broken, skipped))
