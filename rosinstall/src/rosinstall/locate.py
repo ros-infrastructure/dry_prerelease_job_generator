@@ -63,7 +63,12 @@ def get_rosinstall(name, data, type_, branch=None, prefix=None):
     # if we were unable to compute the rosinstall info based on a
     # desired branch, use the default info instead
     if ri_entry is None:
-        ri_entry = data['rosinstall']
+        if data['vcs'] == 'svn':
+            # fancy logic to enable package-specific checkout and also
+            # fix a bug in the indexer.
+            ri_entry = {'svn': {'local-name': name, 'uri': data['vcs_uri']}}
+        else:
+            ri_entry = data['rosinstall']
         
     if len(ri_entry) != 1:
         raise InvalidData("rosinstall malformed for %s %s\n"%(type_, name))
@@ -71,10 +76,11 @@ def get_rosinstall(name, data, type_, branch=None, prefix=None):
     prefix = prefix or ''
     for k, v in ri_entry.iteritems():
         if 'local-name' in v:
+            local_name = v['local-name']                
             # 3513
             # compute path: we can't use os.path.join because rosinstall paths
             # are always Unix-style.
-            paths = [x for x in (prefix, v['local-name']) if x]
+            paths = [x for x in (prefix, local_name) if x]
             path = '/'.join(paths)
             v['local-name'] = path
 
