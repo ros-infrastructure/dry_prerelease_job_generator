@@ -123,7 +123,7 @@ def deb_in_repo(deb_name, deb_version, os_platform, arch):
     return rosdeb.deb_in_repo(SHADOW_REPO_URL, deb_name, deb_version, os_platform, arch, use_regex=True)
 
 def get_depends(deb_name, os_platform, arch):
-    print "Get depends from %s"%(SHADOW_REPO_URL)
+    debug("get_depends from %s"%(SHADOW_REPO_URL))
     return rosdeb.get_depends(SHADOW_REPO_URL, deb_name, os_platform, arch)
     
 def download_files(stack_name, stack_version, staging_dir, files):
@@ -136,10 +136,7 @@ def download_files(stack_name, stack_version, staging_dir, files):
     for f_name in files:
         dest = os.path.join(staging_dir, f_name)
         url = TARBALL_URL%locals()
-        try:
-            urllib.urlretrieve(url, dest)
-        except Exception,e:
-            print e
+        urllib.urlretrieve(url, dest)
         dl_files.append(dest)
 
     return dl_files
@@ -224,7 +221,7 @@ def create_chroot(distro, distro_name, os_platform, arch):
 
 
 def do_deb_build(distro_name, stack_name, stack_version, os_platform, arch, staging_dir, noupload, interactive):
-    print "Actually trying to build %s-%s..."%(stack_name, stack_version)
+    print("Actually trying to build %s-%s..."%(stack_name, stack_version))
 
     distro_tgz = os.path.join('/var/cache/pbuilder', "%s-%s.tgz"%(os_platform, arch))
     cache_dir = '/home/rosbuild/aptcache/%s-%s'%(os_platform, arch)
@@ -315,7 +312,7 @@ echo "Resuming pbuilder"
         archcmd = ['setarch', arch]
 
     # Actually build the deb.  This results in the deb being located in results_dir
-    print "starting pbuilder build of %s-%s"%(stack_name, stack_version)
+    print("starting pbuilder build of %s-%s"%(stack_name, stack_version))
     subprocess.check_call(archcmd+ ['sudo', 'pbuilder', '--build', '--basetgz', distro_tgz, '--configfile', conf_file, '--hookdir', hook_dir, '--buildresult', results_dir, '--binary-arch', '--buildplace', build_dir, '--aptcache', cache_dir, dsc_file], stderr=subprocess.STDOUT)
 
     # Set up an RE to look for the debian file and find the build_version
@@ -338,7 +335,7 @@ echo "Resuming pbuilder"
     deb_file_final = "%s_%s"%(deb_name, deb_version_final)
 
     # Build a package db if we have to
-    print "starting package db build of %s-%s"%(stack_name, stack_version)
+    print("starting package db build of %s-%s"%(stack_name, stack_version))
     subprocess.check_call(['bash', '-c', 'cd %(staging_dir)s && dpkg-scanpackages . > %(results_dir)s/Packages'%locals()])
 
 
@@ -432,15 +429,17 @@ reprepro -V -b /var/packages/ros-shadow-fixed/ubuntu --noskipold update %(os_pla
 """%locals()
 
         #Actually run script and check result
-        print "locking debs into fixed repo: \n[[[%s]]]"%(script_content)
+        debug("locking debs into fixed repo: \n[[[%s]]]"%(script_content))
         (o,e) = run_script.communicate(script_content)
         res = run_script.wait()
-        print o
+        debug("output of run_script: %s"%o)
         if res != 0:
             raise InternalBuildFailure("Could not run version-locking script:\n%s\n%s"%(o, e))
 
-
-def get_buildable(deps, distro_name, os_platform, requested_stack_name, force):
+def debug(msg):
+    print "[build_debs]: %s"%(msg)
+    
+def get_buildable(deps, distro_name, os_platform, arch, requested_stack_name, force):
     # have to recalculate buildable after each build as invalidation
     # may have occurred.  We examine in order to minimize retreading.
     for sn, sv in deps:
@@ -448,10 +447,10 @@ def get_buildable(deps, distro_name, os_platform, requested_stack_name, force):
         deb_version = debianize_version(sv, '\w*', os_platform)
         in_repo = deb_in_repo(deb_name, deb_version, os_platform, arch)
         if not in_repo:
-            print "[build_debs]: selecting [%s] because [%s, %s] not in repo"%(sn, deb_name, deb_version)
+            debug("selecting [%s] because [%s, %s] not in repo"%(sn, deb_name, deb_version))
             return sn, sv
         elif force and sn == requested_stack_name:
-            print "[build_debs]: forcing build of %s"%(requested_stack_name)
+            debug("forcing build of %s"%(requested_stack_name))
     
 def build_debs(distro, stack_name, os_platform, arch, staging_dir, force, noupload, interactive):
     distro_name = distro.release_name
@@ -461,7 +460,6 @@ def build_debs(distro, stack_name, os_platform, arch, staging_dir, force, nouplo
 
     # Create the environment where we build the debs, if necessary
     create_chroot(distro, distro_name, os_platform, arch)
-
 
     # Load blacklisted information
     missing_primary, missing_dep, missing_excluded, missing_excluded_dep = list_missing.get_missing(distro, os_platform, arch)
@@ -477,34 +475,32 @@ def build_debs(distro, stack_name, os_platform, arch, staging_dir, force, nouplo
 
     keep_building = True
     while keep_building:
-        print "[build_debs]: looking for next stack to build. Current deps list is [%s]"%(deps)
-        buildable = get_buildable(deps, distro_name, os_platform, stack_name, force)
+        debug("looking for next stack to build. Current deps list is [%s]"%(deps))
+        buildable = get_buildable(deps, distro_name, os_platform, arch, stack_name, force)
         if buildable is None:
-            print "[build_debs]: Nothing left to build"
+            debug("Nothing left to build")
             keep_building = False
         else:
-            print "[build_debs]: Attempting to build: %s"%(buildable)
+            debug("Attempting to build: %s"%(buildable))
             deps.remove(buildable)
             sn, sv = buildable
             si = load_info(sn, sv)
             depends = set(si['depends'])
             if depends.isdisjoint(broken.union(skipped)):
-                print "[build_debs]: Initiating build of: %s"%(buildable)                
+                debug("Initiating build of: %s"%(buildable))
                 try:
                     do_deb_build(distro_name, sn, sv, os_platform, arch, staging_dir, noupload, interactive and sn == stack_name)
                 except:
-                    print "[build_debs]: Build of [%s] failed, adding to broken list"%(buildable)                
+                    debug("Build of [%s] failed, adding to broken list"%(buildable))
                     broken.add(sn)
             else:
-                print "[build_debs]: Skipping %s (%s) since dependencies not built: %s"%(sn, sv, broken.union(skipped)&depends)
+                debug("[build_debs]: Skipping %s (%s) since dependencies not built: %s"%(sn, sv, broken.union(skipped)&depends))
                 skipped.add(sn)
 
     if broken.union(skipped):
         raise StackBuildFailure("debbuild did not complete successfully. A list of broken and skipped stacks are below. Broken means the stack itself did not build. Skipped stacks means that the stack's dependencies could not be built.\n\nBroken stacks: %s.  Skipped stacks: %s"%(broken, skipped))
 
 EMAIL_FROM_ADDR = 'ROS debian build system <noreply@willowgarage.com>'
-
-
 
 
 def parse_deb_packages(text):
@@ -558,10 +554,10 @@ def create_meta_pkg(packagelist, distro, distro_name, metapackage, deps, os_plat
                 stack_deb_version = packagelist[stack_deb_name]['Version']
                 ros_depends.append('%s (= %s)'%(stack_deb_name, stack_deb_version))
             else:
-                print >> sys.stderr, "Variant %s depends on non-built deb, %s"%(metapackage, stack)
+                debug("WARNING: Variant %s depends on non-built deb, %s"%(metapackage, stack))
                 missing = True
         else:
-            print >> sys.stderr, "Variant %s depends on non-exist stack, %s"%(metapackage, stack)
+            debug("WARNING: Variant %s depends on non-exist stack, %s"%(metapackage, stack))
             missing = True
 
     ros_depends_str = ', '.join(ros_depends)
@@ -593,7 +589,7 @@ Description: Meta package for %(metapackage)s variant of ROS.
 def upload_debs(files,distro_name,os_platform,arch):
 
     if len(files) == 0:
-        print >> sys.stderr, "No debs to upload."
+        debug("No debs to upload.")
         return 1 # no files to upload
 
     subprocess.check_call(['scp'] + files + ['%s:/var/packages/%s/ubuntu/incoming/%s'%(REPO_LOGIN, SHADOW_REPO,os_platform)], stderr=subprocess.STDOUT)
@@ -625,10 +621,10 @@ rm %(new_files)s
     #Actually run script and check result
     (o,e) = run_script.communicate(script_content)
     res = run_script.wait()
-    print o
+    debug("result of run script: %s"%o)
     if res != 0:
-        print >> sys.stderr, "Could not run upload script"
-        print >> sys.stderr, o
+        debug("ERROR: Could not run upload script")
+        debug("ERROR: output of upload script: %s"%o)
         return 1
     else:
         return 0
@@ -669,7 +665,7 @@ def gen_metapkgs(distro, os_platform, arch, staging_dir, force=False):
             list_deps = set([x.split()[0].strip() for x in packagelist[deb_name]['Depends'].split(',')])
             mp_deps = set(["ros-%s-%s"%(distro_name, debianize_name(x)) for x in set(d.stack_names) - missing_ok])
             if list_deps == mp_deps:
-                print "Metapackage %s already has correct deps"%deb_name
+                debug("Metapackage %s already has correct deps"%deb_name)
                 continue
 
         # Else, we create the new metapkg
@@ -731,7 +727,7 @@ def build_debs_main():
             raise BuildFailure("[%s] is not a known platform.\nSupported platforms are: %s"%(os_platform, ' '.join(rosdeb.platforms())))
 
         if not os.path.exists(staging_dir):
-            print "creating staging dir: %s"%(staging_dir)
+            debug("creating staging dir: %s"%(staging_dir))
             os.makedirs(staging_dir)
 
         # Load the distro from the URL
@@ -785,8 +781,8 @@ def build_debs_main():
             failure_message = "Internal failure in the release system. Please notify leibs and kwc @willowgarage.com:\n%s\n\n%s"%(e, traceback.format_exc(e))
 
     if failure_message or warning_message:
-        print >> sys.stderr, failure_message
-        print >> sys.stderr, warning_message
+        print("FAILURE: %s"%failure_message)
+        print("WARNING: %s"%warning_message)
 
         if not options.interactive:
             failure_message = "%s\n%s\n%s"%(failure_message, warning_message, os.environ.get('BUILD_URL', ''))
