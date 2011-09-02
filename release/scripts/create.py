@@ -91,7 +91,7 @@ def yes_or_no():
 
 def prompt(msg):
     while True:
-        prompt = raw_input("Would you like to tag %s as %s in %s, [y/n]"%(config.dev_branch, tag_name, from_url))
+        prompt = raw_input(msg)
         if prompt == 'y':
             return True
         elif prompt == 'n':
