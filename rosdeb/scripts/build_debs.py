@@ -221,7 +221,7 @@ def create_chroot(distro, distro_name, os_platform, arch):
 
 
 def do_deb_build(distro_name, stack_name, stack_version, os_platform, arch, staging_dir, noupload, interactive):
-    print("Actually trying to build %s-%s..."%(stack_name, stack_version))
+    debug("Actually trying to build %s-%s..."%(stack_name, stack_version))
 
     distro_tgz = os.path.join('/var/cache/pbuilder', "%s-%s.tgz"%(os_platform, arch))
     cache_dir = '/home/rosbuild/aptcache/%s-%s'%(os_platform, arch)
@@ -312,7 +312,7 @@ echo "Resuming pbuilder"
         archcmd = ['setarch', arch]
 
     # Actually build the deb.  This results in the deb being located in results_dir
-    print("starting pbuilder build of %s-%s"%(stack_name, stack_version))
+    debug("starting pbuilder build of %s-%s"%(stack_name, stack_version))
     subprocess.check_call(archcmd+ ['sudo', 'pbuilder', '--build', '--basetgz', distro_tgz, '--configfile', conf_file, '--hookdir', hook_dir, '--buildresult', results_dir, '--binary-arch', '--buildplace', build_dir, '--aptcache', cache_dir, dsc_file], stderr=subprocess.STDOUT)
 
     # Set up an RE to look for the debian file and find the build_version
@@ -335,7 +335,7 @@ echo "Resuming pbuilder"
     deb_file_final = "%s_%s"%(deb_name, deb_version_final)
 
     # Build a package db if we have to
-    print("starting package db build of %s-%s"%(stack_name, stack_version))
+    debug("starting package db build of %s-%s"%(stack_name, stack_version))
     subprocess.check_call(['bash', '-c', 'cd %(staging_dir)s && dpkg-scanpackages . > %(results_dir)s/Packages'%locals()])
 
 
@@ -354,7 +354,7 @@ dpkg -l %(deb_name)s
             
 
 
-    print "starting verify script for %s-%s"%(stack_name, stack_version)
+    debug("starting verify script for %s-%s"%(stack_name, stack_version))
     subprocess.check_call(archcmd + ['sudo', 'pbuilder', '--execute', '--basetgz', distro_tgz, '--configfile', conf_file, '--bindmounts', results_dir, '--buildplace', build_dir, '--aptcache', cache_dir, verify_script], stderr=subprocess.STDOUT)
 
     if not noupload:
@@ -362,22 +362,22 @@ dpkg -l %(deb_name)s
         base_files = ['%s_%s.changes'%(deb_file, arch), "%s_%s.deb"%(deb_file_final, arch)]
         files = [os.path.join(results_dir, x) for x in base_files]
     
-        print "uploading debs for %s-%s to %s"%(stack_name, stack_version, REPO_HOSTNAME)
+        debug("uploading debs for %s-%s to %s"%(stack_name, stack_version, REPO_HOSTNAME))
         cmd = ['scp'] + files + ['%s:/var/packages/ros-shadow/ubuntu/incoming/%s'%(REPO_LOGIN, os_platform)]
-        print ' '.join(cmd)
+        debug(' '.join(cmd))
         subprocess.check_call(cmd, stderr=subprocess.STDOUT)
-        print "upload complete"
+        debug("upload complete")
 
         # Assemble string for moving all files from incoming to queue (while lock is being held)
         move_str = '\n'.join(['mv '+os.path.join('/var/packages/ros-shadow/ubuntu/incoming',os_platform,x)+' '+os.path.join('/var/packages/ros-shadow/ubuntu/queue',os_platform,x) for x in base_files])
 
         # This script moves files into queue directory, removes all dependent debs, removes the existing deb, and then processes the incoming files
         remote_cmd = "TMPFILE=`mktemp` || exit 1 && cat > ${TMPFILE} && chmod +x ${TMPFILE} && ${TMPFILE}; ret=${?}; rm ${TMPFILE}; exit ${ret}"
-        print "running remote command [%s]"%(remote_cmd)
+        debug("running remote command [%s]"%(remote_cmd))
         run_script = subprocess.Popen(['ssh', REPO_LOGIN, remote_cmd], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-        print "getting depends to prepare invalidate script"
+        debug("getting depends to prepare invalidate script")
         invalidate = [deb_name] + get_depends(deb_name, os_platform, arch)
-        print "invalidating pre-existing and downstream: %s"%(invalidate)
+        debug("invalidating pre-existing and downstream: %s"%(invalidate))
         invalidate_cmds = ["reprepro -b /var/packages/ros-shadow/ubuntu -V -A %(arch)s removefilter %(os_platform)s 'Package (==%(deb_name_x)s)'"%locals() for deb_name_x in  invalidate]
         invalidate_str = "\n".join(invalidate_cmds)
         script_content = """
@@ -396,9 +396,9 @@ reprepro -b /var/packages/ros-shadow/ubuntu -V processincoming %(os_platform)s
 
         #Actually run script and check result
         (o,e) = run_script.communicate(script_content)
-        print "waiting for invalidation script"
+        debug("waiting for invalidation script")
         res = run_script.wait()
-        print o
+        debug("invalidation script result: %s"%o)
         if res != 0:
             raise InternalBuildFailure("Could not run upload script:\n%s\n%s"%(o, e))
 
@@ -494,7 +494,7 @@ def build_debs(distro, stack_name, os_platform, arch, staging_dir, force, nouplo
                     debug("Build of [%s] failed, adding to broken list"%(str(buildable)))
                     broken.add(sn)
             else:
-                debug("[build_debs]: Skipping %s (%s) since dependencies not built: %s"%(sn, sv, broken.union(skipped)&depends))
+                debug("Skipping %s (%s) since dependencies not built: %s"%(sn, sv, broken.union(skipped)&depends))
                 skipped.add(sn)
 
     if broken.union(skipped):
@@ -781,8 +781,8 @@ def build_debs_main():
             failure_message = "Internal failure in the release system. Please notify leibs and kwc @willowgarage.com:\n%s\n\n%s"%(e, traceback.format_exc(e))
 
     if failure_message or warning_message:
-        print("FAILURE: %s"%failure_message)
-        print("WARNING: %s"%warning_message)
+        debug("FAILURE: %s"%failure_message)
+        debug("WARNING: %s"%warning_message)
 
         if not options.interactive:
             failure_message = "%s\n%s\n%s"%(failure_message, warning_message, os.environ.get('BUILD_URL', ''))
