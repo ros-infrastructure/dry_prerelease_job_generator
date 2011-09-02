@@ -447,8 +447,11 @@ def get_buildable(deps, distro_name, os_platform, requested_stack_name, force):
         deb_name = "ros-%s-%s"%(distro_name, debianize_name(sn))
         deb_version = debianize_version(sv, '\w*', os_platform)
         in_repo = deb_in_repo(deb_name, deb_version, os_platform, arch)
-        if not in_repo or (force and sn == requested_stack_name):
+        if not in_repo:
+            print "[build_debs]: selecting [%s] because [%s, %s] not in repo"%(sn, deb_name, deb_version)
             return sn, sv
+        elif force and sn == requested_stack_name:
+            print "[build_debs]: forcing build of %s"%(requested_stack_name)
     
 def build_debs(distro, stack_name, os_platform, arch, staging_dir, force, noupload, interactive):
     distro_name = distro.release_name
