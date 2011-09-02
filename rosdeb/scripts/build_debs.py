@@ -466,6 +466,9 @@ def build_debs(distro, stack_name, os_platform, arch, staging_dir, force, nouplo
         if sn not in missing_ok:
             deb_name = "ros-%s-%s"%(distro_name, debianize_name(sn))
             deb_version = debianize_version(sv, '\w*', os_platform)
+            print "Looking for deb [%s] ver [%s] in repo"%(deb_name, deb_version)
+            in_repo = deb_in_repo(deb_name, deb_version, os_platform, arch)
+            print "deb_in_repo[%s, %s]: %s"%(deb_name, deb_version, in_repo)
             if not deb_in_repo(deb_name, deb_version, os_platform, arch) or (force and sn == stack_name):
                 si = load_info(sn, sv)
                 depends = set(si['depends'])
