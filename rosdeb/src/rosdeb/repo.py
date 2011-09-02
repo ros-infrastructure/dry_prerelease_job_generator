@@ -44,19 +44,22 @@ from .core import debianize_name
 class BadRepo(Exception): pass
 
 _Packages_cache = {}
-def get_Packages(repo_url, os_platform, arch):
+def get_Packages(repo_url, os_platform, arch, cache=None):
     """
     Retrieve the package list from the shadow repo. This routine
     utilizes a cache and should not be invoked in long-running
     processes.
     @raise BadRepo: if repo does not exist
     """
+    if cache is None:
+        cache = _Packages_cache
+        
     packages_url = repo_url + '/ubuntu/dists/%(os_platform)s/main/binary-%(arch)s/Packages'%locals()
-    if packages_url in _Packages_cache:
-        return _Packages_cache[packages_url]
+    if packages_url in cache:
+        return cache[packages_url]
     else:
         try:
-            _Packages_cache[packages_url] = retval = urllib2.urlopen(packages_url).read()
+            cache[packages_url] = retval = urllib2.urlopen(packages_url).read()
         except urllib2.HTTPError:
             raise BadRepo("[%s]: %s"%(repo_url, packages_url))
     return retval
@@ -83,11 +86,11 @@ def parse_Packages(packagelist):
             package = version = deps = distro = None
     return package_deps
     
-def load_Packages(repo_url, os_platform, arch):
+def load_Packages(repo_url, os_platform, arch, cache=None):
     """
     Download and parse debian Packages list into (package, version, depends) tuples
     """
-    return parse_Packages(get_Packages(repo_url, os_platform, arch))
+    return parse_Packages(get_Packages(repo_url, os_platform, arch, cache))
 
 def get_repo_version(repo_url, distro, os_platform, arch):
     """
@@ -96,17 +99,11 @@ def get_repo_version(repo_url, distro, os_platform, arch):
     packagelist = load_Packages(repo_url, os_platform, arch)
     return max(['0'] + [x[1][x[1].find('-')+1:x[1].find('~')] for x in packagelist if x[3] == distro.release_name])
 
-#    deb_name = "ros-%s-ros"%(distro.release_name)
-#    matches = [x for x in packagelist if x[0] == deb_name]
-#    if not matches:
-#        return None
-#    version = matches[0][1]
-#    return version[version.find('-')+1:version.find('~')]
-
-
-
-def deb_in_repo(repo_url, deb_name, deb_version, os_platform, arch, use_regex=True):
-    packagelist = get_Packages(repo_url, os_platform, arch)
+def deb_in_repo(repo_url, deb_name, deb_version, os_platform, arch, use_regex=True, cache=None):
+    """
+    @param cache: dictionary to store Packages list for caching
+    """
+    packagelist = get_Packages(repo_url, os_platform, arch, cache)
     if not use_regex:
         s = 'Package: %s\nVersion: %s'%(deb_name, deb_version)
         return s in packagelist

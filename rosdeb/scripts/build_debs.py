@@ -119,8 +119,8 @@ class TempRamFS:
         subprocess.check_call(cmd, stderr=subprocess.STDOUT)
 
     
-def deb_in_repo(deb_name, deb_version, os_platform, arch):
-    return rosdeb.deb_in_repo(SHADOW_REPO_URL, deb_name, deb_version, os_platform, arch, use_regex=True)
+def deb_in_repo(deb_name, deb_version, os_platform, arch, cache=None):
+    return rosdeb.deb_in_repo(SHADOW_REPO_URL, deb_name, deb_version, os_platform, arch, use_regex=True, cache=cache)
 
 def get_depends(deb_name, os_platform, arch):
     debug("get_depends from %s"%(SHADOW_REPO_URL))
@@ -442,10 +442,12 @@ def debug(msg):
 def get_buildable(deps, distro_name, os_platform, arch, requested_stack_name, force):
     # have to recalculate buildable after each build as invalidation
     # may have occurred.  We examine in order to minimize retreading.
+
+    cache = {} #fresh Packages cache each time through
     for sn, sv in deps:
         deb_name = "ros-%s-%s"%(distro_name, debianize_name(sn))
         deb_version = debianize_version(sv, '\w*', os_platform)
-        in_repo = deb_in_repo(deb_name, deb_version, os_platform, arch)
+        in_repo = deb_in_repo(deb_name, deb_version, os_platform, arch, cache)
         if not in_repo:
             debug("selecting [%s] because [%s, %s] not in repo"%(sn, deb_name, deb_version))
             return sn, sv
