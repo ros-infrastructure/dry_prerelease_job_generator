@@ -475,7 +475,8 @@ def build_debs(distro, stack_name, os_platform, arch, staging_dir, force, nouplo
 
     keep_building = True
     while keep_building:
-        debug("looking for next stack to build. Current deps list is\n=======================\n%s\n==================="%('\n'.join(["%s"%x for x in deps])))
+        printable_list = '\n'.join(["%s"%str(x) for x in deps])
+        debug("looking for next stack to build. Current deps list is\n=======================\n%s\n==================="%(printable_list))
         buildable = get_buildable(deps, distro_name, os_platform, arch, stack_name, force)
         if buildable is None:
             debug("Nothing left to build")
