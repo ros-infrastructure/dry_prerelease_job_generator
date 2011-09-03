@@ -1,4 +1,4 @@
-rospkg documentation
+vcstools documentation
 ====================
 
 .. module:: vcstools
@@ -46,15 +46,15 @@ or ``easy_install``:
 
     easy_install vcstools
 
-Using rospkg
-============
+Using vcstools
+==============
 
 The :mod:`vcstools` module is meant to be used as a normal Python
 module.  After it has been installed, you can ``import`` it normally
 and do not need to declare as a ROS package dependency.
 
 
-Advanced: rospkg developers/contributors
+Advanced: vcstools developers/contributors
 ========================================
 
 .. toctree::
