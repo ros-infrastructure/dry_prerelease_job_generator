@@ -247,7 +247,7 @@ def checkout_distro_stack(distro_stack, from_url, spec):
     tempdir = tempfile.mkdtemp()
     temp_repo = os.path.join(tempdir, distro_stack.name)
     client = VcsClient(vcs_type, temp_repo)
-    client.checkout(from_url, config.dev_branch)
+    client.checkout(from_url, spec)
     return temp_repo
 
 def tag_release(distro_stack):
