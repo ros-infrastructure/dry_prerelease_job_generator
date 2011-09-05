@@ -155,27 +155,15 @@ def create_chroot(distro, distro_name, os_platform, arch):
 
     subprocess.check_call(['sudo', 'pbuilder', '--create', '--distribution', os_platform, '--debootstrapopts', '--arch=%s' % arch, '--othermirror', 'deb http://packages.ros.org/ros-shadow/ubuntu %s main' % (os_platform), '--basetgz', distro_tgz, '--components', 'main restricted universe multiverse', '--extrapackages', deplist, '--aptcache', cache_dir])
 
-#def push_built_deb(os_platform, repo_name, upload_files, change_files):
-#    # Upload the debs to the server
-#    print "uploading debs for %s-%s to pub8"%(stack_name, stack_version)
-#    subprocess.check_call(['scp'] + upload_files + ['rosbuild@pub8:/var/packages/%s/ubuntu/queue/%s'%(repo_name,os_platform)])
-#
-#    for change_file in change_files:
-#        #runs processing
-#        remote_cmd = "reprepro -b /var/packages/%s/ubuntu -V processincoming %s %s"%(repo_name, os_platform, change_file)
-#        print "running on pub8", remote_cmd
-#        cmd = ['ssh', 'rosbuild@pub8', remote_cmd]
-#        success = subprocess.call(cmd) == 0
-#        if( not success ):
-#            print "Failed to update package. Go fix it.", change_file
-            
 def do_deb_build(distro_name, stack_name, stack_version, os_platform, arch, staging_dir, noupload, interactive):
     print "Actually trying to build %s-%s..." % (stack_name, stack_version)
     project_name = stack_name.split('/')[-1].rstrip('.git')
-    
     #pull down the git repo using git-buildpackage clone, this gets all the right tags
     subprocess.check_call(["/bin/bash", "-c", "cd %(staging_dir)s && gbp-clone %(stack_name)s" % locals()])
     
+    #update any submodules.
+    subprocess.check_call(["/bin/bash", "-c", "cd %(staging_dir)s/%(project_name)s && git submodule update --init"% locals()])
+
     lines = open(os.path.join(staging_dir,project_name,'debian/changelog'),'r').readlines()
     first_line = lines[0]
     w = first_line.split('(')
