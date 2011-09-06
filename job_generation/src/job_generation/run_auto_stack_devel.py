@@ -72,7 +72,7 @@ def main():
                 rosinstall_file = '%s.rosinstall'%options.stack
                 with open(rosinstall_file, 'w') as f:
                     f.write(rosinstall)
-                call('rosinstall --delete-changed-uris --rosdep-yes %s %s'%(env['WORKSPACE'], rosinstall_file), env,
+                call('rosinstall --delete-changed-uris --rosdep-yes %s/depends %s'%(env['WORKSPACE'], rosinstall_file), env,
                      'Install the stack dependencies from source.')
         else:
             print 'Stack %s does not have any dependencies, not installing anything now'%str(options.stack)
