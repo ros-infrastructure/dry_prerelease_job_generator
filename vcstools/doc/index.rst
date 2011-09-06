@@ -1,5 +1,5 @@
 vcstools documentation
-====================
+======================
 
 .. module:: vcstools
 .. moduleauthor:: Tully Foote <tfoote@willowgarage.com>, Thibault Kruse <kruset@in.tum.de>, Ken Conley <kwc@willowgarage.com>

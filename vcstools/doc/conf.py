@@ -41,7 +41,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'rospkg'
+project = u'vcstools'
 copyright = u'2010, Willow Garage'
 
 # The version info for the project you're documenting, acts as replacement for
