@@ -79,10 +79,10 @@ class VcsClient(object):
         return self.vcs.get_branch_parent()
 
     def get_diff(self, basepath=None):
-        return self.vcs.get_diff(self, basepath)
+        return self.vcs.get_diff(basepath)
 
     def get_status(self, basepath=None, untracked=False):
-        return self.vcs.get_status(self, basepath, untracked)
+        return self.vcs.get_status(basepath, untracked)
 
 # backwards compat
 VCSClient=VcsClient
