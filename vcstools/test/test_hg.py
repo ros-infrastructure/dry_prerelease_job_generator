@@ -188,7 +188,7 @@ class HGDiffStatClientTest(HGClientTestSetups):
         client = HgClient(self.readonly_path)
         self.assertTrue(client.path_exists())
         self.assertTrue(client.detect_presence())
-        self.assertEquals('diff --git a/added.txt b/added.txt\nnew file mode 100644\n--- /dev/null\n+++ ./added.txt\n@@ -0,0 +1,1 @@\n+0123456789abcdef\n\\ No newline at end of file\ndiff --git a/deleted.txt b/deleted.txt\ndeleted file mode 100644\ndiff --git a/modified-fs.txt b/modified-fs.txt\n--- ./modified-fs.txt\n+++ ./modified-fs.txt\n@@ -0,0 +1,1 @@\n+0123456789abcdef\n\\ No newline at end of file\ndiff --git a/modified.txt b/modified.txt\n--- ./modified.txt\n+++ ./modified.txt\n@@ -0,0 +1,1 @@\n+0123456789abcdef\n\\ No newline at end of file\n\n', client.get_diff())
+        self.assertEquals('diff --git ./added.txt ./added.txt\nnew file mode 100644\n--- /dev/null\n+++ ./added.txt\n@@ -0,0 +1,1 @@\n+0123456789abcdef\n\\ No newline at end of file\ndiff --git ./deleted.txt ./deleted.txt\ndeleted file mode 100644\ndiff --git ./modified-fs.txt ./modified-fs.txt\n--- ./modified-fs.txt\n+++ ./modified-fs.txt\n@@ -0,0 +1,1 @@\n+0123456789abcdef\n\\ No newline at end of file\ndiff --git ./modified.txt ./modified.txt\n--- ./modified.txt\n+++ ./modified.txt\n@@ -0,0 +1,1 @@\n+0123456789abcdef\n\\ No newline at end of file\n\n', client.get_diff())
 
     def test_diff_relpath(self):
         from vcstools.hg import HgClient
@@ -196,7 +196,7 @@ class HGDiffStatClientTest(HGClientTestSetups):
         self.assertTrue(client.path_exists())
         self.assertTrue(client.detect_presence())
 
-        self.assertEquals('diff --git a/added.txt b/added.txt\nnew file mode 100644\n--- /dev/null\n+++ readonly/added.txt\n@@ -0,0 +1,1 @@\n+0123456789abcdef\n\\ No newline at end of file\ndiff --git a/deleted.txt b/deleted.txt\ndeleted file mode 100644\ndiff --git a/modified-fs.txt b/modified-fs.txt\n--- readonly/modified-fs.txt\n+++ readonly/modified-fs.txt\n@@ -0,0 +1,1 @@\n+0123456789abcdef\n\\ No newline at end of file\ndiff --git a/modified.txt b/modified.txt\n--- readonly/modified.txt\n+++ readonly/modified.txt\n@@ -0,0 +1,1 @@\n+0123456789abcdef\n\\ No newline at end of file\n\n', client.get_diff(basepath=os.path.dirname(self.readonly_path)))
+        self.assertEquals('diff --git readonly/added.txt readonly/added.txt\nnew file mode 100644\n--- /dev/null\n+++ readonly/added.txt\n@@ -0,0 +1,1 @@\n+0123456789abcdef\n\\ No newline at end of file\ndiff --git readonly/deleted.txt readonly/deleted.txt\ndeleted file mode 100644\ndiff --git readonly/modified-fs.txt readonly/modified-fs.txt\n--- readonly/modified-fs.txt\n+++ readonly/modified-fs.txt\n@@ -0,0 +1,1 @@\n+0123456789abcdef\n\\ No newline at end of file\ndiff --git readonly/modified.txt readonly/modified.txt\n--- readonly/modified.txt\n+++ readonly/modified.txt\n@@ -0,0 +1,1 @@\n+0123456789abcdef\n\\ No newline at end of file\n\n', client.get_diff(basepath=os.path.dirname(self.readonly_path)))
 
     def test_status(self):
         from vcstools.hg import HgClient

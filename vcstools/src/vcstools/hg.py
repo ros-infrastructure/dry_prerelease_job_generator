@@ -39,6 +39,7 @@ New in ROS C-Turtle.
 import os
 import subprocess
 import sys
+import string
 
 from .vcs_base import VcsClientBase
 
@@ -57,6 +58,8 @@ def _hg_diff_path_change(diff, path):
     s_list = [line for line in diff.split(os.linesep)]
     for line in s_list:
         newline = line
+        if line.startswith("diff"):
+            state = INIT
         if state == INIT:
             if line.startswith("@@"):
                 state = INDIFF
@@ -65,8 +68,10 @@ def _hg_diff_path_change(diff, path):
                     newline = "--- " + path + line[5:]
                 if line.startswith("+++") and not line.startswith("+++ /dev/null"):
                     newline = "+++ " + path + line[5:]
-        elif line.startswith("diff"):
-            state = INIT
+                if line.startswith("diff --git"):
+                    # first replacing b in case path starts with a/
+                    newline = string.replace(line, " b/", " " + path + "/", 1)
+                    newline = string.replace(newline, " a/", " " + path + "/", 1)
         result += newline + '\n'
     return result
 
