@@ -369,7 +369,7 @@ def create_meta_pkg(packagelist, distro, distro_name, metapackage, deps, os_plat
 Package: %(deb_name)s
 Version: %(deb_version)s
 Architecture: %(arch)s
-Maintainer: The ROS community <ros-user@lists.sourceforge.net>
+Maintainer: The ROS community <ros-users@code.ros.org>
 Installed-Size:
 Depends: %(ros_depends_str)s
 Section: unknown
