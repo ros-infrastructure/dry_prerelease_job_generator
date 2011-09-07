@@ -573,11 +573,13 @@ def run_chroot(options, path, workspace, hdd_tmp_dir):
         cmd = "apt-get update".split()
         chrti.execute(cmd)
 
-        cmd = "apt-get install -y --force-yes build-essential python-yaml cmake subversion mercurial bzr git-core wget python-setuptools".split()
+        cmd = "apt-get install -y --force-yes build-essential python-yaml cmake subversion mercurial bzr git-core wget python-setuptools python-pip".split()
         chrti.execute(cmd)
 
-        cmd = "easy_install -U rosinstall".split()
-        chrti.execute(cmd)
+        pypi_pkgs = ['pip', 'vcstools', 'rospkg', 'rosinstall']
+        for p in pypi_pkgs:
+            cmd = ["pip", "install", "-U",p]
+            chrti.execute(cmd)
 
         if options.arch in ['i386', 'i686']:
 
