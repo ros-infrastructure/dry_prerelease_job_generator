@@ -28,6 +28,8 @@ import rosinstall.helpers
 
 from vcstools import VcsClient
 
+__REPOTYPES__ = ['svn', 'bzr', 'hg', 'git']
+
 def usage():
   print __doc__ % vars()
   exit(1)
@@ -45,8 +47,15 @@ class ConfigElement:
     raise NotImplementedError, "ConfigElement install unimplemented"
   def get_ros_path(self):
     raise NotImplementedError, "ConfigElement get_ros_path unimplemented"
+  def get_yaml(self):
+    """yaml with values as specified in file"""
+    raise NotImplementedError, "ConfigElement get_versioned_yaml unimplemented"
   def get_versioned_yaml(self):
     raise NotImplementedError, "ConfigElement get_versioned_yaml unimplemented"
+  def get_diff(self, basepath=None):
+    raise NotImplementedError, "ConfigElement get_diff unimplemented"
+  def get_status(self, basepath=None, untracked=False):
+    raise NotImplementedError, "ConfigElement get_status unimplemented"
   def backup(self, backup_path):
     if not backup_path:
       raise ROSInstallException("Cannot install %s.  backup disabled."%self.path)
@@ -95,8 +104,10 @@ class OtherConfigElement(ConfigElement):
 
   def get_versioned_yaml(self):
     raise ROSInstallException("Cannot generate versioned outputs with non source types")
-    return [{"other": {"local-name": self.path} }]
 
+  def get_yaml(self):
+    return [{"other": {"local-name": self.path} }]
+  
 class VCSConfigElement(ConfigElement):
   def __init__(self, path, uri, version=''):
     self.path = path
@@ -160,8 +171,21 @@ class VCSConfigElement(ConfigElement):
     else:
       return None
 
+  def get_yaml(self):
+    "yaml as from source"
+    result = {self.vcsc.get_vcs_type_name(): {"local-name": self.path, "uri": self.uri} }
+    if self.version != None and self.version != '':
+      result[self.vcsc.get_vcs_type_name()]["version"]=self.version
+    return [result]
+
   def get_versioned_yaml(self):
     return [{self.vcsc.get_vcs_type_name(): {"local-name": self.path, "uri": self.uri, "version":self.vcsc.get_version()} }]
+
+  def get_diff(self, basepath=None):
+    return self.vcsc.get_diff(basepath)
+  
+  def get_status(self, basepath=None, untracked=False):
+    return self.vcsc.get_status(basepath, untracked)
   
 
 class AVCSConfigElement(VCSConfigElement):
@@ -280,6 +304,14 @@ class Config:
     return success
     # TODO go back and make sure that everything in options.path is described
     # in the yaml, and offer to delete otherwise? not sure, but it could go here
+
+  def get_config_elements(self):
+    """ Return the simplifed ROS_PACKAGE_PATH """
+    code_trees = []
+    for t in reversed(self.trees):
+      if not rosinstall.helpers.is_path_ros(t.get_path()):
+        code_trees.append(t)
+    return code_trees
 
 
   def get_ros_package_path(self):
@@ -421,6 +453,44 @@ def rewrite_included_source(source_yaml, source_path):
   #print "after", source_yaml
   return source_yaml
 
+
+def get_diffs(config, path):
+  """calls SCM diff for all SCM entries in config, relative to path"""
+  result=[]
+
+  for element in config.get_config_elements():
+    entry = element.get_yaml()[0]
+    for scmtype in __REPOTYPES__:
+      if scmtype in entry.keys():
+        result.append({'entry':entry, 'diff':element.get_diff(path)})
+  return result
+
+
+def get_statuses(config, path, untracked = False):
+  """calls SCM status for all SCM entries in config, relative to path"""
+  result=[]
+  for element in config.get_config_elements():
+    entry = element.get_yaml()[0]
+    for scmtype in __REPOTYPES__:
+      if scmtype in entry.keys():
+        status = element.get_status(path, untracked)
+        # align other scm output to svn
+        columns = -1
+        if scmtype == "git":
+          columns = 3
+        elif scmtype == "hg":
+          columns = 2
+        elif scmtype == "bzr":
+          columns = 4
+        if columns > -1 and status != None:
+          status_aligned = ''
+          for line in status.splitlines():
+            status_aligned = status_aligned + line[:columns].ljust(8) + line[columns:] + '\n'
+          status = status_aligned
+        result.append({'entry':entry, 'status':status})
+  return result
+
+
 def rosinstall_main(argv):
   if len(argv) < 2:
     usage()
@@ -435,7 +505,7 @@ URIs can be web urls to remote .rosinstall files, local .rosinstall files,\n\
 git, svn, bzr, hg URIs, or local directories.\n\
 Later URIs will shadow packages of earlier URIs.\n",
                         epilog="See: http://www.ros.org/wiki/rosinstall for details\n",
-                        version="%prog 0.5.20")
+                        version="%prog 0.5.21")
   parser.add_option("-n", "--nobuild", dest="nobuild", default=False,
                     help="skip the build step for the ROS stack",
                     action="store_true")
@@ -454,7 +524,16 @@ Later URIs will shadow packages of earlier URIs.\n",
   parser.add_option("--backup-changed-uris", dest="backup_changed", default='',
                     help="backup the local copy of a directory before changing uri to this directory.",
                     action="store")
-
+  parser.add_option("--diff", dest="vcs_diff", default=False,
+                    help="shows a combined diff over all SCM entries",
+                    action="store_true")
+  parser.add_option("--status", dest="vcs_status", default=False,
+                    help="shows a combined status command over all SCM entries",
+                    action="store_true")
+  parser.add_option("--status-untracked", dest="vcs_status_untracked", default=False,
+                    help="shows a combined status command over all SCM entries, also showing untracked files",
+                    action="store_true")
+  
   parser.add_option("--generate-versioned-rosinstall", dest="generate_versioned", default=None,
                     help="generate a versioned rosinstall file", action="store")
   (options, args) = parser.parse_args(args)
@@ -499,14 +578,13 @@ Later URIs will shadow packages of earlier URIs.\n",
 
   observed_paths = {}
   aggregate_source_yaml = []
-  print "rosinstall operating on", options.path, "from specifications in rosinstall files ", ", ".join(config_uris)
 
   for a in config_uris:
     #print "argument", a
     config_uri = rosinstall.helpers.conditional_abspath(a)
     if os.path.isdir(config_uri):
       rosinstall_uri = os.path.join(config_uri, ".rosinstall")
-      print "processing config_uri %s"%config_uri
+      #print "processing config_uri %s"%config_uri
       if os.path.exists(rosinstall_uri):
         source_yaml = rosinstall.helpers.get_yaml_from_uri(rosinstall_uri)
         if not source_yaml:
@@ -541,6 +619,37 @@ Later URIs will shadow packages of earlier URIs.\n",
     config.write_version_locked_source(filename)
     print "Saved versioned rosinstall of current directory %s to %s"%(options.path, filename)
     return 0
+
+  if options.vcs_diff:
+    alldiff = ""
+    difflist = get_diffs(config, options.path)
+    for entrydiff in difflist:
+      if entrydiff['diff'] != None:
+        alldiff += entrydiff['diff']
+    print alldiff
+    return True
+
+  if options.vcs_status:
+    statuslist = get_statuses(config, options.path, False)
+
+    allstatus=""
+    for entrystatus in statuslist:
+      if entrystatus['status'] != None:
+        allstatus += entrystatus['status']
+    print allstatus
+    return True
+
+  if options.vcs_status_untracked:
+    statuslist = get_statuses(config, options.path, True)
+
+    allstatus=""
+    for entrystatus in statuslist:
+      if entrystatus['status'] != None:
+        allstatus += entrystatus['status']
+    print allstatus
+    return True
+
+  print "rosinstall operating on", options.path, "from specifications in rosinstall files ", ", ".join(config_uris)
 
   ## Save .rosinstall 
   config.write_source()

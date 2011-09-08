@@ -45,3 +45,9 @@ binary_deb: dsc
 
 upload: source_deb
 	cd deb_dist && dput ppa:tully.foote/tully-test-ppa ../rosinstall_${VERSION}-1_source.changes 
+
+testsetup:
+	echo "running tests"
+
+run_test: testsetup  # not test so as not to clobber ROS testing once not a ros package rename to test
+	nosetests --with-coverage --cover-package=rosinstall
