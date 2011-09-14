@@ -449,6 +449,7 @@ def get_buildable(deps, distro_name, os_platform, arch, requested_stack_name, fo
         deb_version = debianize_version(sv, '\w*', os_platform)
         in_repo = deb_in_repo(deb_name, deb_version, os_platform, arch, cache)
         if not in_repo:
+            debug("deb_in_repo(%s)"%(repr(deb_name, deb_version, os_platform, arch, cache)))
             debug("selecting [%s] because [%s, %s] not in repo"%(sn, deb_name, deb_version))
             return sn, sv
         elif force and sn == requested_stack_name:
