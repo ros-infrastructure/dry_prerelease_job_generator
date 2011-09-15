@@ -48,7 +48,7 @@ import stat
 import re
 import time
 
-from rosdistro import Distro
+from rospkg.distro import distro_uri, load_distro
 import rosdeb
 from rosdeb import ubuntu_release, debianize_name, debianize_version, \
     platforms, ubuntu_release_name, load_Packages, get_repo_version
@@ -632,12 +632,6 @@ rm %(new_files)s
     else:
         return 0
 
-
-def load_distro(distro_name):
-    # Load the distro from the URL
-    distro_uri = "https://code.ros.org/svn/release/trunk/distros/%s.rosdistro"%distro_name
-    return Distro(distro_uri)
-    
 def gen_metapkgs(distro, os_platform, arch, staging_dir, force=False):
     distro_name = distro.release_name
 
@@ -733,9 +727,7 @@ def build_debs_main():
             debug("creating staging dir: %s"%(staging_dir))
             os.makedirs(staging_dir)
 
-        # Load the distro from the URL
-        distro_uri = "https://code.ros.org/svn/release/trunk/distros/%s.rosdistro"%distro_name
-        distro = Distro(distro_uri)
+        distro = load_distro(distro_uri(distro_name))
 
         if options.ramdisk:
             with TempRamFS(staging_dir, "20G"):
