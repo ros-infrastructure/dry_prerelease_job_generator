@@ -8,9 +8,6 @@
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/iso_generator</url>
-  <depend package="rosdistro"/>
-  <depend package="hudson"/>
-  <depend package="rosdeb"/>
 
 </package>
 
