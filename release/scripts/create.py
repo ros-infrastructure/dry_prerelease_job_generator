@@ -409,9 +409,6 @@ def main():
     check_version()
     
     try:
-        repair = '--repair' in sys.argv
-        sys.argv = [a for a in sys.argv if a != '--repair']
-        
         # load the args
         name, version, distro_file = load_sys_args()
         try:
@@ -443,7 +440,7 @@ You can trigger pre-release builds for your stack on <http://code.ros.org/prerel
         distro_stack = distro.stacks[name]
         
         #checkout the stack
-        tmp_dir = checkout_stack(name, distro_stack, repair)
+        tmp_dir = checkout_stack(name, distro_stack)
         confirm_stack_version(local_path, os.path.join(tmp_dir, name), name, version)
         check_stack_depends(local_path, name)
 
@@ -452,7 +449,7 @@ You can trigger pre-release builds for your stack on <http://code.ros.org/prerel
         
         # create the tarball
         tarball, control = make_dist_of_dir(tmp_dir, name, version, distro_stack)
-        #tarball, control = make_dist(name, version, distro_stack, repair=repair)
+        #tarball, control = make_dist(name, version, distro_stack)
         if not control['rosdeps']:
             sys.stderr.write("""Misconfiguration: control rosdeps are empty.\n
     In order to run create.py, the stack you are releasing must be on your current
@@ -467,8 +464,7 @@ You can trigger pre-release builds for your stack on <http://code.ros.org/prerel
             print "no valid contact e-mail, will not send build failure messages"
         
         # create the VCS tags
-        if not repair:
-            tag_release(distro_stack)
+        tag_release(distro_stack)
 
         # checkin the tarball
         copy_to_server(name, version, tarball, control)
@@ -477,9 +473,8 @@ You can trigger pre-release builds for your stack on <http://code.ros.org/prerel
         os.remove(tarball)
 
         # update the rosdistro file
-        if not repair:
-            update_rosdistro_yaml(name, version, distro_file)
-            checkin_distro_file(name, version, distro_file)
+        update_rosdistro_yaml(name, version, distro_file)
+        checkin_distro_file(name, version, distro_file)
 
         # trigger source deb system
         trigger_hudson_source_deb(name, version, distro)

@@ -41,6 +41,9 @@ import tempfile
 import re
 import tarfile
 import shutil
+import urllib2
+import re
+import hashlib
 
 import yaml
 
@@ -48,16 +51,13 @@ import roslib.packages
 import roslib.stacks
 import roslib.stack_manifest
 
-from rosdistro import Distro
 from rosdeb import control_data
 # we export this symbol to create.py as well
-from rosdeb.rosutil import checkout_svn_to_tmp, checkout_dev_to_tmp, checkout_tag_to_tmp
+from rosdeb.rosutil import checkout_svn_to_tmp, checkout_dev_to_tmp
 
 class ReleaseException(Exception): pass
 
 def get_source_version(distro, stack_name):
-    import urllib2
-    import re
     dev_svn = distro.stacks[stack_name].dev_svn 
     print "Reading version number from %s"%(dev_svn)
 
@@ -215,20 +215,14 @@ def make_dist(name, version, distro_stack, repair=False):
 
     return make_dist_of_dir(tmp_dir, name, version, distro_stack)
 
-def checkout_stack(name, distro_stack, repair):
+def checkout_stack(name, distro_stack):
     """ 
     Checkout the stack into a tempdir
     
     @return The temporary directory to find the stack inside
     """
-    
-    if not repair:
-        tmp_dir = checkout_dev_to_tmp(name, distro_stack)
-    else:
-        tmp_dir = checkout_tag_to_tmp(name, distro_stack)        
+    tmp_dir = checkout_dev_to_tmp(name, distro_stack)
     return tmp_dir
-
-import hashlib
 
 def md5sum_file(filename):
     m = hashlib.md5()
