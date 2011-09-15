@@ -16,7 +16,6 @@
   <depend package="roslib"/>
   <depend package="rosdep"/>
   <depend package="hudson"/>
-  <depend package="rosdistro"/>
   
   <rosdep name="python-yaml" />
 
