@@ -35,8 +35,6 @@
 import os
 import sys
 
-import rosdistro
-
 ubuntu_map = {
     '11.04': 'natty',
     '10.10': 'maverick',
