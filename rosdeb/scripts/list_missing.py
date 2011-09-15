@@ -163,9 +163,9 @@ def get_missing(distro, os_platform, arch, repo=SHADOW_REPO, lock_version=True):
     deps = compute_deps(distro, 'ALL')
 
     # These stacks are not actually relased, so we treat them as implicitly excluded
-    missing_primary = set(distro.stack_names) - set(distro.released_stacks.keys())
+    missing_primary = set(distro.stacks.keys()) - set(distro.released_stacks.keys())
     missing_dep = set()
-    missing_excluded = set(distro.stack_names) - set(distro.released_stacks.keys())
+    missing_excluded = set(distro.stacks.keys()) - set(distro.released_stacks.keys())
     missing_excluded_dep = set()
 
     # Build the deps in order
