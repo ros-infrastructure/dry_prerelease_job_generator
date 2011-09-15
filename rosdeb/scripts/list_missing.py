@@ -50,10 +50,10 @@ import urllib2
 import stat
 import tempfile
 import time
+import rospkg.distro
 
 import rosdeb
 
-from rosdistro import Distro
 from rosdeb import ubuntu_release, debianize_name, debianize_version, platforms, ubuntu_release_name, \
     deb_in_repo, load_Packages, get_repo_version, get_stack_version, BadRepo
 
@@ -225,8 +225,7 @@ def list_missing(distro, os_platform, arch):
 
 def load_distro(distro_name):
     "Load the distro from the URL"
-    distro_uri = "https://code.ros.org/svn/release/trunk/distros/%s.rosdistro"%(distro_name)
-    return Distro(distro_uri)
+    return rospkg.distro.load_distro(rospkg.distro.distro_uri(distro_name))
 
 SOURCEDEB_DIR_URI = 'https://code.ros.org/svn/release/download/stacks/%(stack_name)s/%(stack_name)s-%(stack_version)s/'
 SOURCEDEB_URI = SOURCEDEB_DIR_URI+'%(deb_name)s_%(stack_version)s-0~%(os_platform)s.dsc'

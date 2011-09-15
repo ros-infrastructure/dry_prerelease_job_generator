@@ -71,45 +71,6 @@ def checkout_svn_to_tmp(name, uri):
     subprocess.check_call(['svn', 'co', uri, dest])
     return tmp_dir
 
-def checkout_tag_to_tmp(name, distro_stack):
-    """
-    Checkout an VCS-based 'release-tag' code tree to the tmp dir.
-    
-    Utility routine -- need to replace with vcs
-    
-    @return: temporary directory that contains checkout of SVN tree in
-    directory 'name'. temporary directory will be a subdirectory of
-    OS-provided temporary space.
-    @rtype: str
-    @raise Exception: if checkout cannot be done 
-    """
-
-    for key in ['svn', 'git', 'hz', 'bzr']:
-        if key in distro_stack._rules:
-            break
-    else:
-        raise Exception("stack [%s] does not have any supported checkout rules"%(name))
-
-    try:
-        if key == 'svn':
-            uri = distro_stack.expand_rule(distro_stack._rules[key]['release-tag'])
-            version = ''
-        elif key in ['hg', 'git', 'bzr']:
-            uri = distro_stack.expand_rule(distro_stack._rules[key]['uri'])
-            version = distro_stack.expand_rule(distro_stack._rules[key]['release-tag'])
-        else:
-            raise Exception ("key %s not implemented"%key)
-
-    except KeyError:
-        raise Exception("cannot checkout stack dev tree to tmp: %s rules have no 'dev' key"%(key))
-
-    tmp_dir = tempfile.mkdtemp()
-    dest = os.path.join(tmp_dir, name)
-    print 'Checking out a fresh copy of %s from %s to %s...'%(name, uri, dest)
-    vcs_client = vcstools.VcsClient(key, dest)
-    vcs_client.checkout(uri, version)
-    return tmp_dir
-
 def checkout_dev_to_tmp(name, distro_stack):
     """
     Checkout an VCS-based 'dev' code tree to the tmp dir.

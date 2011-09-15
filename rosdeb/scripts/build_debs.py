@@ -52,7 +52,7 @@ from rosdistro import Distro
 import rosdeb
 from rosdeb import ubuntu_release, debianize_name, debianize_version, \
     platforms, ubuntu_release_name, load_Packages, get_repo_version
-from rosdeb.rosutil import checkout_svn_to_tmp, send_email
+from rosdeb.rosutil import send_email
 from rosdeb.source_deb import download_control
 
 import list_missing

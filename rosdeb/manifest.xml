@@ -17,7 +17,6 @@
   <depend package="rosdep"/>
   <depend package="hudson"/>
   <depend package="rosdistro"/>
-  <depend package="vcstools"/>
   
   <rosdep name="python-yaml" />
 
