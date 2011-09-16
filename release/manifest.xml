@@ -13,6 +13,7 @@
   <depend package="rosdistro" />  
   <depend package="rosdeb" />
   <depend package="hudson" />
+  <depend package="vcstools" />
 
   <rosdep name="python-yaml" />
 
