@@ -11,6 +11,7 @@
   <depend package="rosdistro"/>
   <depend package="hudson"/>
   <depend package="rosdeb"/>
+  <depend package="vcstools"/>
 
 </package>
 
