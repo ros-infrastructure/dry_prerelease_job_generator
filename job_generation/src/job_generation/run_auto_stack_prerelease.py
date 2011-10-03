@@ -89,6 +89,8 @@ def main():
                 print 'Installing stack dependencies from source'
                 rosinstall = stacks_to_rosinstall(depends_all, rosdistro_obj.released_stacks, 'release-tar')
                 rosinstall_file = '%s.rosinstall'%DEPENDS_DIR
+                print 'Generating rosinstall file [%s]'%(rosinstall_file)
+                print 'Contents:\n\n'+rosinstall+'\n\n'
                 with open(rosinstall_file, 'w') as f:
                     f.write(rosinstall)
                 call('rosinstall --rosdep-yes %s /opt/ros/%s %s'%(DEPENDS_DIR, options.rosdistro, rosinstall_file), env,
@@ -155,6 +157,8 @@ def main():
                 print 'Installing source of %s'%str(depends_all_depends_on_all)
                 rosinstall = stacks_to_rosinstall(depends_all_depends_on_all, rosdistro_obj.released_stacks, 'release-tar')
                 rosinstall_file = '%s_depends_all_depends_on_all.rosinstall'%DEPENDS_ON_DIR
+                print 'Generating rosinstall file [%s]'%(rosinstall_file)
+                print 'Contents:\n\n'+rosinstall+'\n\n'
                 with open(rosinstall_file, 'w') as f:
                     f.write(rosinstall)
                     call('rosinstall --rosdep-yes %s /opt/ros/%s %s %s'%(DEPENDS_ON_DIR, options.rosdistro, STACK_DIR, rosinstall_file), env,
@@ -168,6 +172,8 @@ def main():
             print 'Installing depends_on_all stacks from source: %s'%str(depends_on_all)
             rosinstall = stacks_to_rosinstall(depends_on_all, rosdistro_obj.released_stacks, 'release-tar')
             rosinstall_file = '%s.rosinstall'%DEPENDS_ON_DIR
+            print 'Generating rosinstall file [%s]'%(rosinstall_file)
+            print 'Contents:\n\n'+rosinstall+'\n\n'
             with open(rosinstall_file, 'w') as f:
                 f.write(rosinstall)
             call('rosinstall --rosdep-yes %s /opt/ros/%s %s %s'%(DEPENDS_ON_DIR, options.rosdistro, STACK_DIR, rosinstall_file), env,
