@@ -251,7 +251,6 @@ def make_dist_of_dir(tmp_dir, name, version, distro_stack):
     # move tarball outside tmp_dir so we can clean it up
     dst = os.path.join(tempfile.gettempdir(), os.path.basename(tarball))
     shutil.copyfile(tarball, dst)
-    shutil.rmtree(tmp_dir)
     return dst, control
 
 TAR_IGNORE_TOP=['build']

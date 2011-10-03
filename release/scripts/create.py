@@ -250,13 +250,13 @@ def checkout_distro_stack(distro_stack, from_url, spec):
     client.checkout(from_url, spec)
     return temp_repo
 
-def tag_release(distro_stack):
+def tag_release(distro_stack, checkout_dir):
     if 'svn' in distro_stack._rules:
         tag_subversion(distro_stack)
     elif 'git' in distro_stack._rules:
-        tag_git(distro_stack)
+        tag_git(distro_stack, checkout_dir)
     elif 'hg' in distro_stack._rules:
-        tag_mercurial(distro_stack)
+        tag_mercurial(distro_stack, checkout_dir)
     elif 'bzr' in distro_stack._rules:
         tag_bzr(distro_stack)
     else:
@@ -279,12 +279,13 @@ def tag_subversion(distro_stack):
     else:
         return [tag_url]
     
-def tag_mercurial(distro_stack):
+def tag_mercurial(distro_stack, checkout_dir):
     config = distro_stack.vcs_config
+    from_url = config.repo_uri
+    temp_repo = os.path.join(checkout_dir, distro_stack.name)     
+
     for tag_name in [config.release_tag, config.distro_tag]:
-        from_url = config.repo_uri
         if prompt("Would you like to tag %s as %s in %s, [y/n]"%(config.dev_branch, tag_name, from_url)):
-            temp_repo = checkout_distro_stack(distro_stack, from_url, config.dev_branch)
             subprocess.check_call(['hg', 'tag', '-f', tag_name], cwd=temp_repo)
             subprocess.check_call(['hg', 'push'], cwd=temp_repo)
     return [tag_name]
@@ -308,13 +309,13 @@ def tag_bzr(distro_stack):
         subprocess.check_call(['bzr', 'push', '--create-prefix', from_url+"/"+branch_name], cwd=temp_repo)
     return [config.distro_tag]
 
-def tag_git(distro_stack):
+def tag_git(distro_stack, checkout_dir):
     config = distro_stack.vcs_config
     from_url = config.repo_uri
+    temp_repo = os.path.join(checkout_dir, distro_stack.name)
 
     # First create a release tag in the git repository.
     if prompt("Would you like to tag %s as %s in %s, [y/n]"%(config.dev_branch, config.release_tag, from_url)):
-        temp_repo = checkout_distro_stack(distro_stack, from_url, config.dev_branch)
         subprocess.check_call(['git', 'tag', '-f', config.release_tag], cwd=temp_repo)
         subprocess.check_call(['git', 'push', '--tags'], cwd=temp_repo)
 
@@ -323,7 +324,6 @@ def tag_git(distro_stack):
     # branches can be force-updated by fetch.
     branch_name = config.distro_tag
     if prompt("Would you like to create the branch %s as %s in %s, [y/n]"%(config.dev_branch, branch_name, from_url)):
-        temp_repo = checkout_distro_stack(distro_stack, from_url, config.dev_branch)
         subprocess.check_call(['git', 'branch', '-f', branch_name, config.dev_branch], cwd=temp_repo)
         subprocess.check_call(['git', 'push', from_url, branch_name], cwd=temp_repo)
     return [config.distro_tag]
@@ -464,7 +464,10 @@ You can trigger pre-release builds for your stack on <http://code.ros.org/prerel
             print "no valid contact e-mail, will not send build failure messages"
         
         # create the VCS tags
-        tag_release(distro_stack)
+        tag_release(distro_stack, tmp_dir)
+
+        # Remove checkout dir
+        shutil.rmtree(tmp_dir)
 
         # checkin the tarball
         copy_to_server(name, version, tarball, control)
