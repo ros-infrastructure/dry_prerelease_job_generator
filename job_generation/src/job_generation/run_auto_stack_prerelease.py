@@ -63,7 +63,7 @@ def main():
         print 'Contents:\n\n'+rosinstall+'\n\n'
         with open(rosinstall_file, 'w') as f:
             f.write(rosinstall)
-        print 'rosinstall file [%s] generated'%(rosinstall_file)
+            print 'rosinstall file [%s] generated'%(rosinstall_file)
         call('rosinstall --rosdep-yes %s /opt/ros/%s %s'%(STACK_DIR, options.rosdistro, rosinstall_file), env,
              'Install the stacks to test from source.')
 
@@ -93,6 +93,7 @@ def main():
                 print 'Contents:\n\n'+rosinstall+'\n\n'
                 with open(rosinstall_file, 'w') as f:
                     f.write(rosinstall)
+                    print 'rosinstall file [%s] generated'%(rosinstall_file)
                 call('rosinstall --rosdep-yes %s /opt/ros/%s %s'%(DEPENDS_DIR, options.rosdistro, rosinstall_file), env,
                      'Install the stack dependencies from source.')
             else:
@@ -161,8 +162,9 @@ def main():
                 print 'Contents:\n\n'+rosinstall+'\n\n'
                 with open(rosinstall_file, 'w') as f:
                     f.write(rosinstall)
-                    call('rosinstall --rosdep-yes %s /opt/ros/%s %s %s'%(DEPENDS_ON_DIR, options.rosdistro, STACK_DIR, rosinstall_file), env,
-                         'Install the stacks that depend on the stacks that are getting tested from source.')
+                    print 'rosinstall file [%s] generated'%(rosinstall_file)
+                call('rosinstall --rosdep-yes %s /opt/ros/%s %s %s'%(DEPENDS_ON_DIR, options.rosdistro, STACK_DIR, rosinstall_file), env,
+                     'Install dependencies of depends_on_all stacks, excluding dependencies of test stacks.')
         else:
             print "No dependencies of depends_on_all stacks"
             
@@ -176,6 +178,7 @@ def main():
             print 'Contents:\n\n'+rosinstall+'\n\n'
             with open(rosinstall_file, 'w') as f:
                 f.write(rosinstall)
+                print 'rosinstall file [%s] generated'%(rosinstall_file)
             call('rosinstall --rosdep-yes %s /opt/ros/%s %s %s'%(DEPENDS_ON_DIR, options.rosdistro, STACK_DIR, rosinstall_file), env,
                  'Install the stacks that depend on the stacks that are getting tested from source.')
 
