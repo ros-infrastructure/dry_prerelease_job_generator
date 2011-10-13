@@ -213,6 +213,8 @@ def create_chroot(distro, distro_name, os_platform, arch):
 
     debootstrap_type = 'debootstrap' # use default
     mirror = 'http://aptproxy.willowgarage.com/archive.ubuntu.com/ubuntu' # use wg mirror
+    if os_platform == 'oneiric':  # disable aptproxy for now since aptproxy is not setup correctly yet.  #TODO #FIXME remove this once aptproxy is fixed.  
+        mirror = 'http://archive.ubuntu.com/ubuntu'
     if arch == 'armel':
         debootstrap_type = 'qemu-debootstrap'
         mirror = 'http://ports.ubuntu.com/ubuntu-ports/'
