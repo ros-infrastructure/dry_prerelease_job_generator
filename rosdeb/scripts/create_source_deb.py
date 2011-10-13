@@ -35,6 +35,8 @@
 Create source debs from tarballs stored in the release repo
 """
 
+from __future__ import print_function
+
 import roslib; roslib.load_manifest('rosdeb')
 
 import os
@@ -42,6 +44,7 @@ import sys
 import subprocess
 import shutil
 import tempfile
+import yaml
 
 import rosdeb
 from rosdeb.rosutil import checkout_svn_to_tmp
@@ -73,11 +76,10 @@ def copy_tarball_to_dir(tarball_file, staging_dir, stack_name, stack_version):
     if old_dir == new_dir:
         if os.path.basename(tarball_file) != f_name:
             # rename
-            print "renaming\n  %s\n\t=>\n  %s"%(tarball_file, dest)
+            print("renaming\n  %s\n\t=>\n  %s"%(tarball_file, dest))
             os.rename(tarball_file, dest)
     else:
-        import shutil
-        print "copying\n  %s\n\t=>\n  %s"%(tarball_file, dest)
+        print("copying\n  %s\n\t=>\n  %s"%(tarball_file, dest))
         shutil.copyfile(tarball_file, dest)
     
 def upload_files(files, stack_name, stack_version):
@@ -90,7 +92,7 @@ def upload_files(files, stack_name, stack_version):
         names = [os.path.basename(f) for f in files]
         for f, base in zip(files, names):
             to_path = os.path.join(subdir, base)
-            print "copying %s to %s"%(f, to_path)
+            print("copying %s to %s"%(f, to_path))
             assert os.path.exists(f)
             update = os.path.exists(to_path)
             if update:
@@ -109,11 +111,11 @@ def upload_files(files, stack_name, stack_version):
     
 def _source_deb_main(distro_name, stack_name, stack_version, os_platform, staging_dir):
     if os_platform not in rosdeb.platforms():
-        print >> sys.stderr, "[%s] is not a known platform.\nSupported platforms are: %s"%(os_platform, ' '.join(rosdeb.platforms()))
+        print("[%s] is not a known platform.\nSupported platforms are: %s"%(os_platform, ' '.join(rosdeb.platforms())), sys.stderr)
         sys.exit(1)
     
     if not os.path.exists(staging_dir):
-        print "creating staging dir: %s"%(staging_dir)
+        print("creating staging dir: %s"%(staging_dir))
         os.makedirs(staging_dir)
 
     download_tarball(stack_name, stack_version, staging_dir)
@@ -147,7 +149,7 @@ def send_email(smtp_server, from_addr, to_addrs, subject, text):
     msg['Subject'] = subject
 
     s = smtplib.SMTP(smtp_server)
-    print 'Sending mail to %s'%(to_addrs)
+    print('Sending mail to %s'%(to_addrs))
     s.sendmail(msg['From'], [msg['To']], msg.as_string())
     s.quit()
 
@@ -185,9 +187,6 @@ def source_deb_main():
     success = []
 
     for os_platform in targets:
-        if os_platform == 'oneiric':
-            print "ignoring oneiric for now"
-            continue
         staging_dir = os.path.join(tempfile.gettempdir(), "rosdeb-%s"%(os_platform))
         if os.path.exists(staging_dir):
             shutil.rmtree(staging_dir)
@@ -195,12 +194,12 @@ def source_deb_main():
         try:
             _source_deb_main(distro_name, stack_name, stack_version, os_platform, staging_dir)
             success.append(os_platform)
-        except Exception, e:
+        except Exception as e:
             errors.append((os_platform, e))
                 
     if options.hudson:
         for os_platform in success:
-            print "triggering build-debs for %s, %s, %s"%(stack_name, distro_name, os_platform)
+            print("triggering build-debs for %s, %s, %s"%(stack_name, distro_name, os_platform))
             trigger_hudson_build_debs(stack_name, distro_name, os_platform)
 
     # Handle build failures:
@@ -219,10 +218,9 @@ def source_deb_main():
 
         error_msgs += '='*80 + '\n'
 
-        print >> sys.stderr, error_msgs
+        print(error_msgs, file=sys.stderr)
 
         # load the control data
-        import yaml
         control_file = os.path.join(staging_dir, "%s-%s.yaml"%(stack_name, stack_version))
         with open(control_file) as f:
             control = yaml.load(f)
@@ -253,9 +251,9 @@ new targets.
                 
             send_email(options.smtp, EMAIL_FROM_ADDR, to_addr, subject, email_msg)
         elif not 'contact' in control:
-            print >> sys.stderr, "no contact e-mail in control file, will not send e-mail to owner"
+            print("no contact e-mail in control file, will not send e-mail to owner", file=sys.stderr)
         elif not options.smtp:
-            print >> sys.stderr, "no SMTP server configured, will not send e-mail to owner"                
+            print("no SMTP server configured, will not send e-mail to owner", file=sys.stderr)
 
         # Exit with error code to signal build failure
         sys.exit(2)
