@@ -345,21 +345,21 @@ echo "Resuming pbuilder"
     # Script to execute for deb verification
     # TODO: Add code to run all the unit-tests for the deb!
     verify_script = os.path.join(staging_dir, 'verify_script.sh')
-    with open(verify_script, 'w') as f:
-        f.write("""#!/bin/sh
+    verify_script_contents = """#!/bin/sh
 set -o errexit
 echo "deb file:%(staging_dir)s results/" > /etc/apt/sources.list.d/pbuild.list
 apt-get update
 apt-get install %(deb_name)s=%(deb_version_final)s -y --force-yes
 dpkg -l %(deb_name)s
-"""%locals())
+"""%locals()
+    with open(verify_script, 'w') as f:
+        f.write(verify_script_contents)
         os.chmod(verify_script, stat.S_IRWXU)
-            
-
 
     debug("starting verify script for %s-%s"%(stack_name, stack_version))
+    debug("VERIFY SCRIPT\n==================\n%s\n================"%verify_script_contents)
     command = archcmd + ['sudo', 'pbuilder', '--execute', '--basetgz', distro_tgz, '--configfile', conf_file, '--bindmounts', results_dir, '--buildplace', build_dir, '--aptcache', cache_dir, verify_script]
-    debug("verify command: %s"%(str(command)))
+    debug("verify command: %s"%(' '.join(command)))
     try:
         subprocess.check_call(command, stderr=subprocess.STDOUT)
     except:
