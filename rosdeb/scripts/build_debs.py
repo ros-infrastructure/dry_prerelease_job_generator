@@ -363,7 +363,7 @@ dpkg -l %(deb_name)s
     try:
         subprocess.check_call(command, stderr=subprocess.STDOUT)
     except:
-        debug("FAILED: verify command"%(str(command)))
+        debug("FAILED: verify command %s"%(str(command)))
         raise
     debug("success: verify script for %s-%s"%(stack_name, stack_version))
     if not noupload:
