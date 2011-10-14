@@ -47,6 +47,7 @@ import urllib2
 import stat
 import re
 import time
+import traceback
 
 from rospkg.distro import distro_uri, load_distro
 import rosdeb
@@ -357,8 +358,14 @@ dpkg -l %(deb_name)s
 
 
     debug("starting verify script for %s-%s"%(stack_name, stack_version))
-    subprocess.check_call(archcmd + ['sudo', 'pbuilder', '--execute', '--basetgz', distro_tgz, '--configfile', conf_file, '--bindmounts', results_dir, '--buildplace', build_dir, '--aptcache', cache_dir, verify_script], stderr=subprocess.STDOUT)
-
+    command = archcmd + ['sudo', 'pbuilder', '--execute', '--basetgz', distro_tgz, '--configfile', conf_file, '--bindmounts', results_dir, '--buildplace', build_dir, '--aptcache', cache_dir, verify_script]
+    debug("verify command: %s"%(str(command)))
+    try:
+        subprocess.check_call(command, stderr=subprocess.STDOUT)
+    except:
+        debug("FAILED: verify command"%(str(command))
+        raise
+    debug("success: verify script for %s-%s"%(stack_name, stack_version))
     if not noupload:
         # Upload the debs to the server
         base_files = ['%s_%s.changes'%(deb_file, arch), "%s_%s.deb"%(deb_file_final, arch)]
@@ -496,6 +503,7 @@ def build_debs(distro, stack_name, os_platform, arch, staging_dir, force, nouplo
                 try:
                     do_deb_build(distro_name, sn, sv, os_platform, arch, staging_dir, noupload, interactive and sn == stack_name)
                 except:
+                    traceback.print_exc()
                     debug("Build of [%s] failed, adding to broken list"%(str(buildable)))
                     broken.add(sn)
             else:
