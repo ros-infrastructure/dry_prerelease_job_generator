@@ -360,11 +360,14 @@ dpkg -l %(deb_name)s
     debug("VERIFY SCRIPT\n==================\n%s\n================"%verify_script_contents)
     command = archcmd + ['sudo', 'pbuilder', '--execute', '--basetgz', distro_tgz, '--configfile', conf_file, '--bindmounts', results_dir, '--buildplace', build_dir, '--aptcache', cache_dir, verify_script]
     debug("verify command: %s"%(' '.join(command)))
-    try:
-        subprocess.check_call(command, stderr=subprocess.STDOUT)
-    except:
-        debug("FAILED: verify command %s"%(str(command)))
-        raise
+    p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    p_stdout, p_stderr = p.communicate()
+    if p.returncode != 0:
+        debug("STDOUT[%s]%"%(p_stdout))
+        debug("STDERR[%s]%"%(p_stderr))
+        raise Exception("FAILED: verify command %s"%(str(command)))
+    #subprocess.check_call(command, stderr=subprocess.STDOUT)
+
     debug("success: verify script for %s-%s"%(stack_name, stack_version))
     if not noupload:
         # Upload the debs to the server
