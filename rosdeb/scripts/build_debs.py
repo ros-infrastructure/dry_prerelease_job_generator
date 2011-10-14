@@ -363,8 +363,8 @@ dpkg -l %(deb_name)s
     p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     p_stdout, p_stderr = p.communicate()
     if p.returncode != 0:
-        debug("STDOUT[%s]%s"%(p_stdout))
-        debug("STDERR[%s]%s"%(p_stderr))
+        debug("STDOUT[%s]"%(p_stdout))
+        debug("STDERR[%s]"%(p_stderr))
         raise Exception("FAILED: verify command %s"%(str(command)))
     #subprocess.check_call(command, stderr=subprocess.STDOUT)
 
