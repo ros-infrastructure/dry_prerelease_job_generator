@@ -1,6 +1,6 @@
 os_platform = {
     'testing': ['lucid', 'maverick'],
-    'unstable': ['lucid', 'maverick', 'natty', 'oneiric'],
+    'unstable': ['lucid', 'oneiric'],
     'electric': ['lucid', 'maverick', 'natty', 'oneiric'],
     'diamondback': ['lucid', 'maverick', 'natty'],
     'cturtle': ['lucid', 'maverick', 'karmic'],
