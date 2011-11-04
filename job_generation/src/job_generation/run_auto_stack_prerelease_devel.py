@@ -143,7 +143,7 @@ def main():
 
         # if tested stacks are all in a variant, then only test stacks that are also in a variant
         variant_stacks = []
-        for v in rosdistro_obj.variants:
+        for name, v in rosdistro_obj.variants.iteritems():
             variant_stacks = variant_stacks + v.stack_names
         all_in_variant = True
         for s in options.stack:
