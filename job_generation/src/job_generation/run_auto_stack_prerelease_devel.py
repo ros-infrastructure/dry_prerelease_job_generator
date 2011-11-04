@@ -150,6 +150,7 @@ def main():
             if not s in variant_stacks:
                 all_in_variant = False
         if all_in_variant:
+            print "Limiting test to stacks that are in a variant"
             for s in depends_on_all:
                 if not s in variant_stacks:
                     depends_on_all.remove(s)
