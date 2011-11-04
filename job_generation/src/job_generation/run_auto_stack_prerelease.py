@@ -140,6 +140,21 @@ def main():
         # all stacks that depends on the tested stacks, excluding the tested stacks.
         depends_on_all = apt_deps.depends_on_all(options.stack)
         remove(depends_on_all, options.stack)
+
+        # if tested stacks are all in a variant, then only test stacks that are also in a variant
+        variant_stacks = []
+        for name, v in rosdistro_obj.variants.iteritems():
+            variant_stacks = variant_stacks + v.stack_names
+        all_in_variant = True
+        for s in options.stack:
+            if not s in variant_stacks:
+                all_in_variant = False
+        if all_in_variant:
+            print "Limiting test to stacks that are in a variant"
+            for s in depends_on_all:
+                if not s in variant_stacks:
+                    depends_on_all.remove(s)
+
         # all stack dependencies of above stack list, except for the test stack dependencies
         depends_all_depends_on_all = apt_deps.depends_all(depends_on_all)
         remove(depends_all_depends_on_all, options.stack)
