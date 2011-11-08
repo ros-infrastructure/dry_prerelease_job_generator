@@ -67,9 +67,7 @@ ROS_REPO=REPO_URL%{'repo': 'ros'}
 
 HUDSON='http://build.willowgarage.com/'
 
-#TODO: reinstate armel, for now omitting to have cleaner display
-#ARCHES = ['i386', 'amd64', 'armel']
-ARCHES = ['i386', 'amd64']
+ARCHES = ['i386', 'amd64', 'armel']
 
 import traceback
 
