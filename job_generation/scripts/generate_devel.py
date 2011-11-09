@@ -146,7 +146,7 @@ def create_devel_configs(os, rosdistro, stack):
         hudson_config = hudson_config.replace('HUDSON_VCS', hudson_vcs)
         hudson_config = hudson_config.replace('TIME_TRIGGER', time_trigger)
         hudson_config = hudson_config.replace('JOB_CHILDREN', job_children)
-        hudson_config = hudson_config.replace('EMAIL', 'wim+devel@willowgarage.com')
+        hudson_config = hudson_config.replace('EMAIL', 'rosrelease-devel@kforge.ros.org')
         hudson_config = hudson_config.replace('NODE', node)
         configs[name] = hudson_config
     return configs
