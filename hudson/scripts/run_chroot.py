@@ -217,7 +217,7 @@ class ChrootInstance:
     def bootstrap(self):
         cmd = ['sudo', 'apt-get', 'install', 'debootstrap']
         print cmd
-        self.check_call(cmd)
+        self.check_call(cmd, display=True)
         
         deboot_url = 'http://aptproxy.willowgarage.com/us.archive.ubuntu.com/ubuntu'
         if self.distro in valid_debian_distros:
@@ -576,10 +576,12 @@ def run_chroot(options, path, workspace, hdd_tmp_dir):
         cmd = "apt-get install -y --force-yes build-essential python-yaml cmake subversion mercurial bzr git-core wget python-setuptools python-pip".split()
         chrti.execute(cmd)
 
-        pypi_pkgs = ['pip', 'vcstools', 'rospkg', 'rosinstall', 'mock', 'nose', 'coverage', 'genmsg', 'genpy']
-        for p in pypi_pkgs:
-            cmd = ["pip", "install", "-U",p, '--extra-index-url=http://b.pypi.python.org/simple/', '--extra-index-url=http://c.pypi.python.org/simple/', '--extra-index-url=http://d.pypi.python.org/simple/']
-            chrti.execute(cmd, display=True)
+        #pypi_pkgs = ['pip', 'vcstools', 'rospkg', 'rosinstall', 'mock', 'nose', 'coverage', 'genmsg', 'genpy']
+        #for p in pypi_pkgs:
+        #    cmd = ["pip", "install", "-U",p, '--extra-index-url=http://b.pypi.python.org/simple/', '--extra-index-url=http://c.pypi.python.org/simple/', '--extra-index-url=http://d.pypi.python.org/simple/']
+        #    chrti.execute(cmd, display=True)
+        
+        chrti.execute("pip install http://pr.willowgarage.com/downloads/rosbootstrap/rosbootstrap.pybundle".split(), display=True)
 
         if options.arch in ['i386', 'i686']:
 
