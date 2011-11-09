@@ -451,3 +451,9 @@ def call(command, env=None, message='', ignore_fail=False):
             raise Exception
 
         
+def get_sys_info():
+    arch = 'i386'
+    if '64' in call('uname -mrs'):
+        arch = 'amd64'
+    ubuntudistro = call('lsb_release -a').split('Codename:')[1].strip()
+    return (arch, ubuntudistro)
