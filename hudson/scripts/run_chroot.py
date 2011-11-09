@@ -578,7 +578,7 @@ def run_chroot(options, path, workspace, hdd_tmp_dir):
 
         pypi_pkgs = ['pip', 'vcstools', 'rospkg', 'rosinstall', 'mock', 'nose', 'coverage', 'genmsg', 'genpy']
         for p in pypi_pkgs:
-            cmd = ["pip", "install", "-U",p]
+            cmd = ["pip", "install", "-U",p, '--extra-index-url=http://b.pypi.python.org/simple/', '--extra-index-url=http://c.pypi.python.org/simple/', '--extra-index-url=http://d.pypi.python.org/simple/']
             chrti.execute(cmd, display=True)
 
         if options.arch in ['i386', 'i686']:
