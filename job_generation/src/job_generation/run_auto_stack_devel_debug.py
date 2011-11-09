@@ -2,6 +2,7 @@
 
 from roslib import stack_manifest
 from jobs_common import *
+from apt_parser import parse_apt
 import sys
 import os
 import optparse 
@@ -23,6 +24,7 @@ def main():
             print "You can only provide one stack at a time"
             return -1
         options.stack = options.stack[0]
+        print "parsed options: %s"%str(options)
 
         # set environment
         print "Setting up environment"
@@ -37,7 +39,7 @@ def main():
         env['PYTHONPATH'] = env['ROS_ROOT']+'/core/roslib/src'
         env['PATH'] = '%s/ros/bin:%s'%(ros_path, os.getenv('PATH'))
         stack_dir = env['WORKSPACE']+'/'+options.stack
-        print("environment set to %s"%str(env))
+        print("Environment set to %s"%str(env))
 
         # Parse distro file
         rosdistro_obj = rosdistro.Distro(get_rosdistro_file(options.rosdistro))
@@ -56,18 +58,28 @@ def main():
                     get_depends_all(rosdistro_obj, d, depends)
                     print 'Resulting total dependencies: %s'%str(depends)
 
-
         if len(depends) > 0:
             if not options.source_only:
-                # Install Debian packages  stack dependencies
+                # check if Debian packages of stack exist
+                (arch, ubuntudistro) = get_sys_info()
+                print "Parsing apt repository configuration file to get stack dependencies, for %s machine running %s"%(arch, ubuntudistro)
+                apt_deps = parse_apt(ubuntudistro, arch, options.rosdistro)
+                for d in depends:
+                    if not apt_deps.has_debian_package(d):
+                        print "Stack %s does not have Debian package yet. Stopping this test." %d
+                        generate_email("Stack %s does not have Debian package yet. Stopping this test."%d, env)
+                        return 0
+
+                # Install Debian packages of stack dependencies
                 print 'Installing debian packages of stack dependencies from stacks %s'%str(options.stack)
                 call('sudo apt-get update', env)
                 print 'Installing debian packages of "%s" dependencies: %s'%(options.stack, str(depends))
                 call('sudo apt-get install %s --yes'%(stacks_to_debs(depends, options.rosdistro)), env)
             else:
-                # Install dependencies from source
+                # Install stack dependencies from source
                 print 'Installing stack dependencies from source'
                 rosinstall = stacks_to_rosinstall(depends, rosdistro_obj.released_stacks, 'release-tar')
+                print 'Using rosinstall yaml: %s'%rosinstall
                 rosinstall_file = '%s.rosinstall'%options.stack
                 with open(rosinstall_file, 'w') as f:
                     f.write(rosinstall)
@@ -76,19 +88,20 @@ def main():
         else:
             print 'Stack %s does not have any dependencies, not installing anything now'%str(options.stack)
 
-        # Install system dependencies
-        print 'Installing system dependencies'
+        # Install system dependencies of stack itself
+        print 'Installing system dependencies of stack %s'%options.stack
         call('rosmake rosdep', env)
         call('rosdep install -y %s'%options.stack, env,
-             'Installing system dependencies of stack %s'%options.stack)
+             'Install system dependencies of stack %s'%options.stack)
 
         # Start Hudson Helper
-        print 'Running Hudson Helper'
+        print 'Running Hudson Helper in folder %s'%stack_dir
         res = 0
         test_results = env['ROS_TEST_RESULTS_DIR']
         for r in range(0, options.repeat+1):
             env['ROS_TEST_RESULTS_DIR'] = test_results + '/run_'+str(r)
-            res_one = subprocess.call(('./hudson_helper --dir-test %s build'%stack_dir).split(' '), env=env)
+            #res_one = subprocess.call(('./hudson_helper --dir-test %s build'%stack_dir).split(' '), env=env)
+            res_one = subprocess.call(('./hudson_helper --pkg-test %s build'%options.stack).split(' '), env=env)
             if res_one != 0:
                 res = res_one
         return res
