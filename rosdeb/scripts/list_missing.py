@@ -77,13 +77,10 @@ def svn_url_exists(url):
     """
     @return: True if SVN url points to an existing resource
     """
-    import subprocess
-    try:
-        p = subprocess.Popen(['svn', 'info', url], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        p.wait()
-        return p.returncode == 0
-    except:
-        return False
+    fh = urllib.urlopen(url)
+    if fh.getcode() == 200:
+        return True
+    return False
 
 def load_info(stack_name, stack_version):
     
