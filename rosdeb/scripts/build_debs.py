@@ -174,7 +174,11 @@ def compute_deps(distro, stack_name):
 
     if stack_name == 'ALL':
         for s in distro.released_stacks.keys():
-            add_stack(s)
+            try:
+                add_stack(s)
+            except BuildFailure as e:
+                print "WARNING: Failed loading stack [%s] removing from ALL.  Error:\b=n%s"%(s, e)
+                
     else:
         add_stack(stack_name)
 
