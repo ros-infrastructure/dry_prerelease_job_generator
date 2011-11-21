@@ -23,9 +23,9 @@ def main():
 
     # generate rosinstall file for variant
     if options.overlay == 'yes':
-        rosinstall = rosdistro.variant_to_rosinstall(options.variant, distro_obj, 'release')
+        rosinstall = rosdistro.variant_to_rosinstall(options.variant, distro_obj, 'release-tar')
     else:
-        rosinstall = rosdistro.extended_variant_to_rosinstall(options.variant, distro_obj, 'release')        
+        rosinstall = rosdistro.extended_variant_to_rosinstall(options.variant, distro_obj, 'release-tar')        
 
     print rosinstall
 
