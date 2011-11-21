@@ -127,10 +127,7 @@ def main():
 
 
         # parse debian repository configuration file to get stack dependencies
-        arch = 'i386'
-        if '64' in call('uname -mrs', env):
-            arch = 'amd64'
-        ubuntudistro = call('lsb_release -a', env).split('Codename:')[1].strip()
+        (arch, ubuntudistro) = get_sys_info()
         print "Parsing apt repository configuration file to get stack dependencies, for %s machine running %s"%(arch, ubuntudistro)
         apt_deps = parse_apt(ubuntudistro, arch, options.rosdistro)
         if not apt_deps.has_debian_package(options.stack):
