@@ -31,7 +31,6 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-from __future__ import with_statement
 """
 Build debs for a package and all of its dependencies as necessary
 """
@@ -101,6 +100,8 @@ def load_info(stack_name, stack_version):
 class MissingDefinition(Exception): pass
 
 def compute_deps(distro, stack_name):
+    # for suppressing repeated error messages
+    ignored = []
 
     seen = set()
     ordered_deps = []
@@ -120,8 +121,10 @@ def compute_deps(distro, stack_name):
             # converted this is a soft-fail from a sys.exit. this is
             # caused by stacks that depend on stacks that have been
             # pulled.
-            sys.stderr.write("[%s] build failure loading dependency [%s]: %s\n"%(s, d, e))
-            #raise MissingDefinition("[%s] build failure loading dependency [%s]: %s\n"%(s, d, e))
+            if not d in ignored:
+                sys.stderr.write("[%s] ignoring dependency [%s], possible catkin-ized\n"%(s, d))
+                ignored.append(d)
+            #raise MissingDefinition("[%s] failure loading dependency [%s]: %s\n"%(s, d, e))
         except Exception as e:
             # this is a soft-fail. If the load_info fails, it means
             # the stack is missing. We will detect it missing
