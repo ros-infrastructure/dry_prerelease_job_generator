@@ -118,9 +118,6 @@ def compute_deps(distro, stack_name):
             for d in si['depends']:
                 add_stack(d)
         except MissingDefinition as e:
-            # converted this is a soft-fail from a sys.exit. this is
-            # caused by stacks that depend on stacks that have been
-            # pulled.
             if not d in ignored:
                 sys.stderr.write("[%s] ignoring dependency [%s], possible catkin-ized\n"%(s, d))
                 ignored.append(d)
@@ -185,6 +182,11 @@ def get_missing(distro, os_platform, arch, repo=SHADOW_REPO, lock_version=True):
             except:
                 # stack is missing, including its info
                 depends = set()
+
+            # subtract any depends that aren't in the distro b/c of catkin dry/wet line
+            to_remove = [d for d in depends if not d in distro.stacks]
+            for d in to_remove:
+                depends.remove(d)
                 
             if excludes.check(sn):
                 missing_excluded.add(sn)
