@@ -196,7 +196,9 @@ def create_chroot(distro, distro_name, os_platform, arch):
     if not os.path.exists(cache_dir):
         os.makedirs(cache_dir)
 
+    debug('loading ros stack info')
     ros_info = load_info('ros', distro.released_stacks['ros'].version)
+    debug('loaded ros stack info: %s'%(ros_info))
 
     # Things that this build infrastructure depends on
     basedeps = ['wget', 'lsb-release', 'debhelper']
