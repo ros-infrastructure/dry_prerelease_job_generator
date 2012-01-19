@@ -4,11 +4,21 @@
 usage: %prog [args]
 """
 
-import os, sys, string
+import os
+import sys
 from optparse import OptionParser
 import subprocess
-import roslib
 
+try:
+  # backwards-compatible for Fuerte changes
+  import rospkg
+  rosstack = rospkg.RosStack()
+  def depends_1(stack):
+    return rosstack.get_depends(stack, implicit=False)
+except ImportError:
+  import roslib.rospack
+  depends_1 = roslib.rospack.rosstack_depends_1
+  
 def main(argv, stdout, environ):
 
   parser = OptionParser(__doc__.strip())
@@ -22,7 +32,7 @@ def main(argv, stdout, environ):
 
   deps = []
   
-  for stk in roslib.rospack.rosstack_depends_1(stack):
+  for stk in depends_1(stack):
     version = None
     debname = "ros-%s-%s"%(distro, stk.replace('_','-'))
     cmd = subprocess.Popen(['dpkg', '-s', debname], stdout=subprocess.PIPE)
