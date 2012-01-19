@@ -201,7 +201,8 @@ def create_chroot(distro, distro_name, os_platform, arch):
     # Things that this build infrastructure depends on
     basedeps = ['wget', 'lsb-release', 'debhelper']
     # Deps we claimed to have needed for building ROS
-    basedeps += ['build-essential', 'python-yaml', 'cmake', 'subversion', 'python-setuptools']
+    # TODO:FIXME: remove pkg-config
+    basedeps += ['build-essential', 'python-yaml', 'cmake', 'subversion', 'python-setuptools', 'pkg-config']
     # Extra deps that some stacks seem to be missing
     basedeps += ['libxml2-dev', 'libtool', 'unzip']
     # For debugging
