@@ -71,6 +71,8 @@ REPO_HOSTNAME='pub8'
 REPO_USERNAME='rosbuild'
 REPO_LOGIN='%s@%s'%(REPO_USERNAME, REPO_HOSTNAME)
 
+TGZ_VERSION=1
+
 import traceback
 
 class StackBuildFailure(Exception):
@@ -187,14 +189,13 @@ def compute_deps(distro, stack_name):
 
 def create_chroot(distro, distro_name, os_platform, arch):
 
-    distro_tgz = os.path.join('/var/cache/pbuilder', "%s-%s.tgz"%(os_platform, arch))
+    distro_tgz = os.path.join('/var/cache/pbuilder', "%s-%s-%s.tgz"%(os_platform, arch, TGZ_VERSION))
     cache_dir = '/home/rosbuild/aptcache/%s-%s'%(os_platform, arch)
 
-    if 0:
-        if os.path.exists(distro_tgz) and os.path.getsize(distro_tgz) > 0:  # Zero sized file left in place if last build crashed
-            return
-    else:
-        debug("forcing re-creation of pbuilder cache")
+    if os.path.exists(distro_tgz) and os.path.getsize(distro_tgz) > 0:  # Zero sized file left in place if last build crashed
+        return
+
+    debug("re-creating pbuilder cache")
 
     if not os.path.exists(cache_dir):
         os.makedirs(cache_dir)
@@ -240,7 +241,7 @@ def create_chroot(distro, distro_name, os_platform, arch):
 def do_deb_build(distro_name, stack_name, stack_version, os_platform, arch, staging_dir, noupload, interactive):
     debug("Actually trying to build %s-%s..."%(stack_name, stack_version))
 
-    distro_tgz = os.path.join('/var/cache/pbuilder', "%s-%s.tgz"%(os_platform, arch))
+    distro_tgz = os.path.join('/var/cache/pbuilder', "%s-%s-%s.tgz"%(os_platform, arch, TGZ_VERSION))
     cache_dir = '/home/rosbuild/aptcache/%s-%s'%(os_platform, arch)
 
     deb_name = "ros-%s-%s"%(distro_name, debianize_name(stack_name))
