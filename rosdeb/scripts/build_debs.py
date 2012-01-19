@@ -190,15 +190,22 @@ def create_chroot(distro, distro_name, os_platform, arch):
     distro_tgz = os.path.join('/var/cache/pbuilder', "%s-%s.tgz"%(os_platform, arch))
     cache_dir = '/home/rosbuild/aptcache/%s-%s'%(os_platform, arch)
 
-    if os.path.exists(distro_tgz) and os.path.getsize(distro_tgz) > 0:  # Zero sized file left in place if last build crashed
-        return
+    if 0:
+        if os.path.exists(distro_tgz) and os.path.getsize(distro_tgz) > 0:  # Zero sized file left in place if last build crashed
+            return
+    else:
+        debug("forcing re-creation of pbuilder cache")
 
     if not os.path.exists(cache_dir):
         os.makedirs(cache_dir)
 
-    debug('loading ros stack info')
-    ros_info = load_info('ros', distro.released_stacks['ros'].version)
-    debug('loaded ros stack info: %s'%(ros_info))
+    try:
+        debug('loading ros stack info')
+        ros_info = load_info('ros', distro.released_stacks['ros'].version)
+        debug('loaded ros stack info: %s'%(ros_info))
+    except:
+        # mock in data if we are in fuerte+
+        ros_info = {'rosdeps': {os_platform: []}}
 
     # Things that this build infrastructure depends on
     basedeps = ['wget', 'lsb-release', 'debhelper']
@@ -472,8 +479,6 @@ def build_debs(distro, stack_name, os_platform, arch, staging_dir, force, nouplo
 
     # Create the environment where we build the debs, if necessary
     create_chroot(distro, distro_name, os_platform, arch)
-    # TODO:FIXME:REMOVE
-    debug("manually installing pkg-config")
     subprocess.check_call(['sudo', 'apt-get', 'install', '-y', 'pkg-config'])
 
     # Load blacklisted information
