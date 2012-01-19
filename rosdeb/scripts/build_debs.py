@@ -472,7 +472,7 @@ def build_debs(distro, stack_name, os_platform, arch, staging_dir, force, nouplo
     create_chroot(distro, distro_name, os_platform, arch)
     # TODO:FIXME:REMOVE
     debug("manually installing pkg-config")
-    subprocess.check_call(['apt-get', 'install', '-y', 'pkg-config'])
+    subprocess.check_call(['sudo', 'apt-get', 'install', '-y', 'pkg-config'])
 
     # Load blacklisted information
     missing_primary, missing_dep, missing_excluded, missing_excluded_dep = list_missing.get_missing(distro, os_platform, arch)
