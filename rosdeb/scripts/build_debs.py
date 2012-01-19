@@ -738,7 +738,9 @@ def build_debs_main():
             debug("creating staging dir: %s"%(staging_dir))
             os.makedirs(staging_dir)
 
-        distro = load_distro(distro_uri(distro_name))
+        uri = distro_uri(distro_name)
+        debug("loading distro file from %s"%(uri))
+        distro = load_distro(uri)
 
         if options.ramdisk:
             with TempRamFS(staging_dir, "20G"):
