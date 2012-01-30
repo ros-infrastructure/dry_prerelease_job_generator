@@ -198,6 +198,8 @@ def get_missing(distro, os_platform, arch, repo=SHADOW_REPO, lock_version=True):
                 if not depends.isdisjoint(missing_excluded.union(missing_excluded_dep)):
                     missing_excluded_dep.add(sn)
 
+        else:
+            print "IN", sn
     missing_primary -= missing_excluded
     missing_dep -= missing_excluded_dep
 

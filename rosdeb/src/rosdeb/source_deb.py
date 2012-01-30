@@ -308,4 +308,3 @@ def control_data(stack_name, stack_version, md5sum, stack_file=None):
     
     return metadata
 
-

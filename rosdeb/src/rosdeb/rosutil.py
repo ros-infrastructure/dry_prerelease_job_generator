@@ -46,6 +46,9 @@ import roslib.packages
 import vcstools
 
 import rosdeb
+
+# due to migration issues, have to boostrap rosdep manually
+roslib.load_manifest('rosdep')
 import rosdep
 from rosdep.core import RosdepLookupPackage, YamlCache
 
