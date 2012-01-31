@@ -27,8 +27,8 @@ def main():
 
         # set environment
         print "Setting up environment"
-        stack_dir = env['WORKSPACE']+'/'+options.stack
         env = get_environment()
+        stack_dir = env['WORKSPACE']+'/'+options.stack
         env['ROS_PACKAGE_PATH'] = os.pathsep.join([env['ROS_PACKAGE_PATH'], stack_dir])
         print("Environment set to %s"%str(env))
 
