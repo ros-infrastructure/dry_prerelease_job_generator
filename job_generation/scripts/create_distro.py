@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-#!/usr/bin/env python
 # Software License Agreement (BSD License)
 #
 # Copyright (c) 2011, Willow Garage, Inc.
@@ -42,7 +41,7 @@ import sys
 
 import roslib.packages
 import rosdeb.targets
-import hudson
+import jenkins
 
 if not len(sys.argv) == 4:
     print "Usage: create_distro <distro> <username> <password>"
@@ -50,7 +49,7 @@ if not len(sys.argv) == 4:
 
 _, distro, username, password = sys.argv
 
-h = hudson.Hudson('http://build.willowgarage.com', username, password)
+h = jenkins.Jenkins('http://build.willowgarage.com', username, password)
 
 d = os.path.join(roslib.packages.get_pkg_dir('job_generation'), 'scripts')
 

@@ -147,7 +147,7 @@ scp $WORKSPACE/add_debs.py rosbuild@pub8:/tmp
 
 import roslib; roslib.load_manifest("job_generation")
 from job_generation.jobs_common import *
-import hudson
+import jenkins
 import urllib
 import optparse 
 import yaml
@@ -202,7 +202,7 @@ def main():
 
     # hudson instance
     info = urllib.urlopen(CONFIG_PATH).read().split(',')
-    hudson_instance = hudson.Hudson(SERVER, info[0], info[1])
+    hudson_instance = jenkins.Jenkins(SERVER, info[0], info[1])
 
     # send openni tests to Hudson
     print 'Creating openni Hudson jobs:'

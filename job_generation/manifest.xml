@@ -9,7 +9,6 @@
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/job_generation</url>
   <depend package="rosdistro"/>
-  <depend package="hudson"/>
 
 </package>
 

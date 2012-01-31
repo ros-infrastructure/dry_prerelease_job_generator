@@ -64,12 +64,11 @@ println &quot;${build_failures_context}&quot;&#xd;
 """
 
 import roslib; roslib.load_manifest("job_generation")
-import rosdistro
+
 from job_generation.jobs_common import *
-import hudson
+import jenkins
 import urllib
 import optparse 
-
 
 def prerelease_job_name(distro_name, stack_list, ubuntu, arch):
     return get_job_name('prerelease', distro_name, '_'.join(stack_list), ubuntu, arch)
@@ -116,10 +115,10 @@ def main():
     try:
         # create hudson instance
         if len(args) == 2:
-            hudson_instance = hudson.Hudson(SERVER, args[0], args[1])
+            hudson_instance = jenkins.Jenkins(SERVER, args[0], args[1])
         else:
             info = urllib.urlopen(CONFIG_PATH).read().split(',')
-            hudson_instance = hudson.Hudson(SERVER, info[0], info[1])
+            hudson_instance = jenkins.Jenkins(SERVER, info[0], info[1])
         prerelease_configs = create_prerelease_configs(options.rosdistro, options.stack, options.email, options.repeat, options.source_only, options.arch, options.ubuntu)
 
         # check if jobs are not already running

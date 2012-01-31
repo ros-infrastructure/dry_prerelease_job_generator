@@ -72,17 +72,18 @@ println &quot;${build_failures_context}&quot;&#xd;
 </project>
 """
 
-
 import roslib; roslib.load_manifest("job_generation")
-import rosdistro
-from job_generation.jobs_common import *
 
+import rospkg
+import rospkg.distro
+
+from job_generation.jobs_common import *
 
 def devel_job_name(distro_name, stack_name, ubuntu, arch):
     return get_job_name('devel', distro_name, stack_name, ubuntu, arch)
 
-
 def create_devel_configs(os, distro_name, stack):
+    stack_name = stack.name
     dist_arch = []
     if os == 'ubuntu':
         for ubuntudistro in UBUNTU_DISTRO_MAP[distro_name]:
@@ -100,14 +101,14 @@ def create_devel_configs(os, distro_name, stack):
         node = 'osx10_5_vnc'
 
     # create gold distro
-    gold_children = [devel_job_name(distro_name, stack.name, u, a) for (u, a) in dist_arch]
+    gold_children = [devel_job_name(distro_name, stack_name, u, a) for (u, a) in dist_arch]
     gold_job = gold_children[0]
     gold_children.remove(gold_job)
 
     # create hudson config files for each ubuntu distro
     configs = {}
     for (osdistro, arch) in dist_arch:
-        name = devel_job_name(distro_name, stack.name, osdistro, arch)
+        name = devel_job_name(distro_name, stack_name, osdistro, arch)
 
         # create VCS block
         if stack.vcs_config.type in hudson_scm_managers:
@@ -115,14 +116,16 @@ def create_devel_configs(os, distro_name, stack):
         else:
             raise NotImplementedError("vcs type %s not implemented as hudson scm manager"%stack.vcs_config.type)
 
-
-        if stack.vcs_config.type in ['svn']:
-            hudson_vcs = hudson_vcs.replace('STACKNAME', stack.name)
-            hudson_vcs = hudson_vcs.replace('STACKURI', stack.vcs_config.anon_dev)
+        vcs_config = stack.vcs_config
+        if vcs_config.type in ['svn']:
+            url, version = vcs_config.get_branch('devel', anonymous=True)
+            hudson_vcs = hudson_vcs.replace('STACKNAME', stack_name)
+            hudson_vcs = hudson_vcs.replace('STACKURI', url)
         elif stack.vcs_config.type in ['git', 'hg', 'bzr']:
-            hudson_vcs = hudson_vcs.replace('STACKBRANCH', stack.vcs_config.dev_branch)
-            hudson_vcs = hudson_vcs.replace('STACKURI', stack.vcs_config.anon_repo_uri)
-            hudson_vcs = hudson_vcs.replace('STACKNAME', stack.name)
+            url, version = vcs_config.get_branch('devel', anonymous=True)
+            hudson_vcs = hudson_vcs.replace('STACKBRANCH', version)
+            hudson_vcs = hudson_vcs.replace('STACKURI', url)
+            hudson_vcs = hudson_vcs.replace('STACKNAME', stack_name)
         else:
             print "UNSUPPORTED VCS TYPE"
             raise
@@ -142,7 +145,7 @@ def create_devel_configs(os, distro_name, stack):
         hudson_config = hudson_config.replace('UBUNTUDISTRO', osdistro)
         hudson_config = hudson_config.replace('ARCH', arch)
         hudson_config = hudson_config.replace('ROSDISTRO', distro_name)
-        hudson_config = hudson_config.replace('STACKNAME', stack.name)   
+        hudson_config = hudson_config.replace('STACKNAME', stack_name)   
         hudson_config = hudson_config.replace('HUDSON_VCS', hudson_vcs)
         hudson_config = hudson_config.replace('TIME_TRIGGER', time_trigger)
         hudson_config = hudson_config.replace('JOB_CHILDREN', job_children)
@@ -158,9 +161,10 @@ def main():
     (options, args) = get_options(['rosdistro'], ['delete', 'wait', 'stack', 'os'])
     if not options:
         return -1
+    distro_name = options.rosdistro
 
     # generate hudson config files
-    distro_obj = rosdistro.Distro(get_rosdistro_file(options.rosdistro))
+    distro_obj = rospkg.distro.load_distro(rospkg.distro.distro_uri(distro_name))
     if options.stack:
         stack_list = options.stack
         for s in stack_list:

@@ -4,7 +4,7 @@ import roslib; roslib.load_manifest("job_generation")
 import os
 import sys
 import optparse
-import hudson
+import jenkins
 import urllib
 import time
 import subprocess
@@ -336,7 +336,7 @@ def schedule_jobs(jobs, wait=False, delete=False, start=False, hudson_obj=None):
     # create hudson instance
     if not hudson_obj:
         info = urllib.urlopen(CONFIG_PATH).read().split(',')
-        hudson_obj = hudson.Hudson(SERVER, info[0], info[1])
+        hudson_obj = jenkins.Jenkins(SERVER, info[0], info[1])
 
     finished = False
     while not finished:

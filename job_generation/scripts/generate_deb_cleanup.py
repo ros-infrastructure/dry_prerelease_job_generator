@@ -148,7 +148,7 @@ python $WORKSPACE/script.py
 
 import roslib; roslib.load_manifest("job_generation")
 from job_generation.jobs_common import *
-import hudson
+import jenkins
 import urllib
 import optparse 
 import yaml
@@ -190,7 +190,7 @@ def main():
 
     # hudson instance
     info = urllib.urlopen(CONFIG_PATH).read().split(',')
-    hudson_instance = hudson.Hudson(SERVER, info[0], info[1])
+    hudson_instance = jenkins.Jenkins(SERVER, info[0], info[1])
 
     # send aptcachecleanup tests to Hudson
     print 'Creating aptcachecleanup Hudson jobs:'
