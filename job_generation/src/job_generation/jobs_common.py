@@ -438,7 +438,7 @@ def call(command, env=None, message='', ignore_fail=False):
         print str(res)
         print str(err)
         if helper.returncode != 0:
-            raise Exception
+            raise Exception('bad return code')
         return res
     except Exception:
         if not ignore_fail:
@@ -455,7 +455,7 @@ def call(command, env=None, message='', ignore_fail=False):
                 message += "PYTHONPATH = %s\n"%env['PYTHONPATH']
                 message += "\n=========================================\n"
                 generate_email(message, env)
-            raise Exception
+            raise Exception('job failed')
 
         
 def get_sys_info():

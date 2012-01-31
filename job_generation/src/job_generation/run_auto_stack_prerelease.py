@@ -35,17 +35,10 @@ def main():
         # set environment
         print "Setting up environment"
         env = get_environment()
-        env['ROS_PACKAGE_PATH'] = '%s:%s:%s:/opt/ros/%s/stacks'%(env['INSTALL_DIR']+'/'+STACK_DIR,
-                                                                 env['INSTALL_DIR']+'/'+DEPENDS_DIR,
-                                                                 env['INSTALL_DIR']+'/'+DEPENDS_ON_DIR,
-                                                                 options.rosdistro)
-        if 'ros' in options.stack:
-            env['ROS_ROOT'] = env['INSTALL_DIR']+'/'+STACK_DIR+'/ros'
-            print "We're building ROS, so setting the ROS_ROOT to %s"%(env['ROS_ROOT'])
-        else:
-            env['ROS_ROOT'] = '/opt/ros/%s/ros'%options.rosdistro
-        env['PYTHONPATH'] = env['ROS_ROOT']+'/core/roslib/src'
-        env['PATH'] = '/opt/ros/%s/ros/bin:%s'%(options.rosdistro, os.environ['PATH'])
+        env['ROS_PACKAGE_PATH'] = os.pathsep.join([env['INSTALL_DIR']+'/'+STACK_DIR,
+                                                   env['INSTALL_DIR']+'/'+DEPENDS_DIR,
+                                                   env['INSTALL_DIR']+'/'+DEPENDS_ON_DIR,
+                                                   env['ROS_PACKAGE_PATH']])
         print "Environment set to %s"%str(env)
 
         # Parse distro file
@@ -107,7 +100,6 @@ def main():
 
         # Install system dependencies of stacks re're testing
         print "Installing system dependencies of stacks we're testing"
-        call('rosmake rosdep', env)
         for stack in options.stack:
             call('rosdep install -y %s'%stack, env,
                  'Install system dependencies of stack %s'%stack)
