@@ -40,13 +40,12 @@ def main():
         depends = []
         rosstack = rospkg.RosStack(ros_paths=[stack_dir])
         depends_one = rosstack.get_depends(options.stack, implicit=False)
-        with open(stack_xml) as stack_file:
-            print 'Dependencies of stack %s: %s'%(options.stack, str(depends_one))
-            for d in depends_one:
-                if not d == options.stack and not d in depends:
-                    print 'Adding dependencies of stack %s'%d
-                    get_depends_all(rosdistro_obj, d, depends)
-                    print 'Resulting total dependencies: %s'%str(depends)
+        print 'Dependencies of stack %s: %s'%(options.stack, str(depends_one))
+        for d in depends_one:
+            if not d == options.stack and not d in depends:
+                print 'Adding dependencies of stack %s'%d
+                get_depends_all(rosdistro_obj, d, depends)
+                print 'Resulting total dependencies: %s'%str(depends)
 
         if len(depends) > 0:
             if not options.source_only:
