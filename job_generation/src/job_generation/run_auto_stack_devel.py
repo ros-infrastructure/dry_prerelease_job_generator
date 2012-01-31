@@ -27,17 +27,9 @@ def main():
 
         # set environment
         print "Setting up environment"
-        env = get_environment()
-        if options.source_only or options.stack == 'ros':
-            ros_path = env['WORKSPACE']
-        else:
-            ros_path = '/opt/ros/%s'%options.rosdistro
-        print "Working in %s"%ros_path
-        env['ROS_PACKAGE_PATH'] = '%s:%s'%(env['WORKSPACE'], ros_path)
-        env['ROS_ROOT'] = '%s/ros'%ros_path
-        env['PYTHONPATH'] = env['ROS_ROOT']+'/core/roslib/src'
-        env['PATH'] = '%s/ros/bin:%s'%(ros_path, os.getenv('PATH'))
         stack_dir = env['WORKSPACE']+'/'+options.stack
+        env = get_environment()
+        env['ROS_PACKAGE_PATH'] = os.pathsep.join([env['ROS_PACKAGE_PATH'], stack_dir])
         print("Environment set to %s"%str(env))
 
         # Parse distro file
