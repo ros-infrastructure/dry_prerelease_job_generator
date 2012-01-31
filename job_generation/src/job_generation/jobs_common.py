@@ -180,8 +180,8 @@ hudson_scm_managers = {'svn':"""
 """
 }
 
-def stack_to_deb(stack, distro_name):
-    return '-'.join(['ros', distro_name, stack.name.replace('_','-')])
+def stack_to_deb(stack_name, distro_name):
+    return '-'.join(['ros', distro_name, stack_name.replace('_','-')])
 
 def stacks_to_debs(stack_list, distro_name):
     if not stack_list or len(stack_list) == 0:
