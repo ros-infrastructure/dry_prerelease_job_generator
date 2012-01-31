@@ -2,6 +2,7 @@
 
 import roslib; roslib.load_manifest("job_generation")
 import os
+import sys
 import optparse
 import rosdistro
 import hudson
