@@ -8,6 +8,7 @@ import subprocess
 import traceback
 
 import rospkg
+import rospkg.distro
 
 def main():
     # global try
@@ -23,6 +24,7 @@ def main():
             print "You can only provide one stack at a time"
             return -1
         options.stack = options.stack[0]
+        distro_name = options.rosdistro
         print "parsed options: %s"%str(options)
 
         # set environment
@@ -33,8 +35,8 @@ def main():
         print("Environment set to %s"%str(env))
 
         # Parse distro file
-        rosdistro_obj = rosdistro.Distro(get_rosdistro_file(options.rosdistro))
-        print 'Operating on ROS distro %s'%rosdistro_obj.release_name
+        distro_obj = rospkg.distro.load_distro(rospkg.distro.distro_uri(distro_name))
+        print 'Operating on ROS distro %s'%distro_obj.release_name
 
         # get all stack dependencies of the stack we're testing
         depends = []
@@ -44,7 +46,7 @@ def main():
         for d in depends_one:
             if not d == options.stack and not d in depends:
                 print 'Adding dependencies of stack %s'%d
-                get_depends_all(rosdistro_obj, d, depends)
+                get_depends_all(distro_obj, d, depends)
                 print 'Resulting total dependencies: %s'%str(depends)
 
         if len(depends) > 0:
@@ -53,11 +55,11 @@ def main():
                 print 'Installing debian packages of stack dependencies from stacks %s'%str(options.stack)
                 call('sudo apt-get update', env)
                 print 'Installing debian packages of "%s" dependencies: %s'%(options.stack, str(depends))
-                call('sudo apt-get install %s --yes'%(stacks_to_debs(depends, options.rosdistro)), env)
+                call('sudo apt-get install %s --yes'%(stacks_to_debs(depends, distro_name)), env)
             else:
                 # Install stack dependencies from source
                 print 'Installing stack dependencies from source'
-                rosinstall = stacks_to_rosinstall(depends, rosdistro_obj.released_stacks, 'release-tar')
+                rosinstall = stacks_to_rosinstall(depends, distro_obj.released_stacks, 'release-tar')
                 print 'Using rosinstall yaml: %s'%rosinstall
                 rosinstall_file = '%s.rosinstall'%options.stack
                 with open(rosinstall_file, 'w') as f:

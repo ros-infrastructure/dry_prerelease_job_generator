@@ -78,14 +78,14 @@ import rosdistro
 from job_generation.jobs_common import *
 
 
-def devel_job_name(rosdistro, stack_name, ubuntu, arch):
-    return get_job_name('devel', rosdistro, stack_name, ubuntu, arch)
+def devel_job_name(distro_name, stack_name, ubuntu, arch):
+    return get_job_name('devel', distro_name, stack_name, ubuntu, arch)
 
 
-def create_devel_configs(os, rosdistro, stack):
+def create_devel_configs(os, distro_name, stack):
     dist_arch = []
     if os == 'ubuntu':
-        for ubuntudistro in UBUNTU_DISTRO_MAP[rosdistro]:
+        for ubuntudistro in UBUNTU_DISTRO_MAP[distro_name]:
             for arch in ARCHES:
                 dist_arch.append((ubuntudistro, arch))
         bootstrap_script = BOOTSTRAP_SCRIPT
@@ -100,14 +100,14 @@ def create_devel_configs(os, rosdistro, stack):
         node = 'osx10_5_vnc'
 
     # create gold distro
-    gold_children = [devel_job_name(rosdistro, stack.name, u, a) for (u, a) in dist_arch]
+    gold_children = [devel_job_name(distro_name, stack.name, u, a) for (u, a) in dist_arch]
     gold_job = gold_children[0]
     gold_children.remove(gold_job)
 
     # create hudson config files for each ubuntu distro
     configs = {}
     for (osdistro, arch) in dist_arch:
-        name = devel_job_name(rosdistro, stack.name, osdistro, arch)
+        name = devel_job_name(distro_name, stack.name, osdistro, arch)
 
         # create VCS block
         if stack.vcs_config.type in hudson_scm_managers:
@@ -141,7 +141,7 @@ def create_devel_configs(os, rosdistro, stack):
         hudson_config = hudson_config.replace('EMAIL_TRIGGERS', get_email_triggers(['Unstable', 'Failure', 'Fixed']))
         hudson_config = hudson_config.replace('UBUNTUDISTRO', osdistro)
         hudson_config = hudson_config.replace('ARCH', arch)
-        hudson_config = hudson_config.replace('ROSDISTRO', rosdistro)
+        hudson_config = hudson_config.replace('ROSDISTRO', distro_name)
         hudson_config = hudson_config.replace('STACKNAME', stack.name)   
         hudson_config = hudson_config.replace('HUDSON_VCS', hudson_vcs)
         hudson_config = hudson_config.replace('TIME_TRIGGER', time_trigger)

@@ -171,8 +171,8 @@ import optparse
 import yaml
 
 
-def gazebo_job_name(rosdistro, rosinstall, ubuntudistro, arch):
-    return "_".join(['gazebo', rosdistro, rosinstall.split('/')[-1].split('.')[0], ubuntudistro, arch])
+def gazebo_job_name(distro_name, rosinstall, ubuntudistro, arch):
+    return "_".join(['gazebo', distro_name, rosinstall.split('/')[-1].split('.')[0], ubuntudistro, arch])
 
 
 def rosinstall_to_vcs(rosinstall):
@@ -188,18 +188,18 @@ def rosinstall_to_vcs(rosinstall):
 
 
 
-def create_gazebo_configs(rosdistro, rosinstall):
+def create_gazebo_configs(distro_name, rosinstall):
     # create gold distro
-    gold_job = gazebo_job_name(rosdistro, rosinstall, UBUNTU_DISTRO_MAP[rosdistro][0], ARCHES[0])
-    gold_children = [gazebo_job_name(rosdistro, rosinstall, u, a)
-                     for a in ARCHES for u in UBUNTU_DISTRO_MAP[rosdistro]]
+    gold_job = gazebo_job_name(distro_name, rosinstall, UBUNTU_DISTRO_MAP[distro_name][0], ARCHES[0])
+    gold_children = [gazebo_job_name(distro_name, rosinstall, u, a)
+                     for a in ARCHES for u in UBUNTU_DISTRO_MAP[distro_name]]
     gold_children.remove(gold_job)
 
     # create hudson config files for each ubuntu distro
     configs = {}
-    for ubuntudistro in UBUNTU_DISTRO_MAP[rosdistro]:
+    for ubuntudistro in UBUNTU_DISTRO_MAP[distro_name]:
         for arch in ARCHES:
-            name = gazebo_job_name(rosdistro, rosinstall, ubuntudistro, arch)
+            name = gazebo_job_name(distro_name, rosinstall, ubuntudistro, arch)
 
             # check if this is the 'gold' job
             time_trigger = ''
@@ -212,7 +212,7 @@ def create_gazebo_configs(rosdistro, rosinstall):
             hudson_config = hudson_config.replace('BOOTSTRAP_SCRIPT', BOOTSTRAP_SCRIPT)
             hudson_config = hudson_config.replace('UBUNTUDISTRO', ubuntudistro)
             hudson_config = hudson_config.replace('ARCH', arch)
-            hudson_config = hudson_config.replace('ROSDISTRO', rosdistro)
+            hudson_config = hudson_config.replace('ROSDISTRO', distro_name)
             hudson_config = hudson_config.replace('HUDSON_VCS', rosinstall_to_vcs(rosinstall))
             hudson_config = hudson_config.replace('TIME_TRIGGER', time_trigger)
             hudson_config = hudson_config.replace('JOB_CHILDREN', job_children)

@@ -82,22 +82,22 @@ import urllib
 import optparse 
 
 
-def post_release_job_name(rosdistro, stack_name, ubuntu, arch):
-    return get_job_name('released', rosdistro, stack_name, ubuntu, arch)
+def post_release_job_name(distro_name, stack_name, ubuntu, arch):
+    return get_job_name('released', distro_name, stack_name, ubuntu, arch)
 
 
-def create_post_release_configs(rosdistro, stack):
+def create_post_release_configs(distro_name, stack):
     # create gold distro
-    gold_job = post_release_job_name(rosdistro, stack.name, UBUNTU_DISTRO_MAP[rosdistro][0], ARCHES[0])
-    gold_children = [post_release_job_name(rosdistro, stack.name, u, a)
-                     for a in ARCHES for u in UBUNTU_DISTRO_MAP[rosdistro]]
+    gold_job = post_release_job_name(distro_name, stack.name, UBUNTU_DISTRO_MAP[distro_name][0], ARCHES[0])
+    gold_children = [post_release_job_name(distro_name, stack.name, u, a)
+                     for a in ARCHES for u in UBUNTU_DISTRO_MAP[distro_name]]
     gold_children.remove(gold_job)
 
     # create hudson config files for each ubuntu distro
     configs = {}
-    for ubuntudistro in UBUNTU_DISTRO_MAP[rosdistro]:
+    for ubuntudistro in UBUNTU_DISTRO_MAP[distro_name]:
         for arch in ARCHES:
-            name = post_release_job_name(rosdistro, stack.name, ubuntudistro, arch)
+            name = post_release_job_name(distro_name, stack.name, ubuntudistro, arch)
 
             # create VCS block
             if stack.vcs_config.type in hudson_scm_managers:
@@ -130,7 +130,7 @@ def create_post_release_configs(rosdistro, stack):
             hudson_config = hudson_config.replace('EMAIL_TRIGGERS', get_email_triggers(['Unstable', 'Failure', 'Fixed']))
             hudson_config = hudson_config.replace('UBUNTUDISTRO', ubuntudistro)
             hudson_config = hudson_config.replace('ARCH', arch)
-            hudson_config = hudson_config.replace('ROSDISTRO', rosdistro)
+            hudson_config = hudson_config.replace('ROSDISTRO', distro_name)
             hudson_config = hudson_config.replace('STACKNAME', stack.name)   
             hudson_config = hudson_config.replace('HUDSON_VCS', hudson_vcs)
             hudson_config = hudson_config.replace('TIME_TRIGGER', time_trigger)

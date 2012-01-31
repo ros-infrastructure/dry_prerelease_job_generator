@@ -2,7 +2,9 @@
 
 
 import roslib; roslib.load_manifest("job_generation")
-import rosdistro
+import rospk
+import rospkg.distro
+
 from jobs_common import *
 import sys
 import os
@@ -18,31 +20,27 @@ def main():
 
     # set environment
     env = get_environment()
-    env['PATH'] = '/opt/ros/%s/ros/bin:%s'%(options.rosdistro, os.environ['PATH'])
-    env['ROS_PACKAGE_PATH'] = '%s:/opt/ros/%s/stacks'%(env['WORKSPACE'], options.rosdistro)
-    env['ROS_ROOT'] = '/opt/ros/%s/ros'%options.rosdistro
-    env['PYTHONPATH'] = env['ROS_ROOT']+'/core/roslib/src'
-
+    env['ROS_PACKAGE_PATH'] = os.pathsep.join(env['WORKSPACE'], env['ROS_PACKAGE_PATH'])
 
     # Parse distro file
-    rosdistro_obj = rosdistro.Distro(get_rosdistro_file(options.rosdistro))
-    print 'Operating on ROS distro %s'%rosdistro_obj.release_name
+    distro_name = options.rosdistro
+    distro_obj = rospkg.distro.load_distro(rospkg.distro.distro_uri(distro_name))
+    print 'Operating on ROS distro %s'%distro_obj.release_name
 
     # Install Debian packages of ALL stacks in distro
     call('sudo apt-get update', env)
-    print 'Installing all stacks of ros distro %s: %s'%(options.rosdistro, str(rosdistro_obj.stacks.keys()))
-    for stack in rosdistro_obj.stacks:
-        call('sudo apt-get install %s --yes'%(stack_to_deb(stack, options.rosdistro)), env, ignore_fail=True)
+    print 'Installing all stacks of ros distro %s: %s'%(distro_name, str(distro_obj.stacks.keys()))
+    for stack in distro_obj.stacks:
+        call('sudo apt-get install %s --yes'%(stack_to_deb(stack, distro_name)), env, ignore_fail=True)
     
     # install system dependencies of all packages
-    res = call('rospack list', env, 'Getting list of all packages')
-    packages = [p.split(' ')[0] for p in res.split('\n') if p != '']
+    rospack = rospkg.RosPack(ros_paths=rospkg.environment.get_ros_paths(env=env))
+    packages = rospack.list()
     for pkg in packages:
-        if not pkg in rosdistro_obj.stacks:
-            res = call('rospack find %s'%pkg, env, 'Check if package is blacklisted')
-            if not os.path.isfile(res[0:len(res)-1]+'/ROS_BUILD_BLACKLIST'):
+        if not pkg in distro_obj.stacks:
+            pkg_dir = rospack.get_path(pkg)
+            if not os.path.isfile(os.path.join(pkg_dir, 'ROS_BUILD_BLACKLIST'):
                 call('rosdep install -y %s'%pkg, env, 'Installing system dependencies of package %s'%pkg)
-
 
     # Run hudson helper 
     print 'Running Hudson Helper'

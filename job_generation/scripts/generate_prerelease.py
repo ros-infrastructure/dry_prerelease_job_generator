@@ -71,30 +71,30 @@ import urllib
 import optparse 
 
 
-def prerelease_job_name(rosdistro, stack_list, ubuntu, arch):
-    return get_job_name('prerelease', rosdistro, '_'.join(stack_list), ubuntu, arch)
+def prerelease_job_name(distro_name, stack_list, ubuntu, arch):
+    return get_job_name('prerelease', distro_name, '_'.join(stack_list), ubuntu, arch)
 
 
-def create_prerelease_configs(rosdistro, stack_list, email, repeat, source_only, arches=None, ubuntudistros=None):
+def create_prerelease_configs(distro_name, stack_list, email, repeat, source_only, arches=None, ubuntudistros=None):
     stack_list.sort()
 
     if not arches:
         arches = ARCHES
     if not ubuntudistros:
-        ubuntudistros = UBUNTU_DISTRO_MAP[rosdistro]
+        ubuntudistros = UBUNTU_DISTRO_MAP[distro_name]
 
     # create hudson config files for each ubuntu distro
     configs = {}
     for ubuntudistro in ubuntudistros:
         for arch in arches:
-            name = prerelease_job_name(rosdistro, stack_list, ubuntudistro, arch)
+            name = prerelease_job_name(distro_name, stack_list, ubuntudistro, arch)
             hudson_config = HUDSON_PRERELEASE_CONFIG
             hudson_config = hudson_config.replace('BOOTSTRAP_SCRIPT', BOOTSTRAP_SCRIPT)
             hudson_config = hudson_config.replace('SHUTDOWN_SCRIPT', SHUTDOWN_SCRIPT)
             hudson_config = hudson_config.replace('EMAIL_TRIGGERS', get_email_triggers(['Unstable', 'Failure', 'StillFailing', 'Fixed', 'StillUnstable', 'Success'], False))
             hudson_config = hudson_config.replace('UBUNTUDISTRO', ubuntudistro)
             hudson_config = hudson_config.replace('ARCH', arch)
-            hudson_config = hudson_config.replace('ROSDISTRO', rosdistro)
+            hudson_config = hudson_config.replace('ROSDISTRO', distro_name)
             hudson_config = hudson_config.replace('STACKNAME', '---'.join(stack_list))
             hudson_config = hudson_config.replace('STACKARGS', ' '.join(['--stack %s'%s for s in stack_list]))
             hudson_config = hudson_config.replace('EMAIL', email)
