@@ -6,7 +6,7 @@ DEPENDS_ON_DIR = 'depends_on_overlay'
 
 
 import roslib; roslib.load_manifest("job_generation")
-from roslib import stack_manifest
+import rospkg
 import rosdistro
 from jobs_common import *
 from apt_parser import parse_apt
@@ -35,17 +35,10 @@ def main():
         # set environment
         print "Setting up environment"
         env = get_environment()
-        env['ROS_PACKAGE_PATH'] = '%s:%s:%s:/opt/ros/%s/stacks'%(env['INSTALL_DIR']+'/'+STACK_DIR,
-                                                                 env['INSTALL_DIR']+'/'+DEPENDS_DIR,
-                                                                 env['INSTALL_DIR']+'/'+DEPENDS_ON_DIR,
-                                                                 options.rosdistro)
-        if 'ros' in options.stack:
-            env['ROS_ROOT'] = env['INSTALL_DIR']+'/'+STACK_DIR+'/ros'
-            print "We're building ROS, so setting the ROS_ROOT to %s"%(env['ROS_ROOT'])
-        else:
-            env['ROS_ROOT'] = '/opt/ros/%s/ros'%options.rosdistro
-        env['PYTHONPATH'] = env['ROS_ROOT']+'/core/roslib/src'
-        env['PATH'] = '/opt/ros/%s/ros/bin:%s'%(options.rosdistro, os.environ['PATH'])
+        env['ROS_PACKAGE_PATH'] = os.pathsep.join([env['INSTALL_DIR']+'/'+STACK_DIR,
+                                                   env['INSTALL_DIR']+'/'+DEPENDS_DIR,
+                                                   env['INSTALL_DIR']+'/'+DEPENDS_ON_DIR,
+                                                   env['ROS_PACKAGE_PATH'])
         print "Environment set to %s"%str(env)
 
         # Parse distro file
@@ -72,16 +65,15 @@ def main():
         print "Computing dependencies of stacks we're testing"
         depends_all = []
         for stack in options.stack:    
-            stack_xml = '%s/%s/stack.xml'%(STACK_DIR, stack)
-            call('ls %s'%stack_xml, env, 'Checking if stack %s contains "stack.xml" file'%stack)
-            with open(stack_xml) as stack_file:
-                depends_one = [str(d) for d in stack_manifest.parse(stack_file.read()).depends]  # convert to list
-                print 'Dependencies of stack %s: %s'%(stack, str(depends_one))
-                for d in depends_one:
-                    if not d in options.stack and not d in depends_all:
-                        print 'Adding dependencies of stack %s'%d
-                        get_depends_all(rosdistro_obj, d, depends_all)
-                        print 'Resulting total dependencies of all stacks that get tested: %s'%str(depends_all)
+            stack_dir = os.path.join(STACK_DIR, stack)
+            rosstack = rospkg.RosStack(ros_paths=[stack_dir])                                        
+            depends_one = rosstack.get_depends(stack, implicit=False)
+            print 'Dependencies of stack %s: %s'%(stack, str(depends_one))
+            for d in depends_one:
+               if not d in options.stack and not d in depends_all:
+                    print 'Adding dependencies of stack %s'%d
+                    get_depends_all(rosdistro_obj, d, depends_all)
+                    print 'Resulting total dependencies of all stacks that get tested: %s'%str(depends_all)
 
         if len(depends_all) > 0:
             if options.source_only:

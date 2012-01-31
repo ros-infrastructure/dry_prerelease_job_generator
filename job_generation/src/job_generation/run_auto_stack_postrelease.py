@@ -4,7 +4,7 @@ DEPENDS_ON_DIR = 'depends_on_overlay'
 
 
 import roslib; roslib.load_manifest("job_generation")
-from roslib import stack_manifest
+import rospkg
 import rosdistro
 from jobs_common import *
 import sys
@@ -37,8 +37,9 @@ def main():
     # Install Debian packages of stack dependencies
     print 'Installing debian packages of stack dependencies'
     call('sudo apt-get update', env)
-    with open('%s/%s/stack.xml'%(os.environ['WORKSPACE'], options.stack)) as stack_file:
-        depends = stack_manifest.parse(stack_file.read()).depends
+    stack_dir = os.path.join(os.environ['WORKSPACE'], options.stack)
+    rosstack = rospkg.RosStack(ros_paths=[stack_dir])
+    depends = rosstack.get_depends(options.stack, implicit=False)
     if len(depends) != 0:
         call('sudo apt-get install %s --yes'%(stacks_to_debs(depends, options.rosdistro)), env,
              'Installing dependencies of stack "%s": %s'%(options.stack, str(depends)))
@@ -63,9 +64,6 @@ def main():
     print 'Installing all released stacks of ros distro %s: %s'%(options.rosdistro, str(rosdistro_obj.released_stacks.keys()))
     for stack in rosdistro_obj.released_stacks:
         call('sudo apt-get install %s --yes'%(stack_to_deb(stack, options.rosdistro)), env, ignore_fail=True)
-
-
-    
 
     # Install all stacks that depend on this stack
     print 'Installing all stacks that depend on these stacks from source'

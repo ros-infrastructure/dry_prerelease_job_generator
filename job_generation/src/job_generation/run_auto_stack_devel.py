@@ -1,6 +1,5 @@
 #!/usr/bin/python
 
-from roslib import stack_manifest
 from jobs_common import *
 import sys
 import os
@@ -8,6 +7,7 @@ import optparse
 import subprocess
 import traceback
 
+import rospkg
 
 def main():
     # global try
@@ -38,10 +38,9 @@ def main():
 
         # get all stack dependencies of the stack we're testing
         depends = []
-        stack_xml = '%s/stack.xml'%stack_dir
-        call('ls %s'%stack_xml, env, 'Checking if stack %s contains "stack.xml" file'%options.stack)
+        rosstack = rospkg.RosStack(ros_paths=[stack_dir])
+        depends_one = rosstack.get_depends(options.stack, implicit=False)
         with open(stack_xml) as stack_file:
-            depends_one = [str(d) for d in stack_manifest.parse(stack_file.read()).depends]  # convert to list
             print 'Dependencies of stack %s: %s'%(options.stack, str(depends_one))
             for d in depends_one:
                 if not d == options.stack and not d in depends:
