@@ -29,7 +29,7 @@ HUDSON_DEVEL_CONFIG = """<?xml version='1.0' encoding='UTF-8'?>
     <hudson.tasks.Shell> 
       <command>
 BOOTSTRAP_SCRIPT
-rosrun job_generation run_auto_stack_devel.py --stack STACKNAME --rosdistro ROSDISTRO --repeat 0 SOURCE_ONLY
+run_auto_stack_devel.py --stack STACKNAME --rosdistro ROSDISTRO --repeat 0 SOURCE_ONLY
 SHUTDOWN_SCRIPT
      </command> 
     </hudson.tasks.Shell> 
@@ -71,8 +71,6 @@ println &quot;${build_failures_context}&quot;&#xd;
   <buildWrappers/> 
 </project>
 """
-
-import roslib; roslib.load_manifest("job_generation")
 
 import rospkg
 import rospkg.distro

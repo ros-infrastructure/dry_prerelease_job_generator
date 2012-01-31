@@ -34,8 +34,6 @@
 # Revision $Id: hudson.py 12523 2010-12-21 01:03:35Z tfoote $
 # $Author: tfoote $
 
-import roslib; roslib.load_manifest('job_generation')
-
 import os
 import sys
 

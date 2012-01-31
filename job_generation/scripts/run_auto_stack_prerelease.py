@@ -4,25 +4,21 @@ STACK_DIR = 'stack_overlay'
 DEPENDS_DIR = 'depends_overlay'
 DEPENDS_ON_DIR = 'depends_on_overlay'
 
-
-import roslib; roslib.load_manifest("job_generation")
 import rospkg
 import rospkg.distro
 
-from jobs_common import *
-from apt_parser import parse_apt
+from job_generation.jobs_common import *
+from job_generation.apt_parser import parse_apt
 import sys
 import os
 import optparse 
 import subprocess
 import traceback
 
-
 def remove(list1, list2):
     for l in list2:
         if l in list1:
             list1.remove(l)
-
 
 def main():
     # global try
@@ -40,18 +36,19 @@ def main():
         env['ROS_PACKAGE_PATH'] = os.pathsep.join([env['INSTALL_DIR']+'/'+STACK_DIR,
                                                    env['INSTALL_DIR']+'/'+DEPENDS_DIR,
                                                    env['INSTALL_DIR']+'/'+DEPENDS_ON_DIR,
-                                                   env['ROS_PACKAGE_PATH'])
+                                                   env['ROS_PACKAGE_PATH']])
         print "Environment set to %s"%str(env)
 
         # Parse distro file
         distro_obj = rospkg.distro.load_distro(rospkg.distro.distro_uri(distro_name))
         print 'Operating on ROS distro %s'%distro_obj.release_name
 
+
         # Install the stacks to test from source
         print 'Installing the stacks to test from source'
         rosinstall = ''
         for stack in options.stack:
-            rosinstall += stack_to_rosinstall(distro_obj.stacks[stack], 'devel')
+            rosinstall += distro_obj.stacks[stack].vcs_config.to_rosinstall(stack, 'devel', anonymous=True)
         rosinstall_file = '%s.rosinstall'%STACK_DIR
         print 'Generating rosinstall file [%s]'%(rosinstall_file)
         print 'Contents:\n\n'+rosinstall+'\n\n'
@@ -67,11 +64,11 @@ def main():
         depends_all = []
         for stack in options.stack:    
             stack_dir = os.path.join(STACK_DIR, stack)
-            rosstack = rospkg.RosStack(ros_paths=[stack_dir])                                        
+            rosstack = rospkg.RosStack(ros_paths=[stack_dir])
             depends_one = rosstack.get_depends(stack, implicit=False)
             print 'Dependencies of stack %s: %s'%(stack, str(depends_one))
             for d in depends_one:
-               if not d in options.stack and not d in depends_all:
+                if not d in options.stack and not d in depends_all:
                     print 'Adding dependencies of stack %s'%d
                     get_depends_all(distro_obj, d, depends_all)
                     print 'Resulting total dependencies of all stacks that get tested: %s'%str(depends_all)
@@ -100,7 +97,6 @@ def main():
 
         # Install system dependencies of stacks re're testing
         print "Installing system dependencies of stacks we're testing"
-        call('rosmake rosdep', env)
         for stack in options.stack:
             call('rosdep install -y %s'%stack, env,
                  'Install system dependencies of stack %s'%stack)
@@ -120,10 +116,7 @@ def main():
 
 
         # parse debian repository configuration file to get stack dependencies
-        arch = 'i386'
-        if '64' in call('uname -mrs', env):
-            arch = 'amd64'
-        ubuntudistro = call('lsb_release -a', env).split('Codename:')[1].strip()
+        (arch, ubuntudistro) = get_sys_info()
         print "Parsing apt repository configuration file to get stack dependencies, for %s machine running %s"%(arch, ubuntudistro)
         apt_deps = parse_apt(ubuntudistro, arch, distro_name)
         if not apt_deps.has_debian_package(options.stack):

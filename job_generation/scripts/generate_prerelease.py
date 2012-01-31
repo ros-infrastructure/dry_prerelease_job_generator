@@ -26,7 +26,7 @@ HUDSON_PRERELEASE_CONFIG = """<?xml version='1.0' encoding='UTF-8'?>
     <hudson.tasks.Shell> 
       <command>
 BOOTSTRAP_SCRIPT
-rosrun job_generation run_auto_stack_prerelease.py STACKARGS --rosdistro ROSDISTRO --repeat REPEAT SOURCE_ONLY
+run_auto_stack_prerelease.py STACKARGS --rosdistro ROSDISTRO --repeat REPEAT SOURCE_ONLY
 SHUTDOWN_SCRIPT
      </command> 
     </hudson.tasks.Shell> 
@@ -62,8 +62,6 @@ println &quot;${build_failures_context}&quot;&#xd;
   <buildWrappers/> 
 </project>
 """
-
-import roslib; roslib.load_manifest("job_generation")
 
 from job_generation.jobs_common import *
 import jenkins

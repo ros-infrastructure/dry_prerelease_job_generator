@@ -30,7 +30,7 @@ HUDSON_POST_RELEASE_CONFIG = """<?xml version='1.0' encoding='UTF-8'?>
     <hudson.tasks.Shell> 
       <command>
 BOOTSTRAP_SCRIPT
-rosrun job_generation run_auto_stack_postrelease.py --stack STACKNAME --rosdistro ROSDISTRO
+run_auto_stack_postrelease.py --stack STACKNAME --rosdistro ROSDISTRO
 SHUTDOWN_SCRIPT
      </command> 
     </hudson.tasks.Shell> 
@@ -73,14 +73,10 @@ println &quot;${build_failures_context}&quot;&#xd;
 </project>
 """
 
-
-import roslib; roslib.load_manifest("job_generation")
-import rosdistro
 import time
 from job_generation.jobs_common import *
 import urllib
 import optparse 
-
 
 def post_release_job_name(distro_name, stack_name, ubuntu, arch):
     return get_job_name('released', distro_name, stack_name, ubuntu, arch)

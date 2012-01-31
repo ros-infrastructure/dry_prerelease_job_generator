@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-from jobs_common import *
+from job_generation.jobs_common import *
 import sys
 import os
 import optparse 

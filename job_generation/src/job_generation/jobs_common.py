@@ -1,6 +1,5 @@
 #!/usr/bin/python
 
-import roslib; roslib.load_manifest("job_generation")
 import os
 import sys
 import optparse
@@ -35,7 +34,7 @@ cd \$INSTALL_DIR
 
 wget  --no-check-certificate http://code.ros.org/svn/ros/installers/branches/fuerte/hudson/hudson_helper 
 chmod +x  hudson_helper
-svn co https://code.ros.org/svn/ros/stacks/ros_release/branches/fuerte ros_release
+sudo easy_install -U ros-job_generation
 """
 
 SHUTDOWN_SCRIPT = """

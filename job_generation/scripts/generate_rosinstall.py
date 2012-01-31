@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 
-from __future__ import with_statement
 PKG = 'job_generation'
-import roslib; roslib.load_manifest(PKG)
 
 import sys
 import subprocess
@@ -11,7 +9,6 @@ import optparse
 import datetime
 from job_generation.jobs_common import *
 from pysqlite2 import dbapi2 as sqlite
-
 
 def main():
     (options, args) = get_options(['rosdistro', 'overlay', 'variant'], ['database'])

@@ -2,12 +2,10 @@
 
 DEPENDS_ON_DIR = 'depends_on_overlay'
 
-
-import roslib; roslib.load_manifest("job_generation")
 import rospkg
 import rospkg.distro
 
-from jobs_common import *
+from job_generation.jobs_common import *
 import sys
 import os
 import optparse 

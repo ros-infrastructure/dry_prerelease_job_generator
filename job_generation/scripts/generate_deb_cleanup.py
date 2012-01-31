@@ -146,13 +146,11 @@ python $WORKSPACE/script.py
 </project>
 """
 
-import roslib; roslib.load_manifest("job_generation")
 from job_generation.jobs_common import *
 import jenkins
 import urllib
 import optparse 
 import yaml
-
 
 MACHINEIDS = ['bf1', 'bf2', 'bf3', 'bf4-wgsf6', 'bf5-wgsf7']
 
@@ -178,9 +176,6 @@ def create_aptcachecleanup_configs():
             configs[name] = hudson_config
     return configs
     
-    
-
-
 def main():
     parser = optparse.OptionParser()
     parser.add_option('--delete', dest = 'delete', default=False, action='store_true',

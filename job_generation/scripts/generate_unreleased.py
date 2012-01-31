@@ -52,7 +52,7 @@ HUDSON_UNRELEASED_CONFIG = """<?xml version='1.0' encoding='UTF-8'?>
     <hudson.tasks.Shell> 
       <command>
 BOOTSTRAP_SCRIPT
-rosrun job_generation run_auto_stack_unreleased.py --rosdistro ROSDISTRO
+run_auto_stack_unreleased.py --rosdistro ROSDISTRO
 SHUTDOWN_SCRIPT
      </command> 
     </hudson.tasks.Shell> 
@@ -95,10 +95,8 @@ println &quot;${build_failures_context}&quot;&#xd;
 </project>
 """
 
-import roslib; roslib.load_manifest("job_generation")
 from job_generation.jobs_common import *
 import yaml
-
 
 def unreleased_job_name(distro_name, rosinstall, ubuntu, arch):
     return get_job_name('unreleased', distro_name, rosinstall.split('/')[-1].split('.')[0], ubuntu, arch)
