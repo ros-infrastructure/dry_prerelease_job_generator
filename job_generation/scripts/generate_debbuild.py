@@ -82,7 +82,6 @@ bash $WORKSPACE/build.bash</command>
 """
 
 import roslib; roslib.load_manifest("job_generation")
-import rosdistro
 from job_generation.jobs_common import *
 import optparse
 

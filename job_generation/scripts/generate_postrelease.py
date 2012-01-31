@@ -87,9 +87,11 @@ def post_release_job_name(distro_name, stack_name, ubuntu, arch):
 
 
 def create_post_release_configs(distro_name, stack):
+    stack_name = stack.name
+    
     # create gold distro
-    gold_job = post_release_job_name(distro_name, stack.name, UBUNTU_DISTRO_MAP[distro_name][0], ARCHES[0])
-    gold_children = [post_release_job_name(distro_name, stack.name, u, a)
+    gold_job = post_release_job_name(distro_name, stack_name, UBUNTU_DISTRO_MAP[distro_name][0], ARCHES[0])
+    gold_children = [post_release_job_name(distro_name, stack_name, u, a)
                      for a in ARCHES for u in UBUNTU_DISTRO_MAP[distro_name]]
     gold_children.remove(gold_job)
 
@@ -97,7 +99,7 @@ def create_post_release_configs(distro_name, stack):
     configs = {}
     for ubuntudistro in UBUNTU_DISTRO_MAP[distro_name]:
         for arch in ARCHES:
-            name = post_release_job_name(distro_name, stack.name, ubuntudistro, arch)
+            name = post_release_job_name(distro_name, stack_name, ubuntudistro, arch)
 
             # create VCS block
             if stack.vcs_config.type in hudson_scm_managers:
@@ -105,14 +107,19 @@ def create_post_release_configs(distro_name, stack):
             else:
                 raise NotImplementedError("vcs type %s not implemented as hudson scm manager"%stack.vcs_config.type)
 
-            
-            if stack.vcs_config.type in ['svn']:
-                hudson_vcs = hudson_vcs.replace('STACKNAME', stack.name)
-                hudson_vcs = hudson_vcs.replace('STACKURI', stack.vcs_config.anon_distro_tag)
+            # this code is essentially the same as generate_devel and should be merged
+            vcs_config = stack.vcs_config
+            if vcs_config.type in ['svn']:
+                # TODO: should probably use 'release' branch instead
+                #url, version = vcs_config.get_branch('release', anonymous=True)
+                url, version = vcs_config.get_branch('distro', anonymous=True)
+                hudson_vcs = hudson_vcs.replace('STACKNAME', stack_name)
+                hudson_vcs = hudson_vcs.replace('STACKURI', url)
             elif stack.vcs_config.type in ['git', 'hg', 'bzr']:
-                hudson_vcs = hudson_vcs.replace('STACKBRANCH', stack.vcs_config.distro_tag)
-                hudson_vcs = hudson_vcs.replace('STACKURI', stack.vcs_config.anon_repo_uri)
-                hudson_vcs = hudson_vcs.replace('STACKNAME', stack.name)
+                url, version = vcs_config.get_branch('devel', anonymous=True)
+                hudson_vcs = hudson_vcs.replace('STACKBRANCH', version)
+                hudson_vcs = hudson_vcs.replace('STACKURI', url)
+                hudson_vcs = hudson_vcs.replace('STACKNAME', stack_name)
             else:
                 print "UNSUPPORTED VCS TYPE"
                 raise
@@ -131,7 +138,7 @@ def create_post_release_configs(distro_name, stack):
             hudson_config = hudson_config.replace('UBUNTUDISTRO', ubuntudistro)
             hudson_config = hudson_config.replace('ARCH', arch)
             hudson_config = hudson_config.replace('ROSDISTRO', distro_name)
-            hudson_config = hudson_config.replace('STACKNAME', stack.name)   
+            hudson_config = hudson_config.replace('STACKNAME', stack_name)   
             hudson_config = hudson_config.replace('HUDSON_VCS', hudson_vcs)
             hudson_config = hudson_config.replace('TIME_TRIGGER', time_trigger)
             hudson_config = hudson_config.replace('JOB_CHILDREN', job_children)
@@ -146,9 +153,10 @@ def main():
     (options, args) = get_options(['rosdistro'], ['delete', 'wait', 'stack'])
     if not options:
         return -1
+    distro_name = options.distro_name
 
     # Parse distro file
-    distro_obj = rosdistro.Distro(get_rosdistro_file(options.rosdistro))
+    distro_obj = rospkg.distro.load_distro(rospkg.distro.distro_uri(distro_name))
     print 'Operating on ROS distro %s'%distro_obj.release_name
 
     # generate hudson config files
@@ -159,7 +167,6 @@ def main():
         stack_list = distro_obj.released_stacks
     for stack_name in stack_list:
         post_release_configs.update(create_post_release_configs(distro_obj.release_name, distro_obj.released_stacks[stack_name]))
-
 
     # schedule jobs
     schedule_jobs(post_release_configs, options.wait, options.delete)

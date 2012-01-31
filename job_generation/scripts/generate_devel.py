@@ -116,6 +116,7 @@ def create_devel_configs(os, distro_name, stack):
         else:
             raise NotImplementedError("vcs type %s not implemented as hudson scm manager"%stack.vcs_config.type)
 
+        # this code is essentially the same as generate_postrelease and should be merged
         vcs_config = stack.vcs_config
         if vcs_config.type in ['svn']:
             url, version = vcs_config.get_branch('devel', anonymous=True)
@@ -153,8 +154,6 @@ def create_devel_configs(os, distro_name, stack):
         hudson_config = hudson_config.replace('NODE', node)
         configs[name] = hudson_config
     return configs
-
-    
     
 
 def main():
