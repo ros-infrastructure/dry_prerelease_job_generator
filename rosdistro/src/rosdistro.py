@@ -386,7 +386,7 @@ class Distro(object):
         # initialize members
         self.source_uri = source_uri
 
-        self.ros = None
+        #self.ros = None
         self.stacks = {} # {str: DistroStack}
         self.stack_names = []
         self.released_stacks = {}  # {str: DistroStack}
@@ -440,14 +440,14 @@ class Distro(object):
         for v in variants.iterkeys():
             self.variants[v] = Variant(v, variants)
 
-        if not 'ros' in stack_props:
-            raise DistroException("this program assumes that ros is in your variant")
+        #if not 'ros' in stack_props:
+        #    raise DistroException("this program assumes that ros is in your variant")
 
         self.stacks = load_distro_stacks(self.distro_props, self.stack_names, release_name=self.release_name, version=self.version)
         for s, obj in self.stacks.iteritems():
             if obj.version:
                 self.released_stacks[s] = obj
-        self.ros = self.stacks.get('ros', None)
+        #self.ros = self.stacks.get('ros', None)
 
 
 # TODO Ken's suggested restructuring template
