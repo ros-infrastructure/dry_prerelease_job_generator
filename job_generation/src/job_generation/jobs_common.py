@@ -10,6 +10,9 @@ import time
 import subprocess
 import yaml
 
+import rospkg
+import rospkg.distro
+
 BOOTSTRAP_SCRIPT = """
 cat &gt; $WORKSPACE/script.sh &lt;&lt;DELIM
 #!/usr/bin/env bash
