@@ -368,10 +368,8 @@ def schedule_jobs(jobs, wait=False, delete=False, start=False, hudson_obj=None):
             finished = True
 
 
-
-def get_rosdistro_file(rosdistro):
-    return 'https://code.ros.org/svn/release/trunk/distros/%s.rosdistro'%rosdistro
-
+def get_rosdistro_file(distro_name):
+    return 'https://code.ros.org/svn/release/trunk/distros/%s.rosdistro'%distro_name
 
 
 def get_email_triggers(when, send_devel=True):

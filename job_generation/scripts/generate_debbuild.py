@@ -44,7 +44,7 @@ HUDSON_DEBBUILD_CONFIG = """<?xml version="1.0" encoding="UTF-8"?>
   <concurrentBuild>false</concurrentBuild>
   <builders>
     <hudson.tasks.Shell>
-      <command>echo %(rosdistro)s
+      <command>echo %(distro_name)s
 echo $STACK_NAME
 echo %(osdistro)s
 echo %(arch)s
@@ -55,7 +55,7 @@ cat &gt; $WORKSPACE/build.bash &lt;&lt; DELIM
 source /opt/ros/cturtle/setup.sh
 export ROS_PACKAGE_PATH=$WORKSPACE/ros_release:$WORKSPACE/release:$ROS_PACKAGE_PATH
 
-rosrun rosdeb build_debs.py %(rosdistro)s $STACK_NAME %(osdistro)s %(arch)s --force --besteffort
+rosrun rosdeb build_debs.py %(distro_name)s $STACK_NAME %(osdistro)s %(arch)s --force --besteffort
 DELIM
 
 bash $WORKSPACE/build.bash</command>
@@ -81,50 +81,39 @@ bash $WORKSPACE/build.bash</command>
 
 """
 
-
-
 import roslib; roslib.load_manifest("job_generation")
 import rosdistro
 from job_generation.jobs_common import *
 import optparse
 
+def debbuild_job_name(distro_name, ubuntu, arch):
+    return "-".join(["debbuild-build-debs", distro_name, ubuntu, arch])
 
-def debbuild_job_name(rosdistro, ubuntu, arch):
-    return "-".join(["debbuild-build-debs", rosdistro, ubuntu, arch])
-
-
-
-def create_debbuild_configs(osdistro, rosdistro, arch):
-
+def create_debbuild_configs(osdistro, distro_name, arch):
     # create hudson config files for each ubuntu distro
     configs = {}
-    name = debbuild_job_name(rosdistro, osdistro, arch)
+    name = debbuild_job_name(distro_name, osdistro, arch)
     
     hudson_config = HUDSON_DEBBUILD_CONFIG
     
-    configs[name] = hudson_config%{'osdistro':osdistro, 'rosdistro':rosdistro, 'arch':arch}
+    configs[name] = hudson_config%{'osdistro':osdistro, 'rosdistro':distro_name, 'arch':arch}
     return configs
-
-    
-    
 
 usage_str = "usage: %prog --rosdistro ROSDISTRO [--architecture ARCH ] [--os OS_CODENAME] [--delete] [--nowait]"
 
 def main():
     parser = optparse.OptionParser(usage=usage_str)
-    parser.add_option('--rosdistro', action='store', dest='rosdistro', help='which rosdistro to use')
+    parser.add_option('--rosdistro', action='store', dest='distro_name', help='which distro to use')
     parser.add_option('--architecture', action='append', dest='arch', help='Architecture to target')
     parser.add_option('--codename', action='append', dest='codename', help='Codename to target')
     parser.add_option('--wait', action='store_true', dest='wait', default=False, help='Wait for running jobs to finish, instead of skipping')
     parser.add_option('--delete', action='store_true', dest='delete', default=False, help='Delete the specified job')
 
-    #(options, args) = get_options(['rosdistro'], ['delete', 'wait', 'os', 'arch'])
     (options, args) = parser.parse_args()
-    if not options.rosdistro:
-        parser.parse_error("rosdistro required")
-    if options.rosdistro:
-        rosdistro_list = [options.rosdistro]
-        
+    if not options.distro_name:
+        parser.parse_error("--rosdistro required")
+    if options.distro_name:
+        distro_name_list = [options.distro_name]
 
     os_list = ['lucid', 'maverick', 'natty']
     arch_list = ['i386', 'amd64', 'armel']
@@ -134,16 +123,13 @@ def main():
     if options.arch:
         arch_list = options.arch
     
-    print os_list, arch_list, rosdistro_list
- 
+    print os_list, arch_list, distro_name_list
 
     debbuild_configs = {}
-    for rosdistro in rosdistro_list:
+    for distro_name in distro_name_list:
         for arch in arch_list:
             for o in os_list:
-                debbuild_configs.update(create_debbuild_configs(o, rosdistro, arch))
-
-    
+                debbuild_configs.update(create_debbuild_configs(o, distro_name, arch))
                 
     # schedule jobs
     print "Scheduling updates"

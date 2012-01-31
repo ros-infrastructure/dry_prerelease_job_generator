@@ -228,14 +228,14 @@ def main():
                       help='Delete jobs from Hudson')    
     parser.add_option('--rosinstall', dest = 'rosinstall', action='store',
                       help="Specify the rosinstall file that refers to gazebo code.")
-    parser.add_option('--rosdistro', dest = 'rosdistro', action='store',
+    parser.add_option('--rosdistro', dest = 'distro_name', action='store',
                       help="Specify the ros distro to operate on (defaults to cturtle)")
     (options, args) = parser.parse_args()
-    if not options.rosdistro:
+    if not options.distro_name:
         print 'Please provide the ros distro you want to test: --rosdistro cturtle'
         return
-    if not options.rosdistro in UBUNTU_DISTRO_MAP.keys():
-        print 'You profided an invalid "--rosdistro %s" argument. Options are %s'%(options.rosdistro, UBUNTU_DISTRO_MAP.keys())
+    if not options.distro_name in UBUNTU_DISTRO_MAP.keys():
+        print 'You profided an invalid "--rosdistro %s" argument. Options are %s'%(options.distro_name, UBUNTU_DISTRO_MAP.keys())
         return
     if not options.rosinstall:
         print 'Please provide the rosinstall of gazebo code to test: --rosinstall foo.rosinstall'
@@ -248,7 +248,7 @@ def main():
 
     # send gazebo tests to Hudson
     print 'Creating gazebo Hudson jobs:'
-    gazebo_configs = create_gazebo_configs(options.rosdistro, options.rosinstall)
+    gazebo_configs = create_gazebo_configs(options.distro_name, options.rosinstall)
 
     for job_name in gazebo_configs:
         exists = hudson_instance.job_exists(job_name)

@@ -4,16 +4,16 @@ import urllib
 import yaml
 
 
-def parse_package(package_string, rosdistro):
+def parse_package(package_string, distro_name):
     depends = []
     for l in package_string.splitlines():
         if 'Package: ' in l:
-            package = deb_to_stack(l.split('Package: ')[1], rosdistro)
+            package = deb_to_stack(l.split('Package: ')[1], distro_name)
         elif 'Depends' in l:
             dep_str = l.split('Depends: ')[1]
             for d in dep_str.split(', '):
                 if '(' in d:
-                    dep = deb_to_stack(d.split(' ')[0], rosdistro)
+                    dep = deb_to_stack(d.split(' ')[0], distro_name)
                     if dep:
                         depends.append(dep)
         elif 'Description: Meta package for' in l:
@@ -21,23 +21,19 @@ def parse_package(package_string, rosdistro):
 
     return (package, depends)
 
-
-
-def deb_to_stack(deb_name, rosdistro):
-    if not deb_name.startswith('ros-%s'%rosdistro):
+def deb_to_stack(deb_name, distro_name):
+    if not deb_name.startswith('ros-%s'%distro_name):
         return None
     return '_'.join(deb_name.split('-')[2:])
 
-
-
 class AptParser:
-    def __init__(self, string, rosdistro):
+    def __init__(self, string, distro_name):
         self.depends_list = {}
         self.depends_on_list = {}
         
         for package in string.split('Package: '):
             if len(package) > 0:
-                (package, depends) = parse_package('Package: '+package, rosdistro)
+                (package, depends) = parse_package('Package: '+package, distro_name)
                 if package:
                     if not package in self.depends_on_list:
                         self.depends_on_list[package] = []
@@ -96,9 +92,9 @@ class AptParser:
 
         
 
-def parse_apt(ubuntudistro, arch, rosdistro):
+def parse_apt(ubuntudistro, arch, distro_name):
     url_name = 'http://packages.ros.org/ros-shadow-fixed/ubuntu/dists/%s/main/binary-%s/Packages'%(ubuntudistro, arch)
-    parser = AptParser(urllib.urlopen(url_name).read(), rosdistro)
+    parser = AptParser(urllib.urlopen(url_name).read(), distro_name)
     return parser
 
 
