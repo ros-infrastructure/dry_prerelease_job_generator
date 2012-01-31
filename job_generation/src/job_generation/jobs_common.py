@@ -32,7 +32,7 @@ cd \$INSTALL_DIR
 
 wget  --no-check-certificate http://code.ros.org/svn/ros/installers/trunk/hudson/hudson_helper 
 chmod +x  hudson_helper
-svn co https://code.ros.org/svn/ros/stacks/ros_release/trunk ros_release
+svn co https://code.ros.org/svn/ros/stacks/ros_release/branches/fuerte ros_release
 """
 
 SHUTDOWN_SCRIPT = """
@@ -71,10 +71,7 @@ ARCHES = ['amd64', 'i386']
 UBUNTU_DISTRO_MAP = os_test_platform = {
     'testing': ['lucid', 'maverick'],
     'unstable': ['lucid', 'oneiric'],
-    'fuerte': ['lucid', 'oneiric'],
-    'electric': ['lucid', 'maverick', 'natty', 'oneiric'],
-    'diamondback': ['lucid', 'maverick', 'natty'],
-    'cturtle': ['lucid', 'maverick', 'karmic'],
+    'fuerte': ['lucid', 'oneiric'] 
 }
 
 # Path to hudson server
