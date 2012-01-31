@@ -225,9 +225,12 @@ def get_depends_all(distro_obj, stack_name, depends_all):
     if not stack_name in depends_all:
         depends_all.append(stack_name)
         try:
-            for d in get_depends_one(distro_obj.stacks[stack_name]):
-                get_depends_all(distro_obj, d, depends_all)
-        except KeyError, ex:
+            if stack_name in distro_obj.stacks:
+                for d in get_depends_one(distro_obj.stacks[stack_name]):
+                    get_depends_all(distro_obj, d, depends_all)
+            else:
+                print >> sys.stderr, "WARNING: [%s] not in rosdistro file, assuming catkin-ized"%(stack_name)
+        except KeyError as ex:
             print "Exception when processing %s.  Key %s is not in distro_obj.stacks: %s"%(stack_name, ex, ", ".join([s for s in distro_obj.stacks]))
             print "depends_all is %s"%(', '.join(depends_all))
             raise ex
