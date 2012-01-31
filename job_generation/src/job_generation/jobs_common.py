@@ -31,7 +31,7 @@ export ROS_PACKAGE_PATH=\$INSTALL_DIR/ros_release:\$ROS_PACKAGE_PATH
 mkdir -p \$INSTALL_DIR
 cd \$INSTALL_DIR
 
-wget  --no-check-certificate http://code.ros.org/svn/ros/installers/trunk/hudson/hudson_helper 
+wget  --no-check-certificate http://code.ros.org/svn/ros/installers/branches/fuerte/hudson/hudson_helper 
 chmod +x  hudson_helper
 svn co https://code.ros.org/svn/ros/stacks/ros_release/branches/fuerte ros_release
 """
