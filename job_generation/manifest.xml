@@ -10,7 +10,6 @@
   <url>http://ros.org/wiki/job_generation</url>
   <depend package="rosdistro"/>
   <depend package="hudson"/>
-  <depend package="rosdeb"/>
   <depend package="vcstools"/>
 
 </package>

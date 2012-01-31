@@ -1,7 +1,6 @@
 #!/usr/bin/python
 
 import roslib; roslib.load_manifest("job_generation")
-from rosdeb import targets
 import os
 import optparse
 import rosdistro
@@ -26,7 +25,7 @@ export ROS_TEST_RESULTS_DIR=/tmp/ros/test_results
 export JOB_NAME=$JOB_NAME
 export BUILD_NUMBER=$BUILD_NUMBER
 export HUDSON_URL=$HUDSON_URL
-export ROS_PACKAGE_PATH=\$INSTALL_DIR/ros_release:/opt/ros/ROSDISTRO/stacks
+export ROS_PACKAGE_PATH=\$INSTALL_DIR/ros_release:\$ROS_PACKAGE_PATH
 
 mkdir -p \$INSTALL_DIR
 cd \$INSTALL_DIR
@@ -69,7 +68,14 @@ echo "_________________________________END SCRIPT_______________________________
 ARCHES = ['amd64', 'i386']
 
 # ubuntu distro mapping to ros distro
-UBUNTU_DISTRO_MAP = targets.os_test_platform
+UBUNTU_DISTRO_MAP = os_test_platform = {
+    'testing': ['lucid', 'maverick'],
+    'unstable': ['lucid', 'oneiric'],
+    'fuerte': ['lucid', 'oneiric'],
+    'electric': ['lucid', 'maverick', 'natty', 'oneiric'],
+    'diamondback': ['lucid', 'maverick', 'natty'],
+    'cturtle': ['lucid', 'maverick', 'karmic'],
+}
 
 # Path to hudson server
 SERVER = 'http://build.willowgarage.com'
