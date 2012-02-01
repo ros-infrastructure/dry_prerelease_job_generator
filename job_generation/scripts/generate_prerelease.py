@@ -1,5 +1,6 @@
 #!/usr/bin/python
 
+import traceback
 
 # template to create pre-release hudson configuration file
 HUDSON_PRERELEASE_CONFIG = """<?xml version='1.0' encoding='UTF-8'?>
@@ -122,7 +123,7 @@ def main():
         # check if jobs are not already running
         for job_name in prerelease_configs:
             exists = hudson_instance.job_exists(job_name)
-            if exists and hudson_instance.job_is_running(job_name):
+            if exists and job_is_running(hudson_instance, job_name):
                 print 'Cannot create job %s because a job with the same name is already running.'%job_name
                 print 'Please try again when this job finished running.'
                 return 
@@ -138,6 +139,7 @@ def main():
 
     # catch all exceptions
     except Exception, e:
+        traceback.print_exc() 
         print 'ERROR: Failed to communicate with Hudson server. Try again later.'
 
 

@@ -1,0 +1,4 @@
+> update version in setup.py
+# python setup.py build
+# python setup.py sdist upload
+# sudo pip install -U ros-job_generation
