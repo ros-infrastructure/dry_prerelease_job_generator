@@ -417,10 +417,12 @@ def write_file(filename, msg):
 
 def generate_email(message, env):
     print message
+    text_xml = '<testsuite name="dummy" tests="1" errors="0" failures="0" skip="0"><testcase classname="Dummy" name="dummy" time="0"/></testsuite>'
     write_file(env['WORKSPACE']+'/build_output/buildfailures.txt', message)
     write_file(env['WORKSPACE']+'/test_output/testfailures.txt', '')
     write_file(env['WORKSPACE']+'/build_output/buildfailures-with-context.txt', '')
-    
+    write_file(env['WORKSPACE']+'/test_results/_hudson/dummy.xml', text_xml)    
+    write_file(env['WORKSPACE']+'/test_results/0/_hudson/dummy.xml', text_xml)
 
 
 def call(command, env=None, message='', ignore_fail=False):

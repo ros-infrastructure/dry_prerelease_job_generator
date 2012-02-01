@@ -57,8 +57,8 @@ def main():
                 print 'Installing debian packages of "%s" dependencies: %s'%(options.stack, str(depends))
                 res = call('sudo apt-get install %s --yes'%(stacks_to_debs(depends, distro_name)), env, ignore_fail=True)
                 if res != 0:
-                    generate_email('Not all dependencies of stack %s have a Debian package. Skipping this devel build'%options.stack, env)
-                    return 0  # return success
+                    generate_email('Not all dependencies of stack %s have a Debian package. Skipping this devel build'%str(options.stack), env)
+                    sys.exit(0)  # return success
             else:
                 # Install stack dependencies from source
                 print 'Installing stack dependencies from source'
