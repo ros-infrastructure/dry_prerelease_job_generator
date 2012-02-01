@@ -434,7 +434,11 @@ def call(command, env=None, message='', ignore_fail=False):
         print str(err)
         if helper.returncode != 0:
             raise Exception('bad return code')
+
+        # command succeede, return code 0
         return res
+
+    # command failed
     except Exception:
         if not ignore_fail:
             message += "\n=========================================\n"
@@ -451,6 +455,7 @@ def call(command, env=None, message='', ignore_fail=False):
                 message += "\n=========================================\n"
                 generate_email(message, env)
             raise Exception('job failed')
+        return -1;
 
         
 def get_sys_info():
