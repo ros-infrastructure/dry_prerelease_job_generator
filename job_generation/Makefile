@@ -1,6 +1,6 @@
 .PHONY: all setup clean_dist distro clean install upload
 
-NAME='ros-job_generation'
+NAME=ros-job_generation
 VERSION=`python setup.py -V`
 
 all:
