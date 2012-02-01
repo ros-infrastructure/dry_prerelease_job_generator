@@ -2,6 +2,7 @@
 
 import os
 import sys
+import string
 import optparse
 import jenkins
 import urllib
@@ -330,7 +331,17 @@ def get_options(required, optional):
 
     return (options, args)
 
-
+def job_is_running(jenkins_obj, name):
+    """
+    Test if a job is running
+    @param name The job name
+    """
+    info = jenkins_obj.get_job_info(name)
+    if 'color' in info:
+        if string.find(info['color'], "_anime") > 0:
+            return True
+    return False
+    
 def schedule_jobs(jobs, wait=False, delete=False, start=False, hudson_obj=None):
     # create hudson instance
     if not hudson_obj:
@@ -344,7 +355,7 @@ def schedule_jobs(jobs, wait=False, delete=False, start=False, hudson_obj=None):
             exists = hudson_obj.job_exists(job_name)
 
             # job is already running
-            if exists and hudson_obj.job_is_running(job_name):
+            if exists and job_is_running(hudson_obj, job_name):
                 jobs_todo[job_name] = jobs[job_name]
                 print "Not reconfiguring running job %s because it is still running"%job_name
 
