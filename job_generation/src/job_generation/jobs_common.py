@@ -357,17 +357,22 @@ def schedule_jobs(jobs, wait=False, delete=False, start=False, hudson_obj=None):
             # job is already running
             if exists and job_is_running(hudson_obj, job_name):
                 jobs_todo[job_name] = jobs[job_name]
-                print "Not reconfiguring running job %s because it is still running"%job_name
+                print "Not changing job %s because it is still running"%job_name
 
             # reconfigure job
-            elif exists:
+            elif exists and not delete:
                 hudson_obj.reconfig_job(job_name, jobs[job_name])
                 if start:
                     hudson_obj.build_job(job_name)
                 print " - %s"%job_name
 
+            # delete job
+            elif exists and delete:
+                hudson_obj.delete_job(job_name)
+                print " - deleted job %s"%job_name
+
             # create job
-            elif not exists:
+            elif not exists and not delete:
                 hudson_obj.create_job(job_name, jobs[job_name])
                 if start:
                     hudson_obj.build_job(job_name)
