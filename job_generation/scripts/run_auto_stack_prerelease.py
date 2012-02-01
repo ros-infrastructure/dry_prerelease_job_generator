@@ -54,9 +54,8 @@ def main():
         with open(rosinstall_file, 'w') as f:
             f.write(rosinstall)
             print 'rosinstall file [%s] generated'%(rosinstall_file)
-        call('rosinstall --rosdep-yes %s /opt/ros/%s %s'%(STACK_DIR, distro_name, rosinstall_file), env,
+        call('rosinstall -n %s /opt/ros/%s %s'%(STACK_DIR, distro_name, rosinstall_file), env,
              'Install the stacks to test from source.')
-
 
         # get all stack dependencies of stacks we're testing
         print "Computing dependencies of stacks we're testing"
@@ -83,7 +82,7 @@ def main():
                 with open(rosinstall_file, 'w') as f:
                     f.write(rosinstall)
                     print 'rosinstall file [%s] generated'%(rosinstall_file)
-                call('rosinstall --rosdep-yes %s /opt/ros/%s %s'%(DEPENDS_DIR, distro_name, rosinstall_file), env,
+                call('rosinstall -n %s /opt/ros/%s %s'%(DEPENDS_DIR, distro_name, rosinstall_file), env,
                      'Install the stack dependencies from source.')
             else:
                 # Install Debian packages of stack dependencies
@@ -163,8 +162,12 @@ def main():
                 with open(rosinstall_file, 'w') as f:
                     f.write(rosinstall)
                     print 'rosinstall file [%s] generated'%(rosinstall_file)
-                call('rosinstall --rosdep-yes %s /opt/ros/%s %s %s'%(DEPENDS_ON_DIR, distro_name, STACK_DIR, rosinstall_file), env,
+                call('rosinstall -n %s /opt/ros/%s %s %s'%(DEPENDS_ON_DIR, distro_name, STACK_DIR, rosinstall_file), env,
                      'Install dependencies of depends_on_all stacks, excluding dependencies of test stacks.')
+                for s in depends_all_depends_on_all:
+                    call('rosdep install -y %s'%s, env, 'Install rosdep dependencies of depends_all_depends_on_all')
+
+
         else:
             print "No dependencies of depends_on_all stacks"
             
@@ -179,8 +182,11 @@ def main():
             with open(rosinstall_file, 'w') as f:
                 f.write(rosinstall)
                 print 'rosinstall file [%s] generated'%(rosinstall_file)
-            call('rosinstall --rosdep-yes %s /opt/ros/%s %s %s'%(DEPENDS_ON_DIR, distro_name, STACK_DIR, rosinstall_file), env,
+            call('rosinstall -n %s /opt/ros/%s %s %s'%(DEPENDS_ON_DIR, distro_name, STACK_DIR, rosinstall_file), env,
                  'Install the stacks that depend on the stacks that are getting tested from source.')
+            for s in depends_on_all:
+                call('rosdep install -y %s'%s, env, 'Install rosdep dependencies of depends_on_all')
+
 
             # Run hudson helper for all stacks
             print 'Running Hudson Helper'
