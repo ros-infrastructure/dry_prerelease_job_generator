@@ -189,13 +189,13 @@ def stacks_to_debs(stack_list, distro_name):
     return ' '.join([stack_to_deb(s, distro_name) for s in stack_list])
 
 def stacks_to_rosinstall(stack_list, stack_map, branch):
-    res = ''
+    res = []
     for s in stack_list:
         if s in stack_map:
-            res += stack_map[s].vcs_config.to_rosinstall(s, branch, anonymous=True)
+            res.extend(stack_map[s].vcs_config.to_rosinstall(s, branch, anonymous=True))
         else:
             print 'Stack "%s" is not in stack list. Not adding this stack to rosinstall file'%s
-    return res
+    return yaml.dump(res)
 
 def get_depends_one(stack):
     name = '%s-%s'%(stack.name, stack.version)

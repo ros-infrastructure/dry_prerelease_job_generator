@@ -14,6 +14,7 @@ import os
 import optparse 
 import subprocess
 import traceback
+import yaml
 
 def remove(list1, list2):
     for l in list2:
@@ -46,9 +47,7 @@ def main():
 
         # Install the stacks to test from source
         print 'Installing the stacks to test from source'
-        rosinstall = ''
-        for stack in options.stack:
-            rosinstall += distro_obj.stacks[stack].vcs_config.to_rosinstall(stack, 'devel', anonymous=True)
+        rosinstall = stacks_to_rosinstall(options.stack, distro_obj.stacks, 'devel')
         rosinstall_file = '%s.rosinstall'%STACK_DIR
         print 'Generating rosinstall file [%s]'%(rosinstall_file)
         print 'Contents:\n\n'+rosinstall+'\n\n'
