@@ -199,7 +199,8 @@ def get_missing(distro, os_platform, arch, repo=SHADOW_REPO, lock_version=True):
                     missing_excluded_dep.add(sn)
 
         else:
-            print "IN", sn
+            pass
+            #print "IN", sn
     missing_primary -= missing_excluded
     missing_dep -= missing_excluded_dep
 
