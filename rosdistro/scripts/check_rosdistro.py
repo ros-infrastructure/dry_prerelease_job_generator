@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 from __future__ import print_function
-import roslib; roslib.load_manifest('rosdistro')
 
 NAME='check_rosdistro.py'
 
@@ -10,7 +9,7 @@ import os
 import urllib2
 import yaml
 
-import rosdistro 
+import rospkg.distro
 
 def get_depends(stack):
     name = '%s-%s'%(stack.name, stack.version)
@@ -37,10 +36,11 @@ def main():
 
     # parse rosdistro file
     arg0 = args[0]
+    
     if os.path.isfile(arg0):
-        rosdistro_obj = rosdistro.Distro(arg0)
+        rosdistro_obj = rospkg.distro.load_distro(arg0)
     else:
-        rosdistro_obj = rosdistro.Distro(rosdistro.distro_uri(arg0))
+        rosdistro_obj = rospkg.distro.load_distro(rospkg.distro.distro_uri(arg0))
 
     for name, s in rosdistro_obj.stacks.iteritems():
         tmp = s.vcs_config.type
@@ -64,13 +64,16 @@ def main():
             print(sys.stderr, "No variant [%s]"%(variant_name), file=sys.stderr)
             continue
         header = True
-        for stack_name in variant.stack_names_explicit:
+        for stack_name in variant.get_stack_names(implicit=True):
             if not stack_name in rosdistro_obj.released_stacks:
                 print('Variant %s depends on %s, which is not released'%(variant_name, stack_name))
                 continue
             stack = rosdistro_obj.stacks[stack_name]
             depends = get_depends(stack)
             for d in depends:
+                if d in ['ros', 'rx', 'ros_comm', 'actionlib', 'common_msgs', 'ros_tutorials']:
+                    # filter for catkin-based stacks
+                    continue
                 if not d in variant.stack_names:
                     if header:
                         print('Variant %s'%variant_name)
