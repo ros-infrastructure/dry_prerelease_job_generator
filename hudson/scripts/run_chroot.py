@@ -576,7 +576,7 @@ def run_chroot(options, path, workspace, hdd_tmp_dir):
         cmd = "apt-get install -y --force-yes build-essential python-yaml cmake subversion mercurial bzr git-core wget python-setuptools python-pip".split()
         chrti.execute(cmd)
 
-        pypi_pkgs = ['pip', 'vcstools', 'rospkg', 'rosinstall', 'mock', 'nose', 'coverage', 'genmsg', 'genpy', 'rosdep']
+        pypi_pkgs = ['pip', 'vcstools', 'rospkg', 'rosinstall', 'mock', 'nose', 'coverage', 'rosdep']
         for p in pypi_pkgs:
             cmd = ["pip", "install", "-U",p, '--extra-index-url=http://b.pypi.python.org/simple/', '--extra-index-url=http://c.pypi.python.org/simple/', '--extra-index-url=http://d.pypi.python.org/simple/']
             chrti.execute(cmd, display=True)
