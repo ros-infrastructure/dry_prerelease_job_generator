@@ -18,7 +18,6 @@ cat &gt; $WORKSPACE/script.sh &lt;&lt;DELIM
 #!/usr/bin/env bash
 set -o errexit
 echo "_________________________________BEGIN SCRIPT______________________________________"
-sudo apt-get install bzr --yes
 sudo apt-get install ros-ROSDISTRO-ros --yes
 source /opt/ros/ROSDISTRO/setup.sh
 
