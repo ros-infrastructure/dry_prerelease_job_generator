@@ -554,7 +554,7 @@ def run_chroot(options, path, workspace, hdd_tmp_dir):
         cmd = "apt-get update".split()
         chrti.execute(cmd)
 
-        cmd = "apt-get install -y --force-yes build-essential python-yaml cmake subversion mercurial git-core wget python-setuptools".split()
+        cmd = "apt-get install -y --force-yes build-essential python-yaml python-svn cmake subversion mercurial git-core wget python-setuptools".split()
         chrti.execute(cmd)
 
         cmd = "sudo easy_install -U rosinstall".split()
