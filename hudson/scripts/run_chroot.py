@@ -582,7 +582,7 @@ def run_chroot(options, path, workspace, hdd_tmp_dir):
             chrti.execute(cmd, display=True)
 
         chrti.execute(['rosdep', 'init'], display=True)
-        chrti.execute(['rosdep', 'update'], display=True)
+        chrti.execute(['rosdep', 'update'], user='rosbuild', display=True)
 
         if options.arch in ['i386', 'i686']:
 
