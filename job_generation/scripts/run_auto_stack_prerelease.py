@@ -125,6 +125,13 @@ def main():
         depends_on_all = apt_deps.depends_on_all(options.stack)
         remove(depends_on_all, options.stack)
 
+        # remove unreleased stack from the depends_on_all list
+        for s in depends_on_all:
+            if not s in distro_obj.released_stacks:
+                print "Removing stack %s from depends_on_all because it is not a released stack any more"%s
+                depends_on_all.remove(s)
+
+
         # if tested stacks are all in a variant, then only test stacks that are also in a variant
         variant_stacks = []
         for name, v in distro_obj.variants.iteritems():
