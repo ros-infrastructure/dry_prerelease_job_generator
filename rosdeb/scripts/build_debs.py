@@ -208,6 +208,9 @@ def create_chroot(distro, distro_name, os_platform, arch):
         # mock in data if we are in fuerte+
         ros_info = {'rosdeps': {os_platform: []}}
 
+    # force update of apt index
+    subprocess.check_call(['sudo', 'apt-get', 'update', stderr=subprocess.STDOUT)
+    
     # Things that this build infrastructure depends on
     basedeps = ['wget', 'lsb-release', 'debhelper']
     # Deps we claimed to have needed for building ROS
