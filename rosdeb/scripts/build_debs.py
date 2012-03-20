@@ -209,7 +209,7 @@ def create_chroot(distro, distro_name, os_platform, arch):
         ros_info = {'rosdeps': {os_platform: []}}
 
     # force update of apt index
-    subprocess.check_call(['sudo', 'apt-get', 'update', stderr=subprocess.STDOUT)
+    subprocess.check_call(['sudo', 'apt-get', 'update'], stderr=subprocess.STDOUT)
     
     # Things that this build infrastructure depends on
     basedeps = ['wget', 'lsb-release', 'debhelper']
