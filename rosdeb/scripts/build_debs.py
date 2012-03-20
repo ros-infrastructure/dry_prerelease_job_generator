@@ -71,7 +71,7 @@ REPO_HOSTNAME='pub8'
 REPO_USERNAME='rosbuild'
 REPO_LOGIN='%s@%s'%(REPO_USERNAME, REPO_HOSTNAME)
 
-TGZ_VERSION=2
+TGZ_VERSION=3
 
 import traceback
 
@@ -235,8 +235,8 @@ def create_chroot(distro, distro_name, os_platform, arch):
     if arch == 'armel':
         debootstrap_type = 'qemu-debootstrap'
         mirror = 'http://ports.ubuntu.com/ubuntu-ports/'
-        
-    command = ['sudo', 'pbuilder', '--create', '--distribution', os_platform, '--debootstrap', debootstrap_type, '--debootstrapopts', '--arch=%s'%arch, '--mirror', mirror, '--othermirror', 'deb http://packages.ros.org/ros-shadow/ubuntu %s main'%(os_platform), '--basetgz', distro_tgz, '--components', 'main restricted universe multiverse', '--extrapackages', deplist, '--aptcache', cache_dir]
+    updates_mirror = "deb http://aptproxy/us.archive.ubuntu.com/ubuntu/ %s-updates main restricted"%(os_platform)
+    command = ['sudo', 'pbuilder', '--create', '--distribution', os_platform, '--debootstrap', debootstrap_type, '--debootstrapopts', '--arch=%s'%arch, '--mirror', mirror, '--othermirror', 'deb http://packages.ros.org/ros-shadow/ubuntu %s main'%(os_platform), '--othermirror', updates_mirror, '--basetgz', distro_tgz, '--components', 'main restricted universe multiverse', '--extrapackages', deplist, '--aptcache', cache_dir]
     debug("Setting up chroot: [%s]"%(str(command)))
     subprocess.check_call(command, stderr=subprocess.STDOUT)
 
