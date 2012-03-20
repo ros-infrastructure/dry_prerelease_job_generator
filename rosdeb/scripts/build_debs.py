@@ -236,13 +236,9 @@ def create_chroot(distro, distro_name, os_platform, arch):
         debootstrap_type = 'qemu-debootstrap'
         mirror = 'http://ports.ubuntu.com/ubuntu-ports/'
     shadow_mirror = 'deb http://packages.ros.org/ros-shadow/ubuntu %s main'%(os_platform)
-    updates_mirror = "deb http://aptproxy/us.archive.ubuntu.com/ubuntu/ %s-updates main restricted"%(os_platform)
-    # only have a lucid-updates right now.  Build fails if we add non-existent mirror.
-    if os_platform in ['lucid']:
-        # --othermirror uses a | as a separator
-        other_mirror = '%s|%s'%(updates_mirror, shadow_mirror)
-    else:
-        other_mirror = shadow_mirror
+    updates_mirror = "deb http://aptproxy.willowgarage.com/us.archive.ubuntu.com/ubuntu/ %s-updates main restricted"%(os_platform)
+    # --othermirror uses a | as a separator
+    other_mirror = '%s|%s'%(updates_mirror, shadow_mirror)
     command = ['sudo', 'pbuilder', '--create', '--distribution', os_platform, '--debootstrap', debootstrap_type, '--debootstrapopts', '--arch=%s'%arch, '--mirror', mirror, '--othermirror', other_mirror, '--basetgz', distro_tgz, '--components', 'main restricted universe multiverse', '--extrapackages', deplist, '--aptcache', cache_dir]
     debug("Setting up chroot: [%s]"%(str(command)))
     subprocess.check_call(command, stderr=subprocess.STDOUT)
