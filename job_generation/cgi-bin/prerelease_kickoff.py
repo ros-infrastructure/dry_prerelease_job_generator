@@ -58,7 +58,7 @@ def main():
     info = f.read().split(',')
 
     command = ""
-    # old legacy toolset
+    # old legacy toolset in /home/willow/ros_release
     if distro in legacy_distro:
       command = 'export ROS_HOME=/tmp && export ROS_PACKAGE_PATH="/home/willow/ros_release:/opt/ros/cturtle/stacks" && export ROS_ROOT="/opt/ros/cturtle/ros" && export PATH="/opt/ros/cturtle/ros/bin:$PATH" && export PYTHONPATH="/opt/ros/cturtle/ros/core/roslib/src" && rosrun job_generation generate_prerelease.py %s %s --repeat 0 --email %s --rosdistro %s'%(info[0], info[1], email, distro)
 
