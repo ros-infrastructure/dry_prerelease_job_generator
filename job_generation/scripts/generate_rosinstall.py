@@ -4,7 +4,7 @@ PKG = 'job_generation'
 
 import sys
 import subprocess
-import rosdistro 
+import rospkg.distro 
 import optparse
 import datetime
 from job_generation.jobs_common import *
@@ -16,13 +16,13 @@ def main():
         return -1
 
     # Parse distro file
-    distro_obj = rosdistro.Distro(get_rosdistro_file(options.rosdistro))
+    distro_obj = rospkg.distro.load_distro(rospkg.distro.distro_uri(options.rosdistro))
 
     # generate rosinstall file for variant
     if options.overlay == 'yes':
-        rosinstall = rosdistro.variant_to_rosinstall(options.variant, distro_obj, 'release-tar')
+        rosinstall = rospkg.distro.distro_to_rosinstall(distro_obj, 'release-tar', options.variant, False)
     else:
-        rosinstall = rosdistro.extended_variant_to_rosinstall(options.variant, distro_obj, 'release-tar')        
+        rosinstall = rospkg.distro.distro_to_rosinstall(distro_obj, 'release-tar', options.variant, True)
 
     print rosinstall
 
