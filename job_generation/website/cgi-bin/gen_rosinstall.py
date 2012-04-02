@@ -23,9 +23,6 @@ def main():
     for k in keys:
         if not k in form.keys():
             return 'Missing parameters: %s'%k
-    if form['rosdistro'].value not in ['boxturtle', 'cturtle', 'diamondback', 'unstable', 'electric', 'fuerte']:
-         # needs to send httperror instead
-         return 'invalid rosdistro parameter'
     if form['overlay'].value not in ['yes', 'no']:
          # needs to send httperror instead
          return 'invalid overlay parameter'
