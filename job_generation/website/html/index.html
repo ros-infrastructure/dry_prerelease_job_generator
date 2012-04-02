@@ -1,0 +1,124 @@
+<html>
+<head>
+<title>Pre-Release tests</title>
+<script>
+/* This script and many more are available free online at
+The JavaScript Source!! http://javascript.internet.com
+Created by: Jeroen Haan | http://www.haan.net */
+
+function addStackInput(i) {
+  var div = document.createElement("div");
+  div.innerHTML='&rarr;Stack name ' + i + ': <input type="text" name="stack_' + i + '"/> (e.g., <tt>joystick_drivers</tt>)';
+
+  div.setAttribute("id", 'stack_' + i);
+  var stacks = document.getElementById('stacks');
+  stacks.appendChild(div);
+}
+
+function setupClickHandler() {
+  var x = document.getElementById('add_stack');
+  x.onclick = function() {
+    var i = parseFloat(g_stack_count)+1;
+    addStackInput(i);
+    g_stack_count = i;
+  }
+}
+
+// Multiple onload function created by: Simon Willison
+// http://simonwillison.net/2004/May/26/addLoadEvent/
+function addLoadEvent(func) {
+  var oldonload = window.onload;
+  if (typeof window.onload != 'function') {
+    window.onload = func;
+  } else {
+    window.onload = function() {
+      if (oldonload) {
+        oldonload();
+      }
+      func();
+    }
+  }
+}
+
+addLoadEvent(function() {
+  g_stack_count = 1;
+  addStackInput(g_stack_count);
+  setupClickHandler();
+});
+</script>
+</head>
+
+<body>
+<h1>Pre-Release stack tests on Hudson</h1>
+<p>Use this form to create Hudson jobs that verify if one or more
+  stacks are ready to be released.  To release multiple stacks that
+  depend on each others changes, you need to trigger one single
+  prerelease build for all stacks at once. 
+
+<p> <img src="search.png" alt="Search for bugs" />
+
+
+<h3>What gets tested:</h3>
+<p>Hudson will build your stack plus all released stacks that have a
+dependency on your stack. So you will find out if your own stack
+works, and if the release of your stack breaks any of the already
+released stacks. The build will happen on all the distributions and
+architectures that are supported by Willow Garage. 
+
+Hudson will download the branches of your stack that are specified in
+the rosdistro file.  In some cases this is trunk, in other cases this
+is another branch. Check the rosdistro file to see which branches will
+get
+tested. See <a href="http://www.ros.org/wiki/regression_tests">this
+page</a> for more details.
+
+<h3>Why run these tests:</h3>
+<p>You should see these Hudson tests as a powerful tool to help you to
+avoid the embarasment of releasing a broken stack, or worse, from
+releasing a stack that breaks other people's code.  While it is
+acceptable to release a stack that does not work on all distributions
+and architectures that are supported by Willow Garage, your stack will
+be much more useful to the community when it works on all supported
+platforms.
+
+
+<h3>Reproduce test results:</h3>
+<p>If you're trying to reproduce a failure that only happens on a
+distro/arch that is different from your machine, you can
+follow <a href="http://www.ros.org/wiki/regression_tests/reproducing">these instructions</a> to set up a chroot invironment.
+
+<h3>Problems:</h3>
+<p>If you have any problems with the pre-release tests, you can file a
+  ticket <a href="https://code.ros.org/trac/ros/newticket?component=ros_release&type=defect&owner=wim&keywords=prerelease"
+  target="_blank">here</a>.
+
+<form name="input" action="http://packages.ros.org/cgi-bin/prerelease_kickoff.py" method="get">
+
+<br><br>
+<h1>Run the tests</h1>
+
+<h3>ROS distribution:</h3>
+<select name="distro"> 
+    <option>cturtle</option> 
+    <option>diamondback</option> 
+    <option selected>electric</option>
+    <option>fuerte</option> 
+    <option>unstable</option> 
+</select> (which distribution you want to test against)
+<br><br>
+
+<h3>Stack(s) to test (simultaneously):</h3>
+<div id="stacks">
+</div>
+<a href="#" id="add_stack"><input type="button" value="Add another stack"/></a>
+
+<br><br>
+
+
+<h3>Email address:</h3> <input type="text" name="email" /> (e.g., <tt>you@willowgarage.com</tt>)
+<br>
+<br><hr>
+<input type="submit" value="Submit" />
+</form>
+</body>
+</html>
