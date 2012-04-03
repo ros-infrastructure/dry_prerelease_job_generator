@@ -15,6 +15,11 @@ cgitb.enable()
 def main():
     legacy_distro = ['cturtle', 'diamondback', 'electric']
 
+    prefix = "'other': {'local-name': '/opt/ros/fuerte/share/ros'}, \
+              'other': {'local-name': '/opt/ros/fuerte/share'}, \
+              'other': {'local-name': '/opt/ros/fuerte/stacks'}, \
+              'setup-file': {'local-name': '/opt/ros/fuerte/setup.sh'}"
+
     print "Content-Type: text/html"     # HTML is following
     print                               # blank line, end of headers
 
@@ -45,6 +50,8 @@ def main():
     if helper.returncode != 0:
         return '%s'%str(err)
     else:
+        if not form['rosdistro'].value in legacy_distro: 
+            res = "[{" + prefix + ", " + res[2:]
         print '%s'%str(res)
         return 0
     
