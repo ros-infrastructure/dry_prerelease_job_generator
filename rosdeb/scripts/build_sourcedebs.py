@@ -52,7 +52,7 @@ import time
 from rospkg.distro import load_distro, distro_uri
 import rosdeb
 from rosdeb import ubuntu_release, debianize_name, debianize_version, \
-    platforms, ubuntu_release_name, load_Packages, get_repo_version
+    platforms, ubuntu_release_name, load_Packages, get_repo_version, targets
 from rosdeb.rosutil import send_email
 from rosdeb.source_deb import download_control
 

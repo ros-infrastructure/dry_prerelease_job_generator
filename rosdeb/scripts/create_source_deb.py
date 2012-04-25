@@ -47,6 +47,7 @@ import tempfile
 import yaml
 
 import rosdeb
+import rosdeb.targets
 from rosdeb.rosutil import checkout_svn_to_tmp
 
 NAME = 'create_source_deb.py' 
