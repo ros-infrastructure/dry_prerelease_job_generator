@@ -110,8 +110,14 @@ def upload_files(files, stack_name, stack_version):
             shutil.rmtree(tmp_dir)
     
 def _source_deb_main(distro_name, stack_name, stack_version, os_platform, staging_dir):
-    if os_platform not in rosdeb.platforms():
-        print("[%s] is not a known platform.\nSupported platforms are: %s"%(os_platform, ' '.join(rosdeb.platforms())), sys.stderr)
+    if distro_name not in rosdeb.targets.os_platform:
+        print("[%s] is not a valid distro.\nSupported distros are: %s"%(distro_name, ' '.join(rosdeb.targets.os_platform.keys())), sys.stderr)
+        sys.exit(1)
+        
+        
+    target_platforms = rosdeb.targets.os_platform[distro_name]
+    if os_platform not in taget_platforms[distro_name]:
+        print("[%s] is not a known platform.\nSupported platforms are: %s"%(os_platform, ' '.join(target_platforms[distro_name])), sys.stderr)
         sys.exit(1)
     
     if not os.path.exists(staging_dir):
