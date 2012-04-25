@@ -116,7 +116,7 @@ def _source_deb_main(distro_name, stack_name, stack_version, os_platform, stagin
         
         
     target_platforms = rosdeb.targets.os_platform[distro_name]
-    if os_platform not in taget_platforms[distro_name]:
+    if os_platform not in target_platforms[distro_name]:
         print("[%s] is not a known platform.\nSupported platforms are: %s"%(os_platform, ' '.join(target_platforms[distro_name])), sys.stderr)
         sys.exit(1)
     
