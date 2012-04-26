@@ -745,7 +745,7 @@ def build_debs_main():
         staging_dir = tempfile.mkdtemp()
 
     try:
-        if distro_name not in rosdeb.targets.os_platform[distro_name]:
+        if distro_name not in rosdeb.targets.os_platform:
             raise BuildFailure("[%s] is not a known rosdistro.\nValid rosdistros are: %s" % (distro_name, ' '.join(rosdeb.targets.os_platform.keys())))
         target_platforms = rosdeb.targets.os_platform[distro_name]
         if os_platform not in target_platforms:
