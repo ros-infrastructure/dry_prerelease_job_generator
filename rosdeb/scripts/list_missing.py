@@ -288,6 +288,7 @@ def get_html_header(distro_name):
 %(distro_name)s: debbuild report
 </title>
 </head>
+<script type="text/javascript" src="sortable.js"></script>
 <style type="text/css">
 body {
   font-family: Helvetica, Arial, Verdana, sans-serif;
@@ -314,7 +315,7 @@ td {
 def get_html_table_header(h, distro_name, os_platforms, arches, counts, job):
     b = cStringIO.StringIO()
     b.write("""<strong>Click [+] to trigger a new build of the selected stack/platform</strong>")
-<table cellspacing=0 border="1">
+<table cellspacing=0 border="1" class="sortable" id="stackstatustable">
    <tr>
      <th>Stack</th>""")
 
