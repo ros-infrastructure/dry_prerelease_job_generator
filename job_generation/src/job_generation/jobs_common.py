@@ -71,7 +71,6 @@ ARCHES = ['amd64', 'i386']
 UBUNTU_DISTRO_MAP = os_test_platform = {
     'testing': ['lucid', 'maverick'],
     'unstable': ['lucid', 'oneiric'],
-    'fuerte': ['lucid', 'oneiric', 'precise'],
     'electric': ['lucid', 'maverick', 'natty', 'oneiric'],
     'diamondback': ['lucid', 'maverick', 'natty'],
     'cturtle': ['lucid', 'maverick', 'karmic'],
