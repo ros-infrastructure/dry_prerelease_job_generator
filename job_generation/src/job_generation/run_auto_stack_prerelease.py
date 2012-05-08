@@ -42,8 +42,10 @@ def main():
         if 'ros' in options.stack:
             env['ROS_ROOT'] = env['INSTALL_DIR']+'/'+STACK_DIR+'/ros'
             print "We're building ROS, so setting the ROS_ROOT to %s"%(env['ROS_ROOT'])
+            ros_tested_ignore_return = True
         else:
             env['ROS_ROOT'] = '/opt/ros/%s/ros'%options.rosdistro
+            ros_tested_ignore_return = False
         env['PYTHONPATH'] = env['ROS_ROOT']+'/core/roslib/src'
         env['PATH'] = '/opt/ros/%s/ros/bin:%s'%(options.rosdistro, os.environ['PATH'])
         print "Environment set to %s"%str(env)
@@ -64,7 +66,7 @@ def main():
         with open(rosinstall_file, 'w') as f:
             f.write(rosinstall)
             print 'rosinstall file [%s] generated'%(rosinstall_file)
-        ros_tested_ignore_return = 'ros' in options.stacks
+
 
         call('rosinstall --rosdep-yes %s /opt/ros/%s %s'%(STACK_DIR, options.rosdistro, rosinstall_file), env,
              'Install the stacks to test from source.', ignore_fail = ros_tested_ignore_return)
