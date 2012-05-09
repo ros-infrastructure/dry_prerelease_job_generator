@@ -66,7 +66,7 @@ ROS_REPO=REPO_URL%{'repo': 'ros'}
 
 HUDSON='http://build.willowgarage.com/'
 
-ARCHES = ['i386', 'amd64', 'armel']
+ARCHES = ['i386', 'amd64'] #,'armel'
 
 import traceback
 
