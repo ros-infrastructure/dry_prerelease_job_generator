@@ -11,7 +11,7 @@ import urllib
 
 # Valid options
 valid_archs = ['i386', 'i686', 'amd64']
-valid_ubuntu_distros = ['hardy', 'jaunty', 'karmic', 'lucid', 'maverick', 'natty', 'oneiric']
+valid_ubuntu_distros = ['hardy', 'jaunty', 'karmic', 'lucid', 'maverick', 'natty', 'oneiric', 'precise']
 valid_debian_distros = ['lenny', 'squeeze']
 
 
