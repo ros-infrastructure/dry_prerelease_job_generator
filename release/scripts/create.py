@@ -68,6 +68,8 @@ distros_dir = os.path.join(pkg_dir, '..', 'distros')
 TARBALL_DIR_URL = 'https://code.ros.org/svn/release/download/stacks/%(stack_name)s/%(stack_name)s-%(stack_version)s'
 ROSORG_URL = 'http://ros.org/download/stacks/%(stack_name)s/%(stack_name)s-%(stack_version)s.tar.bz2'
 SERVER = 'http://build.willowgarage.com/'
+
+VALID_ROSDISTROS = ['cturtle', 'diamondback', 'electric']
     
 def svn_url_exists(url):
     """
@@ -148,6 +150,8 @@ def load_sys_args():
  * version (e.g. 1.0.1)
  * distro release name (e.g. cturtle)""")
     name, version, release_name = args
+    if release_name not in VALID_ROSDISTROS:
+        parser.error("release_name [%s] is not in the valid list [%s], If you are releasing into fuerte please use the new tools http://www.ros.org/wiki/release/Releasing/fuerte"%(release_name, VALID_ROSDISTROS))
     distro_file = os.path.join(distros_dir, '%s.rosdistro'%(release_name))
     distro_file = os.path.abspath(distro_file)
     if not os.path.isfile(distro_file):
