@@ -447,7 +447,7 @@ set -o errexit
 flock 200
 export %(platform_upper)s_UPDATE=ros-%(os_platform)s-%(distro)s-%(arch)s
 /var/packages/ros-shadow-fixed/ubuntu/conf/gen_distributions.sh > /var/packages/ros-shadow-fixed/ubuntu/conf/distributions
-reprepro -V -b /var/packages/ros-shadow-fixed/ubuntu -A %(arch)s removefilter %(os_platform)s 'WG-rosdistro(==%(distro)s)'
+reprepro -V -b /var/packages/ros-shadow-fixed/ubuntu -A %(arch)s removefilter %(os_platform)s 'Package (%% ros-%(distro)s-*)'
 reprepro -V -b /var/packages/ros-shadow-fixed/ubuntu --noskipold update %(os_platform)s
 ) 200>/var/lock/ros-shadow.lock
 """%locals()
