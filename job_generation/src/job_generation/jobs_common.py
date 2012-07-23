@@ -4,6 +4,7 @@ import roslib; roslib.load_manifest("job_generation")
 import os
 import optparse
 import rosdistro
+import rospkg
 import hudson
 import urllib
 import time
@@ -319,18 +320,18 @@ def get_options(required, optional):
 
     # check if stacks exist
     if 'stack' in ops and options.stack:
-        distro_obj = rosdistro.Distro(get_rosdistro_file(options.rosdistro))
+        distro_obj = rospkg.distro.load_distro(rospkg.distro.distro_uri(get_rosdistro_file(options.rosdistro)))
         for s in options.stack:
             if not s in distro_obj.stacks:
-                print 'Stack "%s" does not exist in the %s disro file.'%(s, options.rosdistro)
+                print 'Stack "%s" does not exist in the %s distro file.'%(s, options.rosdistro)
                 print 'You need to add this stack to the rosdistro file'
                 return (None, args)
 
     # check if variant exists
     if 'variant' in ops and options.variant:
-        distro_obj = rosdistro.Distro(get_rosdistro_file(options.rosdistro))
+        distro_obj = rospkg.distro.load_distro(rospkg.distro.distro_uri(get_rosdistro_file(options.rosdistro)))
         if not options.variant in distro_obj.variants:
-                print 'Variant "%s" does not exist in the %s disro file.'%(options.variant, options.rosdistro)
+                print 'Variant "%s" does not exist in the %s distro file.'%(options.variant, options.rosdistro)
                 return (None, args)
 
     return (options, args)
