@@ -1,6 +1,7 @@
 os_platform = {
     'testing': ['lucid', 'maverick'],
     'unstable': ['lucid', 'oneiric'],
+    'groovy': ['oneiric', 'precise'],
     'fuerte': ['lucid', 'oneiric', 'precise'],
     'electric': ['lucid', 'maverick', 'natty', 'oneiric'],
     'diamondback': ['lucid', 'maverick', 'natty'],
@@ -12,6 +13,7 @@ os_platform = {
 os_test_platform = {
     'testing': ['lucid', 'maverick'],
     'unstable': ['lucid', 'oneiric'],
+    'groovy': ['oneiric', 'precise'],
     'fuerte': ['lucid', 'oneiric', 'precise'],
     'electric': ['lucid', 'natty', 'oneiric'],
     'diamondback': ['lucid', 'natty'],
