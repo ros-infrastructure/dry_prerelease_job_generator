@@ -5,6 +5,7 @@ import os
 import optparse
 import rosdistro
 import rospkg
+import rospkg.distro
 import hudson
 import urllib
 import time
