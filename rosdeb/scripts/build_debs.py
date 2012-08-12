@@ -749,7 +749,7 @@ def build_debs_main():
             raise BuildFailure("[%s] is not a known rosdistro.\nValid rosdistros are: %s" % (distro_name, ' '.join(rosdeb.targets.os_platform.keys())))
         target_platforms = rosdeb.targets.os_platform[distro_name]
         if os_platform not in target_platforms:
-            raise BuildFailure("[%s] is not a known platform.\nSupported platforms are: %s" % (os_platform, ' '.join(target_platforms)))
+            raise BuildFailure("[%s] is not a known platformfor distro %s.\nSupported platforms are: %s" % (os_platform, distro_name, ' '.join(target_platforms)))
 
         if not os.path.exists(staging_dir):
             debug("creating staging dir: %s"%(staging_dir))
