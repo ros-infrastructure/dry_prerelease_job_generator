@@ -71,7 +71,7 @@ REPO_HOSTNAME='pub8'
 REPO_USERNAME='rosbuild'
 REPO_LOGIN='%s@%s'%(REPO_USERNAME, REPO_HOSTNAME)
 
-TGZ_VERSION=3
+TGZ_VERSION=4
 
 import traceback
 
@@ -239,7 +239,7 @@ def create_chroot(distro, distro_name, os_platform, arch):
     updates_mirror = "deb http://aptproxy.willowgarage.com/us.archive.ubuntu.com/ubuntu/ %s-updates main restricted"%(os_platform)
     # --othermirror uses a | as a separator
     other_mirror = '%s|%s'%(updates_mirror, shadow_mirror)
-    command = ['sudo', 'pbuilder', '--create', '--distribution', os_platform, '--debootstrap', debootstrap_type, '--debootstrapopts', '--arch=%s'%arch, '--mirror', mirror, '--othermirror', other_mirror, '--basetgz', distro_tgz, '--components', 'main restricted universe multiverse', '--extrapackages', deplist, '--aptcache', cache_dir]
+    command = ['sudo', 'pbuilder', '--create', '--distribution', os_platform, '--debootstrap', debootstrap_type, '--debootstrapopts', '--arch=%s'%arch, '--mirror', mirror, '--othermirror', other_mirror, '--basetgz', distro_tgz, '--components', 'main restricted universe multiverse', '--extrapackages', deplist, '--aptcache', cache_dir, '--debootstrapopts', '--keyring=/etc/apt/trusted.gpg', '--keyring=/etc/apt/trusted.gpg']
     debug("Setting up chroot: [%s]"%(str(command)))
     subprocess.check_call(command, stderr=subprocess.STDOUT)
 
