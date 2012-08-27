@@ -243,7 +243,7 @@ def create_chroot(distro, distro_name, os_platform, arch):
     debug("pbuilder verison: [%s]"%(str(command)))
     subprocess.check_call(command, stderr=subprocess.STDOUT)
 
-    command = ['sudo', 'pbuilder', '--create', '--distribution', os_platform, '--debootstrap', debootstrap_type, '--debootstrapopts', '--arch=%s'%arch, '--mirror', mirror, '--othermirror', other_mirror, '--basetgz', distro_tgz, '--components', 'main restricted universe multiverse', '--extrapackages', deplist, '--aptcache', cache_dir, '--debootstrapopts', '--keyring=/etc/apt/trusted.gpg', '--keyring=/etc/apt/trusted.gpg']
+    command = ['sudo', 'pbuilder', '--create', '--distribution', os_platform, '--debootstrap', debootstrap_type, '--debootstrapopts', '--arch=%s'%arch, '--mirror', mirror, '--othermirror', other_mirror, '--basetgz', distro_tgz, '--components', 'main restricted universe multiverse', '--extrapackages', deplist, '--aptcache', cache_dir, '--debootstrapopts', '--keyring=/etc/apt/trusted.gpg', '--keyring', '/etc/apt/trusted.gpg']
     debug("Setting up chroot: [%s]"%(str(command)))
     subprocess.check_call(command, stderr=subprocess.STDOUT)
 
