@@ -239,7 +239,7 @@ def create_chroot(distro, distro_name, os_platform, arch):
     updates_mirror = "deb http://aptproxy.willowgarage.com/us.archive.ubuntu.com/ubuntu/ %s-updates main restricted"%(os_platform)
     # --othermirror uses a | as a separator
     other_mirror = '%s|%s'%(updates_mirror, shadow_mirror)
-    command = ['dpkg', '-l'. 'pbuilder']
+    command = ['dpkg', '-l', 'pbuilder']
     debug("pbuilder verison: [%s]"%(str(command)))
     subprocess.check_call(command, stderr=subprocess.STDOUT)
 
