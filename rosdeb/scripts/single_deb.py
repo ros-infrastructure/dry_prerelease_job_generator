@@ -220,8 +220,7 @@ def create_chroot(distro, distro_name, os_platform, arch):
     subprocess.check_call(command, stderr=subprocess.STDOUT)
 
     command = ['sudo', 'pbuilder', '--create', '--distribution', os_platform, '--debootstrap', debootstrap_type, '--debootstrapopts', '--arch=%s'%arch, '--mirror', mirror, '--othermirror', other_mirror, '--basetgz', distro_tgz, '--components', 'main restricted universe multiverse', '--extrapackages', deplist, '--aptcache', cache_dir]
-    # add keyring commands for new pbuilder, commented out for development on my machine. 
-    #command.extend(['--debootstrapopts', '--keyring=/etc/apt/trusted.gpg', '--keyring', '/etc/apt/trusted.gpg'])
+    command.extend(['--debootstrapopts', '--keyring=/etc/apt/trusted.gpg', '--keyring', '/etc/apt/trusted.gpg'])
     debug("Setting up chroot: [%s]"%(str(command)))
     subprocess.check_call(command, stderr=subprocess.STDOUT)
 
@@ -682,12 +681,10 @@ def single_deb_main():
                       dest="force", default=False, action="store_true")
     parser.add_option("--noupload",
                       dest="noupload", default=False, action="store_true")
-    parser.add_option("--noramdisk",
-                      dest="ramdisk", default=True, action="store_false")
+#    parser.add_option("--repo",
+#                      dest="repo-hostname", default='pub8', action="store")
     parser.add_option("--interactive",
                       dest="interactive", default=False, action="store_true")
-    parser.add_option("--besteffort",
-                      dest="besteffort", default=False, action="store_true")
     parser.add_option('--smtp', dest="smtp", default='pub1.willowgarage.com', metavar="SMTP_SERVER")
 
     (options, args) = parser.parse_args()
@@ -755,7 +752,7 @@ def single_deb_main():
                 shutil.rmtree(staging_dir)
 
     # If there was no failure and we did a build of ALL, so we go ahead and stamp the debs now
-    if not failure_message and stack_name == 'ALL' and (options.besteffort or not warning_message):
+    if not failure_message and not warning_message:
         try:
             lock_debs(distro.release_name, os_platform, arch)
         except Exception, e:
