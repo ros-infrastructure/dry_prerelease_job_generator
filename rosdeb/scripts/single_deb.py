@@ -71,7 +71,7 @@ REPO_HOSTNAME='pub8'
 REPO_USERNAME='rosbuild'
 REPO_LOGIN='%s@%s'%(REPO_USERNAME, REPO_HOSTNAME)
 
-TGZ_VERSION=dry_4
+TGZ_VERSION='dry_4'
 
 import traceback
 
