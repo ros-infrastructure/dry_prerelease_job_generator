@@ -44,10 +44,10 @@ def main():
     # new pypi-based tools
     else:
         command = 'generate_rosinstall.py --rosdistro %s --variant %s --overlay %s --database /home/log/rosinstall.db'%(form['rosdistro'].value, form['variant'].value, form['overlay'].value)
-
     helper = subprocess.Popen(['bash', '-c', command], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     res, err = helper.communicate()
     if helper.returncode != 0:
+        print "#failed to execute generate_rosinstall.py", command
         return '%s'%str(err)
     else:
         if not form['rosdistro'].value in legacy_distro: 

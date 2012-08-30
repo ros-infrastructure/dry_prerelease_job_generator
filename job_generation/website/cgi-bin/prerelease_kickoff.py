@@ -42,6 +42,8 @@ def find_stacks(form):
 
 def main():
     legacy_distro = ['cturtle', 'diamondback', 'electric']
+    rosmake_distro = ['fuerte', 'groovy']
+    catkin_distro = ['groovy (catkin)']
 
     print "Content-Type: text/html"     # HTML is following
     print                               # blank line, end of headers
@@ -50,26 +52,54 @@ def main():
 
     ret = find_stacks(form)
     if not ret:
-        print '<p><a href="/hudson-html/hudson_kick_off.html">Try again</a>'
+        print '<p><a href="http://packages.ros.org/prerelease">Try again</a>'
         return
     distro, email, stacks = ret
 
     f = open('/var/www/hds.xml')
     info = f.read().split(',')
 
-    command = ""
     # old legacy toolset in /home/willow/ros_release
     if distro in legacy_distro:
       command = 'export ROS_HOME=/tmp && export ROS_PACKAGE_PATH="/home/willow/ros_release:/opt/ros/cturtle/stacks" && export ROS_ROOT="/opt/ros/cturtle/ros" && export PATH="/opt/ros/cturtle/ros/bin:$PATH" && export PYTHONPATH="/opt/ros/cturtle/ros/core/roslib/src" && rosrun job_generation generate_prerelease.py %s %s --repeat 0 --email %s --rosdistro %s'%(info[0], info[1], email, distro)
+      for s in stacks:
+        command += ' --stack %s'%s
+      res, err = subprocess.Popen(['bash', '-c', command], stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
+
 
     # new pypi-based tools
-    else:
+    elif distro in rosmake_distro:
       command = 'generate_prerelease.py %s %s --repeat 0 --email %s --rosdistro %s'%(info[0], info[1], email, distro)
+      for s in stacks:
+        command += ' --stack %s'%s
+      res, err = subprocess.Popen(['bash', '-c', command], stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
 
-    for s in stacks:
-      command += ' --stack %s'%s
 
-    res, err = subprocess.Popen(['bash', '-c', command], stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
+    # catkin stacks
+    elif distro in catkin_distro:
+      if len(stacks) != 1:
+        print "Catkint Groovy prerelease tests currently only support one stack at a time"
+        return
+      res = ""
+      err = ""
+      name = '_'.join(stacks)
+      name = 'groovy_' + name
+      if len(name) > 25:
+          name = name[:17]+"..."
+      for ubuntu in ['lucid', 'precise']:
+          for arch in ['amd64', 'i386']:
+              command = "/home/willow/buildfarm/run_jenkins %s %s %s prerelease.py groovy %s"%(name, ubuntu, arch, ' '.join(stacks))
+              res_part, err_part = subprocess.Popen(['bash', '-c', command], stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
+              res = res + '\n' + res_part
+              err = err + '\n' + err_part
+
+
+    # invalid distro
+    else:
+      print "Unsupported distro: %s"%distro
+      return
+
+
     res = res.replace('<', '<a href="')
     res = res.replace('>', '">the Hudson server</a>')
     res = res.replace('\n', '<br>')
