@@ -77,9 +77,6 @@ def main():
 
     # catkin stacks
     elif distro in catkin_distro:
-      if len(stacks) != 1:
-        print "Catkint Groovy prerelease tests currently only support one stack at a time"
-        return
       res = ""
       err = ""
       name = '_'.join(stacks)
