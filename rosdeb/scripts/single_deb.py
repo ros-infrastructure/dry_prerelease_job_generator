@@ -360,11 +360,11 @@ dpkg -l %(deb_name)s
     debug("starting verify script for %s-%s"%(stack_name, stack_version))
     subprocess.check_call(archcmd + ['sudo', 'pbuilder', '--execute', '--basetgz', distro_tgz, '--configfile', conf_file, '--bindmounts', results_dir, '--buildplace', build_dir, '--aptcache', cache_dir, verify_script], stderr=subprocess.STDOUT)
 
+    # Upload the debs to the server
+    base_files = ['%s_%s.changes'%(deb_file, arch), "%s_%s.deb"%(deb_file_final, arch)]
+    files = [os.path.join(results_dir, x) for x in base_files]
+    debug("Generated debian files: %s" % files)
     if not noupload:
-        # Upload the debs to the server
-        base_files = ['%s_%s.changes'%(deb_file, arch), "%s_%s.deb"%(deb_file_final, arch)]
-        files = [os.path.join(results_dir, x) for x in base_files]
-    
         debug("uploading debs for %s-%s to %s"%(stack_name, stack_version, REPO_HOSTNAME))
         cmd = ['scp'] + files + ['%s:/var/packages/ros-shadow/ubuntu/incoming/%s'%(REPO_LOGIN, os_platform)]
         debug(' '.join(cmd))
