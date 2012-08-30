@@ -83,12 +83,12 @@ def main():
       res = ""
       err = ""
       name = '_'.join(stacks)
-      name = 'groovy_' + name
+      name = 'groovy-' + name
       if len(name) > 25:
           name = name[:17]+"..."
       for ubuntu in ['lucid', 'precise']:
           for arch in ['amd64', 'i386']:
-              command = "/home/willow/buildfarm/run_jenkins %s %s %s prerelease.py groovy %s"%(name, ubuntu, arch, ' '.join(stacks))
+              command = "/home/willow/buildfarm/run_jenkins %s %s %s %s prerelease.py groovy %s"%(name, email, ubuntu, arch, ' '.join(stacks))
               res_part, err_part = subprocess.Popen(['bash', '-c', command], stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
               res = res + '\n' + res_part
               err = err + '\n' + err_part
