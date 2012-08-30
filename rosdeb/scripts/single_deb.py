@@ -61,11 +61,9 @@ NAME = 'build_debs.py'
 TARBALL_URL = "https://code.ros.org/svn/release/download/stacks/%(stack_name)s/%(base_name)s/%(f_name)s"
 
 SHADOW_REPO='ros-shadow'
-DEST_REPO='ros-shadow-fixed'
 
 REPO_URL='http://packages.ros.org/%s/'
 SHADOW_REPO_URL=REPO_URL%SHADOW_REPO
-DEST_REPO_URL=REPO_URL%DEST_REPO
 
 REPO_HOSTNAME='pub8'
 REPO_USERNAME='rosbuild'
@@ -751,12 +749,6 @@ def single_deb_main():
             if options.staging_dir is None:
                 shutil.rmtree(staging_dir)
 
-    # If there was no failure and we did a build of ALL, so we go ahead and stamp the debs now
-    if not failure_message and not warning_message:
-        try:
-            lock_debs(distro.release_name, os_platform, arch)
-        except Exception, e:
-            failure_message = "Internal failure in the release system. Please notify leibs and kwc @willowgarage.com:\n%s\n\n%s"%(e, traceback.format_exc(e))
 
     if failure_message or warning_message:
         debug("FAILURE: %s"%failure_message)
