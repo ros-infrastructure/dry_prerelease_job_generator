@@ -381,6 +381,7 @@ def upload_debs(files,distro_name,os_platform,arch):
     replace_elements['repo_incoming_path'] = os.path.join(REPO_PATH, 'queue', os_platform)
     replace_elements['repo_path'] = os.path.join(REPO_PATH, os_platform)
     replace_elements['distro'] = os_platform
+    replace_elements['repo_username'] = REPO_USERNAME
 
     try:
         tf_name = None
