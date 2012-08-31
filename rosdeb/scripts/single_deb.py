@@ -397,6 +397,10 @@ post_upload_command     = ssh %(repo_username)s@%(repo_hostname)s -- /usr/bin/re
             tf_name = tf.name
 
         ret_val = subprocess.call(['cat', tf_name])
+        cmd = ['dput', '-u', '-c', tf_name, 'debtarget' ]
+        cmd.extend(files)
+        print "Uploading with command: %s" % cmd
+        #subprocess.check_call(cmd)
     finally:
         if tf_name:
             if os.path.exists(tf_name):
