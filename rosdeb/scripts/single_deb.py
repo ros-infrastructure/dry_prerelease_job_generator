@@ -367,6 +367,8 @@ dpkg -l %(deb_name)s
 
 
     if not noupload:
+        upload_debs(files,distro_name,os_platform,arch):
+
         replace_elements  = {}
         replace_elements['repo_hostname'] = REPO_HOSTNAME
         replace_elements['repo_incoming_path'] = os.path.join(REPO_PATH, 'queue', os_platform)
@@ -375,7 +377,7 @@ dpkg -l %(deb_name)s
 
         try:
             tf_name = None
-            with tempfile.NameTemporaryFile(delete=False)  as tf:
+            with tempfile.NamedTemporaryFile(delete=False)  as tf:
                 tf.write("""
 [debtarget]
 method                  = scp
@@ -386,12 +388,22 @@ post_upload_command     = ssh %(repo_username)@@%(repo_hostname)s -- /usr/bin/re
 """ % replace_elements)
                 tf_name = tf.name
             
-            p = subprocess.call(['cat', tf_name])
+            ret_val = subprocess.call(['cat', tf_name])
         finally:
             if tf_name:
                 if os.path.exists(tf_name):
                     os.remove(tf_name)
+            raise
 
+        return ret_val == 0
+
+
+#    if res != 0:
+#        debug("ERROR: Could not run upload script")
+#        debug("ERROR: output of upload script: %s"%o)
+#        return 1
+#    else:
+#        return 0
             
             # The cache is no longer valid, we clear it so that we won't skip debs that have been invalidated
             # ??? What was this doing?
