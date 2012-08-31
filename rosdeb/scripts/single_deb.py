@@ -392,7 +392,7 @@ method                  = scp
 fqdn                    = %(repo_hostname)s
 incoming                = %(repo_path)s
 run_dinstall            = 0
-post_upload_command     = ssh %(repo_username)@@%(repo_hostname)s -- /usr/bin/reprepro -b %(repo_path) --ignore=emptyfilenamepart -V processincoming %(distro)s
+post_upload_command     = ssh %(repo_username)s@%(repo_hostname)s -- /usr/bin/reprepro -b %(repo_path)s --ignore=emptyfilenamepart -V processincoming %(distro)s
 """ % replace_elements)
             tf_name = tf.name
 
