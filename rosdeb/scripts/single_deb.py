@@ -67,7 +67,7 @@ REPO_HOSTNAME='50.28.27.175'
 REPO_PATH ='/var/www/repos/building'
 REPO_USERNAME='rosbuild'
 
-TGZ_VERSION='dry_4'
+TGZ_VERSION='dry_5'
 
 import traceback
 
