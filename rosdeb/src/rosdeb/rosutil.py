@@ -307,7 +307,10 @@ def send_email(smtp_server, from_addr, to_addrs, subject, text):
 
     s = smtplib.SMTP(smtp_server)
     print 'Sending mail to %s'%(to_addrs)
-    s.sendmail(msg['From'], [msg['To']], msg.as_string())
+    try:
+        s.sendmail(msg['From'], [msg['To']], msg.as_string())
+    except Exception, ex:
+        print "Sending email failed with exception: %s" % ex
     s.quit()
 
 if __name__ == '__main__':
