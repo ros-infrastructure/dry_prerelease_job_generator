@@ -400,7 +400,6 @@ post_upload_command     = ssh %(repo_username)@@%(repo_hostname)s -- /usr/bin/re
         if tf_name:
             if os.path.exists(tf_name):
                 os.remove(tf_name)
-        raise
 
     return ret_val == 0
 
