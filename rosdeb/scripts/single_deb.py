@@ -367,18 +367,25 @@ dpkg -l %(deb_name)s
 
 
     if not noupload:
-        upload_debs(files,distro_name,os_platform,arch):
+        if not upload_debs(files,distro_name,os_platform,arch):
+            print "Upload of debs failed!!!"
+            return 1
+    return 0
 
-        replace_elements  = {}
-        replace_elements['repo_hostname'] = REPO_HOSTNAME
-        replace_elements['repo_incoming_path'] = os.path.join(REPO_PATH, 'queue', os_platform)
-        replace_elements['repo_path'] = os.path.join(REPO_PATH, os_platform)
-        replace_elements['distro'] = os_platform
+        
 
-        try:
-            tf_name = None
-            with tempfile.NamedTemporaryFile(delete=False)  as tf:
-                tf.write("""
+
+def upload_debs(files,distro_name,os_platform,arch):
+    replace_elements  = {}
+    replace_elements['repo_hostname'] = REPO_HOSTNAME
+    replace_elements['repo_incoming_path'] = os.path.join(REPO_PATH, 'queue', os_platform)
+    replace_elements['repo_path'] = os.path.join(REPO_PATH, os_platform)
+    replace_elements['distro'] = os_platform
+
+    try:
+        tf_name = None
+        with tempfile.NamedTemporaryFile(delete=False)  as tf:
+            tf.write("""
 [debtarget]
 method                  = scp
 fqdn                    = %(repo_hostname)s
@@ -386,16 +393,16 @@ incoming                = %(repo_path)s
 run_dinstall            = 0
 post_upload_command     = ssh %(repo_username)@@%(repo_hostname)s -- /usr/bin/reprepro -b %(repo_path) --ignore=emptyfilenamepart -V processincoming %(distro)s
 """ % replace_elements)
-                tf_name = tf.name
-            
-            ret_val = subprocess.call(['cat', tf_name])
-        finally:
-            if tf_name:
-                if os.path.exists(tf_name):
-                    os.remove(tf_name)
-            raise
+            tf_name = tf.name
 
-        return ret_val == 0
+        ret_val = subprocess.call(['cat', tf_name])
+    finally:
+        if tf_name:
+            if os.path.exists(tf_name):
+                os.remove(tf_name)
+        raise
+
+    return ret_val == 0
 
 
 #    if res != 0:
@@ -572,48 +579,6 @@ Description: Meta package for %(metapackage)s variant of ROS.
     return dest_deb
 
 
-def upload_debs(files,distro_name,os_platform,arch):
-
-    if len(files) == 0:
-        debug("No debs to upload.")
-        return 1 # no files to upload
-
-#    subprocess.check_call(['scp'] + files + ['%s:/var/packages/%s/ubuntu/incoming/%s'%(REPO_LOGIN, SHADOW_REPO,os_platform)], stderr=subprocess.STDOUT)
-
-#    base_files = [x.split('/')[-1] for x in files]
-
-    # Assemble string for moving all files from incoming to queue (while lock is being held)
-#    mvstr = '\n'.join(['mv '+os.path.join('/var/packages/%s/ubuntu/incoming'%(SHADOW_REPO),os_platform,x)+' '+os.path.join('/var/packages/%s/ubuntu/queue'%(SHADOW_REPO),os_platform,x) for x in base_files])
-#    new_files = ' '.join(os.path.join('/var/packages/%s/ubuntu/queue'%(SHADOW_REPO),os_platform,x) for x in base_files)
-
-    # hacky
-#    shadow_repo = SHADOW_REPO
-
-    # This script moves files into queue directory, removes all dependent debs, removes the existing deb, and then processes the incoming files
-#    remote_cmd = "TMPFILE=`mktemp` || exit 1 && cat > ${TMPFILE} && chmod +x ${TMPFILE} && ${TMPFILE}; ret=${?}; rm ${TMPFILE}; exit ${ret}"
-#    run_script = subprocess.Popen(['ssh', REPO_LOGIN, remote_cmd], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    script_content = """
-#!/bin/bash
-set -o errexit
-(
-flock 200
-# Move from incoming to queue
-%(mvstr)s
-reprepro -V -b /var/packages/%(shadow_repo)s/ubuntu includedeb %(os_platform)s %(new_files)s
-rm %(new_files)s
-) 200>/var/lock/ros-shadow.lock
-"""%locals()
-
-    #Actually run script and check result
-#    (o,e) = run_script.communicate(script_content)
-#    res = run_script.wait()
-#    debug("result of run script: %s"%o)
-#    if res != 0:
-#        debug("ERROR: Could not run upload script")
-#        debug("ERROR: output of upload script: %s"%o)
-#        return 1
-#    else:
-#        return 0
 
 def gen_metapkgs(distro, os_platform, arch, staging_dir, force=False):
     distro_name = distro.release_name
