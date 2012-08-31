@@ -60,14 +60,12 @@ import list_missing
 NAME = 'build_debs.py' 
 TARBALL_URL = "https://code.ros.org/svn/release/download/stacks/%(stack_name)s/%(base_name)s/%(f_name)s"
 
-SHADOW_REPO='ros-shadow'
 
-REPO_URL='http://packages.ros.org/%s/'
-SHADOW_REPO_URL=REPO_URL%SHADOW_REPO
+REPO_URL='http://50.28.27.175/repos/building'
 
-REPO_HOSTNAME='pub8'
+REPO_HOSTNAME='50.28.27.175'
+REPO_PATH ='/var/www/repos/building'
 REPO_USERNAME='rosbuild'
-REPO_LOGIN='%s@%s'%(REPO_USERNAME, REPO_HOSTNAME)
 
 TGZ_VERSION='dry_4'
 
@@ -78,7 +76,7 @@ class StackBuildFailure(Exception):
     def __init__(self, message):
         self._message = message
     def __str__(self):
-        return self._message
+       return self._message
 
 class BuildFailure(Exception):
 
@@ -96,11 +94,11 @@ class InternalBuildFailure(Exception):
 
     
 def deb_in_repo(deb_name, deb_version, os_platform, arch, cache=None):
-    return rosdeb.deb_in_repo(SHADOW_REPO_URL, deb_name, deb_version, os_platform, arch, use_regex=True, cache=cache)
+    return rosdeb.deb_in_repo(REPO_URL, deb_name, deb_version, os_platform, arch, use_regex=True, cache=cache)
 
 def get_depends(deb_name, os_platform, arch):
-    debug("get_depends from %s"%(SHADOW_REPO_URL))
-    return rosdeb.get_depends(SHADOW_REPO_URL, deb_name, os_platform, arch)
+    debug("get_depends from %s"%(REPO_URL))
+    return rosdeb.get_depends(REPO_URL, deb_name, os_platform, arch)
     
 def download_files(stack_name, stack_version, staging_dir, files):
     import urllib
@@ -209,7 +207,7 @@ def create_chroot(distro, distro_name, os_platform, arch):
     if arch == 'armel':
         debootstrap_type = 'qemu-debootstrap'
         mirror = 'http://ports.ubuntu.com/ubuntu-ports/'
-    shadow_mirror = 'deb http://packages.ros.org/ros-shadow/ubuntu %s main'%(os_platform)
+    shadow_mirror = 'deb %s %s main' % (REPO_URL, os_platform)
     updates_mirror = "deb http://aptproxy.willowgarage.com/us.archive.ubuntu.com/ubuntu/ %s-updates main restricted"%(os_platform)
     # --othermirror uses a | as a separator
     other_mirror = '%s|%s'%(updates_mirror, shadow_mirror)
@@ -361,52 +359,39 @@ dpkg -l %(deb_name)s
     subprocess.check_call(archcmd + ['sudo', 'pbuilder', '--execute', '--basetgz', distro_tgz, '--configfile', conf_file, '--bindmounts', results_dir, '--buildplace', build_dir, '--aptcache', cache_dir, verify_script], stderr=subprocess.STDOUT)
 
     # Upload the debs to the server
-    base_files = ['%s_%s.changes'%(deb_file, arch), "%s_%s.deb"%(deb_file_final, arch)]
+    base_files = ['%s_%s.changes'%(deb_file, arch)] # , "%s_%s.deb"%(deb_file_final, arch)
     files = [os.path.join(results_dir, x) for x in base_files]
-    print "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-    print "Generated debian files: %s" % files
+    print "Generated debian change files: %s" % files
+
+
+
+
     if not noupload:
-        debug("uploading debs for %s-%s to %s"%(stack_name, stack_version, REPO_HOSTNAME))
-        cmd = ['scp'] + files + ['%s:/var/packages/ros-shadow/ubuntu/incoming/%s'%(REPO_LOGIN, os_platform)]
-        debug(' '.join(cmd))
-        subprocess.check_call(cmd, stderr=subprocess.STDOUT)
-        debug("upload complete")
+        replace_elements  = {}
+        replace_elements['repo_hostname'] = REPO_HOSTNAME
+        replace_elements['repo_incoming_path'] = os.path.join(REPO_PATH, 'queue', os_platform)
+        replace_elements['repo_path'] = os.path.join(REPO_PATH, os_platform)
+        replace_elements['distro'] = os_platform
 
-        # Assemble string for moving all files from incoming to queue (while lock is being held)
-        move_str = '\n'.join(['mv '+os.path.join('/var/packages/ros-shadow/ubuntu/incoming',os_platform,x)+' '+os.path.join('/var/packages/ros-shadow/ubuntu/queue',os_platform,x) for x in base_files])
+        try:
+            tf_name = None
+            with tempfile.NameTemporaryFile(delete=False)  as tf:
+                tf.write("""
+[debtarget]
+method                  = scp
+fqdn                    = %(repo_hostname)s
+incoming                = %(repo_path)s
+run_dinstall            = 0
+post_upload_command     = ssh %(repo_username)@@%(repo_hostname)s -- /usr/bin/reprepro -b %(repo_path) --ignore=emptyfilenamepart -V processincoming %(distro)s
+""" % replace_elements)
+                tf_name = tf.name
+            
+            subprocess.Popen(['cat', tf_name])
 
-        # This script moves files into queue directory, removes all dependent debs, removes the existing deb, and then processes the incoming files
-        remote_cmd = "TMPFILE=`mktemp` || exit 1 && cat > ${TMPFILE} && chmod +x ${TMPFILE} && ${TMPFILE}; ret=${?}; rm ${TMPFILE}; exit ${ret}"
-        debug("running remote command [%s]"%(remote_cmd))
-        run_script = subprocess.Popen(['ssh', REPO_LOGIN, remote_cmd], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-        debug("getting depends to prepare invalidate script")
-        invalidate = [deb_name] + get_depends(deb_name, os_platform, arch)
-        debug("invalidating pre-existing and downstream: %s"%(invalidate))
-        invalidate_cmds = ["reprepro -b /var/packages/ros-shadow/ubuntu -V -A %(arch)s removefilter %(os_platform)s 'Package (==%(deb_name_x)s)'"%locals() for deb_name_x in  invalidate]
-        invalidate_str = "\n".join(invalidate_cmds)
-        script_content = """
-#!/bin/bash
-set -o errexit
-(
-flock 200
-# Move from incoming to queue
-%(move_str)s
-# Remove all debs that depend on this package
-%(invalidate_str)s
-# Load it into the repo
-reprepro -b /var/packages/ros-shadow/ubuntu -V processincoming %(os_platform)s
-) 200>/var/lock/ros-shadow.lock
-"""%locals()
-
-        #Actually run script and check result
-        (o,e) = run_script.communicate(script_content)
-        debug("waiting for invalidation script")
-        res = run_script.wait()
-        debug("invalidation script result: %s"%o)
-        if res != 0:
-            raise InternalBuildFailure("Could not run upload script:\n%s\n%s"%(o, e))
-
+                     
+    if False:
         # The cache is no longer valid, we clear it so that we won't skip debs that have been invalidated
+        # ??? What was this doing?
         rosdeb.repo._Packages_cache = {}
 
 def lock_debs(distro, os_platform, arch):
@@ -578,20 +563,20 @@ def upload_debs(files,distro_name,os_platform,arch):
         debug("No debs to upload.")
         return 1 # no files to upload
 
-    subprocess.check_call(['scp'] + files + ['%s:/var/packages/%s/ubuntu/incoming/%s'%(REPO_LOGIN, SHADOW_REPO,os_platform)], stderr=subprocess.STDOUT)
+#    subprocess.check_call(['scp'] + files + ['%s:/var/packages/%s/ubuntu/incoming/%s'%(REPO_LOGIN, SHADOW_REPO,os_platform)], stderr=subprocess.STDOUT)
 
-    base_files = [x.split('/')[-1] for x in files]
+#    base_files = [x.split('/')[-1] for x in files]
 
     # Assemble string for moving all files from incoming to queue (while lock is being held)
-    mvstr = '\n'.join(['mv '+os.path.join('/var/packages/%s/ubuntu/incoming'%(SHADOW_REPO),os_platform,x)+' '+os.path.join('/var/packages/%s/ubuntu/queue'%(SHADOW_REPO),os_platform,x) for x in base_files])
-    new_files = ' '.join(os.path.join('/var/packages/%s/ubuntu/queue'%(SHADOW_REPO),os_platform,x) for x in base_files)
+#    mvstr = '\n'.join(['mv '+os.path.join('/var/packages/%s/ubuntu/incoming'%(SHADOW_REPO),os_platform,x)+' '+os.path.join('/var/packages/%s/ubuntu/queue'%(SHADOW_REPO),os_platform,x) for x in base_files])
+#    new_files = ' '.join(os.path.join('/var/packages/%s/ubuntu/queue'%(SHADOW_REPO),os_platform,x) for x in base_files)
 
     # hacky
-    shadow_repo = SHADOW_REPO
+#    shadow_repo = SHADOW_REPO
 
     # This script moves files into queue directory, removes all dependent debs, removes the existing deb, and then processes the incoming files
-    remote_cmd = "TMPFILE=`mktemp` || exit 1 && cat > ${TMPFILE} && chmod +x ${TMPFILE} && ${TMPFILE}; ret=${?}; rm ${TMPFILE}; exit ${ret}"
-    run_script = subprocess.Popen(['ssh', REPO_LOGIN, remote_cmd], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+#    remote_cmd = "TMPFILE=`mktemp` || exit 1 && cat > ${TMPFILE} && chmod +x ${TMPFILE} && ${TMPFILE}; ret=${?}; rm ${TMPFILE}; exit ${ret}"
+#    run_script = subprocess.Popen(['ssh', REPO_LOGIN, remote_cmd], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     script_content = """
 #!/bin/bash
 set -o errexit
@@ -605,15 +590,15 @@ rm %(new_files)s
 """%locals()
 
     #Actually run script and check result
-    (o,e) = run_script.communicate(script_content)
-    res = run_script.wait()
-    debug("result of run script: %s"%o)
-    if res != 0:
-        debug("ERROR: Could not run upload script")
-        debug("ERROR: output of upload script: %s"%o)
-        return 1
-    else:
-        return 0
+#    (o,e) = run_script.communicate(script_content)
+#    res = run_script.wait()
+#    debug("result of run script: %s"%o)
+#    if res != 0:
+#        debug("ERROR: Could not run upload script")
+#        debug("ERROR: output of upload script: %s"%o)
+#        return 1
+#    else:
+#        return 0
 
 def gen_metapkgs(distro, os_platform, arch, staging_dir, force=False):
     distro_name = distro.release_name
