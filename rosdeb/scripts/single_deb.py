@@ -386,13 +386,12 @@ post_upload_command     = ssh %(repo_username)@@%(repo_hostname)s -- /usr/bin/re
 """ % replace_elements)
                 tf_name = tf.name
             
-            subprocess.Popen(['cat', tf_name])
+            p = subprocess.call(['cat', tf_name])
 
-                     
-    if False:
-        # The cache is no longer valid, we clear it so that we won't skip debs that have been invalidated
-        # ??? What was this doing?
-        rosdeb.repo._Packages_cache = {}
+            
+            # The cache is no longer valid, we clear it so that we won't skip debs that have been invalidated
+            # ??? What was this doing?
+            #rosdeb.repo._Packages_cache = {}
 
 def lock_debs(distro, os_platform, arch):
 
