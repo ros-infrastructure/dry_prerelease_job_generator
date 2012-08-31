@@ -379,7 +379,7 @@ def upload_debs(files,distro_name,os_platform,arch):
     replace_elements  = {}
     replace_elements['repo_hostname'] = REPO_HOSTNAME
     replace_elements['repo_incoming_path'] = os.path.join(REPO_PATH, 'queue', os_platform)
-    replace_elements['repo_path'] = os.path.join(REPO_PATH, os_platform)
+    replace_elements['repo_path'] = REPO_PATH
     replace_elements['distro'] = os_platform
     replace_elements['repo_username'] = REPO_USERNAME
 
@@ -390,7 +390,7 @@ def upload_debs(files,distro_name,os_platform,arch):
 [debtarget]
 method                  = scp
 fqdn                    = %(repo_hostname)s
-incoming                = %(repo_path)s
+incoming                = %(repo_incoming_path)s
 run_dinstall            = 0
 post_upload_command     = ssh %(repo_username)s@%(repo_hostname)s -- /usr/bin/reprepro -b %(repo_path)s --ignore=emptyfilenamepart -V processincoming %(distro)s
 """ % replace_elements)
