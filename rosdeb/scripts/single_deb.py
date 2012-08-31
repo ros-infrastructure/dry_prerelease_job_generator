@@ -387,6 +387,10 @@ post_upload_command     = ssh %(repo_username)@@%(repo_hostname)s -- /usr/bin/re
                 tf_name = tf.name
             
             p = subprocess.call(['cat', tf_name])
+        finally:
+            if tf_name:
+                if os.path.exists(tf_name):
+                    os.remove(tf_name)
 
             
             # The cache is no longer valid, we clear it so that we won't skip debs that have been invalidated
