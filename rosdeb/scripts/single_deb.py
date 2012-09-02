@@ -477,10 +477,6 @@ def build_debs(distro, stack_name, os_platform, arch, staging_dir, force, nouplo
         raise BuildFailure("stack [%s] not found in distro [%s]."%(stack_name, distro_name))
 
 
-    # Load blacklisted information
-    missing_primary, missing_dep, missing_excluded, missing_excluded_dep = list_missing.get_missing(distro, os_platform, arch)
-    missing_ok = missing_excluded.union(missing_excluded_dep)
-
     try:
         stack_version = distro.released_stacks[stack_name].version
     except KeyError, ex:
