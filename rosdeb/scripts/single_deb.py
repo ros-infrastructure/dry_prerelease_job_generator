@@ -388,13 +388,15 @@ def invalidate_debs(package, os_platform, arch):
 
     # remove all dependencies
     cmd = "/usr/bin/reprepro -b %(repo_path)s -T deb -V listfilter %(os_platform)s \"Architecture (== %(arch)s ), Depends ($ *%(package)s,* ) | Depends ($ *%(package)s )\" "%locals()
+    cmd = cmd.replace('$', '%')
 
     print "Invalidation command: ", cmd
     stdin, stdout, stderr = ssh.exec_command(cmd)
     print "Invalidation results:", stdout.readlines(), stderr.readlines()
 
     # remove the package itseif
-    cmd = "/usr/bin/reprepro -b %(repo_path)s -T deb -V listfilter %(os_platform)s \"Package (== %(package)s ), Architecture (== %(arch)s ) ) \" "%locals()    cmd = cmd.replace('$', '%')
+    cmd = "/usr/bin/reprepro -b %(repo_path)s -T deb -V listfilter %(os_platform)s \"Package (== %(package)s ), Architecture (== %(arch)s ) ) \" "%locals()
+
 
     print "Invalidation command: ", cmd
     stdin, stdout, stderr = ssh.exec_command(cmd)
