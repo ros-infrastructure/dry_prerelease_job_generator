@@ -488,7 +488,7 @@ def build_debs(distro, stack_name, os_platform, arch, staging_dir, force, nouplo
 
 
     debug("Attempting to build: %s"%(str(stack_name)))
-    si = load_info(stack_name, stack_version)
+    #si = load_info(stack_name, stack_version)
     missing_depends = list_missing.compute_missing_depends(stack_name, distro, os_platform, arch)
 
     if not missing_depends:
@@ -502,7 +502,7 @@ def build_debs(distro, stack_name, os_platform, arch, staging_dir, force, nouplo
             debug("Build of [%s] failed, adding to broken list"%(str(stack_name)))
             broken.add(stack_name)
     else:
-        debug("Skipping %s (%s) since dependencies not built: %s"%(stack_name, sv, missing_depends))
+        debug("Skipping %s (%s) since dependencies not built: %s"%(stack_name, stack_version, missing_depends))
         skipped.add(stack_name)
 
     if broken.union(skipped):
