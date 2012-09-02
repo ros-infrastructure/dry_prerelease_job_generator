@@ -496,8 +496,9 @@ def build_debs(distro, stack_name, os_platform, arch, staging_dir, force, nouplo
 
     debug("Attempting to build: %s"%(str(stack_name)))
     si = load_info(stack_name, stack_version)
-    depends = set(si['depends'])
-    if depends.isdisjoint(broken.union(skipped)):
+    missing_depends = compute_missing_depends(stack_name, distro, os_platform, arch)
+
+    if not missing_depends:
         debug("Initiating build of: %s"%(str(stack_name)))
         try:
             do_deb_build(distro_name, stack_name, stack_version, os_platform, arch, staging_dir, noupload, interactive)
@@ -506,7 +507,7 @@ def build_debs(distro, stack_name, os_platform, arch, staging_dir, force, nouplo
             debug("Build of [%s] failed, adding to broken list"%(str(stack_name)))
             broken.add(stack_name)
     else:
-        debug("Skipping %s (%s) since dependencies not built: %s"%(stack_name, sv, broken.union(skipped)&depends))
+        debug("Skipping %s (%s) since dependencies not built: %s"%(stack_name, sv, missing_depends))
         skipped.add(stack_name)
 
     if broken.union(skipped):
