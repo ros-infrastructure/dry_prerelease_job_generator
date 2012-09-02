@@ -369,7 +369,7 @@ dpkg -l %(deb_name)s
 
     if not noupload:
         
-        invalidate_debs(deb_name, os_platform, arch
+        invalidate_debs(deb_name, os_platform, arch)
 
         if not upload_debs(files,distro_name,os_platform,arch):
             print "Upload of debs failed!!!"
