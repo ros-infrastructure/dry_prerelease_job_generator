@@ -152,7 +152,7 @@ class ExclusionList(object):
 
 def compute_missing_depends(stack_name, distro, os_platform, arch, repo=SHADOW_REPO, lock_version=True):
     missing_deps = set()
-    deps = compute_deps(distro, stack_name):
+    deps = compute_deps(distro, stack_name)
     for d in deps:
         deb_name = "ros-%s-%s"%(distro, debianize_name(d))
         if not deb_in_repo(repo, deb_name, deb_version, os_platform, arch, use_regex=True):
