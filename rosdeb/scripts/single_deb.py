@@ -490,7 +490,7 @@ def build_debs(distro, stack_name, os_platform, arch, staging_dir, force, nouplo
     debug("Attempting to build: %s"%(str(stack_name)))
     #si = load_info(stack_name, stack_version)
     missing_depends = list_missing.compute_missing_depends(stack_name, distro, os_platform, arch)
-
+    debug("Missing depends = %s" % missing_depends)
     if not missing_depends:
         # Create the environment where we build the debs, if necessary
         create_chroot(distro, distro_name, os_platform, arch)
