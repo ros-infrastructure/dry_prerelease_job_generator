@@ -476,9 +476,6 @@ def build_debs(distro, stack_name, os_platform, arch, staging_dir, force, nouplo
     if stack_name not in distro.released_stacks:
         raise BuildFailure("stack [%s] not found in distro [%s]."%(stack_name, distro_name))
 
-    # Create the environment where we build the debs, if necessary
-    create_chroot(distro, distro_name, os_platform, arch)
-    subprocess.check_call(['sudo', 'apt-get', 'install', '-y', 'pkg-config'])
 
     # Load blacklisted information
     missing_primary, missing_dep, missing_excluded, missing_excluded_dep = list_missing.get_missing(distro, os_platform, arch)
@@ -496,9 +493,11 @@ def build_debs(distro, stack_name, os_platform, arch, staging_dir, force, nouplo
 
     debug("Attempting to build: %s"%(str(stack_name)))
     si = load_info(stack_name, stack_version)
-    missing_depends = compute_missing_depends(stack_name, distro, os_platform, arch)
+    missing_depends = list_missing.compute_missing_depends(stack_name, distro, os_platform, arch)
 
     if not missing_depends:
+        # Create the environment where we build the debs, if necessary
+        create_chroot(distro, distro_name, os_platform, arch)
         debug("Initiating build of: %s"%(str(stack_name)))
         try:
             do_deb_build(distro_name, stack_name, stack_version, os_platform, arch, staging_dir, noupload, interactive)
