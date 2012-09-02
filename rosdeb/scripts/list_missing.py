@@ -160,11 +160,12 @@ def compute_missing_depends(stack_name, distro, os_platform, arch, repo=SHADOW_R
     deps = set([(sn, sv) for (sn, sv) in deps if not sn == stack_name])
     for sn, sv in deps:
         deb_name = "ros-%s-%s"%(distro, debianize_name(sn))
+        
         #deb_version = '[0-9.]*-[st][0-9]+~[a-z]+'
         # be very promisucous
         deb_version = '.*'
         if not deb_in_repo(repo, deb_name, deb_version, os_platform, arch, use_regex=True):
-            missing_deps.add(sn)
+            missing_deps.add(deb_name)
 
     return missing_deps
 
