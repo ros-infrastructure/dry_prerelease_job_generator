@@ -743,7 +743,8 @@ def single_deb_main():
                 if  'contact' in control and distro_name != 'diamondback':
                     to_addr = control['contact']
                     subject = 'debian build [%s-%s-%s-%s] failed'%(distro_name, stack_name, os_platform, arch)
-                    send_email(options.smtp, EMAIL_FROM_ADDR, to_addr, subject, failure_message)
+                    # DISABLE SENDING OF EMAIL from script. This can be done better by jenkins. 
+                    # send_email(options.smtp, EMAIL_FROM_ADDR, to_addr, subject, failure_message)
         sys.exit(1)
             
 
