@@ -99,7 +99,7 @@ def load_info(stack_name, stack_version):
 
 class MissingDefinition(Exception): pass
 
-def compute_deps(distro, stack_name):
+def compute_deps(distro, stack_name, ignore_catkinized = True):
     # for suppressing repeated error messages
     ignored = []
 
@@ -135,6 +135,9 @@ def compute_deps(distro, stack_name):
     else:
         add_stack(stack_name)
 
+    if not ignore_catkinized:
+        ordered_deps += [(sn, 'foo') for sn in ignored]
+
     return ordered_deps
 
 
@@ -152,7 +155,9 @@ class ExclusionList(object):
 
 def compute_missing_depends(stack_name, distro, os_platform, arch, repo=SHADOW_REPO, lock_version=True):
     missing_deps = set()
-    deps = compute_deps(distro, stack_name)
+    deps = compute_deps(distro, stack_name, ignore_catkinized = False)
+    #don't include self
+    deps = set([(sn, sv) for (sn, sv) in deps if not sn == stack_name])
     for sn, sv in deps:
         deb_name = "ros-%s-%s"%(distro, debianize_name(sn))
         deb_version = '[0-9.]*-[st][0-9]+~[a-z]+'
