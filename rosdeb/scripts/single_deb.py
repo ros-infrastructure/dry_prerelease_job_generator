@@ -37,6 +37,7 @@ Build debs for a package and all of its dependencies as necessary
 
 import roslib; roslib.load_manifest('rosdeb')
 
+import paramiko
 import os
 import sys
 import subprocess
@@ -367,12 +368,26 @@ dpkg -l %(deb_name)s
 
 
     if not noupload:
+        
+        invalidate_debs(deb_name, os_platform, arch
+
         if not upload_debs(files,distro_name,os_platform,arch):
             print "Upload of debs failed!!!"
             return 1
     return 0
 
-        
+
+def invalidate_debs(package, os_platform, arch):
+    repo_fqdn = REPO_HOSTNAME
+    repo_path = REPO_PATH
+
+    cmd = "/usr/bin/reprepro -b %(repo_path)s -T deb -V listfilter %(os_platform)s \" ( Package (% %(package)s ) | Architecture (== %(arch)s ), ( Depends (% %(package)s,* ) | Depends (% *%(package)s ) ) )\" " % locals()
+    ssh = paramiko.SSHClient()
+    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    ssh.connect(repo_fqdn, username='rosbuild')
+    stdin, stdout, stderr = ssh.exec_command(cmd)
+    print "Invalidation results:", stdout.readlines()
+    ssh.close()
 
 
 def upload_debs(files,distro_name,os_platform,arch):
