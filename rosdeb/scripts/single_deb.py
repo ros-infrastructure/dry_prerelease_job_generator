@@ -380,12 +380,22 @@ dpkg -l %(deb_name)s
 def invalidate_debs(package, os_platform, arch):
     repo_fqdn = REPO_HOSTNAME
     repo_path = REPO_PATH
-    cmd = "/usr/bin/reprepro -b %(repo_path)s -T deb -V listfilter %(os_platform)s \" Package ($ %(package)s ) | Architecture (== %(arch)s ), ( Depends ($ %(package)s,* ) | Depends ($ *%(package)s ) )\" "%locals()
-    cmd = cmd.replace('$', '%')
+#    cmd = "/usr/bin/reprepro -b %(repo_path)s -T deb -V listfilter %(os_platform)s \" ( Package (== %(package)s ), Architecture (== %(arch)s ) ) | (Architecture (== %(arch)s ), ( Depends ($ %(package)s,* ) | Depends ($ *%(package)s ) )\" "%locals()
 
     ssh = paramiko.SSHClient()
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     ssh.connect(repo_fqdn, username='rosbuild')
+
+    # remove all dependencies
+    cmd = "/usr/bin/reprepro -b %(repo_path)s -T deb -V listfilter %(os_platform)s \"Architecture (== %(arch)s ), Depends ($ *%(package)s,* ) | Depends ($ *%(package)s )\" "%locals()
+
+    print "Invalidation command: ", cmd
+    stdin, stdout, stderr = ssh.exec_command(cmd)
+    print "Invalidation results:", stdout.readlines(), stderr.readlines()
+
+    # remove the package itseif
+    cmd = "/usr/bin/reprepro -b %(repo_path)s -T deb -V listfilter %(os_platform)s \"Package (== %(package)s ), Architecture (== %(arch)s ) ) \" "%locals()    cmd = cmd.replace('$', '%')
+
     print "Invalidation command: ", cmd
     stdin, stdout, stderr = ssh.exec_command(cmd)
     print "Invalidation results:", stdout.readlines(), stderr.readlines()
