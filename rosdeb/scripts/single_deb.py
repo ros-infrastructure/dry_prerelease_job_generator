@@ -387,7 +387,7 @@ def invalidate_debs(package, os_platform, arch):
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     ssh.connect(repo_fqdn, username='rosbuild')
     stdin, stdout, stderr = ssh.exec_command(cmd)
-    print "Invalidation results:", stdout.readlines()
+    print "Invalidation results:", stdout.readlines(), stderr.readlines()
     ssh.close()
 
 
