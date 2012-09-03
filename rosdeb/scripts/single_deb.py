@@ -395,7 +395,7 @@ def invalidate_debs(package, os_platform, arch):
     print "Invalidation results:", stdout.readlines(), stderr.readlines()
 
     # remove the package itseif
-    cmd = "/usr/bin/reprepro -b %(repo_path)s -T deb -V listfilter %(os_platform)s \"Package (== %(package)s ), Architecture (== %(arch)s ) ) \" "%locals()
+    cmd = "/usr/bin/reprepro -b %(repo_path)s -T deb -V listfilter %(os_platform)s \"Package (== %(package)s ), Architecture (== %(arch)s ) \" "%locals()
 
 
     print "Invalidation command: ", cmd
