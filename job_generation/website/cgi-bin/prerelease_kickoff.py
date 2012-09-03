@@ -85,7 +85,7 @@ def main():
           name = name[:17]+"..."
       for ubuntu in ['lucid', 'precise']:
           for arch in ['amd64', 'i386']:
-              command = "/home/willow/buildfarm/run_jenkins %s %s %s %s prerelease.py groovy %s"%(ubuntu, arch, name, email, ' '.join(stacks))
+              command = "/home/willow/buildfarm/run_jenkins %s %s %s %s prerelease groovy %s"%(ubuntu, arch, name, email, ' '.join(stacks))
               res_part, err_part = subprocess.Popen(['bash', '-c', command], stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
               res = res + '\n' + res_part
               err = err + '\n' + err_part
