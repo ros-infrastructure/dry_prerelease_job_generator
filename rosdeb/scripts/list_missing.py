@@ -136,7 +136,7 @@ def compute_deps(distro, stack_name, ignore_catkinized = True):
         add_stack(stack_name)
 
     if not ignore_catkinized:
-        ordered_deps += [(sn, 'foo') for sn in ignored]
+        ordered_deps += [(sn, 'catkinized') for sn in ignored]
 
     return ordered_deps
 
