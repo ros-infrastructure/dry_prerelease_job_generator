@@ -161,20 +161,13 @@ def compute_missing_depends(stack_name, distro, os_platform, arch, repo=SHADOW_R
     for sn, sv in deps:
         deb_name = "ros-%s-%s"%(distro.release_name, debianize_name(sn))
         
-        # working for dry deb_version = '[0-9.]*-[st][0-9]+~[a-z]+' 
-        # working on wet deb_version = '[0-9.]*-[0-9a-z]+-[0-9]+-[0-9]+-\+0000'
+        # see if there's a dry version
         deb_version = '[0-9.]*-[st][0-9]+~[a-z]+' 
-        print "deb_version", deb_version, 'local_version', sv
         if not deb_in_repo(repo, deb_name, deb_version, os_platform, arch, use_regex=True):
-            print deb_name, "not in dry"
+            # now test for wet version
             deb_version = '[0-9.]*-[0-9a-z]+-[0-9]+-[0-9]+-\+0000'
             if not deb_in_repo(repo, deb_name, deb_version, os_platform, arch, use_regex=True):
-                print "missing dependency", deb_name
                 missing_deps.add(deb_name)
-            else:
-                print "found wet", deb_name
-        else:
-            print "found dry", deb_name
 
     return missing_deps
 
