@@ -387,7 +387,7 @@ def invalidate_debs(package, os_platform, arch):
     ssh.connect(repo_fqdn, username='rosbuild')
 
     # remove all dependencies
-    cmd = "/usr/bin/reprepro -b %(repo_path)s -T deb -V listfilter %(os_platform)s \"Architecture (== %(arch)s ), Depends ($ *%(package)s,* ) | Depends ($ *%(package)s )\" "%locals()
+    cmd = "/usr/bin/reprepro -b %(repo_path)s -T deb -V listfilter %(os_platform)s \"Architecture (== %(arch)s ), Depends ($ *%(package)s[ ,]* ) | Depends ($ *%(package)s )\" "%locals()
     cmd = cmd.replace('$', '%')
 
     print "Invalidation command: ", cmd
