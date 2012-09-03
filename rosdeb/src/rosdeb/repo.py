@@ -53,8 +53,15 @@ def get_Packages(repo_url, os_platform, arch, cache=None):
     """
     if cache is None:
         cache = _Packages_cache
-        
-    packages_url = repo_url + '/ubuntu/dists/%(os_platform)s/main/binary-%(arch)s/Packages'%locals()
+
+    # this is very bad.  This script is assuming the layout of the
+    # repo has a subdirectory ubuntu.  I can't parameterize it out
+    # without potentially breaking a lot. Using an if statement to get
+    # it to work.
+    if 'packages.ros.org/ros' in repo_url or 'shadow' in repo_url:
+        packages_url = repo_url + '/ubuntu/dists/%(os_platform)s/main/binary-%(arch)s/Packages'%locals()
+    else:
+        packages_url = repo_url + '/dists/%(os_platform)s/main/binary-%(arch)s/Packages'%locals()
     if packages_url in cache:
         return cache[packages_url]
     else:
