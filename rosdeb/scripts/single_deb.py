@@ -464,6 +464,9 @@ def upload_binary_debs(files,distro_name,os_platform,arch):
     new_files = ' '.join(os.path.join('%s/queue'%(REPO_PATH),os_platform,x) for x in base_files)
 
 
+    # load repo_path into locals for substitution below
+    repo_path = REPO_PATH
+
     # This script moves files into queue directory, removes all dependent debs, removes the existing deb, and then processes the incoming files
     remote_cmd = "TMPFILE=`mktemp` || exit 1 && cat > ${TMPFILE} && chmod +x ${TMPFILE} && ${TMPFILE}; ret=${?}; rm ${TMPFILE}; exit ${ret}"
     run_script = subprocess.Popen(['ssh', REPO_LOGIN, remote_cmd], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
@@ -472,7 +475,7 @@ def upload_binary_debs(files,distro_name,os_platform,arch):
 set -o errexit
 (
 flock 200
-reprepro -V -b %(REPO_PATH) includedeb %(os_platform)s %(new_files)s
+reprepro -V -b %(repo_path)s includedeb %(os_platform)s %(new_files)s
 rm %(new_files)s
 ) 200>/var/lock/ros-shadow.lock
 """%locals()
