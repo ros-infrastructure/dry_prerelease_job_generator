@@ -716,6 +716,9 @@ def gen_metapkgs_setup(staging_dir_arg, distro, os_platform, arch):
     else:
         staging_dir = tempfile.mkdtemp()
 
+    warning_message = None
+    failure_message = None
+
     try:
         gen_metapkgs(distro, os_platform, arch, staging_dir)
     except BuildFailure, e:
@@ -728,7 +731,7 @@ def gen_metapkgs_setup(staging_dir_arg, distro, os_platform, arch):
         if staging_dir is None:
             shutil.rmtree(staging_dir)
 
-        return warning_message, failure_message
+    return warning_message, failure_message
 
 
 def single_deb_main():
