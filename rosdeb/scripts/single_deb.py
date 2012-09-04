@@ -461,7 +461,7 @@ def upload_binary_debs(files,distro_name,os_platform,arch):
     base_files = [x.split('/')[-1] for x in files]
 
     # Assemble string for moving all files from incoming to queue (while lock is being held)
-    mvstr = '\n'.join(['mv '+os.path.join('/var/packages/%s/ubuntu/incoming'%(SHADOW_REPO),os_platform,x)+' '+os.path.join('/var/packages/%s/ubuntu/queue'%(SHADOW_REPO),os_platform,x) for x in base_files])
+    #mvstr = '\n'.join(['mv '+os.path.join('/var/packages/%s/ubuntu/incoming'%(SHADOW_REPO),os_platform,x)+' '+os.path.join('/var/packages/%s/ubuntu/queue'%(SHADOW_REPO),os_platform,x) for x in base_files])
     new_files = ' '.join(os.path.join('%s/queue'%(REPO_PATH),os_platform,x) for x in base_files)
 
     # hacky
