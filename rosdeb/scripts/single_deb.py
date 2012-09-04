@@ -464,8 +464,6 @@ def upload_binary_debs(files,distro_name,os_platform,arch):
     #mvstr = '\n'.join(['mv '+os.path.join('/var/packages/%s/ubuntu/incoming'%(SHADOW_REPO),os_platform,x)+' '+os.path.join('/var/packages/%s/ubuntu/queue'%(SHADOW_REPO),os_platform,x) for x in base_files])
     new_files = ' '.join(os.path.join('%s/queue'%(REPO_PATH),os_platform,x) for x in base_files)
 
-    # hacky
-    shadow_repo = SHADOW_REPO
 
     # This script moves files into queue directory, removes all dependent debs, removes the existing deb, and then processes the incoming files
     remote_cmd = "TMPFILE=`mktemp` || exit 1 && cat > ${TMPFILE} && chmod +x ${TMPFILE} && ${TMPFILE}; ret=${?}; rm ${TMPFILE}; exit ${ret}"
