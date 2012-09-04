@@ -67,6 +67,7 @@ REPO_URL='http://50.28.27.175/repos/building'
 REPO_HOSTNAME='50.28.27.175'
 REPO_PATH ='/var/www/repos/building'
 REPO_USERNAME='rosbuild'
+REPO_LOGIN="%s@%s" % (REPO_USERNAME, REPO_HOSTNAME)
 
 TGZ_VERSION='dry_5'
 
@@ -449,6 +450,50 @@ post_upload_command     = ssh %(repo_username)s@%(repo_hostname)s -- /usr/bin/re
             # ??? What was this doing?
             #rosdeb.repo._Packages_cache = {}
 
+def upload_binary_debs(files,distro_name,os_platform,arch):
+
+    if len(files) == 0:
+        debug("No debs to upload.")
+        return 1 # no files to upload
+
+    subprocess.check_call(['scp'] + files + ['%s:%s/queue/%s'%(REPO_LOGIN, REPO_PATH, os_platform)], stderr=subprocess.STDOUT)
+
+    base_files = [x.split('/')[-1] for x in files]
+
+    # Assemble string for moving all files from incoming to queue (while lock is being held)
+    mvstr = '\n'.join(['mv '+os.path.join('/var/packages/%s/ubuntu/incoming'%(SHADOW_REPO),os_platform,x)+' '+os.path.join('/var/packages/%s/ubuntu/queue'%(SHADOW_REPO),os_platform,x) for x in base_files])
+    new_files = ' '.join(os.path.join('%s/queue'%(REPO_PATH),os_platform,x) for x in base_files)
+
+    # hacky
+    shadow_repo = SHADOW_REPO
+
+    # This script moves files into queue directory, removes all dependent debs, removes the existing deb, and then processes the incoming files
+    remote_cmd = "TMPFILE=`mktemp` || exit 1 && cat > ${TMPFILE} && chmod +x ${TMPFILE} && ${TMPFILE}; ret=${?}; rm ${TMPFILE}; exit ${ret}"
+    run_script = subprocess.Popen(['ssh', REPO_LOGIN, remote_cmd], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    script_content = """
+#!/bin/bash
+set -o errexit
+(
+flock 200
+# Move from incoming to queue
+# %(mvstr)s Not using move string.  Files go directly into queue
+reprepro -V -b %(REPO_PATH) includedeb %(os_platform)s %(new_files)s
+rm %(new_files)s
+) 200>/var/lock/ros-shadow.lock
+"""%locals()
+
+    #Actually run script and check result
+    (o,e) = run_script.communicate(script_content)
+    res = run_script.wait()
+    debug("result of run script: %s"%o)
+    if res != 0:
+        debug("ERROR: Could not run upload script")
+        debug("ERROR: output of upload script: %s"%o)
+        return 1
+    else:
+        return 0
+
+
 def lock_debs(distro, os_platform, arch):
 
         remote_cmd = "TMPFILE=`mktemp` || exit 1 && cat > ${TMPFILE} && chmod +x ${TMPFILE} && ${TMPFILE}; ret=${?}; rm ${TMPFILE}; exit ${ret}"
@@ -658,7 +703,7 @@ def gen_metapkgs(distro, os_platform, arch, staging_dir, force=False):
     else:
         missing.append('all')
 
-    upload_debs(debs, distro_name, os_platform, arch)
+    upload_binary_debs(debs, distro_name, os_platform, arch)
 
     if missing:
         raise StackBuildFailure("Did not generate all metapkgs: %s."%missing)
@@ -680,7 +725,7 @@ def gen_metapkgs_setup(staging_dir_arg, distro, os_platform, arch):
     except Exception, e:
         failure_message = "Internal failure in the release system. Please notify leibs and kwc @willowgarage.com:\n%s\n\n%s"%(e, traceback.format_exc(e))
     finally:
-        if options.staging_dir is None:
+        if staging_dir is None:
             shutil.rmtree(staging_dir)
 
         return warning_message, failure_message
