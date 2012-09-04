@@ -581,6 +581,9 @@ def create_meta_pkg(packagelist, distro, distro_name, metapackage, deps, os_plat
             debug("WARNING: Variant %s depends on non-exist stack, %s"%(metapackage, stack))
             missing = True
 
+    if missing:
+        return None
+
     ros_depends_str = ', '.join(ros_depends)
 
     with open(control_file, 'w') as f:
@@ -612,7 +615,7 @@ def gen_metapkgs(distro, os_platform, arch, staging_dir, force=False):
     distro_name = distro.release_name
 
     # Retrieve the package list from the shadow repo
-    packageurl="http://packages.ros.org/ros-shadow/ubuntu/dists/%(os_platform)s/main/binary-%(arch)s/Packages"%locals()
+    packageurl=REPO_URL+"/dists/%(os_platform)s/main/binary-%(arch)s/Packages"%locals()
     packagetxt = urllib2.urlopen(packageurl).read()
     packagelist = parse_deb_packages(packagetxt)
 
@@ -723,7 +726,7 @@ def single_deb_main():
             
 
     # Try to create metapkgs as necessary
-    if not failure_message and stack_name == 'ALL':
+    if not failure_message:
 
         if options.staging_dir is not None:
             staging_dir    = options.staging_dir
