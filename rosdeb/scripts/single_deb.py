@@ -749,11 +749,6 @@ def single_deb_main():
         # if we created our own staging dir, we are responsible for cleaning it up
         if options.staging_dir is None:
             shutil.rmtree(staging_dir)
-            
-
-    # Try to create metapkgs as necessary
-    if not failure_message:
-
 
 
     if failure_message or warning_message:
