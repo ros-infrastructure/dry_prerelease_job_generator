@@ -664,6 +664,28 @@ def gen_metapkgs(distro, os_platform, arch, staging_dir, force=False):
         raise StackBuildFailure("Did not generate all metapkgs: %s."%missing)
 
 
+def gen_metapkgs_setup(staging_dir_arg, distro, os_platform, arch):
+    if staging_dir_arg is not None:
+        staging_dir    = staging_dir_arg
+        staging_dir = os.path.abspath(staging_dir)
+    else:
+        staging_dir = tempfile.mkdtemp()
+
+    try:
+        gen_metapkgs(distro, os_platform, arch, staging_dir)
+    except BuildFailure, e:
+        failure_message = "Failure Message:\n"+"="*80+'\n'+str(e)
+    except StackBuildFailure, e:
+        warning_message = "Warning Message:\n"+"="*80+'\n'+str(e)
+    except Exception, e:
+        failure_message = "Internal failure in the release system. Please notify leibs and kwc @willowgarage.com:\n%s\n\n%s"%(e, traceback.format_exc(e))
+    finally:
+        if options.staging_dir is None:
+            shutil.rmtree(staging_dir)
+
+        return warning_message, failure_message
+
+
 def single_deb_main():
 
     from optparse import OptionParser
@@ -696,6 +718,7 @@ def single_deb_main():
     else:
         staging_dir = tempfile.mkdtemp()
 
+
     try:
         if distro_name not in rosdeb.targets.os_platform:
             raise BuildFailure("[%s] is not a known rosdistro.\nValid rosdistros are: %s" % (distro_name, ' '.join(rosdeb.targets.os_platform.keys())))
@@ -710,8 +733,11 @@ def single_deb_main():
         uri = distro_uri(distro_name)
         debug("loading distro file from %s"%(uri))
         distro = load_distro(uri)
-        
-        build_debs(distro, stack_name, os_platform, arch, staging_dir, options.force, options.noupload, options.interactive)
+
+        if stack_name == 'metapackages':
+            (warning_message, failure_message) = gen_metapkgs_setup(options.staging_dir, distro, os_platform, arch)
+        else:
+            build_debs(distro, stack_name, os_platform, arch, staging_dir, options.force, options.noupload, options.interactive)
 
     except StackBuildFailure, e:
         warning_message = "Warning Message:\n"+"="*80+'\n'+str(e)
@@ -728,23 +754,6 @@ def single_deb_main():
     # Try to create metapkgs as necessary
     if not failure_message:
 
-        if options.staging_dir is not None:
-            staging_dir    = options.staging_dir
-            staging_dir = os.path.abspath(staging_dir)
-        else:
-            staging_dir = tempfile.mkdtemp()
-
-        try:
-            gen_metapkgs(distro, os_platform, arch, staging_dir)
-        except BuildFailure, e:
-            failure_message = "Failure Message:\n"+"="*80+'\n'+str(e)
-        except StackBuildFailure, e:
-            warning_message = "Warning Message:\n"+"="*80+'\n'+str(e)
-        except Exception, e:
-            failure_message = "Internal failure in the release system. Please notify leibs and kwc @willowgarage.com:\n%s\n\n%s"%(e, traceback.format_exc(e))
-        finally:
-            if options.staging_dir is None:
-                shutil.rmtree(staging_dir)
 
 
     if failure_message or warning_message:
