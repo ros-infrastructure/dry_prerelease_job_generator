@@ -803,7 +803,7 @@ def single_deb_main():
 
         if not options.interactive:
             failure_message = "%s\n%s\n%s"%(failure_message, warning_message, os.environ.get('BUILD_URL', ''))
-            if options.smtp and stack_name != 'ALL' and distro is not None:
+            if options.smtp and stack_name != 'metapackages' and distro is not None:
                 stack_version = distro.stacks[stack_name].version
                 control = download_control(stack_name, stack_version)
                 if  'contact' in control and distro_name != 'diamondback':
