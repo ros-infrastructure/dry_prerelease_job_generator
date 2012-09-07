@@ -30,6 +30,7 @@ def main():
 
         # parse command line options
         (options, args) = get_options(['stack', 'rosdistro'], ['repeat', 'source-only'])
+        print "options", options, "args", args
         if not options:
             return -1
 
