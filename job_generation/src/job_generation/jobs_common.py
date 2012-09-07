@@ -253,7 +253,7 @@ def get_environment():
 def get_options(required, optional):
     parser = optparse.OptionParser()
     ops = required + optional
-    print "parsing opts", opts
+    print "parsing opts:", opts, "done"
     if 'os' in ops:
         parser.add_option('--os', dest = 'os', default='ubuntu', action='store',
                           help='OS name')
