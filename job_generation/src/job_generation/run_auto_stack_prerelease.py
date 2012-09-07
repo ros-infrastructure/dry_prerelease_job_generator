@@ -26,6 +26,7 @@ def remove(list1, list2):
 def main():
     # global try
     try:
+        print "Parsing arguments"
 
         # parse command line options
         (options, args) = get_options(['stack', 'rosdistro'], ['repeat', 'source-only'])
