@@ -253,6 +253,7 @@ def get_environment():
 def get_options(required, optional):
     parser = optparse.OptionParser()
     ops = required + optional
+    print "parsing opts", opts
     if 'os' in ops:
         parser.add_option('--os', dest = 'os', default='ubuntu', action='store',
                           help='OS name')
@@ -296,8 +297,10 @@ def get_options(required, optional):
         parser.add_option('--database', dest = 'database', default=None, action='store',
                           help="Specify database file")
 
+    print "done setting up parser"
+
     (options, args) = parser.parse_args()
-    
+    print "run parser"
 
     # make repeat an int
     if 'repeat' in ops:
