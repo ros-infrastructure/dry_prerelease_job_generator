@@ -328,16 +328,17 @@ def get_options(required, optional):
     print "check if the stack exists"
     # check if stacks exist
     if 'stack' in ops and options.stack:
-        distro_obj = rospkg.distro.load_distro(rospkg.distro.distro_uri(get_rosdistro_file(options.rosdistro)))
+        distro_obj = rospkg.distro.load_distro(rospkg.distro.distro_uri(options.rosdistro))
         for s in options.stack:
             if not s in distro_obj.stacks:
                 print 'Stack "%s" does not exist in the %s distro file.'%(s, options.rosdistro)
                 print 'You need to add this stack to the rosdistro file'
                 return (None, args)
 
+    print "checking for variants"
     # check if variant exists
     if 'variant' in ops and options.variant:
-        distro_obj = rospkg.distro.load_distro(rospkg.distro.distro_uri(get_rosdistro_file(options.rosdistro)))
+        distro_obj = rospkg.distro.load_distro(rospkg.distro.distro_uri(options.rosdistro))
         if not options.variant in distro_obj.variants:
                 print 'Variant "%s" does not exist in the %s distro file.'%(options.variant, options.rosdistro)
                 return (None, args)
