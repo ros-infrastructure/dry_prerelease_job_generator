@@ -252,6 +252,7 @@ def get_environment():
 
 def get_options(required, optional):
     parser = optparse.OptionParser()
+    print "required: ", required, "optional: ", optional
     ops = required + optional
     print "parsing opts:", opts, "done"
     if 'os' in ops:
