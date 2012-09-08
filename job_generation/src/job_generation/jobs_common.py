@@ -319,11 +319,13 @@ def get_options(required, optional):
         options.email = options.email + '@willowgarage.com'        
 
 
+    print "check if the rosdistro exists:"
     # check if rosdistro exists
     if 'rosdistro' in ops and (not options.rosdistro or not options.rosdistro in UBUNTU_DISTRO_MAP.keys()):
         print 'You provided an invalid "--rosdistro %s" argument. Options are %s'%(options.rosdistro, UBUNTU_DISTRO_MAP.keys())
         return (None, args)
 
+    print "check if the stack exists"
     # check if stacks exist
     if 'stack' in ops and options.stack:
         distro_obj = rospkg.distro.load_distro(rospkg.distro.distro_uri(get_rosdistro_file(options.rosdistro)))
