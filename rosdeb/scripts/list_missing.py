@@ -157,12 +157,9 @@ def compute_missing_depends(stack_name, distro, os_platform, arch, repo=SHADOW_R
     missing_deps = set()
     deps = compute_deps(distro, stack_name, ignore_catkinized = False)
     #don't include self
-    print "Deps are ", deps
     deps = set([(sn, sv) for (sn, sv) in deps if not sn == stack_name])
-    print "Shortened deps are", deps
     for sn, sv in deps:
         deb_name = "ros-%s-%s"%(distro.release_name, debianize_name(sn))
-        print "Testing %s for presence:" % deb_name
         # see if there's a dry version
         deb_version = '[0-9.]*-[st][0-9]+~[a-z]+' 
         if not deb_in_repo(repo, deb_name, deb_version, os_platform, arch, use_regex=True):
@@ -170,11 +167,6 @@ def compute_missing_depends(stack_name, distro, os_platform, arch, repo=SHADOW_R
             wet_deb_version = '[0-9.]*-[0-9a-z]+-[0-9]+-[0-9]+-\+0000'
             if not deb_in_repo(repo, deb_name, wet_deb_version, os_platform, arch, use_regex=True):
                 missing_deps.add(deb_name)
-            else:
-                print "matched wet for %s with %s" % (deb_name, wet_deb_version)
-                            
-        else:
-            print "matched dry for %s with %s" % (deb_name, deb_version)
 
     return missing_deps
 
