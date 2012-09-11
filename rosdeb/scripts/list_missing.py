@@ -165,9 +165,12 @@ def compute_missing_depends(stack_name, distro, os_platform, arch, repo=SHADOW_R
         deb_version = '[0-9.]*-[st][0-9]+~[a-z]+' 
         if not deb_in_repo(repo, deb_name, deb_version, os_platform, arch, use_regex=True):
             # now test for wet version
-            deb_version = '[0-9.]*-[0-9a-z]+-[0-9]+-[0-9]+-\+0000'
-            if not deb_in_repo(repo, deb_name, deb_version, os_platform, arch, use_regex=True):
+            wet_deb_version = '[0-9.]*-[0-9a-z]+-[0-9]+-[0-9]+-\+0000'
+            if not deb_in_repo(repo, deb_name, wet_deb_version, os_platform, arch, use_regex=True):
                 missing_deps.add(deb_name)
+            else:
+                print "matched wet for %s with %s" % (deb_name, wet_deb_version)
+                            
         else:
             print "matched dry for %s with %s" % (deb_name, deb_version)
 
