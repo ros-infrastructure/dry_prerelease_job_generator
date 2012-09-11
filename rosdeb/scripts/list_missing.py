@@ -113,20 +113,20 @@ def compute_deps(distro, stack_name, ignore_catkinized = True):
             raise MissingDefinition("[%s] not found in distro."%(s))
         seen.add(s)
         v = distro.stacks[s].version
-        try:
-            si = load_info(s, v)
-            for d in si['depends']:
+        si = load_info(s, v)
+        for d in si['depends']:
+            try:
                 add_stack(d)
-        except MissingDefinition as e:
-            if not d in ignored:
-                sys.stderr.write("[%s] ignoring dependency [%s], possible catkin-ized\n"%(s, d))
-                ignored.append(d)
-            #raise MissingDefinition("[%s] failure loading dependency [%s]: %s\n"%(s, d, e))
-        except Exception as e:
-            # this is a soft-fail. If the load_info fails, it means
-            # the stack is missing. We will detect it missing
-            # elsewhere.
-            sys.stderr.write(str(e)+'\n')
+            except MissingDefinition as e:
+                if not d in ignored:
+                    sys.stderr.write("[%s] ignoring dependency [%s], possible catkin-ized\n"%(s, d))
+                    ignored.append(d)
+                #raise MissingDefinition("[%s] failure loading dependency [%s]: %s\n"%(s, d, e))
+            except Exception as e:
+                # this is a soft-fail. If the load_info fails, it means
+                # the stack is missing. We will detect it missing
+                # elsewhere.
+                sys.stderr.write(str(e)+'\n')
         ordered_deps.append((s,v))
 
     if stack_name == 'ALL':
