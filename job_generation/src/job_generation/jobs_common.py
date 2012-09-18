@@ -71,8 +71,7 @@ ARCHES = ['amd64', 'i386']
 
 # ubuntu distro mapping to ros distro
 UBUNTU_DISTRO_MAP = os_test_platform = {
-    'testing': ['lucid', 'maverick'],
-    'unstable': ['lucid', 'oneiric'],
+    'groovy': ['oneiric', 'precise', 'quantal'],
     'fuerte': ['lucid', 'oneiric', 'precise'] 
 }
 
