@@ -9,6 +9,7 @@ ${ROS_DISTRO_DIR}/${ROS_STACK_NAME}: ${ROS_STACK_NAME}-${ROS_STACK_VERSION}.md5 
 install: ${ROS_DISTRO_DIR}/${ROS_STACK_NAME}
 	./update_version.py debian/changelog.tmp > debian/changelog
 	bash -c ". setup_deb.sh && ./gen_versioned_debs.py ${ROS_DISTRO_NAME} ${ROS_STACK_NAME}" >> ${SUBSTFILE}
+	bash -c ". setup_deb.sh && env"
 	bash -c ". setup_deb.sh && rosmake ${ROS_STACK_NAME} -V --skip-blacklist --status-rate=0"
 	bash -c ". setup_deb.sh && rosmake ${ROS_STACK_NAME} -i -V --skip-blacklist --status-rate=0"
 ifneq (${ROS_DISTRO_NAME}, cturtle)
