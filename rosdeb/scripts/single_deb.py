@@ -268,7 +268,12 @@ def do_deb_build(distro_name, stack_name, stack_version, os_platform, arch, stag
     with open(p, 'w') as f:
         f.write("""#!/bin/sh
 set -o errexit
-wget https://code.ros.org/svn/release/download/stacks/%(stack_name)s/%(stack_name)s-%(stack_version)s/%(stack_name)s-%(stack_version)s.tar.bz2 -O /tmp/buildd/%(stack_name)s-%(stack_version)s.tar.bz2"""%locals())
+wget https://code.ros.org/svn/release/download/stacks/%(stack_name)s/%(stack_name)s-%(stack_version)s/%(stack_name)s-%(stack_version)s.tar.bz2 -O /tmp/buildd/%(stack_name)s-%(stack_version)s.tar.bz2
+rosdep update
+chown -R pbuilder /tmp/buildd/.ros
+su pbuilder -c "rosdep resolve gtest"
+su pbuilder -c "cp -r /tmp/buildd/.ros /tmp"
+"""%locals())
         os.chmod(p, stat.S_IRWXU)
 
 
@@ -277,7 +282,9 @@ wget https://code.ros.org/svn/release/download/stacks/%(stack_name)s/%(stack_nam
     with open(p, 'w') as f:
         f.write("""#!/bin/sh
 set -o errexit
-apt-get update"""%locals())
+apt-get update
+apt-get install -y python-rosdep
+rosdep init"""%locals())
         os.chmod(p, stat.S_IRWXU)
 
     if interactive:
