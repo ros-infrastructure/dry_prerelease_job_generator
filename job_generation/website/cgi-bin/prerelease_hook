@@ -83,7 +83,7 @@ def main():
 
             # trigger a perrelease build
             args = ' '.join(['%s %s'%(s, v) for s, v in changed_stuff.iteritems()])
-            command = 'generate_jenkins_prerelease wim@hidof.com groovy %s --name pullrequest_%s'%(args, data['pull_request']['number'])
+            command = 'generate_jenkins_prerelease tfoote@willowgarage.com groovy %s --name pullrequest_%s'%(args, data['pull_request']['number'])
             ret, err = subprocess.Popen(['bash', '-c', command], stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
             log(ret)
             log(err)
