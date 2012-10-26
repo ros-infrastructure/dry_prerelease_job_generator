@@ -75,21 +75,10 @@ def main():
       res, err = subprocess.Popen(['bash', '-c', command], stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
 
 
-    # catkin stacks
+    # wet groovy stacks
     elif distro in catkin_distro:
-      res = ""
-      err = ""
-      name = '_'.join(stacks)
-      name = 'groovy-' + name
-      if len(name) > 25:
-          name = name[:17]+"..."
-      for ubuntu in ['lucid', 'precise']:
-          for arch in ['amd64', 'i386']:
-              command = "/home/willow/buildfarm/run_jenkins %s %s %s %s prerelease groovy %s"%(ubuntu, arch, name, email, ' '.join(stacks))
-              res_part, err_part = subprocess.Popen(['bash', '-c', command], stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
-              res = res + '\n' + res_part
-              err = err + '\n' + err_part
-
+        command = "generate_jenkins_prerelease %s groovy %s"%(email, ' '.join(['%s latest'%s for s in stacks]))
+        res, err = subprocess.Popen(['bash', '-c', command], stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
 
     # invalid distro
     else:

@@ -1,0 +1,102 @@
+#!/usr/bin/env python
+
+import sys
+import cgi
+import urllib2
+import os
+import subprocess
+import json
+import yaml
+import cgitb
+cgitb.enable()
+
+
+
+def write_to_disk(data, name, method='w'):
+    with open('/tmp/%s'%name, method) as f:
+        f.write(data)
+
+def log(data):
+    write_to_disk(str(data)+'\n', 'log', 'a')
+
+
+def call(command, envir=None):
+    helper = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=True, env=envir)
+    res, err = helper.communicate()
+    print str(res)
+    print str(err)
+    if helper.returncode != 0:
+        log("/!\  Failed to execute command '%s'"%' '.join(command))
+        raise
+    return res
+
+
+
+def main():
+    print "Content-Type: text/html"     # HTML is following
+    print                               # blank line, end of headers
+    
+    form = cgi.FieldStorage().getfirst('payload')
+    data = json.loads(form)
+    write_to_disk("========================\n"+str(data)+"\n\n", 'log_raw', 'a')
+
+    log('=========================================================================')
+
+    # this is a pull request                                                                                                                                
+    if data.has_key('pull_request'):
+        log("This is pull request number %s\n"%str(data['pull_request']['number']))
+
+        # get the diff of the pull request
+        log("Get diff from url %s"%data['pull_request']['diff_url'])
+        diff = urllib2.urlopen(data['pull_request']['diff_url']).read()              
+        log("The diff: %s"%diff)
+        write_to_disk(diff, 'diff.patch')
+
+
+        # this is a pull request for the groovy.yaml file
+        if not 'releases/groovy.yaml' in diff:
+            log("Not a patch on groovy.yaml")
+        else:
+            log("Patch on groovy.yaml")
+
+            # get the latest groovy.yaml file
+            distro = urllib2.urlopen("https://raw.github.com/ros/rosdistro/master/releases/groovy.yaml").read()
+            write_to_disk(distro, 'distro_orig')
+            write_to_disk(distro, 'distro_new')
+
+            # apply patch of pull request to latest groovy.yaml
+            os.chdir('/tmp')
+            call(["bash", "-c", "patch distro_new -p0 < diff.patch"])
+
+            # read newly patched distro file 
+            log("Read patched distro file")
+            distro_orig = yaml.load(distro)['repositories']
+            with open('/tmp/distro_new') as f:
+                distro_new = yaml.load(f.read())['repositories']
+
+            # find stuff that's new in the distro, or stuff that has a new version
+            changed_stuff = {}
+            for d, value in distro_new.iteritems():
+                if not distro_orig.has_key(d) or value['version'] != distro_orig[d]['version']:
+                    changed_stuff[d] = value['version']
+            log("CHANGED STUFF: %s\n"%str(changed_stuff))
+
+            # trigger a perrelease build
+            args = ' '.join(['%s %s'%(s, v) for s, v in changed_stuff.iteritems()])
+            command = 'generate_jenkins_prerelease wim@hidof.com groovy %s --name pullrequest_%s'%(args, data['pull_request']['number'])
+            ret, err = subprocess.Popen(['bash', '-c', command], stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
+            log(ret)
+            log(err)
+
+    # this is a pull request
+    elif data.has_key('commits'):
+        log("This is a commit")
+
+    else:
+        log("Unknown hook. Data keys are %s"%', '.join(data.keys()))
+
+
+
+
+if __name__ == '__main__':
+    main()
