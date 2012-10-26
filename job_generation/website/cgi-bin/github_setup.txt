@@ -1,0 +1,12 @@
+To api: https://api.github.com/repos/ros-infrastructure/jenkins_tools/hooks
+Send a post request: 
+{
+  "name": "web",
+  "active": true,
+  "events": ["pull_request"],
+  "config": {
+    "url": "http://packages.ros.org/cgi-bin/prerelease_hook"
+  }
+}
+Using authentication.
+E.g. use web form: http://hurl.it
