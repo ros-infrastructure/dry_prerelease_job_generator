@@ -56,6 +56,9 @@ def main():
         rosdistro_obj = rosdistro.Distro(get_rosdistro_file(options.rosdistro))
         print 'Operating on ROS distro %s'%rosdistro_obj.release_name
 
+        # set up rosdep
+        call("rosdep init")
+        call("rosdep update")
 
         # Install the stacks to test from source
         print 'Installing the stacks to test from source'
