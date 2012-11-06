@@ -69,7 +69,7 @@ REPO_PATH ='/var/www/repos/building'
 REPO_USERNAME='rosbuild'
 REPO_LOGIN="%s@%s" % (REPO_USERNAME, REPO_HOSTNAME)
 
-TGZ_VERSION='dry_5'
+TGZ_VERSION='dry_6'
 
 import traceback
 
