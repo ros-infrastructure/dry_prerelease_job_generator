@@ -210,7 +210,7 @@ def create_chroot(distro, distro_name, os_platform, arch):
         debootstrap_type = 'qemu-debootstrap'
         mirror = 'http://ports.ubuntu.com/ubuntu-ports/'
     shadow_mirror = 'deb %s %s main' % (REPO_URL, os_platform)
-    updates_mirror = "deb http://aptproxy.willowgarage.com/us.archive.ubuntu.com/ubuntu/ %s-updates main restricted"%(os_platform)
+    updates_mirror = "deb http://aptproxy.willowgarage.com/us.archive.ubuntu.com/ubuntu/ %s-updates main restricted universe multiverse"%(os_platform)
     # --othermirror uses a | as a separator
     other_mirror = '%s|%s'%(updates_mirror, shadow_mirror)
     command = ['dpkg', '-l', 'pbuilder']
