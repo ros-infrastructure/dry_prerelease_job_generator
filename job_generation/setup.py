@@ -1,13 +1,12 @@
 from setuptools import setup
 
 setup(name='ros-groovy-job-generation',
-      version= '0.2.1',
+      version= '0.2.2',
       install_requires=['python-jenkins', 'rospkg', 'rosdep'],
-      packages=['job_generation'],
+      packages=['job_generation_groovy'],
       package_dir = {'':'src'},
       scripts = ['scripts/generate_groovy_devel.py',
                  'scripts/generate_groovy_prerelease.py',
-                 'scripts/generate_groovy_rosinstall.py',
                  ],
       author = "Wim Meeussen", 
       author_email = "wim@hidof.com",
