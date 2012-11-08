@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(name='ros-job_generation',
-      version= '0.1.22',
+      version= '0.1.25',
       install_requires=['python-jenkins', 'rospkg', 'rosdep'],
       packages=['job_generation'],
       package_dir = {'':'src'},
@@ -15,15 +15,15 @@ setup(name='ros-job_generation',
                  'scripts/run_auto_stack_postrelease.py',
                  'scripts/run_auto_stack_unreleased.py',
                  ],
-      author = "Wim Meeussen", 
+      author = "Wim Meeussen",
       author_email = "wim@willowgarage.com",
       url = "http://www.ros.org/wiki/job_generation",
-      download_url = "http://pr.willowgarage.com/downloads/job_generation/", 
+      download_url = "http://pr.willowgarage.com/downloads/",
       keywords = ["ROS"],
       classifiers = [
-        "Programming Language :: Python", 
+        "Programming Language :: Python",
         "License :: OSI Approved :: BSD License" ],
-      description = "build farm job generation for dry jobs", 
+      description = "build farm job generation for dry jobs",
       long_description = """\
 build farm job generation for dry jobs
 """,

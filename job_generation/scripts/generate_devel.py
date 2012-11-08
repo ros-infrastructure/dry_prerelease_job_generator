@@ -2,56 +2,56 @@
 
 # template to create develop hudscon configuration file
 HUDSON_DEVEL_CONFIG = """<?xml version='1.0' encoding='UTF-8'?>
-<project> 
-  <description>Build of STACKNAME development branch for ROSDISTRO on UBUNTUDISTRO, ARCH</description> 
- <logRotator> 
-    <daysToKeep>180</daysToKeep> 
-    <numToKeep>-1</numToKeep> 
-  </logRotator> 
-  <keepDependencies>false</keepDependencies> 
-  <properties> 
-    <hudson.plugins.trac.TracProjectProperty> 
-      <tracWebsite>http://code.ros.org/trac/ros/</tracWebsite> 
-    </hudson.plugins.trac.TracProjectProperty> 
-  </properties> 
+<project>
+  <description>Build of STACKNAME development branch for ROSDISTRO on UBUNTUDISTRO, ARCH</description>
+ <logRotator>
+    <daysToKeep>180</daysToKeep>
+    <numToKeep>-1</numToKeep>
+  </logRotator>
+  <keepDependencies>false</keepDependencies>
+  <properties>
+    <hudson.plugins.trac.TracProjectProperty>
+      <tracWebsite>http://code.ros.org/trac/ros/</tracWebsite>
+    </hudson.plugins.trac.TracProjectProperty>
+  </properties>
   HUDSON_VCS
   <assignedNode>NODE</assignedNode>
-  <canRoam>false</canRoam> 
-  <disabled>false</disabled> 
-  <blockBuildWhenUpstreamBuilding>false</blockBuildWhenUpstreamBuilding> 
-  <triggers class="vector"> 
-    <hudson.triggers.SCMTrigger> 
-      <spec>TIME_TRIGGER</spec> 
-    </hudson.triggers.SCMTrigger> 
-  </triggers> 
-  <concurrentBuild>false</concurrentBuild> 
-  <builders> 
-    <hudson.tasks.Shell> 
+  <canRoam>false</canRoam>
+  <disabled>false</disabled>
+  <blockBuildWhenUpstreamBuilding>false</blockBuildWhenUpstreamBuilding>
+  <triggers class="vector">
+    <hudson.triggers.SCMTrigger>
+      <spec>TIME_TRIGGER</spec>
+    </hudson.triggers.SCMTrigger>
+  </triggers>
+  <concurrentBuild>false</concurrentBuild>
+  <builders>
+    <hudson.tasks.Shell>
       <command>
 BOOTSTRAP_SCRIPT
 run_auto_stack_devel.py --stack STACKNAME --rosdistro ROSDISTRO --repeat 0 SOURCE_ONLY
 SHUTDOWN_SCRIPT
-     </command> 
-    </hudson.tasks.Shell> 
-  </builders> 
-  <publishers> 
-    <hudson.tasks.BuildTrigger> 
-      <childProjects>JOB_CHILDREN</childProjects> 
-      <threshold> 
-        <name>SUCCESS</name> 
-        <ordinal>0</ordinal> 
-        <color>BLUE</color> 
-      </threshold> 
-    </hudson.tasks.BuildTrigger> 
-    <hudson.tasks.junit.JUnitResultArchiver> 
-      <testResults>test_results/**/_hudson/*.xml</testResults> 
-    </hudson.tasks.junit.JUnitResultArchiver> 
-    <hudson.plugins.emailext.ExtendedEmailPublisher> 
-      <recipientList>EMAIL</recipientList> 
-      <configuredTriggers> 
+     </command>
+    </hudson.tasks.Shell>
+  </builders>
+  <publishers>
+    <hudson.tasks.BuildTrigger>
+      <childProjects>JOB_CHILDREN</childProjects>
+      <threshold>
+        <name>SUCCESS</name>
+        <ordinal>0</ordinal>
+        <color>BLUE</color>
+      </threshold>
+    </hudson.tasks.BuildTrigger>
+    <hudson.tasks.junit.JUnitResultArchiver>
+      <testResults>test_results/**/_hudson/*.xml</testResults>
+    </hudson.tasks.junit.JUnitResultArchiver>
+    <hudson.plugins.emailext.ExtendedEmailPublisher>
+      <recipientList>EMAIL</recipientList>
+      <configuredTriggers>
         EMAIL_TRIGGERS
-      </configuredTriggers> 
-      <defaultSubject>$DEFAULT_SUBJECT</defaultSubject> 
+      </configuredTriggers>
+      <defaultSubject>$DEFAULT_SUBJECT</defaultSubject>
       <defaultContent>$DEFAULT_CONTENT&#xd;
 &#xd;
 &lt;% &#xd;
@@ -63,12 +63,12 @@ def test_failures = hudson.util.RemotingDiagnostics.executeGroovy(&quot;new File
 println &quot;${test_failures}&quot;&#xd;
 def build_failures_context = hudson.util.RemotingDiagnostics.executeGroovy(&quot;new File(\&quot;${ws}/build_output/buildfailures-with-context.txt\&quot;).text&quot;,computer.getChannel())&#xd;
 println &quot;${build_failures_context}&quot;&#xd;
-%&gt;</defaultContent> 
-      <defaultContentTypeHTML>false</defaultContentTypeHTML> 
-      <defaultContentIsScript>true</defaultContentIsScript> 
-    </hudson.plugins.emailext.ExtendedEmailPublisher> 
-  </publishers> 
-  <buildWrappers/> 
+%&gt;</defaultContent>
+      <defaultContentTypeHTML>false</defaultContentTypeHTML>
+      <defaultContentIsScript>true</defaultContentIsScript>
+    </hudson.plugins.emailext.ExtendedEmailPublisher>
+  </publishers>
+  <buildWrappers/>
 </project>
 """
 
@@ -144,7 +144,7 @@ def create_devel_configs(os, distro_name, stack):
         hudson_config = hudson_config.replace('UBUNTUDISTRO', osdistro)
         hudson_config = hudson_config.replace('ARCH', arch)
         hudson_config = hudson_config.replace('ROSDISTRO', distro_name)
-        hudson_config = hudson_config.replace('STACKNAME', stack_name)   
+        hudson_config = hudson_config.replace('STACKNAME', stack_name)
         hudson_config = hudson_config.replace('HUDSON_VCS', hudson_vcs)
         hudson_config = hudson_config.replace('TIME_TRIGGER', time_trigger)
         hudson_config = hudson_config.replace('JOB_CHILDREN', job_children)
@@ -152,13 +152,25 @@ def create_devel_configs(os, distro_name, stack):
         hudson_config = hudson_config.replace('NODE', node)
         configs[name] = hudson_config
     return configs
-    
+
+
+def delete_jobs(pattern, skip_list):
+    info = urllib.urlopen(CONFIG_PATH).read().split(',')
+    hudson_obj = jenkins.Jenkins(SERVER, info[0], info[1])
+
+    # get list of all jobs that match pattern
+    for j in [j['name'] for j in hudson_obj.get_jobs() if pattern in j['name'] and not j['name'] in skip_list]:
+        print " - removing old job %s"%j
+        hudson_obj.delete_job(j)
+
+
+
 
 def main():
-    (options, args) = get_options(['rosdistro'], ['delete', 'wait', 'stack', 'os'])
+    (options, args) = get_options([], ['delete', 'wait', 'stack', 'os'])
     if not options:
         return -1
-    distro_name = options.rosdistro
+    distro_name = 'fuerte'
 
     # generate hudson config files
     distro_obj = rospkg.distro.load_distro(rospkg.distro.distro_uri(distro_name))
@@ -178,6 +190,7 @@ def main():
         devel_configs.update(create_devel_configs(options.os, distro_obj.release_name, distro_obj.stacks[stack_name]))
 
     # schedule jobs
+    delete_jobs("devel_fuerte_", devel_configs.keys())
     schedule_jobs(devel_configs, options.wait, options.delete)
 
 
