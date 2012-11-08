@@ -16,7 +16,7 @@ distro: clean_dist
 
 push: distro
 	python setup.py sdist register upload
-	scp dist/${NAME}-${VERSION}.tar.gz ipr.willowgarage.com:/var/www/pr.willowgarage.com/html/downloads/${NAME}
+	scp dist/${NAME}-${VERSION}.tar.gz ipr.willowgarage.com:/var/www/pr.willowgarage.com/html/downloads/
 
 clean: clean_dist
 	echo "clean"

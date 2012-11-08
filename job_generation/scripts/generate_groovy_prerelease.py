@@ -64,7 +64,7 @@ println &quot;${build_failures_context}&quot;&#xd;
 </project>
 """
 
-from job_generation.jobs_common import *
+from job_generation_groovy.jobs_common_groovy import *
 import jenkins
 import urllib
 import optparse 

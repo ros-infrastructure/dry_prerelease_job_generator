@@ -75,7 +75,7 @@ println &quot;${build_failures_context}&quot;&#xd;
 import rospkg
 import rospkg.distro
 
-from job_generation.jobs_common import *
+from job_generation_groovy.jobs_common_groovy import *
 
 def devel_job_name(distro_name, stack_name, ubuntu, arch):
     return get_job_name('devel', distro_name, stack_name, ubuntu, arch)
