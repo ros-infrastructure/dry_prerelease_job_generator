@@ -18,7 +18,7 @@ cat &gt; $WORKSPACE/script.sh &lt;&lt;DELIM
 #!/usr/bin/env bash
 set -o errexit
 echo "_________________________________BEGIN SCRIPT______________________________________"
-sudo apt-get install ros-ROSDISTRO-ros --yes
+sudo apt-get install --yes ros-ROSDISTRO-ros ros-ROSDISTRO-rospack ros-ROSDISTRO-rosmake ros-ROSDISTRO-rosbuild ros-ROSDISTRO-roslib lsb-release pkg-config ros-ROSDISTRO-rosunit
 source /opt/ros/ROSDISTRO/setup.sh
 
 export INSTALL_DIR=/tmp/install_dir

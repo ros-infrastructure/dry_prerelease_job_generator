@@ -44,7 +44,6 @@ def main():
         distro_obj = rospkg.distro.load_distro(rospkg.distro.distro_uri(distro_name))
         print 'Operating on ROS distro %s'%distro_obj.release_name
 
-
         # Install the stacks to test from source
         print 'Installing the stacks to test from source'
         rosinstall = stacks_to_rosinstall(options.stack, distro_obj.stacks, 'devel')
