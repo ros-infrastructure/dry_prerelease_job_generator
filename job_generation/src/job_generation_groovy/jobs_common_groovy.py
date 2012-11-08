@@ -32,8 +32,9 @@ export ROS_PACKAGE_PATH=\$INSTALL_DIR/ros_release:\$ROS_PACKAGE_PATH
 mkdir -p \$INSTALL_DIR
 cd \$INSTALL_DIR
 
-wget  --no-check-certificate http://code.ros.org/svn/ros/installers/branches/fuerte/hudson/hudson_helper 
+wget  --no-check-certificate http://code.ros.org/svn/ros/installers/branches/fuerte/hudson/hudson_helper
 chmod +x  hudson_helper
+sudo easy_install -U ros-job_generation
 sudo easy_install -U ros-groovy-job-generation
 """
 
@@ -72,7 +73,7 @@ ARCHES = ['amd64', 'i386']
 # ubuntu distro mapping to ros distro
 UBUNTU_DISTRO_MAP = os_test_platform = {
     'groovy': ['oneiric', 'precise', 'quantal'],
-    'fuerte': ['lucid', 'oneiric', 'precise'] 
+    'fuerte': ['lucid', 'oneiric', 'precise']
 }
 
 # Path to hudson server
@@ -84,36 +85,36 @@ CONFIG_PATH = 'http://wgs24.willowgarage.com/hudson-html/hds.xml'
 
 
 EMAIL_TRIGGER="""
-        <hudson.plugins.emailext.plugins.trigger.WHENTrigger> 
-          <email> 
-            <recipientList></recipientList> 
-            <subject>$PROJECT_DEFAULT_SUBJECT</subject> 
-            <body>$PROJECT_DEFAULT_CONTENT</body> 
-            <sendToDevelopers>SEND_DEVEL</sendToDevelopers> 
-            <sendToRecipientList>true</sendToRecipientList> 
-            <contentTypeHTML>false</contentTypeHTML> 
-            <script>true</script> 
-          </email> 
-        </hudson.plugins.emailext.plugins.trigger.WHENTrigger> 
+        <hudson.plugins.emailext.plugins.trigger.WHENTrigger>
+          <email>
+            <recipientList></recipientList>
+            <subject>$PROJECT_DEFAULT_SUBJECT</subject>
+            <body>$PROJECT_DEFAULT_CONTENT</body>
+            <sendToDevelopers>SEND_DEVEL</sendToDevelopers>
+            <sendToRecipientList>true</sendToRecipientList>
+            <contentTypeHTML>false</contentTypeHTML>
+            <script>true</script>
+          </email>
+        </hudson.plugins.emailext.plugins.trigger.WHENTrigger>
 """
 
 
 hudson_scm_managers = {'svn':"""
-  <scm class="hudson.scm.SubversionSCM"> 
-    <locations> 
-      <hudson.scm.SubversionSCM_-ModuleLocation> 
-        <remote>STACKURI</remote> 
-        <local>STACKNAME</local> 
-      </hudson.scm.SubversionSCM_-ModuleLocation> 
-    </locations> 
-    <useUpdate>false</useUpdate> 
-    <doRevert>false</doRevert> 
-    <excludedRegions></excludedRegions> 
-    <includedRegions></includedRegions> 
-    <excludedUsers></excludedUsers> 
-    <excludedRevprop></excludedRevprop> 
-    <excludedCommitMessages></excludedCommitMessages> 
-  </scm> 
+  <scm class="hudson.scm.SubversionSCM">
+    <locations>
+      <hudson.scm.SubversionSCM_-ModuleLocation>
+        <remote>STACKURI</remote>
+        <local>STACKNAME</local>
+      </hudson.scm.SubversionSCM_-ModuleLocation>
+    </locations>
+    <useUpdate>false</useUpdate>
+    <doRevert>false</doRevert>
+    <excludedRegions></excludedRegions>
+    <includedRegions></includedRegions>
+    <excludedUsers></excludedUsers>
+    <excludedRevprop></excludedRevprop>
+    <excludedCommitMessages></excludedCommitMessages>
+  </scm>
 """,
                        'hg':"""
   <scm class="hudson.plugins.mercurial.MercurialSCM">
@@ -126,10 +127,10 @@ hudson_scm_managers = {'svn':"""
   </scm>
 """,
                        'bzr':"""
-  <scm class="hudson.plugins.bazaar.BazaarSCM"> 
-    <source>STACKURI STACKNAME</source> 
-    <clean>false</clean> 
-  </scm> 
+  <scm class="hudson.plugins.bazaar.BazaarSCM">
+    <source>STACKURI STACKNAME</source>
+    <clean>false</clean>
+  </scm>
 """,
                        'git':"""
 
@@ -268,10 +269,10 @@ def get_options(required, optional):
                           help="Build everything from source, don't use Debian packages")
     if 'delete' in ops:
         parser.add_option('--delete', dest = 'delete', default=False, action='store_true',
-                          help='Delete jobs from Hudson')    
+                          help='Delete jobs from Hudson')
     if 'wait' in ops:
         parser.add_option('--wait', dest = 'wait', default=False, action='store_true',
-                          help='Wait for running jobs to finish to reconfigure them')    
+                          help='Wait for running jobs to finish to reconfigure them')
     if 'rosinstall' in ops:
         parser.add_option('--rosinstall', dest = 'rosinstall', default=None, action='store',
                           help="Specify the rosinstall file that refers to unreleased code.")
@@ -286,7 +287,7 @@ def get_options(required, optional):
                           help="Specify database file")
 
     (options, args) = parser.parse_args()
-    
+
 
     # make repeat an int
     if 'repeat' in ops:
@@ -300,7 +301,7 @@ def get_options(required, optional):
 
     # postprocessing
     if 'email' in ops and options.email and not '@' in options.email:
-        options.email = options.email + '@willowgarage.com'        
+        options.email = options.email + '@willowgarage.com'
 
 
     # check if rosdistro exists
@@ -339,7 +340,7 @@ def job_is_running(jenkins_obj, name):
         if string.find(info['color'], "_anime") > 0:
             return True
     return False
-    
+
 def schedule_jobs(jobs, wait=False, delete=False, start=False, hudson_obj=None):
     # create hudson instance
     if not hudson_obj:
@@ -416,7 +417,7 @@ def write_file(filename, msg):
     ensure_dir(filename)
     with open(filename, 'w') as f:
         f.write(msg)
-    
+
 
 def generate_email(message, env):
     print message
@@ -424,7 +425,7 @@ def generate_email(message, env):
     write_file(env['WORKSPACE']+'/build_output/buildfailures.txt', message)
     write_file(env['WORKSPACE']+'/test_output/testfailures.txt', '')
     write_file(env['WORKSPACE']+'/build_output/buildfailures-with-context.txt', '')
-    write_file(env['WORKSPACE']+'/test_results/_hudson/dummy.xml', text_xml)    
+    write_file(env['WORKSPACE']+'/test_results/_hudson/dummy.xml', text_xml)
     write_file(env['WORKSPACE']+'/test_results/0/_hudson/dummy.xml', text_xml)
 
 
@@ -462,7 +463,7 @@ def call(command, env=None, message='', ignore_fail=False):
             raise Exception('job failed')
         return -1;
 
-        
+
 def get_sys_info():
     arch = 'i386'
     if '64' in call('uname -mrs'):
