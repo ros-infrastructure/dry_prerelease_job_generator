@@ -68,12 +68,11 @@ echo "_________________________________END SCRIPT_______________________________
 
 
 # the supported Ubuntu distro's for each ros distro
-ARCHES = ['amd64', 'i386']
+ARCHES = ['amd64']
 
 # ubuntu distro mapping to ros distro
 UBUNTU_DISTRO_MAP = os_test_platform = {
-    'groovy': ['oneiric', 'precise', 'quantal'],
-    'fuerte': ['lucid', 'oneiric', 'precise']
+    'groovy': ['precise']
 }
 
 # Path to hudson server
