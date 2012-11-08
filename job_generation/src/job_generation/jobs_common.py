@@ -71,7 +71,8 @@ ARCHES = ['amd64']
 
 # ubuntu distro mapping to ros distro
 UBUNTU_DISTRO_MAP = os_test_platform = {
-    'fuerte': ['lucid', 'precise']
+    'fuerte': ['lucid', 'precise'],
+    'groovy': ['precise']
 }
 
 # Path to hudson server
