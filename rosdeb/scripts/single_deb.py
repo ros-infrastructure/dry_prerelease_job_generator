@@ -268,6 +268,7 @@ def do_deb_build(distro_name, stack_name, stack_version, os_platform, arch, stag
     with open(p, 'w') as f:
         f.write("""#!/bin/sh
 set -o errexit
+apt-get install ca-certificates -y # not in default ubuntu anymore
 wget https://code.ros.org/svn/release/download/stacks/%(stack_name)s/%(stack_name)s-%(stack_version)s/%(stack_name)s-%(stack_version)s.tar.bz2 -O /tmp/buildd/%(stack_name)s-%(stack_version)s.tar.bz2
 rosdep update
 chown -R pbuilder /tmp/buildd/.ros
