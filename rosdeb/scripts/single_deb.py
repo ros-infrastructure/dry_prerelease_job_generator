@@ -281,7 +281,7 @@ su pbuilder -c "cp -r /tmp/buildd/.ros /tmp"
     # Hook script which makes sure we have updated our apt cache
     p = os.path.join(hook_dir, 'D50update')
     with open(p, 'w') as f:
-        f.write("""#!/bin/sh
+        f.write("""#!/bin/bash
 set -o errexit
 apt-get update
 apt-get install -y python-rosdep
@@ -293,7 +293,7 @@ rosdep init"""%locals())
         # Hook scripts to make us interactive:
         p = os.path.join(hook_dir, 'B50interactive')
         with open(p, 'w') as f:
-            f.write("""#!/bin/sh
+            f.write("""#!/bin/bash
 echo "Entering interactive environment.  Exit when done to continue pbuilder operation."
 export ROS_DESTDIR=/tmp/buildd/%(deb_name)s-%(stack_version)s/debian/%(deb_name)s
 source /tmp/buildd/%(deb_name)s-%(stack_version)s/setup_deb.sh
@@ -306,7 +306,7 @@ echo "Resuming pbuilder"
         # Hook scripts to make us interactive:
         p = os.path.join(hook_dir, 'C50interactive')
         with open(p, 'w') as f:
-            f.write("""#!/bin/sh
+            f.write("""#!/bin/bash
 echo "Entering interactive environment.  Exit when done to continue pbuilder operation."
 export ROS_DESTDIR=/tmp/buildd/%(deb_name)s-%(stack_version)s/debian/%(deb_name)s
 source /tmp/buildd/%(deb_name)s-%(stack_version)s/setup_deb.sh
