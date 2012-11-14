@@ -133,6 +133,8 @@ def _source_deb_main(distro_name, stack_name, stack_version, os_platform, stagin
 
     
 def trigger_hudson_build_debs(name, distro_name, os_platform):
+    if distro_name != 'electric':
+        return
     import hudson
     h = hudson.Hudson(SERVER)
     parameters = {
