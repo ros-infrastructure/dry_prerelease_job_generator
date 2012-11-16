@@ -52,7 +52,7 @@ import time
 from rospkg.distro import distro_uri, load_distro
 import rosdeb
 from rosdeb import ubuntu_release, debianize_name, debianize_version, \
-    platforms, ubuntu_release_name, load_Packages, get_repo_version, targets
+    platforms, ubuntu_release_name, load_Packages, get_repo_version, rosdistro, targets
 from rosdeb.rosutil import send_email
 from rosdeb.source_deb import download_control
 
@@ -602,7 +602,7 @@ def parse_deb_packages(text):
     return parsed
 
 
-def create_meta_pkg(packagelist, distro, distro_name, metapackage, deps, os_platform, arch, staging_dir):
+def create_meta_pkg(packagelist, distro, distro_name, metapackage, deps, os_platform, arch, staging_dir, wet_distro):
     workdir = staging_dir
     metadir = os.path.join(workdir, 'meta')
     if not os.path.exists(metadir):
@@ -619,8 +619,11 @@ def create_meta_pkg(packagelist, distro, distro_name, metapackage, deps, os_plat
 
     missing = False
 
+
+
+
     for stack in deps:
-        if stack in distro.released_stacks:
+        if stack in distro.released_stacks or wet_distro.get_package_list():
             stack_deb_name = "ros-%s-%s"%(distro_name, debianize_name(stack))
             if stack_deb_name in packagelist:
                 stack_deb_version = packagelist[stack_deb_name]['Version']
@@ -682,6 +685,9 @@ def gen_metapkgs(distro, os_platform, arch, staging_dir, force=False):
     # if (metapkg missing) or (metapkg missing deps), then create
     # modify create to version-lock deps
 
+    wet_distro = rosdistro.Rosdistro(distro_name)
+
+
     # Build the new meta packages
     for (v,d) in distro.variants.iteritems():
 
@@ -696,14 +702,14 @@ def gen_metapkgs(distro, os_platform, arch, staging_dir, force=False):
                 continue
 
         # Else, we create the new metapkg
-        mp = create_meta_pkg(packagelist, distro, distro_name, v, set(d.stack_names) - missing_ok, os_platform, arch, staging_dir)
+        mp = create_meta_pkg(packagelist, distro, distro_name, v, set(d.stack_names) - missing_ok, os_platform, arch, staging_dir, wet_distro)
         if mp:
             debs.append(mp)
         else:
             missing.append(v)
 
     # We should always need to build the special "all" metapackage
-    mp = create_meta_pkg(packagelist, distro, distro_name, "all", set(distro.released_stacks.keys()) - missing_ok, os_platform, arch, staging_dir)
+    mp = create_meta_pkg(packagelist, distro, distro_name, "all", set(distro.released_stacks.keys()) - missing_ok, os_platform, arch, staging_dir, wet_distro)
     if mp:
         debs.append(mp)
     else:
