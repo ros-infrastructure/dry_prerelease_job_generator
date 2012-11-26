@@ -12,7 +12,7 @@ from jobs_common import *
 from apt_parser import parse_apt
 import sys
 import os
-import optparse 
+import optparse
 import subprocess
 import traceback
 
@@ -56,10 +56,6 @@ def main():
         rosdistro_obj = rosdistro.Distro(get_rosdistro_file(options.rosdistro))
         print 'Operating on ROS distro %s'%rosdistro_obj.release_name
 
-        # set up rosdep
-        call("rosdep init")
-        call("rosdep update")
-
         # Install the stacks to test from source
         print 'Installing the stacks to test from source'
         rosinstall = ''
@@ -80,7 +76,7 @@ def main():
         # get all stack dependencies of stacks we're testing
         print "Computing dependencies of stacks we're testing"
         depends_all = []
-        for stack in options.stack:    
+        for stack in options.stack:
             stack_xml = '%s/%s/stack.xml'%(STACK_DIR, stack)
             call('ls %s'%stack_xml, env, 'Checking if stack %s contains "stack.xml" file'%stack)
             with open(stack_xml) as stack_file:
@@ -188,7 +184,7 @@ def main():
                      'Install dependencies of depends_on_all stacks, excluding dependencies of test stacks.', ignore_fail = ros_tested_ignore_return)
         else:
             print "No dependencies of depends_on_all stacks"
-            
+
 
         # Install all stacks that depend on this stack from source
         if len(depends_on_all) > 0:
