@@ -447,13 +447,8 @@ def lock_debs(distro, os_platform, arch):
         script_content = """
 #!/bin/bash
 set -o errexit
-(
-flock 200
-export %(platform_upper)s_UPDATE=ros-%(os_platform)s-%(distro)s-%(arch)s
-/var/packages/ros-shadow-fixed/ubuntu/conf/gen_distributions.sh > /var/packages/ros-shadow-fixed/ubuntu/conf/distributions
-reprepro -V -b /var/packages/ros-shadow-fixed/ubuntu -A %(arch)s removefilter %(os_platform)s 'Package (%% ros-%(distro)s-*)'
-reprepro -V -b /var/packages/ros-shadow-fixed/ubuntu --noskipold update %(os_platform)s
-) 200>/var/lock/ros-shadow.lock
+
+PYTHONPATH=/home/rosbuild/reprepro_updater/src python /home/rosbuild/reprepro_updater/scripts/prepare_sync.py /var/packages/ros-shadow-fixed/ubuntu -r %(distro)s -d %(os_platform)s -a %(arch)s 
 """%locals()
 
         #Actually run script and check result
