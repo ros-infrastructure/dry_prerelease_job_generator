@@ -448,7 +448,7 @@ def lock_debs(distro, os_platform, arch):
 #!/bin/bash
 set -o errexit
 
-PYTHONPATH=/home/rosbuild/reprepro_updater/src python /home/rosbuild/reprepro_updater/scripts/prepare_sync.py /var/packages/ros-shadow-fixed/ubuntu -r %(distro)s -d %(os_platform)s -a %(arch)s -c
+PYTHONPATH=/home/rosbuild/reprepro_updater/src python /home/rosbuild/reprepro_updater/scripts/prepare_sync.py /var/packages/ros-shadow-fixed/ubuntu -r %(distro)s -d %(os_platform)s -a %(arch)s -u file:/var/packages/ros-shadow/ubuntu -c
 """%locals()
 
         #Actually run script and check result
