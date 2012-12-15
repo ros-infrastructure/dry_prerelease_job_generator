@@ -113,7 +113,12 @@ def compute_deps(distro, stack_name, ignore_catkinized = True):
             raise MissingDefinition("[%s] not found in distro."%(s))
         seen.add(s)
         v = distro.stacks[s].version
-        si = load_info(s, v)
+        try:
+            si = load_info(s, v)
+        except Exception as e:
+            sys.stderr.write(str(e) + '\n')
+            return
+
         for d in si['depends']:
             try:
                 add_stack(d)
