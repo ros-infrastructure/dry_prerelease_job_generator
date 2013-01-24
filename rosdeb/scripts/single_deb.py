@@ -738,7 +738,7 @@ def gen_metapkgs_setup(staging_dir_arg, distro, os_platform, arch):
     except StackBuildFailure, e:
         warning_message = "Warning Message:\n"+"="*80+'\n'+str(e)
     except Exception, e:
-        failure_message = "Internal failure in the release system. Please notify leibs and kwc @willowgarage.com:\n%s\n\n%s"%(e, traceback.format_exc(e))
+        failure_message = "Internal failure in the release system. Please notify ros-release@code.ros.org:\n%s\n\n%s"%(e, traceback.format_exc(e))
     finally:
         if staging_dir is None:
             shutil.rmtree(staging_dir)
@@ -804,7 +804,7 @@ def single_deb_main():
     except BuildFailure, e:
         failure_message = "Failure Message:\n"+"="*80+'\n'+str(e)
     except Exception, e:
-        failure_message = "Internal failure release system. Please notify leibs and kwc @willowgarage.com:\n%s\n\n%s"%(e, traceback.format_exc(e))
+        failure_message = "Internal failure release system. Please notify ros-release@code.ros.org:\n%s\n\n%s"%(e, traceback.format_exc(e))
     finally:
         # if we created our own staging dir, we are responsible for cleaning it up
         if options.staging_dir is None:

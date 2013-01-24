@@ -769,7 +769,7 @@ def build_debs_main():
     except BuildFailure, e:
         failure_message = "Failure Message:\n"+"="*80+'\n'+str(e)
     except Exception, e:
-        failure_message = "Internal failure release system. Please notify leibs and kwc @willowgarage.com:\n%s\n\n%s"%(e, traceback.format_exc(e))
+        failure_message = "Internal failure release system. Please notify ros-release@code.ros.org:\n%s\n\n%s"%(e, traceback.format_exc(e))
     finally:
         # if we created our own staging dir, we are responsible for cleaning it up
         if options.staging_dir is None:
@@ -792,7 +792,7 @@ def build_debs_main():
         except StackBuildFailure, e:
             warning_message = "Warning Message:\n"+"="*80+'\n'+str(e)
         except Exception, e:
-            failure_message = "Internal failure in the release system. Please notify leibs and kwc @willowgarage.com:\n%s\n\n%s"%(e, traceback.format_exc(e))
+            failure_message = "Internal failure in the release system. Please notify ros-release@code.ros.org:\n%s\n\n%s"%(e, traceback.format_exc(e))
         finally:
             if options.staging_dir is None:
                 shutil.rmtree(staging_dir)
@@ -802,7 +802,7 @@ def build_debs_main():
         try:
             lock_debs(distro.release_name, os_platform, arch)
         except Exception, e:
-            failure_message = "Internal failure in the release system. Please notify leibs and kwc @willowgarage.com:\n%s\n\n%s"%(e, traceback.format_exc(e))
+            failure_message = "Internal failure in the release system. Please notify ros-release@code.ros.org:\n%s\n\n%s"%(e, traceback.format_exc(e))
 
     if failure_message or warning_message:
         debug("FAILURE: %s"%failure_message)
