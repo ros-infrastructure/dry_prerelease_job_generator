@@ -3,7 +3,7 @@
 from job_generation.jobs_common import *
 import sys
 import os
-import optparse 
+import optparse
 import subprocess
 import traceback
 
@@ -55,10 +55,7 @@ def main():
                 print 'Installing debian packages of stack dependencies from stacks %s'%str(options.stack)
                 call('sudo apt-get update', env)
                 print 'Installing debian packages of "%s" dependencies: %s'%(options.stack, str(depends))
-                res = call('sudo apt-get install %s --yes'%(stacks_to_debs(depends, distro_name)), env, ignore_fail=True)
-                if res != 0:
-                    generate_email('Not all dependencies of stack %s have a Debian package. Skipping this devel build'%str(options.stack), env)
-                    sys.exit(0)  # return success
+                call('sudo apt-get install %s --yes'%(stacks_to_debs(depends, distro_name)), env, ignore_fail=True)
             else:
                 # Install stack dependencies from source
                 print 'Installing stack dependencies from source'
