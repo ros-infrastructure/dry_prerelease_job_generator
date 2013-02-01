@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(name='ros-job_generation',
-      version= '0.1.26',
+      version= '0.1.27',
       install_requires=['python-jenkins', 'rospkg', 'rosdep'],
       packages=['job_generation'],
       package_dir = {'':'src'},
