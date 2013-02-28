@@ -345,6 +345,15 @@ def schedule_jobs(jobs, wait=False, delete=False, start=False, hudson_obj=None):
         info = urllib.urlopen(CONFIG_PATH).read().split(',')
         hudson_obj = jenkins.Jenkins(SERVER, info[0], info[1])
 
+    def build_job(jenkins_obj, job_name):
+        #return jenkins_obj.build_job(job_name)
+        # replicate internal implementation of Jenkins.build_job()
+        import urllib2
+        if not jenkins_obj.job_exists(job_name):
+            raise jenkins.JenkinsException('no such job[%s]' % (job_name))
+        # pass parameters to create a POST request instead of GET
+        return jenkins_obj.jenkins_open(urllib2.Request(jenkins_obj.build_job_url(job_name), [('foo', 'bar')]))
+
     finished = False
     while not finished:
         jobs_todo = {}
@@ -360,7 +369,7 @@ def schedule_jobs(jobs, wait=False, delete=False, start=False, hudson_obj=None):
             elif exists and not delete:
                 hudson_obj.reconfig_job(job_name, jobs[job_name])
                 if start:
-                    hudson_obj.build_job(job_name)
+                    build_job(hudson_obj, job_name)
                 print " - %s"%job_name
 
             # delete job
@@ -372,7 +381,7 @@ def schedule_jobs(jobs, wait=False, delete=False, start=False, hudson_obj=None):
             elif not exists and not delete:
                 hudson_obj.create_job(job_name, jobs[job_name])
                 if start:
-                    hudson_obj.build_job(job_name)
+                    build_job(hudson_obj, job_name)
                 print " - %s"%job_name
 
         if wait and len(jobs_todo) > 0:
