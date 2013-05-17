@@ -38,14 +38,14 @@ def main(argv, stdout, environ):
     cmd = subprocess.Popen(['dpkg', '-s', debname], stdout=subprocess.PIPE)
     o,e = cmd.communicate()
     if cmd.returncode != 0:
-      raise "Could not find dependency version number"
+      raise Exception("Could not find dependency version number")
     for l in o.splitlines():
       if l.startswith('Version:'):
         version = l.split()[1].strip()
     if version:
       deps.append("%s (= %s)"%(debname,version))
     else:
-      raise "Could not find dependency version number"
+      raise Exception("Could not find dependency version number")
 
   print "rosstack:Depends="+", ".join(deps)
 
