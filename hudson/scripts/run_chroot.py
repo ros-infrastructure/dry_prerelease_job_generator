@@ -578,7 +578,7 @@ def run_chroot(options, path, workspace, hdd_tmp_dir):
 
         pypi_pkgs = ['pip', 'vcstools', 'rospkg', 'rosinstall', 'mock', 'nose', 'coverage', 'rosdep']
         for p in pypi_pkgs:
-            cmd = ["pip", "install", "-U",p, '--extra-index-url=http://b.pypi.python.org/simple/', '--extra-index-url=http://c.pypi.python.org/simple/', '--extra-index-url=http://d.pypi.python.org/simple/']
+            cmd = ["pip", "install", p, '--extra-index-url=http://b.pypi.python.org/simple/', '--extra-index-url=http://c.pypi.python.org/simple/', '--extra-index-url=http://d.pypi.python.org/simple/']
             chrti.execute(cmd, display=True)
 
         chrti.execute(['rosdep', 'init'], display=True)
