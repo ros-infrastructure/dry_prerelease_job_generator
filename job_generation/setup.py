@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(name='ros-groovy-job-generation',
-      version= '0.2.7',
+      version= '0.2.8',
       install_requires=['python-jenkins', 'rospkg', 'rosdep'],
       packages=['job_generation_groovy'],
       package_dir = {'':'src'},
