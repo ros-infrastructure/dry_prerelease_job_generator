@@ -32,7 +32,7 @@ export ROS_PACKAGE_PATH=\$INSTALL_DIR/ros_release:\$ROS_PACKAGE_PATH
 mkdir -p \$INSTALL_DIR
 cd \$INSTALL_DIR
 
-wget  --no-check-certificate http://code.ros.org/svn/ros/installers/branches/groovy/hudson/hudson_helper
+wget  --no-check-certificate https://raw.github.com/ros-infrastructure/dry_prerelease_job_generator/groovy_new/job_generation/hudson_helper
 chmod +x  hudson_helper
 sudo easy_install -U ros-job_generation
 """
@@ -46,7 +46,7 @@ set -o errexit
 rm -rf $WORKSPACE/test_results
 rm -rf $WORKSPACE/test_output
 
-wget  --no-check-certificate https://code.ros.org/svn/ros/stacks/ros_release/trunk/hudson/scripts/run_chroot.py -O $WORKSPACE/run_chroot.py
+wget  --no-check-certificate https://raw.github.com/ros-infrastructure/dry_prerelease_job_generator/master/hudson/scripts/run_chroot.py -O $WORKSPACE/run_chroot.py
 chmod +x $WORKSPACE/run_chroot.py
 cd $WORKSPACE &amp;&amp; $WORKSPACE/run_chroot.py --distro=UBUNTUDISTRO --arch=ARCH  --ramdisk --hdd-scratch=/home/rosbuild/install_dir --script=$WORKSPACE/script.sh --ssh-key-file=/home/rosbuild/rosbuild-ssh.tar
 """
@@ -75,11 +75,10 @@ UBUNTU_DISTRO_MAP = os_test_platform = {
 }
 
 # Path to hudson server
-SERVER = 'http://build.willowgarage.com'
-#SERVER = 'http://hudson.willowgarage.com:8080'
+SERVER = 'http://jenkins.ros.org'
 
 # config path
-CONFIG_PATH = 'http://wgs24.willowgarage.com/hudson-html/hds.xml'
+CONFIG_PATH = '/var/www/prerelease_website/jenkins.conf'
 
 
 EMAIL_TRIGGER="""
@@ -196,7 +195,7 @@ def stacks_to_rosinstall(stack_list, stack_map, branch):
 
 def get_depends_one(stack):
     name = '%s-%s'%(stack.name, stack.version)
-    url = urllib.urlopen('https://code.ros.org/svn/release/download/stacks/%s/%s/%s.yaml'%(stack.name, name, name))
+    url = urllib.urlopen('http://ros-dry-releases.googlecode.com/svn/download/stacks/%s/%s/%s.yaml'%(stack.name, name, name))
     conf = url.read()
     if '404 Not Found' in conf:
         print 'Could not get dependencies of stack %s with version %s'%(stack.name, stack.version)
@@ -352,7 +351,7 @@ def schedule_jobs(jobs, wait=False, delete=False, start=False, hudson_obj=None):
         if not jenkins_obj.job_exists(job_name):
             raise jenkins.JenkinsException('no such job[%s]' % (job_name))
         # pass parameters to create a POST request instead of GET
-        return jenkins_obj.jenkins_open(urllib2.Request(jenkins_obj.build_job_url(job_name), [('foo', 'bar')]))
+        return jenkins_obj.jenkins_open(urllib2.Request(jenkins_obj.build_job_url(job_name), 'foo=bar'))
 
     finished = False
     while not finished:
@@ -393,7 +392,7 @@ def schedule_jobs(jobs, wait=False, delete=False, start=False, hudson_obj=None):
 
 
 def get_rosdistro_file(distro_name):
-    return 'https://code.ros.org/svn/release/trunk/distros/%s.rosdistro'%distro_name
+    return 'http://ros-dry-releases.googlecode.com/svn/trunk/distros/%s.rosdistro'%distro_name
 
 
 def get_email_triggers(when, send_devel=True):

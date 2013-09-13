@@ -135,7 +135,7 @@ def main():
             print 'Jobs have been deleted. You can now start new jobs'
         else:
             print 'You will receive %d emails on %s, one for each job'%(len(prerelease_configs), options.email)
-            print 'You can follow the progress of these jobs on <%s/view/pre-release>'%(SERVER)
+            print 'You can follow the progress of these jobs on <%s/view/Prerelease>'%(SERVER)
 
     # catch all exceptions
     except Exception, e:
