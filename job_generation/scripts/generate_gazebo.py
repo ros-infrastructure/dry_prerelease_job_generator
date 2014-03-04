@@ -32,11 +32,7 @@ HUDSON_GAZEBO_CONFIG = """<?xml version='1.0' encoding='UTF-8'?>
     <numToKeep>-1</numToKeep> 
   </logRotator> 
   <keepDependencies>false</keepDependencies> 
-  <properties> 
-    <hudson.plugins.trac.TracProjectProperty> 
-      <tracWebsite>http://code.ros.org/trac/ros/</tracWebsite> 
-    </hudson.plugins.trac.TracProjectProperty> 
-  </properties> 
+  <properties/>
   HUDSON_VCS
   <assignedNode>gazebo</assignedNode>
   <canRoam>false</canRoam> 
