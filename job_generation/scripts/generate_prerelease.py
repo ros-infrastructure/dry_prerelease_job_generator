@@ -34,7 +34,7 @@ SHUTDOWN_SCRIPT
       <testDataPublishers/> 
     </hudson.tasks.junit.JUnitResultArchiver> 
     <hudson.plugins.emailext.ExtendedEmailPublisher> 
-      <recipientList>EMAIL,rosrelease-prerelease@kforge.ros.org</recipientList> 
+      <recipientList>EMAIL,ros-buildfarm-prerelease@googlegroups.com</recipientList>
       <configuredTriggers> 
         EMAIL_TRIGGERS
       </configuredTriggers> 

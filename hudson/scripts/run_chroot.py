@@ -219,7 +219,7 @@ class ChrootInstance:
         print cmd
         self.check_call(cmd)
         
-        deboot_url = 'http://aptproxy.willowgarage.com/us.archive.ubuntu.com/ubuntu'
+        deboot_url = 'http://us.archive.ubuntu.com/ubuntu'
         if self.distro in valid_debian_distros:
             deboot_url = 'http://ftp.us.debian.org/debian/'
 
@@ -244,10 +244,10 @@ class ChrootInstance:
             sources=os.path.join(self.chroot_path, 'etc', 'apt', 'sources.list.d', 'aptproxy.list')
 
             with tempfile.NamedTemporaryFile() as tf:
-                print "Setting sources to aptproxy.willowgarage.com", sources
-                tf.write("deb http://aptproxy.willowgarage.com/us.archive.ubuntu.com/ubuntu %s main restricted universe multiverse\n" % self.distro)
-                tf.write("deb http://aptproxy.willowgarage.com/us.archive.ubuntu.com/ubuntu %s-updates main restricted universe multiverse\n" % self.distro)
-                tf.write("deb http://aptproxy.willowgarage.com/us.archive.ubuntu.com/ubuntu %s-security main restricted universe multiverse\n" % self.distro)
+                #print "Setting sources to aptproxy.willowgarage.com", sources
+                tf.write("deb http://us.archive.ubuntu.com/ubuntu %s main restricted universe multiverse\n" % self.distro)
+                tf.write("deb http://us.archive.ubuntu.com/ubuntu %s-updates main restricted universe multiverse\n" % self.distro)
+                tf.write("deb http://us.archive.ubuntu.com/ubuntu %s-security main restricted universe multiverse\n" % self.distro)
 
                 tf.flush()
                 cmd = ['sudo', 'cp', tf.name, sources]
