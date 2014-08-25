@@ -343,7 +343,7 @@ grub-pc grub-pc/install_devices_empty boolean true
         print self.execute(cmd)
 
         self.setup_ssh_client()
-        self.setup_svn_ssl_certs()
+        #self.setup_svn_ssl_certs()
 
     def add_ros_sources(self):
         """
@@ -363,7 +363,7 @@ grub-pc grub-pc/install_devices_empty boolean true
         print "adding code.ros.org gpg key"
         key_file = 'tmp/ros.key'
         abs_key_file =os.path.join(self.chroot_path, key_file)
-        urllib.urlretrieve('http://code.ros.org/packages/ros.key', abs_key_file)
+        urllib.urlretrieve('http://packages.ros.org/ros.key', abs_key_file)
         #with open(abs_key_file) as f:
         #    print "key file:", f.read()
         cmd = ['apt-key', 'add', os.path.join('/', key_file)]
