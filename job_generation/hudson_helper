@@ -422,54 +422,54 @@ class HudsonHelper:
         # gets deleted at the beginning of the next run. This is useful
         # for debugging failing tests, and it keeps ~/.ros from growing
         # without bound.
-        import tarfile, tempfile
-        tmpd = tempfile.mkdtemp()
-        tarname = os.path.join(tmpd, '%s-%s-logs.tgz'%(os.environ['JOB_NAME'], os.environ['BUILD_NUMBER']))
-        tar = tarfile.open(tarname, 'w:gz')
+        # import tarfile, tempfile
+        # tmpd = tempfile.mkdtemp()
+        # tarname = os.path.join(tmpd, '%s-%s-logs.tgz'%(os.environ['JOB_NAME'], os.environ['BUILD_NUMBER']))
+        # tar = tarfile.open(tarname, 'w:gz')
         # We try-except here because the tar.add() call sometimes fails
         # with IOError("end of file reached")
-        try:
-            tar.add(self.dotrosname)
-            tar.close()
-            scp_cmd = ['scp', '-o', 'StrictHostKeyChecking=no', '-qr', tarname, 'rosbuild@pub1.willowgarage.com:/var/www/pub1.willowgarage.com/html/hudson_logs']
-            try:
-                print >> sys.stderr, '[%s] %s'%(NAME,scp_cmd)
-                if DEBUG:
-                    print >> sys.stderr, `env_vars`
-                else:
-                    check_call(scp_cmd, stdout=sys.stdout, stdin=sys.stdin, stderr=sys.stderr)
-            except (CalledProcessError, OSError), e:
-                print >> sys.stderr, '[%s] Error in scp step:%s'%(NAME, e)
-        except IOError, e:
-            print >> sys.stderr, '[%s] Error in tar step:%s'%(NAME, e)
-        shutil.rmtree(tmpd)
+        # try:
+        #     tar.add(self.dotrosname)
+        #     tar.close()
+        #     scp_cmd = ['scp', '-o', 'StrictHostKeyChecking=no', '-qr', tarname, 'rosbuild@pub1.willowgarage.com:/var/www/pub1.willowgarage.com/html/hudson_logs']
+        #     try:
+        #         print >> sys.stderr, '[%s] %s'%(NAME,scp_cmd)
+        #         if DEBUG:
+        #             print >> sys.stderr, `env_vars`
+        #         else:
+        #             check_call(scp_cmd, stdout=sys.stdout, stdin=sys.stdin, stderr=sys.stderr)
+        #     except (CalledProcessError, OSError), e:
+        #         print >> sys.stderr, '[%s] Error in scp step:%s'%(NAME, e)
+        # except IOError, e:
+        #     print >> sys.stderr, '[%s] Error in tar step:%s'%(NAME, e)
+        # shutil.rmtree(tmpd)
 
         # Also push up the build_output/profile.txt and
         # test_output/profile.txt files, to enable trending of build and
         # test times.
-        build_profile = os.path.join(workspace, 'build_output', 'profile.txt')
-        if os.path.isfile(build_profile):
-            scp_cmd = ['scp', '-o', 'StrictHostKeyChecking=no', '-q', build_profile, 'rosbuild@pub1.willowgarage.com:/var/www/pub1.willowgarage.com/html/hudson_logs/profiles/%s-%s.build'%(os.environ['JOB_NAME'], os.environ['BUILD_NUMBER'])]
-            try:
-                print >> sys.stderr, '[%s] %s'%(NAME,scp_cmd)
-                if DEBUG:
-                    print >> sys.stderr, `env_vars`
-                else:
-                    check_call(scp_cmd, stdout=sys.stdout, stdin=sys.stdin, stderr=sys.stderr)
-            except (CalledProcessError, OSError), e:
-                print >> sys.stderr, '[%s] Error in scp step:%s'%(NAME, e)
+        # build_profile = os.path.join(workspace, 'build_output', 'profile.txt')
+        # if os.path.isfile(build_profile):
+        #     scp_cmd = ['scp', '-o', 'StrictHostKeyChecking=no', '-q', build_profile, 'rosbuild@pub1.willowgarage.com:/var/www/pub1.willowgarage.com/html/hudson_logs/profiles/%s-%s.build'%(os.environ['JOB_NAME'], os.environ['BUILD_NUMBER'])]
+        #     try:
+        #         print >> sys.stderr, '[%s] %s'%(NAME,scp_cmd)
+        #         if DEBUG:
+        #             print >> sys.stderr, `env_vars`
+        #         else:
+        #             check_call(scp_cmd, stdout=sys.stdout, stdin=sys.stdin, stderr=sys.stderr)
+        #     except (CalledProcessError, OSError), e:
+        #         print >> sys.stderr, '[%s] Error in scp step:%s'%(NAME, e)
 
-        test_profile = os.path.join(workspace, 'test_output', 'profile.txt')
-        if os.path.isfile(test_profile):
-            scp_cmd = ['scp', '-o', 'StrictHostKeyChecking=no', '-q', test_profile, 'rosbuild@pub1.willowgarage.com:/var/www/pub1.willowgarage.com/html/hudson_logs/profiles/%s-%s.test'%(os.environ['JOB_NAME'], os.environ['BUILD_NUMBER'])]
-            try:
-                print >> sys.stderr, '[%s] %s'%(NAME,scp_cmd)
-                if DEBUG:
-                    print >> sys.stderr, `env_vars`
-                else:
-                    check_call(scp_cmd, stdout=sys.stdout, stdin=sys.stdin, stderr=sys.stderr)
-            except (CalledProcessError, OSError), e:
-                print >> sys.stderr, '[%s] Error in scp step:%s'%(NAME, e)
+        # test_profile = os.path.join(workspace, 'test_output', 'profile.txt')
+        # if os.path.isfile(test_profile):
+        #     scp_cmd = ['scp', '-o', 'StrictHostKeyChecking=no', '-q', test_profile, 'rosbuild@pub1.willowgarage.com:/var/www/pub1.willowgarage.com/html/hudson_logs/profiles/%s-%s.test'%(os.environ['JOB_NAME'], os.environ['BUILD_NUMBER'])]
+        #     try:
+        #         print >> sys.stderr, '[%s] %s'%(NAME,scp_cmd)
+        #         if DEBUG:
+        #             print >> sys.stderr, `env_vars`
+        #         else:
+        #             check_call(scp_cmd, stdout=sys.stdout, stdin=sys.stdin, stderr=sys.stderr)
+        #     except (CalledProcessError, OSError), e:
+        #         print >> sys.stderr, '[%s] Error in scp step:%s'%(NAME, e)
 
         if failure:
             sys.exit(1)
